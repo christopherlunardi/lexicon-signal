@@ -1292,9 +1292,9 @@ function drawTitleRadio(T) {
   // the room around falls into shadow so the radio carries the screen
   const v = ctx.createRadialGradient(cv.width / 2, cv.height * .42, cv.height * .45, cv.width / 2, cv.height * .45, cv.width * .62); v.addColorStop(0, "rgba(6,3,2,0)"); v.addColorStop(1, "rgba(6,3,2,.85)"); ctx.fillStyle = v; ctx.fillRect(0, 0, cv.width, cv.height);
   // PRESS START on a brass plate on the radio's base
-  const a = ease((T - 150) / 15); if (a > 0) { const [px0, py0, pw, ph] = R("plate"), W3 = Math.round(pw * Z * 1.25), H3 = ph * Z, bx = Math.round(cv.width / 2 - W3 / 2), by = zy(L.radioY + rh) - H3 + 6;
+  const a = ease((T - 150) / 15); if (a > 0) { const [px0, py0, pw, ph] = R("plate"), W3 = Math.round(pw * Z * 1.25), H3 = ph * Z, bx = Math.round(cv.width / 2 - W3 / 2), by = zy(L.radioY + rh) - H3 + 34;
     ctx.save(); ctx.globalAlpha = a; octx.clearRect(0, 0, W, H); plate3(octx, 0, 0, Math.round(W3 / Z), ph); ctx.drawImage(over, 0, 0, Math.round(W3 / Z), ph, bx, by, W3, H3);
-    ctx.globalAlpha = a * (.8 + .2 * Math.sin(frame / 12)); ftext(usingTouch ? "TAP TO START" : "PRESS START", cv.width / 2, by + Math.round((H3 - 14 * TK) / 2) + 2, "key", C.ink, "c", { under: C.brassHi, uy: 3 }); ctx.restore();
+    ctx.globalAlpha = a * (.8 + .2 * Math.sin(frame / 12)); const gh = glyphCv("key", "P", C.ink).height; ftext(usingTouch ? "TAP TO START" : "PRESS START", cv.width / 2, by + Math.round((H3 - 3 * Z - gh) / 2), "key", C.ink, "c", { under: C.brassHi, uy: 3 }); ctx.restore();
     const b = bestLine(); if (b) ftext(b, cv.width / 2, by + H3 + 16, "ink", C.amber, "c", { outline: C.dark }); }
 }
 function drawTitleOld() {
