@@ -64,7 +64,8 @@ the same batch.
   our own k-centroid downscale (`art/pixel/kdown.py`): each pixel takes the main colour of what it covers, sharp and true. Use
   that when fix_pixel_art can't find the grid. build.py marks the panes (WIN_PANES, the glass: emissive, rain falls there), the
   light spots (window_lights: lit building windows, the stained glass; the game blooms them) and keeps the beacon's pink halo by
-  keying only magenta that touches the picture's edge.
+  keying only magenta that touches the picture's edge. A sash bar (a copy of the transom) crosses the tall pane at SASH_Y so it
+  reads as a window that opens; the panes split there (rain stays off the bar).
   The night is option 2's teal-green (Chris): build.py recolours the panes' blue pixels by brightness rank to option 2's colours,
   sampled from windows9.png; the rain is tinted to match.
 - Rain (drawRain): faint slanted streaks and drops sliding down the panes in fits and starts, clipped to the panes and kept off
@@ -123,8 +124,8 @@ the same batch.
 - 4x4 keys in the radio glass; trace touching letters (8 directions), 3+ letters. Score = signal (letter values) x boost (length-2)
   x part multipliers; every word carries +2 signal so short words count. 6 words a night (one per lamp), 1 retune; targets
   30 x 1.4^(n-1) rounded to 5 (30, 40, 60, 80...); pick 1 of 3 parts. Night 1 was too hard at 40 in 5 words (Chris kept losing).
-- The goal is said plainly: a night card over the glass at the start ("NIGHT 1 / BEAM 30 SIGNAL / IN 6 WORDS", any input dismisses
-  it), the top plate shows "N TO GO" with a fill bar, the log says what's left after each word, and the tower beacon burns brighter
+- The goal is said plainly: a brass plaque that drops in at the top of the room with a clunk ("NIGHT 1 / BEAM 30 SIGNAL IN 6 WORDS"),
+  holds, then lifts away (any press sends it off; Chris disliked the old dark box over the glass), the top plate shows "N TO GO" with a fill bar, the log says what's left after each word, and the tower beacon burns brighter
   as the night's signal fills.
 - Used keys vanish; the keys above fall down their column with a heavy drop, one short bounce and a thud; new keys fall in from
   the top. No input while keys are falling or letters are flying.

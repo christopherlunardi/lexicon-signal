@@ -43,6 +43,7 @@ SPRITES = {
 }
 # the window's panes, measured on window7_fixed.png (x0, y0, x1, y1): the stained glass strip and the tall pane under the transom
 WIN_PANES = [(22, 22, 120, 55), (22, 61, 120, 210)]
+SASH_Y = 133   # top row of the sash bar across the tall pane (window7_fixed pixels); the bar is as tall as the transom (6 rows)
 WIN_BOX = [0, 0]
 WALL = {"src": "wallpaper.png", "period": (156, 138), "px": 3.9, "area": (150, 160)}
 ICON_NAMES = ["amp", "battery", "vowel", "filter", "coil", "echo", "owl", "knob", "treble", "short", "carrier", "fuse"]
@@ -96,13 +97,19 @@ def main():
         lum = sub[blue] @ [.3, .59, .11]; rank = np.argsort(np.argsort(lum)) / max(1, len(lum) - 1)
         q = (rank * (len(tl) - 1)).astype(int); sub[blue] = np.array([tl[max(0, i - 40):i + 41].mean(0) for i in q])
         wr[y0 - oy:y1 - oy, x0 - ox:x1 - ox] = sub
-    wa[..., :3] = np.clip(wr.round(), 0, 255).astype(np.uint8); imgs["window"] = Image.fromarray(wa, "RGBA")
+    wa[..., :3] = np.clip(wr.round(), 0, 255).astype(np.uint8)
+    # a sash: the wooden bar under the stained glass is copied across the middle of the tall pane, so it reads as a window that opens
+    # (Chris 2026-11-12). The pane becomes two (WIN_PANES lists them).
+    ty0, ty1 = WIN_PANES[0][3], WIN_PANES[1][1]; my = SASH_Y
+    wa[my - oy:my - oy + (ty1 - ty0), :] = np.where(wa[ty0 - oy:ty1 - oy, :, 3:4] > 0, wa[ty0 - oy:ty1 - oy, :], wa[my - oy:my - oy + (ty1 - ty0), :])
+    imgs["window"] = Image.fromarray(wa, "RGBA")
     # the window glass: which window pixels are the night view (they give their own light, so room light skips them)
     win = np.asarray(imgs["window"]).astype(int); rgb = win[..., :3]
     # the glass is every pane inside the frame: the area the blue night covers, minus whole rows/columns that are wood (the transom bar);
     # lit windows, the stained glass and the beacon inside it count as glass too (they light themselves)
     glass = np.zeros(rgb.shape[:2], bool); ox, oy = WIN_BOX[0], WIN_BOX[1]
     for x0, y0, x1, y1 in WIN_PANES: glass[y0 - oy:y1 - oy, x0 - ox:x1 - ox] = True
+    glass[SASH_Y - oy:SASH_Y - oy + (WIN_PANES[1][1] - WIN_PANES[0][3]), :] = False
     imgs["window_glass"] = Image.fromarray(np.dstack([np.full(glass.shape + (3,), 255, np.uint8), glass.astype(np.uint8) * 255]), "RGBA")
     # what in the window gives off light (for the glow pass): lit building windows, the stained glass sun, the beacon. Kept as a
     # list of light spots (centre, size, colour) the game blooms, plus the night sky area (where the rain falls) as a box.
@@ -118,7 +125,8 @@ def main():
             lights.append([round(float(xs.mean()) + sl[1].start, 1), round(float(ys.mean()) + sl[0].start, 1), int(len(ys)), kind])
     gy, gx = np.where(glass & (rgb[..., 2] > rgb[..., 0]))
     pts["window_lights"] = lights
-    pts["window_panes"] = [[x0 - ox, y0 - oy, x1 - ox, y1 - oy] for x0, y0, x1, y1 in WIN_PANES]
+    sh = WIN_PANES[1][1] - WIN_PANES[0][3]; P2 = [WIN_PANES[0], (WIN_PANES[1][0], WIN_PANES[1][1], WIN_PANES[1][2], SASH_Y), (WIN_PANES[1][0], SASH_Y + sh, WIN_PANES[1][2], WIN_PANES[1][3])]
+    pts["window_panes"] = [[x0 - ox, y0 - oy, x1 - ox, y1 - oy] for x0, y0, x1, y1 in P2]
     pts["window_sky"] = [int(gx.min()), int(gy.min()), int(gx.max()) + 1, int(gy.max()) + 1]
     # part icons: full size for the part picker, exactly half (2x2 cells, majority colour) for the bar's slots
     ic, fx, fy = fixed("icons"); ia = np.asarray(ic); al = ia[..., 3] > 0; H, W = al.shape

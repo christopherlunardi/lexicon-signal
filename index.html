@@ -1055,14 +1055,18 @@ function drawFlyers() {
   for (const p of pops) ftext(p.text, FX(p.x), FX(p.y - p.t * .5) - 14, "key", (p.t >> 2) & 1 ? C.hot : C.gold, "c", { outline: C.dark });
 }
 // start of each night: what to do, said plainly, over the glass (any key press dismisses it)
+// start of each night: a brass plaque drops in at the top of the room with a clunk, the night's goal stamped on it, holds, then lifts
+// away (any press sends it off early). Same brass plates as the bar, so it belongs to the radio's world.
 function drawNightCard() {
-  const a = Math.min(1, nightCard / 20), g = L.glass, x = FX(g.x) - 20, y = FX(g.y + g.h / 2) - 62, w = FX(g.w) + 40, hh = 124;
-  ctx.save(); ctx.globalAlpha = a * .88; ctx.fillStyle = "#0b0705"; rr(ctx, x, y, w, hh, 10); ctx.fill(); ctx.globalAlpha = a;
-  ctx.strokeStyle = "rgba(255,179,71,.7)"; ctx.lineWidth = 2; rr(ctx, x, y, w, hh, 10); ctx.stroke();
-  ftext(`NIGHT ${S.night}`, x + w / 2, y + 16, "key", C.hot, "c");
-  ftext(`BEAM ${S.target} SIGNAL`, x + w / 2, y + 58, "ink", C.amber, "c");
-  ftext(`IN ${S.words} WORDS`, x + w / 2, y + 58 + Math.round(22 * TK), "ink", C.amber, "c");
-  ctx.restore();
+  const t = 170 - nightCard, lh = Math.round(22 * TK), l2 = `BEAM ${S.target} SIGNAL IN ${S.words} WORDS`;
+  const w = Math.round(Math.max(textW(l2, "ink"), textW(`NIGHT ${S.night}`, "key")) / FINE) + 34, kh = glyphCv("key", "N", C.ink).height, hh = Math.round((14 + kh + 8 + 14 * TK + 18) / FINE), x = Math.round(W / 2 - w / 2), y1 = 10;
+  let y = y1; if (t < 14) { const u = t / 14; y = Math.round(-hh - 6 + (y1 + hh + 6) * u * u); } else if (t < 22) y = y1 - Math.round(Math.sin((t - 14) / 8 * Math.PI) * 4);
+  if (nightCard < 16) { const u = 1 - nightCard / 16; y = Math.round(y1 - (y1 + hh + 6) * u * u); }
+  if (t === 14) { Sound.thud(2); shake = Math.max(shake, 2); }
+  octx.clearRect(0, 0, W, H); octx.fillStyle = "rgba(8,4,2,.35)"; octx.fillRect(x + 3, y + 4, w, hh); plate3(octx, x, y, w, hh); blitOver();
+  const cx = FX(W / 2), ty = FX(y) + 14;
+  ftext(`NIGHT ${S.night}`, cx, ty, "key", C.ink, "c", { under: C.brassHi, uy: 3 });
+  ftext(l2, cx, ty + kh + 8, "ink", C.inkRed, "c", { under: C.brassHi, uy: 2 });
 }
 function drawBarText() {
   const by = L.barY; drawTube();
