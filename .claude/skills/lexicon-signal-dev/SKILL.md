@@ -139,6 +139,9 @@ the same batch.
   or the button cursor) previews dimly: its letter after the word and "+gain" before the number. Every key shows its value as dots.
 - Input: buttons first (A add letter, A on the last letter sends, B back, Start/Y retune, Select/X/Tab/M sound on or off),
   touch/mouse drag or tap. Gamepad standard mapping, bottom face = A.
+- Keyboard (2026-11-12, Chris's brother typed REAL and R retuned): letter keys TYPE the word (`typeLetter`/`spellPath` find keys
+  spelling it, keeping picked keys that still fit; Qu takes QU), Enter sends, Backspace back, Tab retunes, Esc sound, arrows +
+  Space still work. No letter key may ever be a command.
 - Play area workshop (2026-11-12). Round 1 (six key styles: pixel keys, typewriter, glow tubes, neon glass, ivory tiles, brass keys;
   KEY_STYLES 0..5): Chris picked glow tubes (index 2) but wanted the play area to have more vibe. Round 2 adds
   five whole play-area directions, KEY_STYLES 6..10: valve bank, signal scope, stencil plates, switchboard, dot glass. They draw the
