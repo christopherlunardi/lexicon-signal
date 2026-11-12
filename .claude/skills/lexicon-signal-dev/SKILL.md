@@ -1,6 +1,6 @@
 ---
 name: lexicon-signal-dev
-description: Work on Lexicon Signal (repo lexicon-signal), Chris's late-night radio word game: change it, make and fit its painted art, test it on every screen, publish the phone link. Not for Hereafter Man or Port Stacker.
+description: Work on Lexicon Signal (repo lexicon-signal), Chris's late-night radio word game: change it, make and fit its pixel art, test it on every screen, publish the phone link. Not for Hereafter Man or Port Stacker.
 ---
 
 # Lexicon Signal dev loop (repo: lexicon-signal)
@@ -20,61 +20,60 @@ the same batch.
   Port Stacker may be cloned read-only for reference (the handheld shell came from its game/src/shell.html).
 - Never type his passwords, never use OneDrive.
 
-## Where things live
-- `index.html`: the whole game, written as a page body (no doctype/html/head/body: the artifact host adds them). Sections in order:
-  shell CSS (the studio's handheld: cream body on touch screens, d-pad, A/B, Select/Start pills; `padmode` when a controller is used,
-  `inapp` for the future launcher), stage CSS, vibe overlays, markup, then one script.
-- `words.js`: `window.LEX_WORDS`, the ENABLE list (public domain), 3-12 letters, space separated.
-- `art/`: painted layers `room.png`, `window.png` (glass cut out), `view.png` (city, no tower), `tower.png` (pre-placed in view
-  coordinates), `radio.png` (radio + side table, keyed out). `art/compose.py` layers and grades them into `art/scene.jpg` (1672x941),
-  the only image the game loads. `art/tools/keyout.py` removes a magenta background.
-- Live link: https://claude.ai/artifact/TcdvDWboTHP3Lh1RrqggS3 . Publish `index.html` with files
-  `{"words.js": "words.js", "art/scene.jpg": "art/scene.jpg"}` (same file path keeps the URL).
+## The look (decided 2026-11-12)
+- Late-90s computer-game pixel art: a night room with damask wallpaper, a window with a city and a radio tower (red beacon), a big
+  1940s wooden radio on a sideboard, and a wood-and-brass interface bar along the bottom (text log, two brass plates, battery gauge,
+  part slots). The target picture is `art/concept/look-target.png`.
+- Done the old-school way: the game draws at a real low resolution (W x 270, W = 360..640 from the screen's shape, 480 at 16:9) and
+  the canvas is scaled up with hard square pixels. Every sprite is snapped to ONE shared 64-colour palette (56 from the art + 8 fixed
+  glow accents). The room's light (lamp low right, moonlight round the window, darker edges) is baked per layout with ordered
+  dithering into the palette; the window glass is emissive (skips room light). Live things (keys, needle, lamps, beacon, sparks)
+  are drawn with palette colours only, pixel lines and dithered glows; no blur, no CRT filter.
+- Things rearrange by screen shape: the wallpaper is a tile, the sideboard and bar are left end + repeated middle + right end, panels
+  are 9-sliced from the log box, the bar is made taller by repeating its plain middle rows. Narrow (4:3) screens tuck the window
+  behind the radio's left edge (beacon still visible) and show fewer part slots.
+- Bar contents always sit inside the bar's inner gold border, centred on one line with one equal gap.
 
-## How the game is built
-- Stage: a 1672x941 div showing scene.jpg; every live piece sits at painting coordinates (stage px). A camera (`layout()`) scales it to
-  cover the screen; narrower screens crop to SPAN (335..1600: tower + radio), narrower still centre on the glass. Overlays (title, shop,
-  game over) are placed over the visible part and scaled to stay readable (`compact` hides extra rows on small screens).
-- Painting coordinates (from art/radio.png placed at x+230): tuning dial 895..1237 x 122..216; meter centre 1333,173 r58; glass panel
-  895..1355 x 257..597 (grid 4x4 tiles 100x74, gap 9, origin 911,265); battery lamps x 995/1045/1095/1146/1196/1246, y 662, r18;
-  knobs 890,660 and 1350,660 r45; window shade 218..528 x 130..265 (score); tower beacon 463,326; table apron y ~858 (part plaques).
-  If the art changes, re-measure with a gridded close-up and update these numbers here and in the code.
-- Rules of play: 4x4 grid, trace touching letters (8 directions), 3+ letters, word score = signal (letter values) x boost (length-2)
-  x part multipliers; 5 words a night (lamps), 1 retune; night targets 40 x 1.42^(n-1) rounded to 5; pick 1 of 3 parts after each
-  night. Letter weights and values are our own tables in the script.
-- Planned (Chris 2026-11-12): used letters don't get replaced in place. The letters above them fall down their column with a heavy,
-  mechanical drop (bounce + thud), and new letters slide in from the top to fill each column.
-- Input: controller/keys first (A add letter, A on the last letter sends, B back, Start/Y retune, Select/X cycles the vibe), touch and
-  mouse drag or tap on the glass. Gamepad standard mapping, bottom face = A.
-- Effects: letters fly on a curve into the beacon, beacon flash + rings, score counts up on the shade, needle on the meter, sparks and
-  dust motes on the fx canvas, static snow in the glass as the battery drains. Vibes: night (default), broadcast, film, clean.
-- Sound: Web Audio synth only (84 BPM night pulse that opens up as the signal rises, plus effects). Starts on the first button press.
+## Where things live
+- `index.html`: the whole game, written as a page body (the artifact host adds doctype/head). Shell CSS first (the studio's
+  handheld: d-pad, A/B, Select/Start; `padmode` with a controller, `inapp` for the future launcher), then one canvas and one script.
+- `words.js`: `window.LEX_WORDS`, the ENABLE list (public domain), 3-12 letters.
+- `art/pixel/src/`: ChatGPT sources (wallpaper, window, radio, sideboard, uikit, icons). `art/pixel/build.py` builds the palette,
+  every sprite (key out magenta, crop, shrink to native, 1-bit alpha, snap), marked points, the 12 part icons, two bitmap fonts
+  (DejaVu, rendered without anti-aliasing) and packs it all into `art/pixel/atlas.png` + `atlas.json` (the only art the game loads).
+  `art/pixel/preview.py` / `mock.py` render stills of the room / full screen for judging. `art/pixel/pix.py` = palette helpers.
+- The old painted version's layers and `art/compose.py` are kept in `art/` for reference; the game no longer uses them.
+- Live link: https://claude.ai/artifact/TcdvDWboTHP3Lh1RrqggS3 . Publish `index.html` with files
+  `{"words.js": "words.js", "art/pixel/atlas.png": "art/pixel/atlas.png", "art/pixel/atlas.json": "art/pixel/atlas.json"}`.
+
+## Rules of play
+- 4x4 keys in the radio glass; trace touching letters (8 directions), 3+ letters. Score = signal (letter values) x boost (length-2)
+  x part multipliers. 5 words a night (lamps + battery gauge), 1 retune; targets 40 x 1.42^(n-1) rounded to 5; pick 1 of 3 parts.
+- Used keys vanish; the keys above fall down their column with a heavy drop, one short bounce and a thud; new keys fall in from
+  the top. No input while keys are falling or letters are flying.
+- Sent letters fly to the tower beacon; it flashes and the score counts up on the plate; the log reports everything.
+- Input: buttons first (A add letter, A on the last letter sends, B back, Start/Y retune, Select/X sound), touch/mouse drag or tap.
+  Gamepad standard mapping, bottom face = A.
 
 ## Every change
-1. Edit `index.html` (or art layers + `python3 -I art/compose.py`).
+1. Art: save the upload to `art/pixel/src/`, add/adjust its entry in `build.py` (native width or scale, crop, marked points), run
+   `python3 -I art/pixel/build.py`, check a still with `mock.py`. Code: edit `index.html`.
 2. Syntax check: extract the inline script and `node --check` it.
-3. Screenshots: wrap the page in a doctype/head into a scratch folder with words.js and art/scene.jpg, then shoot with Playwright
-   (Chrome at /usr/bin/google-chrome) at desktop 1280x800 and phone 390x844 with touch on (portrait 4:3 crop), plus 640x480 for the
-   Retroid 2S. Google Fonts are blocked in the sandbox, so fallback fonts show there; that's expected.
-4. Name check (`tools/namecheck.py`), commit with a plain message, push, republish the link.
-5. Tell Chris in a few lines what changed.
+3. Screenshots: copy index.html (wrapped in doctype/head), words.js and art/pixel/atlas.* into a scratch folder, serve it with
+   `python3 -m http.server` (fetch needs http), shoot with Playwright (Chrome at /usr/bin/google-chrome) at 1280x800, phone
+   390x844 with touch, and 640x480.
+4. Name check, commit with a plain message, push, republish the link. Tell Chris in a few lines what changed.
 
-## Art: ChatGPT paints, we fit it
-- Style: mid-century American realist oil painting, flat planes, strong geometric light, deep midnight blues and teals with warm amber
-  lamp light, one red accent (the tower). Never name the painter in prompts saved to the repo.
-- Make each piece as its own layer, and ask for a solid flat magenta (#FF00FF) background (ChatGPT's "transparent" often comes back as
-  a painted checkerboard). Leave every moving part blank in the art (dial, meter face, lamps): the game draws those.
-- Give Chris the WHOLE prompt every time, never "change this line". He attaches the scene so far as the style reference.
-- Fitting: save uploads into art/, key out magenta with `art/tools/keyout.py`, cut rectangles in code when that's cleaner (the window
-  panes), add the layer to `art/compose.py`, rebuild scene.jpg, check a composite before using it.
-- Look: one warm grade over everything (compose.py), with a little more on the radio so it sits in the room's light. Live grain,
-  vignette and the vibe overlays go on top in the page. Chris wants it warm, unified, and not corny.
-- Open direction (2026-11-12): Chris wants to try mixing in a late-90s computer RPG feel (low-res sharp pixels, a shared 256-colour
-  palette, palette-cycling glows, a chunky bevelled bottom HUD bar with a message log and a rolling counter), without fake CRT effects.
-  Mock it as a still first.
+## Art prompts (ChatGPT)
+- One layer at a time, the look target attached for style. Pixel-art wording: low-resolution late-1990s computer game look, crisp
+  hard-edged square pixels, no anti-aliasing, limited palette, small ordered dithering. Lit flatly and evenly (the game adds light).
+- Solid flat pure magenta (#FF00FF) background, never "transparent" (it comes back as a painted checkerboard).
+- Leave every live part blank (dial, meter, glass, lamps, slots, plates): the game draws those.
+- Long pieces drawn evenly so the middle can repeat. UI kits: separate pieces with magenta space between.
+- Give Chris the WHOLE prompt every time, never "change this line". To explore looks, ask for 6-9 options in one grid image.
 
 ## Working with Chris
 - He dictates by voice; "I don't know" is a filler, not doubt.
 - He sends quick notes while you work: fold them into the current batch, don't publish a half-done batch.
-- Keep replies short and plain: what changed, then one question if one is needed. Show options as pictures when it's about looks.
+- Keep replies short and plain: what changed, then one question if one is needed. Show looks as pictures.
 - He only wants the Fable model (subagents) when he asks for it.

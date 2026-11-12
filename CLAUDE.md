@@ -21,6 +21,7 @@ Read the workflow in `.claude/skills/lexicon-signal-dev/SKILL.md` before changin
   working on this game. Port Stacker may be read for reference (its handheld shell is reused here), never written.
 
 ## Layout
-- `index.html` the whole game (shell, stage, styles, script). Written as a page body: the artifact host adds the doctype and head.
+- `index.html` the whole game (shell, canvas, script). Written as a page body: the artifact host adds the doctype and head.
 - `words.js` the word list (ENABLE, public domain), 3-12 letters.
-- `art/` the painted layers (room, window, view, tower, radio), `art/compose.py` builds `art/scene.jpg` from them, `art/tools/` helpers.
+- `art/pixel/` the pixel art: sources in `src/`, `build.py` makes the palette, sprites, icons, fonts and `atlas.png`/`atlas.json`.
+- `art/concept/look-target.png` the look we're matching. Older painted layers in `art/` are kept for reference only.
