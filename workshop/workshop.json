@@ -6,7 +6,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "How should the Carrier Lamp's red key look?",
      "found": "Five ways to mark the red key (it doubles any word that uses it), all without the red outline. Each clip shows the key on its own, then picked into a word: every look keeps it red when picked. Play links open the game with the Carrier Lamp fitted.",
      "options": [
@@ -90,7 +90,8 @@
        ],
        "play": "play.html#test-word-hot-5"
       }
-     ]
+     ],
+     "chosen": "5"
     }
    ]
   },

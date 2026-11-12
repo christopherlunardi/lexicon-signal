@@ -210,7 +210,7 @@ the same batch.
   feedback read/write owner, plus user; omit them on republish.
 - Read his answers: ArtifactData list on the Workshop, collection `feedback`, doc `<topic>-<round>` {pick, notes{id:text}, general,
   submitted}. Act on submitted ones, then mark the round decided (chosen) in workshop.json and republish.
-- carrier-r1 (open, 2026-11-12): five looks for the Carrier Lamp's red key in dot glass, HOT_STYLE 1..5 (red letter, red
+- carrier-r1 (decided: 5, red scan, now the game's look): five looks for the Carrier Lamp's red key in dot glass, HOT_STYLE 1..5 (red letter, red
   backlight, ember fill, pilot lamp, red scan), `#hot-N` opens one (`#test-word-hot-N` fits the carrier). No red outline (Chris).
   A picked red key fills red in every look.
 - title-r1 (open, 2026-11-12): five title entrances in the game, TITLE_STYLES 1..5 (tuning in, from the tower, neon across the street,

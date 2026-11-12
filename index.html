@@ -964,7 +964,8 @@ let dotOkAt = 0, dotOkWas = false;
 /* the Carrier Lamp's red key (Workshop topic "carrier", Chris 2026-11-12: the red outline was no good). HOT_STYLE picks the look;
    #hot-N opens style N: 1 red letter, 2 red backlight, 3 ember fill, 4 pilot lamp, 5 red scan. */
 const HOT_NAMES = ["", "Red letter", "Red backlight", "Ember fill", "Pilot lamp", "Red scan"];
-let HOT_STYLE = 1; { const m = location.hash.match(/hot-(\d)/); if (m) HOT_STYLE = Math.max(1, Math.min(5, +m[1])); }
+let HOT_STYLE = 5; {   // Chris picked red scan (carrier-r1)
+  const m = location.hash.match(/hot-(\d)/); if (m) HOT_STYLE = Math.max(1, Math.min(5, +m[1])); }
 function paDotGlass({ G, tiles, ok, low }) {
   if (ok && !dotOkWas) dotOkAt = frame; dotOkWas = ok;
   ctx.fillStyle = "#070403"; ctx.fillRect(G.x, G.y, G.w, G.h);
