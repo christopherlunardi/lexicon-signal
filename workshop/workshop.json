@@ -1,6 +1,100 @@
 {
  "topics": [
   {
+   "id": "carrier",
+   "title": "Red key (Carrier Lamp)",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "How should the Carrier Lamp's red key look?",
+     "found": "Five ways to mark the red key (it doubles any word that uses it), all without the red outline. Each clip shows the key on its own, then picked into a word: every look keeps it red when picked. Play links open the game with the Carrier Lamp fitted.",
+     "options": [
+      {
+       "id": "1",
+       "title": "Red letter",
+       "note": "The key's letter is lit red instead of amber, with a soft red glow round it. Picked, it fills red.",
+       "images": [
+        {
+         "src": "img/carrier-r1/1.mp4",
+         "label": "Clip"
+        },
+        {
+         "src": "img/carrier-r1/1-still.png",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-word-hot-1"
+      },
+      {
+       "id": "2",
+       "title": "Red backlight",
+       "note": "The letter stays amber; the dots behind it glow a dim, breathing red, like a red bulb behind the panel.",
+       "images": [
+        {
+         "src": "img/carrier-r1/2.mp4",
+         "label": "Clip"
+        },
+        {
+         "src": "img/carrier-r1/2-still.png",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-word-hot-2"
+      },
+      {
+       "id": "3",
+       "title": "Ember fill",
+       "note": "A low red glow sits in the bottom of the key and gently rises and falls, like embers.",
+       "images": [
+        {
+         "src": "img/carrier-r1/3.mp4",
+         "label": "Clip"
+        },
+        {
+         "src": "img/carrier-r1/3-still.png",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-word-hot-3"
+      },
+      {
+       "id": "4",
+       "title": "Pilot lamp",
+       "note": "A small red pilot lamp in the key's corner, softly pulsing, and its value dots turn red. The quietest of the five.",
+       "images": [
+        {
+         "src": "img/carrier-r1/4.mp4",
+         "label": "Clip"
+        },
+        {
+         "src": "img/carrier-r1/4-still.png",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-word-hot-4"
+      },
+      {
+       "id": "5",
+       "title": "Red scan",
+       "note": "A red line keeps sweeping down the key, like a signal being picked up.",
+       "images": [
+        {
+         "src": "img/carrier-r1/5.mp4",
+         "label": "Clip"
+        },
+        {
+         "src": "img/carrier-r1/5-still.png",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-word-hot-5"
+      }
+     ]
+    }
+   ]
+  },
+  {
    "id": "title",
    "title": "Title screen",
    "rounds": [

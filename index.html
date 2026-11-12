@@ -961,15 +961,20 @@ const dotSprs = {};
 function dotSpr(col) { let c = dotSprs[col]; if (!c) { c = dotSprs[col] = document.createElement("canvas"); c.width = c.height = 12; const x = c.getContext("2d"); x.fillStyle = col; x.beginPath(); x.arc(6, 6, 4.7, 0, 7); x.fill(); } return c; }
 const U3 = [[1, 0, 1], [1, 0, 1], [1, 1, 1]];
 let dotOkAt = 0, dotOkWas = false;
+/* the Carrier Lamp's red key (Workshop topic "carrier", Chris 2026-11-12: the red outline was no good). HOT_STYLE picks the look;
+   #hot-N opens style N: 1 red letter, 2 red backlight, 3 ember fill, 4 pilot lamp, 5 red scan. */
+const HOT_NAMES = ["", "Red letter", "Red backlight", "Ember fill", "Pilot lamp", "Red scan"];
+let HOT_STYLE = 1; { const m = location.hash.match(/hot-(\d)/); if (m) HOT_STYLE = Math.max(1, Math.min(5, +m[1])); }
 function paDotGlass({ G, tiles, ok, low }) {
   if (ok && !dotOkWas) dotOkAt = frame; dotOkWas = ok;
   ctx.fillStyle = "#070403"; ctx.fillRect(G.x, G.y, G.w, G.h);
-  const OFF = dotSpr("#24120a"), BG = dotSpr("#6e330d"), BGH = dotSpr("#d88424"), ON = dotSpr("#ffb24c"), HOT = dotSpr("#fff2d4"), VAL = dotSpr("#ffe2b0"), w0 = FX(L.tw), h0 = FX(L.th);
+  const RED = dotSpr("#ff4630"), REDHOT = dotSpr("#ff9a7e"), RBG = dotSpr("#5a120a"), RBGH = dotSpr("#c8301c"), OFF = dotSpr("#24120a"), BG = dotSpr("#6e330d"), BGH = dotSpr("#d88424"), ON = dotSpr("#ffb24c"), HOT = dotSpr("#fff2d4"), VAL = dotSpr("#ffe2b0"), w0 = FX(L.tw), h0 = FX(L.th);
   const frameOf = (x, y, a) => { ctx.globalAlpha = a; ctx.fillStyle = "#0e0806"; rr(ctx, x + 1, y - 1, w0 - 2, h0 + 2, 5); ctx.fill(); ctx.strokeStyle = "rgba(130,86,52,.4)"; ctx.lineWidth = 1.5; ctx.stroke(); };
   for (const g of ghosts) if (g.t < 16) { const a = 1 - g.t / 16, x = FX(g.x) - w0 / 2, y = FX(g.y) - h0 / 2; frameOf(x, y, a);
     for (let r = 0; r < 7; r++) for (let c = 0; c < 9; c++) ctx.drawImage(OFF, x + 4 + c * 6, y + 4 + r * 6, 6, 6); ctx.globalAlpha = 1; }
   for (const o of tiles) { const { t, x, y, w, hh } = o, lit = t.lit, mx = x + Math.round((w - 54) / 2), my = y + Math.round((hh - 42) / 2), b = bits(o.ch === "Qu" ? "Q" : o.ch), qu = o.ch === "Qu", lc = qu ? 1 : 2;
-    const scr = t.land > .4, dim = 1 - low * .35 * (1 - lit), wave = o.on && ok;
+    const scr = t.land > .4, dim = 1 - low * .35 * (1 - lit), wave = o.on && ok, hot = !!t.hot, HS = HOT_STYLE, br = .75 + .25 * Math.sin(frame / 9 + o.i);
+    const scan = hot && HS === 5 ? ((frame * .3 + o.i * 3) % 10) - 1.5 : -9;
     // (picked letters stay steady until the traced word is a real word; then they flicker too)
     // flicker: now and then a module's letter stutters for a few frames (each module on its own random clock), and its dots shimmer faintly
     if (t.flN == null || t.flN < frame - 600) t.flN = frame + 60 + Math.random() * 500;
@@ -986,9 +991,14 @@ function paDotGlass({ G, tiles, ok, low }) {
       if (scr) isL = c > 0 && c < 8 && hsh(c + r * 9 + (frame >> 1) * 3.1, t.seed * 17) < .42;
       const isV = c === 8 && r >= 7 - o.dots, dead = false;   // (dots used to fail one by one on a low battery; Chris didn't like single dots vanishing)
       ctx.globalAlpha = 1; const band = wipe > -9 ? Math.max(0, 1 - Math.abs((c + r) * .9 - wipe) / 1.6) * wa : 0;
-      if (isV) { ctx.drawImage(VAL, dx, dy, 6, 6); continue; }
-      if (isL && !dead) { if (lit > .5) { ctx.globalAlpha = o.on && ok ? fl : 1; ctx.drawImage(HOT, dx, dy, 6, 6); } else { ctx.drawImage(OFF, dx, dy, 6, 6); ctx.globalAlpha = Math.min(1, dim * fl + t.land); ctx.drawImage(scr ? HOT : ON, dx, dy, 6, 6); } continue; }
-      if ((6.6 - r) / 7 < lit * 1.2 && !dead) { ctx.drawImage(BG, dx, dy, 6, 6); if (wave) { ctx.globalAlpha = .5 + .5 * Math.sin(frame * .3 - (c + r) * .8 - o.k * 2); ctx.drawImage(BGH, dx, dy, 6, 6); }
+      if (isV) { ctx.drawImage(hot && HS === 4 ? RED : VAL, dx, dy, 6, 6); continue; }
+      if (hot && HS === 4 && c === 0 && r === 0) { ctx.globalAlpha = .6 + .4 * br; ctx.drawImage(RED, dx - 3, dy - 3, 12, 12); ctx.globalAlpha = .9; ctx.drawImage(REDHOT, dx + 1, dy, 3, 3); continue; }   // the pilot lamp
+      const redL = hot && HS === 1;
+      if (isL && !dead) { if (lit > .5) { ctx.globalAlpha = o.on && ok ? fl : 1; ctx.drawImage(hot ? REDHOT : HOT, dx, dy, 6, 6); } else { ctx.drawImage(OFF, dx, dy, 6, 6); ctx.globalAlpha = Math.min(1, dim * fl + t.land); ctx.drawImage(scr ? HOT : redL ? RED : ON, dx, dy, 6, 6); }
+        if (scan > -9 && Math.abs(r - scan) < 1) { ctx.globalAlpha = .9 * (1 - Math.abs(r - scan)); ctx.drawImage(RED, dx, dy, 6, 6); } continue; }
+      if (hot && lit <= .5 && (HS === 2 || (HS === 3 && (6.6 - r) / 7 < .3 + .12 * Math.sin(frame / 14 + o.i)))) { ctx.drawImage(HS === 2 ? RBG : RBGH, dx, dy, 6, 6); ctx.globalAlpha = HS === 2 ? .35 * br : .5 * br; ctx.drawImage(HS === 2 ? RBGH : RED, dx, dy, 6, 6); continue; }
+      if (scan > -9 && Math.abs(r - scan) < 1) { ctx.drawImage(OFF, dx, dy, 6, 6); ctx.globalAlpha = .7 * (1 - Math.abs(r - scan)); ctx.drawImage(RED, dx, dy, 6, 6); continue; }
+      if ((6.6 - r) / 7 < lit * 1.2 && !dead) { ctx.drawImage(hot ? RBG : BG, dx, dy, 6, 6); if (wave) { ctx.globalAlpha = .5 + .5 * Math.sin(frame * .3 - (c + r) * .8 - o.k * 2); ctx.drawImage(hot ? RBGH : BGH, dx, dy, 6, 6); }   // a picked red key fills red
         if (band > .02) { ctx.globalAlpha = band; ctx.drawImage(HOT, dx, dy, 6, 6); } }
       else ctx.drawImage(OFF, dx, dy, 6, 6); }
     ctx.globalAlpha = 1;
@@ -1013,7 +1023,7 @@ function drawPlayArea() {
   const tiles = []; for (let i = 0; i < NN; i++) { const t = S.grid[i]; if (!t || t.ch === " ") continue; const p = tileXY(i), x = FX(p.x), y = FX(p.y + t.yOff), w = FX(L.tw), hh = FX(L.th), k = S.path.indexOf(i);
     tiles.push({ t, i, x, y, w, hh, cx: x + w / 2, cy: y + hh / 2, on: k >= 0, k, hv: i === cand, v: VALUES[t.ch], dots: Math.min(4, Math.ceil(VALUES[t.ch] / 2)), ch: t.ch }); }
   PA_DRAW[KS - 6]({ G, tiles, ok, low, last, play });
-  for (const o of tiles) if (o.t.hot) { ctx.strokeStyle = (frame >> 3) & 1 ? "#ff3a2e" : "#ff8060"; ctx.lineWidth = 3; ctx.shadowColor = "#ff3a2e"; ctx.shadowBlur = 14; rr(ctx, o.x - 1, o.y - 2, o.w + 1, o.hh + 2, 9); ctx.stroke(); ctx.shadowBlur = 0; }
+  if (KS !== 10) for (const o of tiles) if (o.t.hot) { ctx.strokeStyle = (frame >> 3) & 1 ? "#ff3a2e" : "#ff8060"; ctx.lineWidth = 3; ctx.shadowColor = "#ff3a2e"; ctx.shadowBlur = 14; rr(ctx, o.x - 1, o.y - 2, o.w + 1, o.hh + 2, 9); ctx.stroke(); ctx.shadowBlur = 0; }
   if (play && usingButtons) { const o = tiles.find(o => o.i === S.cursor); if (o) { const c = PA_CUR[KS - 6]; c ? paCursor(o, c[0], c[1]) : curScope(o); } }
   // the glass itself: a recessed pane with a soft slanted reflection; its rim pulses red on the last word
   let gr = ctx.createLinearGradient(G.x, G.y, G.x + G.w * .9, G.y + G.h); gr.addColorStop(.16, "rgba(255,240,220,0)"); gr.addColorStop(.28, "rgba(255,240,220,.055)"); gr.addColorStop(.35, "rgba(255,240,220,.012)"); gr.addColorStop(.42, "rgba(255,240,220,.04)"); gr.addColorStop(.5, "rgba(255,240,220,0)");
@@ -1027,6 +1037,7 @@ const PA_RGB = ["255,130,40", "120,255,170", "255,120,40", "255,180,80", "255,15
 function paGlows(okNow) {
   const g = L.glass, rgb = PA_RGB[KS - 6];
   S.grid.forEach((t, i) => { if (!t || t.ch === " ") return; const c = tileC(i), lit = t.lit || 0, hot = okNow && lit > .5;
+    if (t.hot && KS === 10) bloom(FX(c.x), FX(c.y + t.yOff), [0, 46, 56, 50, 30, 44][HOT_STYLE], "255,60,40", [0, .32, .3, .26, .14, .22][HOT_STYLE] * (.8 + .2 * Math.sin(frame / 9 + i)));
     bloom(FX(c.x), FX(c.y + t.yOff), 40 + 20 * lit, hot ? "255,225,160" : rgb, PA_BASE[KS - 6] + (KS === 9 ? .42 : .3) * lit + .22 * (t.land || 0)); });
   if (sendT < 18) bloom(FX(g.x + g.w / 2), FX(g.y + g.h / 2), FX(g.w) * .9, KS === 7 ? "255,216,128" : "255,190,110", .32 * (1 - sendT / 18));   // the glass flares as a word leaves
   if (arriveT < 26) bloom(FX(g.x) + 14, FX(g.y) + FX(g.h) * .3, 170, "255,70,50", .2 * (1 - arriveT / 26));   // and catches the beacon's answer
@@ -1943,7 +1954,7 @@ async function boot() {
   // test hook: #test-shop opens the part picker after night 1 (for screenshots)
   if (location.hash === "#test-shop") { newRun(); S.parts.push("amp", "coil"); nightClear(); }
   if (location.hash === "#test-swap") { newRun(); S.parts.push("amp", "amp", "coil", "echo", "owl", "short"); nightClear(); const k = shopChoices.findIndex(c => !S.parts.includes(c.id)); if (k >= 0) choosePart(k); }
-  if (location.hash.startsWith("#test-word")) { newRun(); setTimeout(() => { "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); S.path = [0, 1, 2]; usingButtons = true; S.cursor = 3; if (location.hash.includes("fill")) S.score = S.shown = 17; if (location.hash.includes("parts")) { S.parts = ["battery", "battery", "knob", "echo", "amp"]; S.words = maxWords(); S.retunes = maxRetunes(); } nightCard = 0; }, 300); }
+  if (location.hash.startsWith("#test-word")) { newRun(); setTimeout(() => { "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); S.path = [0, 1, 2]; usingButtons = true; S.cursor = 3; if (location.hash.includes("fill")) S.score = S.shown = 17; if (location.hash.includes("hot")) { S.parts = ["carrier"]; S.grid.forEach(t => t.hot = false); S.grid[H5(6)].hot = true; S.grid[H5(9)].hot = false; } if (location.hash.includes("parts")) { S.parts = ["battery", "battery", "knob", "echo", "amp"]; S.words = maxWords(); S.retunes = maxRetunes(); } nightCard = 0; }, 300); }
 }
 boot();
 })();
