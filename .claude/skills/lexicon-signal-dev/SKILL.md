@@ -17,7 +17,7 @@ the same batch.
 - Before every commit run `python3 -I tools/namecheck.py` and read its list; remove anything that names something that isn't ours.
   The check holds no list of forbidden names on purpose.
 - Never change Hereafter Man (christopherlunardi/Hereafter-Man-Claude-1) or Port Stacker Deluxe (christopherlunardi/port-stacker).
-  Port Stacker may be cloned read-only for reference (the handheld shell came from its game/src/shell.html).
+  Port Stacker may be cloned read-only for reference (the handheld shell and the Workshop page came from it).
 - Never type his passwords, never use OneDrive.
 
 ## The look (decided 2026-11-12)
@@ -72,26 +72,28 @@ the same batch.
   touch/mouse drag or tap. Gamepad standard mapping, bottom face = A.
 - Key area workshop (open, 2026-11-12): six key styles live in the game (KEY_STYLES: pixel keys, typewriter, glow tubes, neon glass,
   ivory tiles, brass keys), Select cycles them, remembered per browser; `#test-word-keys-N` opens style N. Smooth styles draw on the
-  fine layer with web fonts (Special Elite, Bungee Hairline, Bungee, Limelight). Value dots stay in every style (Chris likes them), bright enough to read on unselected keys.
-  When he picks one, keep it, drop the rest, and give Select back to sound.
+  fine layer with web fonts (Special Elite, Bungee Hairline, Bungee, Limelight). Value dots stay in every style (Chris likes them),
+  bright enough to read on unselected keys. When he picks one, keep it, drop the rest, and give Select back to sound.
 
 ## Every change
 1. Art: save the upload to `art/pixel/src/`, run it through fix_pixel_art (save as NAME_fixed.png), add its entry in `build.py`
-   (crop and marked points in source pixels), run
-   `python3 -I art/pixel/build.py`, check a still with `mock.py`. Code: edit `index.html`.
+   (crop and marked points in source pixels), run `python3 -I art/pixel/build.py`, check a still with `mock.py`.
+   Code: edit `index.html`.
 2. Syntax check: extract the inline script and `node --check` it.
 3. Screenshots: copy index.html (wrapped in doctype/head), words.js and art/pixel/atlas.* into a scratch folder, serve it with
    `python3 -m http.server` (fetch needs http), shoot with Playwright (Chrome at /usr/bin/google-chrome) at 1280x800, phone
    390x844 with touch, and 640x480. Add `#test-shop` (part picker) or `#test-word` (RAT traced) to the URL for set-up screens.
+   The web fonts are blocked in the sandbox: install @fontsource packages with npm and add local @font-face rules to the test page.
 4. Name check, commit with a plain message, push, republish the link. Tell Chris in a few lines what changed.
 
 ## Workshop (options Chris looks at and plays, like the other games)
 - Lexicon Signal Workshop: https://claude.ai/artifact/LuTEWxDDeCazkUDjiXCrdj , built from `workshop/` (index.html + workshop.json +
   img/<topic>-<round>/). `python3 -I workshop/build.py` makes the playable copy `workshop/play.html` (+ words.js, art/pixel/atlas.*,
   generated, not in git); an option's `play` is `play.html#...` (the game reads `#keys-N`, `#test-word`, `#test-shop` from the hash).
+- When Chris asks for options for anything, they go on the Workshop as a new topic or round.
 - A round in workshop.json: question, found, status open|decided (+chosen), options {id, title, note, images [{src,label}], play}.
-- Publish index.html with `root` workshop and a files map of everything new (unchanged files are kept). Capabilities on first publish:
-  db rule feedback read/write owner, plus user; omit them on republish.
+- Publish index.html with `root` workshop and a files map of everything new (unchanged files are kept). Capabilities: db rule
+  feedback read/write owner, plus user; omit them on republish.
 - Read his answers: ArtifactData list on the Workshop, collection `feedback`, doc `<topic>-<round>` {pick, notes{id:text}, general,
   submitted}. Act on submitted ones, then mark the round decided (chosen) in workshop.json and republish.
 - Open rounds: keys-r1 (letter key look, 6 options).
