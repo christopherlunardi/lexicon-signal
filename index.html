@@ -168,9 +168,9 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 const $ = (id) => document.getElementById(id);
 const DICT = new Set((window.LEX_WORDS || "").split(" "));
 const cv = $("screen"), ctx = cv.getContext("2d");          // the screen: 2 fine pixels per world pixel
-const H = 360, BAR_H = 101, SCENE_H = H - BAR_H, FINE = 2;
-const BIN = { t: 11, b: 11, l: 13, r: 13 };                  // the bar's inner gold border: everything sits inside it
-let W = 640, TK = 1;   // TK: text scale, 1.5 when the screen is small (phones) so typed text stays readable
+const H = 400, BAR_H = 95, SCENE_H = H - BAR_H, FINE = 2;
+const BIN = { t: 12, b: 12, l: 14, r: 14 };                  // the bar's inner gold border: everything sits inside it
+let W = 712, TK = 1;   // TK: text scale, 1.5 when the screen is small (phones) so typed text stays readable
 const world = document.createElement("canvas"), wctx = world.getContext("2d");   // the room, keys and bar, in world pixels
 const over = document.createElement("canvas"), octx = over.getContext("2d");     // menus over the room, in world pixels
 
@@ -288,31 +288,32 @@ const L = {};
 function layout() {
   if (!A) return;
   const wrapEl = $("screenWrap"); const ww = wrapEl.clientWidth || 640, wh = wrapEl.clientHeight || 360;
-  const nW = Math.max(480, Math.min(854, Math.round(H * ww / wh / 2) * 2));
+  const nW = Math.max(532, Math.min(950, Math.round(H * ww / wh / 2) * 2));
   const nTK = ww / nW < 1.15 ? 1.5 : 1; if (nTK !== TK) { TK = nTK; glyphCache.clear(); ADV.ink = 12 * TK; }
   if (nW !== W || !L.ready) { W = nW; world.width = W; world.height = H; over.width = W; over.height = H; cv.width = W * FINE; cv.height = H * FINE;
     computeLayout(); buildRoom(); buildBar(); L.ready = true; }
 }
 function computeLayout() {
-  const rw = R("radio")[2], wide = W >= 587;
+  const rw = R("radio")[2], wide = W >= 650;
   L.radioX = wide ? W - rw - 21 : W - rw - 5; L.radioY = 18;
-  L.winX = wide ? Math.max(18, Math.round((L.radioX - R("window")[2]) / 2)) : L.radioX - R("window")[2] + 10; L.winY = 24;
+  L.winX = wide ? Math.max(18, Math.round((L.radioX - R("window")[2]) / 2)) : L.radioX - R("window")[2] + 10; L.winY = 46;
   const bp = P("window").beacon; L.beacon = { x: L.winX + bp[0], y: L.winY + bp[1] };
   const rp = P("radio");
   L.glass = { x: L.radioX + rp.glass0[0], y: L.radioY + rp.glass0[1], w: rp.glass1[0] - rp.glass0[0], h: rp.glass1[1] - rp.glass0[1] };
-  L.tw = 31; L.th = 25; L.gap = 4;
+  L.gap = 4; L.tw = Math.floor((L.glass.w - 10 - 3 * L.gap) / 4); L.th = Math.floor((L.glass.h - 10 - 3 * L.gap) / 4);
   L.gx = L.glass.x + Math.floor((L.glass.w - (4 * L.tw + 3 * L.gap)) / 2); L.gy = L.glass.y + Math.floor((L.glass.h - (4 * L.th + 3 * L.gap)) / 2);
   L.dial = { x: L.radioX + rp.dial0[0] + 1, y: L.radioY + rp.dial0[1] + 1, w: rp.dial1[0] - rp.dial0[0] - 2, h: rp.dial1[1] - rp.dial0[1] - 2 };
   L.meter = { x: L.radioX + rp.meter[0], y: L.radioY + rp.meter[1], r: rp.meterR[0] - rp.meter[0] };
   L.lamps = [0, 1, 2, 3, 4, 5].map(k => ({ x: L.radioX + rp["lamp" + k][0], y: L.radioY + rp["lamp" + k][1] }));
   L.knobL = { x: L.radioX + rp.knobL[0], y: L.radioY + rp.knobL[1] }; L.knobR = { x: L.radioX + rp.knobR[0], y: L.radioY + rp.knobR[1] };
-  L.sbX = L.radioX - 29; L.sbY = 237;
+  L.sbX = L.radioX - 29; L.sbY = L.radioY + R("radio")[3] - 10;
   // the bar: log | two plates | battery | part slots; one gap, all centred on the bar's middle line, inside the gold border
-  L.barY = SCENE_H; const n = W >= 627 ? 4 : W >= 560 ? 3 : 2; L.nSlots = n;
+  L.barY = SCENE_H;
   const [, , pw, ph] = R("plate"), [, , bw, bh] = R("battery"), [, , sw, sh] = R("slot");
   const GAP = 9, ix0 = BIN.l + 4, ix1 = W - BIN.r - 4, mid = (BIN.t + BAR_H - BIN.b) / 2;
+  let n = 4; while (n > 2 && ix1 - ix0 - (n * sw + (n - 1) * GAP) - pw - bw - 3 * GAP < 160) n--; L.nSlots = n;
   L.logW = ix1 - ix0 - (n * sw + (n - 1) * GAP) - pw - bw - 3 * GAP;
-  L.log = { x: ix0, y: Math.round(mid - 31), w: L.logW, h: 62 };
+  L.log = { x: ix0, y: Math.round(mid - 33), w: L.logW, h: 66 };
   L.plateX = ix0 + L.logW + GAP; L.battX = L.plateX + pw + GAP; L.slotX = L.battX + bw + GAP; L.slotStep = sw + GAP;
   L.plateY0 = Math.round(mid - ph - 4); L.plateY1 = Math.round(mid + 4); L.battY = Math.round(mid - bh / 2); L.slotY = Math.round(mid - sh / 2);
 }
@@ -331,21 +332,20 @@ function buildRoom() {
   const m = document.createElement("canvas"); m.width = W; m.height = SCENE_H; const mc = m.getContext("2d"); spr(mc, "window_glass", L.winX, L.winY);
   mc.globalCompositeOperation = "destination-out"; spr(mc, "radio", L.radioX, L.radioY);
   const md = mc.getImageData(0, 0, W, SCENE_H).data;
-  const wcx = L.winX + R("window")[2] / 2, wcy = L.winY + R("window")[3] / 2, lx = W - 13, ly = 267, K = 4 / 3;
+  const wcx = L.winX + R("window")[2] / 2, wcy = L.winY + R("window")[3] / 2, lx = W - 13, ly = SCENE_H * .87, K = H / 270;
+  // smooth light over the clean art: warm lamp low right, cool moon round the window, slightly darker edges (no palette snapping)
   for (let y = 0; y < SCENE_H; y++) for (let x = 0; x < W; x++) {
     const i = (y * W + x) * 4; let lr, lg, lb;
-    if (md[i + 3] > 0) { lr = .72; lg = .74; lb = .84; }
+    if (md[i + 3] > 0) { lr = .74; lg = .76; lb = .86; }
     else { const lamp = Math.max(0, 1 - Math.hypot((x - lx) / (330 * K), (y - ly) / (260 * K))) ** 1.6, moon = Math.max(0, 1 - Math.hypot((x - wcx) / (150 * K), (y - wcy) / (130 * K))) ** 2;
-      const v = 1 - .25 * Math.max(0, Math.min(1, Math.hypot((x - W / 2) / (W / 2), (y - H / 2) / (H / 2)) - .6));
-      lr = (.56 + lamp * 1.1 + moon * .26) * v; lg = (.54 + lamp * .84 + moon * .34) * v; lb = (.52 + lamp * .55 + moon * .56) * v; }
-    const th = (BAYER[(y & 3) * 4 + (x & 3)] / 16 - .5) * 22;
-    const r = Math.max(0, Math.min(255, d[i] * lr + th)), g = Math.max(0, Math.min(255, d[i + 1] * lg + th)), b = Math.max(0, Math.min(255, d[i + 2] * lb + th));
-    const k = (((r >> 3) * 32 + (g >> 3)) * 32 + (b >> 3)) * 3; d[i] = LUT[k]; d[i + 1] = LUT[k + 1]; d[i + 2] = LUT[k + 2]; d[i + 3] = 255; }
+      const v = 1 - .35 * Math.max(0, Math.min(1, Math.hypot((x - W / 2) / (W / 2), (y - H / 2) / (H / 2)) - .55));
+      lr = (.44 + lamp * 1.0 + moon * .22) * v; lg = (.43 + lamp * .74 + moon * .3) * v; lb = (.44 + lamp * .48 + moon * .5) * v; }
+    d[i] = Math.min(255, d[i] * lr); d[i + 1] = Math.min(255, d[i + 1] * lg); d[i + 2] = Math.min(255, d[i + 2] * lb); d[i + 3] = 255; }
   c.putImageData(img, 0, 0);
 }
 function buildBar() {
   barCv = document.createElement("canvas"); barCv.width = W; barCv.height = BAR_H; const c = barCv.getContext("2d"); c.imageSmoothingEnabled = false;
-  const SRC_H = R("bar_left")[3], TOP = 29, BOT = 29, MID = SRC_H - TOP - BOT;
+  const SRC_H = R("bar_left")[3], TOP = 31, BOT = 31, MID = SRC_H - TOP - BOT;
   const piece = (n, x, w) => { spr(c, n, x, 0, 0, 0, w, TOP); for (let y = TOP; y < BAR_H - BOT; y += MID) spr(c, n, x, y, 0, TOP, w, Math.min(MID, BAR_H - BOT - y)); spr(c, n, x, BAR_H - BOT, 0, SRC_H - BOT, w, BOT); };
   piece("bar_left", 0, R("bar_left")[2]); let x = R("bar_left")[2]; const rw = R("bar_right")[2];
   while (x < W - rw) { const mw = Math.min(R("bar_mid")[2], W - rw - x); piece("bar_mid", x, mw); x += mw; }
@@ -543,7 +543,7 @@ function drawGrid() {
     wctx.fillStyle = on ? (ok ? C.hot : C.selEdge) : C.keyEdge; wctx.fillRect(x, y, L.tw, 1); wctx.fillRect(x, y + L.th - 1, L.tw, 1); wctx.fillRect(x, y, 1, L.th); wctx.fillRect(x + L.tw - 1, y, 1, L.th);
     wctx.fillStyle = on ? C.hot : C.keyTop; wctx.fillRect(x + 1, y + 1, L.tw - 2, 1);
     if (t.hot) { wctx.fillStyle = (frame >> 3) & 1 ? C.red : C.redHot; wctx.fillRect(x - 1, y - 1, L.tw + 2, 1); wctx.fillRect(x - 1, y + L.th, L.tw + 2, 1); wctx.fillRect(x - 1, y, 1, L.th); wctx.fillRect(x + L.tw, y, 1, L.th); }
-    const v = VALUES[t.ch]; wctx.fillStyle = on ? C.ink : C.keyEdge; for (let k = 0; k < Math.min(4, Math.ceil(v / 2)); k++) wctx.fillRect(x + L.tw - 4 - k * 3, y + L.th - 4, 2, 2);
+    const v = VALUES[t.ch]; for (let k = 0; k < Math.min(4, Math.ceil(v / 2)); k++) { wctx.fillStyle = C.keyShadow; wctx.fillRect(x + L.tw - 4 - k * 3, y + L.th - 3, 2, 2); wctx.fillStyle = on ? C.ink : C.gold; wctx.fillRect(x + L.tw - 4 - k * 3, y + L.th - 4, 2, 2); }
   }
   if (KS === 0) for (let k = 1; k < S.path.length; k++) { const a = tileC(S.path[k - 1]), b = tileC(S.path[k]); line(wctx, a.x, a.y, b.x, b.y, ok ? C.hot : C.gold, 2); }
   const cand = candidate(); if (cand >= 0 && !usingButtons && KS === 0) { const p = tileXY(cand); wctx.fillStyle = C.gold; wctx.fillRect(p.x - 1, p.y - 1, L.tw + 2, 1); wctx.fillRect(p.x - 1, p.y + L.th, L.tw + 2, 1); wctx.fillRect(p.x - 1, p.y, 1, L.th); wctx.fillRect(p.x + L.tw, p.y, 1, L.th);
@@ -641,7 +641,7 @@ function drawKeyLetters() {
       ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(cx, cy, r - 4, 0, 7); ctx.fill();
       if (on) { ctx.shadowColor = "#ffb347"; ctx.shadowBlur = 18; ctx.strokeStyle = "rgba(255,200,110,.9)"; ctx.lineWidth = 2; ctx.stroke(); ctx.shadowBlur = 0; }
       vtext(ch, cx, cy + 2, `${ch === "Qu" ? 22 : 28}px "Special Elite", "Courier New", monospace`, "#2a1a0e");
-      pips(cx + r - 10, cy + r - 12, v, "#7a5228");
+      pips(cx + r - 10, cy + r - 12, v, "#4a2a12");
     } else if (KS === 2) {     // glow tubes: dark glass with a fine mesh, thin orange letters burning inside
       ctx.fillStyle = "#0e0806"; rr(ctx, x + 2, y, w - 4, hh, 10); ctx.fill();
       ctx.fillStyle = "rgba(255,140,60,.07)"; for (let yy = y + 3; yy < y + hh - 2; yy += 4) for (let xx = x + 5 + ((yy >> 2) & 1) * 2; xx < x + w - 5; xx += 4) ctx.fillRect(xx, yy, 1, 1);
@@ -650,13 +650,13 @@ function drawKeyLetters() {
       ctx.lineWidth = 2.2; ctx.strokeStyle = lit; ctx.strokeText(ch, cx, cy + 2);   // thicken the filament so it reads
       ctx.strokeStyle = "rgba(255,255,255,.12)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + 9, y + 6); ctx.lineTo(x + 9, y + hh - 10); ctx.stroke();
       ctx.strokeStyle = on ? "rgba(255,180,90,.8)" : "rgba(120,80,50,.6)"; ctx.lineWidth = 2; rr(ctx, x + 2, y, w - 4, hh, 10); ctx.stroke();
-      pips(x + w - 10, y + hh - 9, v, on ? "#ffd0a0" : "#7a3a14");
+      pips(x + w - 10, y + hh - 9, v, on ? "#ffd0a0" : "#ffa24a");
     } else if (KS === 3) {     // neon glass: no keys, glowing letters floating in the smoked glass
       ctx.strokeStyle = on ? "rgba(255,190,110,.55)" : "rgba(255,170,90,.12)"; ctx.lineWidth = 2; rr(ctx, x + 3, y + 2, w - 6, hh - 4, 8); ctx.stroke();
       const col = on ? (ok ? "#ffffff" : "#fff1d6") : "#ffb347";
       vtext(ch, cx, cy + 2, `${ch === "Qu" ? 22 : 30}px Bungee, Impact, sans-serif`, col, on ? 26 : 14, on ? "#ffcf6a" : "#ff8a20");
       vtext(ch, cx, cy + 2, `${ch === "Qu" ? 22 : 30}px Bungee, Impact, sans-serif`, col, 0);
-      pips(x + w - 10, y + hh - 10, v, on ? "#fff1d6" : "rgba(255,170,80,.55)");
+      pips(x + w - 10, y + hh - 10, v, on ? "#fff1d6" : "#ffc070");
     } else if (KS === 4) {     // ivory tiles: chunky game tiles with engraved letters
       ctx.fillStyle = "rgba(0,0,0,.5)"; rr(ctx, x + 2, y + 4, w - 2, hh - 2, 7); ctx.fill();
       let gr = ctx.createLinearGradient(0, y, 0, y + hh); gr.addColorStop(0, on ? (ok ? "#fff2c4" : "#ffd88a") : "#f3e7c9"); gr.addColorStop(1, on ? (ok ? "#ffbf4a" : "#e9a23c") : "#cdb98f");
@@ -664,7 +664,7 @@ function drawKeyLetters() {
       ctx.strokeStyle = "rgba(255,255,255,.55)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(x + 7, y + 2); ctx.lineTo(x + w - 9, y + 2); ctx.stroke();
       if (on) { ctx.shadowColor = "#ffb347"; ctx.shadowBlur = 20; ctx.strokeStyle = "rgba(255,190,90,.9)"; rr(ctx, x + 1, y, w - 3, hh - 3, 7); ctx.stroke(); ctx.shadowBlur = 0; }
       vtext(ch, cx, cy + 1, `${ch === "Qu" ? 20 : 26}px Bungee, Impact, sans-serif`, "rgba(255,255,255,.6)"); vtext(ch, cx, cy - 1, `${ch === "Qu" ? 20 : 26}px Bungee, Impact, sans-serif`, "#3a2010");
-      pips(x + w - 11, y + hh - 11, v, "#a8452a");
+      pips(x + w - 11, y + hh - 11, v, "#8a2410");
     } else if (KS === 5) {     // brass keys: polished brass plates with stamped letters
       ctx.fillStyle = "rgba(0,0,0,.5)"; rr(ctx, x + 2, y + 4, w - 2, hh - 2, 5); ctx.fill();
       let gr = ctx.createLinearGradient(x, y, x + w, y + hh); gr.addColorStop(0, on ? "#fff0b0" : "#f0cf78"); gr.addColorStop(.5, on ? "#ffc848" : "#c69a42"); gr.addColorStop(1, on ? "#d48a20" : "#8a5f22");
@@ -672,7 +672,7 @@ function drawKeyLetters() {
       ctx.strokeStyle = "rgba(60,36,12,.7)"; ctx.lineWidth = 2; rr(ctx, x + 5, y + 4, w - 11, hh - 11, 3); ctx.stroke();
       if (on) { ctx.shadowColor = "#ffd27a"; ctx.shadowBlur = 22; ctx.strokeStyle = ok ? "#fff6dc" : "#ffd27a"; rr(ctx, x + 1, y, w - 3, hh - 3, 5); ctx.stroke(); ctx.shadowBlur = 0; }
       vtext(ch, cx, cy + 1, `${ch === "Qu" ? 20 : 27}px Limelight, Georgia, serif`, "rgba(255,240,200,.7)"); vtext(ch, cx, cy - 1, `${ch === "Qu" ? 20 : 27}px Limelight, Georgia, serif`, "#3a2410");
-      pips(x + w - 11, y + hh - 12, v, "#5a3a14");
+      pips(x + w - 11, y + hh - 12, v, "#2e1a08");
     }
     if (t.hot) { ctx.strokeStyle = (frame >> 3) & 1 ? "#ff3a2e" : "#ff8060"; ctx.lineWidth = 3; ctx.shadowColor = "#ff3a2e"; ctx.shadowBlur = 14; rr(ctx, x - 1, y - 2, w + 1, hh + 2, 9); ctx.stroke(); ctx.shadowBlur = 0; }
     if (hv) { ctx.strokeStyle = "rgba(255,230,170,.85)"; ctx.lineWidth = 2; ctx.setLineDash([6, 4]); rr(ctx, x - 2, y - 3, w + 3, hh + 4, 9); ctx.stroke(); ctx.setLineDash([]); }

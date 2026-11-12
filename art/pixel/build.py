@@ -1,7 +1,12 @@
-"""Builds every pixel-art sprite from the ChatGPT sources in art/pixel/src/.
-1. Master palette (64 colours) from the look target and all sources, so every layer shares the same colours.
-2. Each sprite: key out magenta, crop, shrink to its native size (the game's 480x270 world), hard 1-bit alpha, snap to the palette.
-3. sprites.json: sizes plus marked points (like the tower beacon) in native pixels.
+"""Builds every pixel-art sprite for the game from the art in art/pixel/src/.
+
+ChatGPT's "pixel art" is a big image of fake pixels of uneven size. Each source was run once through a pixel-grid fixer, which
+recovered its real pixel grid; that result is saved next to it as NAME_fixed.png. Sprites are cut from the fixed images at exactly
+their own pixel size: never resized, never forced into a small palette, so every pixel stays clean. (The interface kit came back
+with tall pixels, so its rows are evened out to square pixels first.)
+
+Crops and points below are written in the ORIGINAL source's pixels (easy to measure on the big image) and converted to the fixed
+image's pixels. Outputs: atlas.png + atlas.json (palette for interface colours, sprite rectangles, marked points).
 Run from the repo root: python3 -I art/pixel/build.py"""
 import json, sys
 import numpy as np
@@ -11,125 +16,93 @@ import pix
 
 SRC = "art/pixel/src/"
 OUT = "art/pixel/"
-# name: source file, native width (height follows), points of interest in source pixels (found by eye / measured)
+SQUARE = {"uikit": 3.197}     # sources whose fixed rows need evening out: real pixel size in source px (both axes)
 SPRITES = {
-    "window": {"src": "window.png", "w": 170, "points": {"beacon": (648, 574)}},
-    "radio": {"src": "radio.png", "w": 390, "points": {
+    "window": {"src": "window", "points": {"beacon": (648, 574)}},
+    "radio": {"src": "radio", "points": {
         "glass0": (552, 214), "glass1": (1102, 688), "dial0": (462, 84), "dial1": (1148, 150), "meter": (1312, 146), "meterR": (1392, 146),
         "lamp0": (583, 783), "lamp1": (678, 783), "lamp2": (773, 783), "lamp3": (868, 783), "lamp4": (963, 783), "lamp5": (1062, 783),
         "knobL": (358, 745), "knobR": (1300, 745)}},
-    # the sideboard is cut into a left end, one repeating drawer bay and a right end, so it stretches to any width
-    "sb_left": {"src": "sideboard.png", "scale": .267, "crop": (12, 360, 72, 589)},
-    "sb_mid": {"src": "sideboard.png", "scale": .267, "crop": (72, 360, 327, 589)},
-    "sb_right": {"src": "sideboard.png", "scale": .267, "crop": (1585, 360, 1647, 589)},
-    # interface kit (one scale for every piece): the bar stretches (left end, plain middle, right end) with the clasp centred on top
-    "bar_left": {"src": "uikit.png", "scale": .289, "crop": (14, 112, 138, 416)},
-    "bar_mid": {"src": "uikit.png", "scale": .289, "crop": (300, 112, 558, 416)},
-    "bar_right": {"src": "uikit.png", "scale": .289, "crop": (1524, 112, 1648, 416)},
-    "bar_clasp": {"src": "uikit.png", "scale": .289, "crop": (762, 112, 900, 170)},
-    "logbox": {"src": "uikit.png", "scale": .289, "crop": (24, 538, 642, 800)},
-    "plate": {"src": "uikit.png", "scale": .289, "crop": (674, 554, 1004, 646)},
-    "battery": {"src": "uikit.png", "scale": .289, "crop": (1040, 602, 1290, 720), "points": {"seg0": (1066, 632), "seg1": (1266, 690)}},
-    "slot": {"src": "uikit.png", "scale": .289, "crop": (1320, 554, 1508, 760)},
-    "button": {"src": "uikit.png", "scale": .289, "crop": (1540, 610, 1634, 704)},
+    # the sideboard is a left end, one repeating drawer bay and a right end, so it stretches to any width
+    "sb_left": {"src": "sideboard", "crop": (12, 360, 72, 589)},
+    "sb_mid": {"src": "sideboard", "crop": (72, 360, 327, 589)},
+    "sb_right": {"src": "sideboard", "crop": (1585, 360, 1647, 589)},
+    # interface kit: the bar stretches (left end, plain middle, right end) with the clasp centred on top
+    "bar_left": {"src": "uikit", "crop": (14, 112, 138, 416)},
+    "bar_mid": {"src": "uikit", "crop": (300, 112, 558, 416)},
+    "bar_right": {"src": "uikit", "crop": (1524, 112, 1648, 416)},
+    "bar_clasp": {"src": "uikit", "crop": (762, 112, 900, 170)},
+    "logbox": {"src": "uikit", "crop": (24, 538, 642, 800)},
+    "plate": {"src": "uikit", "crop": (674, 554, 1004, 646)},
+    "battery": {"src": "uikit", "crop": (1040, 602, 1290, 720), "points": {"seg0": (1066, 632), "seg1": (1266, 690)}},
+    "slot": {"src": "uikit", "crop": (1320, 554, 1508, 760)},
+    "button": {"src": "uikit", "crop": (1540, 610, 1634, 704)},
 }
-TILES = {"wall_tile": {"src": "wallpaper.png", "period": (156, 138), "native": (32, 28), "area": (150, 160)}}
+WALL = {"src": "wallpaper.png", "period": (156, 138), "px": 3.9, "area": (150, 160)}
+ICON_NAMES = ["amp", "battery", "vowel", "filter", "coil", "echo", "owl", "knob", "treble", "short", "carrier", "fuse"]
 
-def keyed(path):
-    a = np.asarray(Image.open(path).convert("RGB")).astype(float)
-    r, g, b = a[..., 0], a[..., 1], a[..., 2]
-    alpha = (np.minimum(r, b) - g) < 110          # not magenta
-    ys, xs = np.where(alpha)
-    box = (xs.min(), ys.min(), xs.max() + 1, ys.max() + 1)
-    return a, alpha, box
+def magenta(rgb):
+    r, g, b = rgb[..., 0].astype(int), rgb[..., 1].astype(int), rgb[..., 2].astype(int)
+    return ((np.minimum(r, b) - g) > 110) | ((np.minimum(r, b) - g > 45) & (b > r * .55) & (b > 90))   # incl. pink edge blends
+
+def fixed(name):
+    """The fixed image as RGBA (magenta keyed out) and the scale from source pixels to fixed pixels."""
+    src = Image.open(SRC + name + ".png"); im = Image.open(SRC + name + "_fixed.png").convert("RGBA")
+    if name in SQUARE:
+        im = im.resize((im.width, round(src.height / SQUARE[name])), Image.NEAREST)
+    a = np.asarray(im).copy(); a[..., 3] = np.where(magenta(a[..., :3]) | (a[..., 3] < 128), 0, 255)
+    return Image.fromarray(a, "RGBA"), im.width / src.width, im.height / src.height
 
 def main():
-    sources = [("art/concept/look-target.png", (480, 274)), (SRC + "wallpaper.png", (240, 137))]
-    for s in SPRITES.values():
-        a, alpha, (x0, y0, x1, y1) = keyed(SRC + s["src"])
-        sources.append((SRC + s["src"], (max(8, (x1 - x0) // 8), max(8, (y1 - y0) // 8))))
-    pal = pix.build_palette(sources, 64)
-    meta = {"palette": pal.tolist(), "sprites": {}}
-    for name, t in TILES.items():
-        a = np.asarray(Image.open(SRC + t["src"]).convert("RGB")).astype(float)
-        PX, PY = t["period"]; X0, Y0 = t["area"]
-        reps = [a[y:y + PY, x:x + PX] for y in range(Y0, a.shape[0] - PY - 20, PY) for x in range(X0, a.shape[1] - PX - 20, PX)]
-        tile = np.median(np.stack(reps), 0)
-        small = np.asarray(Image.fromarray(tile.astype("uint8")).resize(t["native"], Image.BOX)).astype(float)
-        Image.fromarray(pix.snap(small, pal)).save(OUT + name + ".png")
-        meta["sprites"][name] = {"w": t["native"][0], "h": t["native"][1], "tile": True}
+    imgs, pts = {}, {}
+    cache = {}
     for name, s in SPRITES.items():
-        a, alpha, (x0, y0, x1, y1) = keyed(SRC + s["src"])
-        if "crop" in s: x0, y0, x1, y1 = s["crop"]
-        W = s["w"] if "w" in s else round((x1 - x0) * s["scale"])
-        H = round(W * (y1 - y0) / (x1 - x0)) if "w" in s else round((y1 - y0) * s["scale"])
-        crop = a[y0:y1, x0:x1]; al = alpha[y0:y1, x0:x1]
-        Image.fromarray(pix.mode_shrink(crop, al, W, H, pal), "RGBA").save(OUT + name + ".png")
-        sx, sy = W / (x1 - x0), H / (y1 - y0)
-        pts = {k: [round((px - x0) * sx), round((py - y0) * sy)] for k, (px, py) in s.get("points", {}).items()}
-        meta["sprites"][name] = {"w": W, "h": H, "points": pts}
-    json.dump(meta, open(OUT + "sprites.json", "w"), indent=1)
-    print(json.dumps({k: v for k, v in meta["sprites"].items()}))
-
-main()
-
-# ---------------- icons, fonts and the atlas the game loads ----------------
-from PIL import ImageDraw, ImageFont
-ICON_NAMES = ["amp", "battery", "vowel", "filter", "coil", "echo", "owl", "knob", "treble", "short", "carrier", "fuse"]
-FONTS = {"small": ("/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf", 8),
-         "big": ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 14)}
-CHARS = "".join(chr(c) for c in range(32, 96)) + "u"
-
-def icons(pal):
-    a, alpha, _ = keyed(SRC + "icons.png")
-    Hh, Ww = alpha.shape; out = {}
-    for k, name in enumerate(ICON_NAMES):
-        cx0, cy0 = (k % 4) * Ww // 4, (k // 4) * Hh // 3
-        al = alpha[cy0:cy0 + Hh // 3, cx0:cx0 + Ww // 4]; ys, xs = np.where(al)
-        x0, x1, y0, y1 = cx0 + xs.min(), cx0 + xs.max() + 1, cy0 + ys.min(), cy0 + ys.max() + 1
-        for tag, size in (("icon_", 38), ("iconL_", 72)):
-            s = size / max(x1 - x0, y1 - y0); W, H = max(1, round((x1 - x0) * s)), max(1, round((y1 - y0) * s))
-            out[tag + name] = Image.fromarray(pix.mode_shrink(a[y0:y1, x0:x1], alpha[y0:y1, x0:x1], W, H, pal), "RGBA")
-    return out
-
-def glyphs():
-    out, metrics = {}, {}
-    for fname, (path, size) in FONTS.items():
-        f = ImageFont.truetype(path, size); asc, desc = f.getmetrics(); h = asc + desc
-        metrics[fname] = {"h": h, "adv": {}}
-        for ch in CHARS:
-            key = "Qu" if ch == "u" else ch
-            if ch == "u" and fname != "big": continue
-            txt = "Qu" if ch == "u" else ch
-            w = max(1, int(round(f.getlength(txt))))
-            im = Image.new("L", (w + 2, h + 2), 0); d = ImageDraw.Draw(im); d.fontmode = "1"; d.text((1, 1), txt, font=f, fill=255)
-            rgba = Image.new("RGBA", im.size, (255, 255, 255, 0)); rgba.putalpha(im.point(lambda v: 255 if v > 127 else 0))
-            out[f"g_{fname}_{ord(ch) if key != 'Qu' else 'Qu'}"] = rgba; metrics[fname]["adv"][key] = w
-    return out, metrics
-
-def atlas(meta, pal):
-    imgs = {n: Image.open(OUT + n + ".png").convert("RGBA") for n in meta["sprites"]}
-    # the window glass mask: which window pixels give their own light (the night view), so room light skips them
+        if s["src"] not in cache: cache[s["src"]] = fixed(s["src"])
+        im, fx, fy = cache[s["src"]]
+        if "crop" in s:
+            x0, y0, x1, y1 = s["crop"]; box = (round(x0 * fx), round(y0 * fy), round(x1 * fx), round(y1 * fy))
+        else:
+            box = im.getbbox()
+        piece = im.crop(box)
+        if "crop" not in s: x0, y0 = box[0] / fx, box[1] / fy
+        imgs[name] = piece
+        pts[name] = {k: [round(px * fx - box[0]), round(py * fy - box[1])] for k, (px, py) in s.get("points", {}).items()}
+    # wallpaper: the median of many repeats (removes the source's uneven edges), one cell per real pixel
+    a = np.asarray(Image.open(SRC + WALL["src"]).convert("RGB")).astype(float)
+    PX, PY = WALL["period"]; X0, Y0 = WALL["area"]
+    tile = np.median(np.stack([a[y:y + PY, x:x + PX] for y in range(Y0, a.shape[0] - PY - 20, PY) for x in range(X0, a.shape[1] - PX - 20, PX)]), 0)
+    big = pix.kmeans(tile.reshape(-1, 3)[::3], 24)
+    imgs["wall_tile"] = Image.fromarray(pix.mode_shrink(tile, np.ones(tile.shape[:2], bool), round(PX / WALL["px"]), round(PY / WALL["px"]), big), "RGBA")
+    # the window glass: which window pixels are the night view (they give their own light, so room light skips them)
     win = np.asarray(imgs["window"]).astype(int); rgb = win[..., :3]
     seen = ((rgb[..., 2] > rgb[..., 0] + 10) | (rgb.max(-1) > 200)) & (win[..., 3] > 0); seen[:8] = seen[-14:] = False
     ys, xs = np.where(seen); inside = np.zeros_like(seen); inside[ys.min():ys.max() + 1, xs.min():xs.max() + 1] = True
-    wood = (rgb[..., 0] > rgb[..., 2] + 25) & (rgb[..., 0] > 60) & (rgb[..., 1] > rgb[..., 0] * .3) & ~(rgb.max(-1) > 200)   # frame bars, not lit windows or the red beacon
+    wood = (rgb[..., 0] > rgb[..., 2] + 25) & (rgb[..., 0] > 60) & (rgb[..., 1] > rgb[..., 0] * .3) & ~(rgb.max(-1) > 200)
     glass = inside & ~wood & (win[..., 3] > 0)
     imgs["window_glass"] = Image.fromarray(np.dstack([np.full(glass.shape + (3,), 255, np.uint8), glass.astype(np.uint8) * 255]), "RGBA")
-    imgs.update(icons(pal))
-    metrics = {}
-    # shelf packing
-    order = sorted(imgs, key=lambda n: -imgs[n].height); AW = 1280; x = y = sh = 0; rects = {}
+    # part icons: full size for the part picker, exactly half (2x2 cells, majority colour) for the bar's slots
+    ic, fx, fy = fixed("icons"); ia = np.asarray(ic); al = ia[..., 3] > 0; H, W = al.shape
+    for k, name in enumerate(ICON_NAMES):
+        cx0, cy0, cx1, cy1 = (k % 4) * W // 4, (k // 4) * H // 3, (k % 4 + 1) * W // 4, (k // 4 + 1) * H // 3
+        ys, xs = np.where(al[cy0:cy1, cx0:cx1]); box = (cx0 + xs.min(), cy0 + ys.min(), cx0 + xs.max() + 1, cy0 + ys.max() + 1)
+        full = ic.crop(box); imgs["iconL_" + name] = full
+        fa = np.asarray(full); hw, hh = max(1, fa.shape[1] // 2), max(1, fa.shape[0] // 2)
+        pal = np.unique(fa[..., :3][fa[..., 3] > 0].reshape(-1, 3), axis=0).astype(float)
+        imgs["icon_" + name] = Image.fromarray(pix.mode_shrink(fa[..., :3].astype(float), fa[..., 3] > 0, hw, hh, pal), "RGBA")
+    # interface colours are picked from a palette of the art itself
+    sample = np.concatenate([np.asarray(im)[..., :3][np.asarray(im)[..., 3] > 0].reshape(-1, 3) for im in imgs.values() if im.mode == "RGBA"])
+    pal = pix.kmeans(sample[::9].astype(float), 56); pal = np.concatenate([pal, np.array(pix.ACCENTS, float)]); pal = np.clip(np.round(pal[np.argsort(pal.mean(1))]), 0, 255).astype(int)
+    # pack
+    order = sorted(imgs, key=lambda n: -imgs[n].height); AW = 1400; x = y = sh = 0; rects = {}
     for n in order:
         w, h = imgs[n].size
         if x + w > AW: x = 0; y += sh + 1; sh = 0
         rects[n] = [x, y, w, h]; x += w + 1; sh = max(sh, h)
-    AH = y + sh + 1; sheet = Image.new("RGBA", (AW, AH), (0, 0, 0, 0))
-    for n, (x, y, w, h) in rects.items(): sheet.alpha_composite(imgs[n], (x, y))
+    sheet = Image.new("RGBA", (AW, y + sh + 1), (0, 0, 0, 0))
+    for n, (x, y, w, h) in rects.items(): sheet.alpha_composite(imgs[n].convert("RGBA"), (x, y))
     sheet.save(OUT + "atlas.png", optimize=True)
-    pts = {n: s.get("points", {}) for n, s in meta["sprites"].items()}
-    json.dump({"palette": meta["palette"], "accents": [list(c) for c in pix.ACCENTS], "rects": rects, "points": pts, "fonts": metrics},
-              open(OUT + "atlas.json", "w"))
-    print("atlas", AW, AH, len(rects), "pieces")
+    json.dump({"palette": pal.tolist(), "accents": [list(c) for c in pix.ACCENTS], "rects": rects, "points": pts, "fonts": {}}, open(OUT + "atlas.json", "w"))
+    for n in ["radio", "window", "wall_tile", "sb_mid", "bar_left", "bar_mid", "logbox", "plate", "battery", "slot", "iconL_amp", "icon_amp"]: print(n, rects[n][2:])
+    print("radio points", pts["radio"]); print("window", pts["window"], "battery", pts["battery"])
 
-atlas(json.load(open(OUT + "sprites.json")), np.array(json.load(open(OUT + "sprites.json"))["palette"], float))
+main()
