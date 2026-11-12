@@ -137,11 +137,14 @@ the same batch.
 - The dial always shows the traced word's value on its right, counting up as letters go in (plain amber while it can't be sent).
   When it can be sent the whole dial lights warm, the word and number go bright and the number gets a "+". A hovered key (mouse,
   or the button cursor) previews dimly: its letter after the word and "+gain" before the number. Every key shows its value as dots.
-- Input: buttons first (A add letter, A on the last letter sends, B back, Start/Y retune, Select/X/Tab/M sound on or off),
+- Input: buttons first (A add letter, A on the last letter sends, B back, Start/Y retune, Select/X sound on or off),
   touch/mouse drag or tap. Gamepad standard mapping, bottom face = A.
-- Keyboard (2026-11-12, Chris's brother typed REAL and R retuned): letter keys TYPE the word (`typeLetter`/`spellPath` find keys
-  spelling it, keeping picked keys that still fit; Qu takes QU), Enter sends, Backspace back, Tab retunes, Esc sound, arrows +
-  Space still work. No letter key may ever be a command.
+- Keyboard (Chris 2026-11-12, after a typing experiment he rejected: the keyboard does NOT type words): WASD/arrows move, Space or
+  Enter picks the letter under the cursor (again on the last letter sends), Backspace back, R retune, M sound. Keep keys few and
+  clear, and list them in the line under the game.
+- Mouse/touch: click or tap letters, or drag across them. A click on a key that doesn't touch the last letter keeps the word and
+  flashes MUST TOUCH (it used to restart the word from that key, which looked like the word vanishing). With one letter picked, a
+  click elsewhere just moves the start.
 - Play area workshop (2026-11-12). Round 1 (six key styles: pixel keys, typewriter, glow tubes, neon glass, ivory tiles, brass keys;
   KEY_STYLES 0..5): Chris picked glow tubes (index 2) but wanted the play area to have more vibe. Round 2 adds
   five whole play-area directions, KEY_STYLES 6..10: valve bank, signal scope, stencil plates, switchboard, dot glass. They draw the

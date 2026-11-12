@@ -158,7 +158,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
     <div class="btns"><button class="btn b" id="btnB" aria-label="B button, back">B<small>BACK</small></button><button class="btn a" id="btnA" aria-label="A button, add letter or send">A<small>TUNE</small></button></div>
     <div class="pills"><button class="pill" id="btnSel" aria-label="Select, sound on or off"><span class="cap">SOUND</span></button><button class="pill" id="btnStart" aria-label="Start, retune"><span class="cap">RETUNE</span></button></div>
   </div>
-  <p class="foot">Type a word or move <kbd>Arrows</kbd> + <kbd>Space</kbd> · Send <kbd>Enter</kbd> · Back <kbd>Backspace</kbd> · Retune <kbd>Tab</kbd> · Sound <kbd>Esc</kbd> · Mouse and touch work too</p>
+  <p class="foot">Move <kbd>WASD</kbd> <kbd>Arrows</kbd> · Pick letter, again to send <kbd>Space</kbd> <kbd>Enter</kbd> · Back <kbd>Backspace</kbd> · Retune <kbd>R</kbd> · Sound <kbd>M</kbd> · Or click / tap letters, or drag across them</p>
 </div>
 
 <script src="words.js"></script>
@@ -473,26 +473,9 @@ function tapTile(i) {
   if (p.length >= 2 && i === p[p.length - 2]) return setPath(p.slice(0, -1));
   if (!p.includes(i) && adjacent(last, i)) return setPath([...p, i]);
   if (p.includes(i)) return setPath(p.slice(0, p.indexOf(i) + 1));
-  setPath([i]);
-}
-// typing: find keys that spell what's been typed so far plus the new letter, keeping the keys already picked when they still fit.
-// A Qu key takes "QU" (typing Q picks it; the U right after is swallowed).
-let lastTyped = "";
-function spellPath(s, start) {
-  const tok = (i) => S.grid[i] && S.grid[i].ch !== " " ? S.grid[i].ch.toUpperCase() : null;
-  const go = (path, rest) => { if (!rest) return path; const last = path[path.length - 1];
-    for (let i = 0; i < 16; i++) { if (path.includes(i) || (path.length && !adjacent(last, i))) continue; const t = tok(i); if (!t) continue;
-      let use = rest.startsWith(t) ? t.length : t === "QU" && rest === "Q" ? 1 : 0; if (!use) continue; const r = go([...path, i], rest.slice(use)); if (r) return r; }
-    return null; };
-  return go(start, s.slice(start.map(i => tok(i)).join("").length));
-}
-function typeLetter(ch) {
-  dismissCard(); if (!canAct()) return;
-  const last = S.path[S.path.length - 1]; if (ch === "U" && lastTyped === "Q" && last != null && S.grid[last].ch === "Qu") { lastTyped = ""; return; }
-  lastTyped = ch; const typed = S.path.map(i => S.grid[i].ch.toUpperCase()).join("") + ch;
-  const p = spellPath(typed, S.path) || spellPath(typed, []);
-  if (p) { setPath(p); S.cursor = p[p.length - 1]; usingButtons = true; }
-  else { Sound.tickMove(); shake = Math.max(shake, 1.5); }   // no key for that letter here: a small knock, nothing changes
+  if (p.length === 1) return setPath([i]);   // a single letter just moves to the new key
+  // not touching the last letter: keep the word (it used to start over from this key, which looked like the word vanishing)
+  dialFlash = { text: "MUST TOUCH", bad: true, t: 50 }; Sound.tickMove(); shake = Math.max(shake, 2);
 }
 function back() { if (canAct() && S.path.length) setPath(S.path.slice(0, -1)); }
 function send() {
@@ -1244,8 +1227,9 @@ const TIPS = [
   "THE LIGHTS OVER THE TUNING KNOB ARE YOUR RETUNES",
   "THE FINE TUNING KNOB GIVES AN EXTRA RETUNE EVERY NIGHT",
   "B TAKES BACK THE LAST LETTER",
-  "SELECT OR ESC TURNS THE SOUND ON AND OFF",
-  "ON A KEYBOARD, JUST TYPE THE WORD AND PRESS ENTER",
+  "SELECT OR M TURNS THE SOUND ON AND OFF",
+  "EACH NEW LETTER MUST TOUCH THE LAST ONE, EVEN CORNER TO CORNER",
+  "CLICK THE LAST LETTER AGAIN TO SEND THE WORD",
   "PRESS A ON THE LAST LETTER TO SEND THE WORD",
   "THE DIAL LIGHTS UP WHEN YOUR WORD CAN BE SENT",
   "SENT LETTERS DROP AWAY AND THE KEYS ABOVE FALL INTO PLACE",
@@ -1511,17 +1495,15 @@ function pressStart() { Sound.ensure(); if (titleBusy()) return; if (S.phase ===
 function pressSel() { Sound.ensure(); Sound.toggle(); }   // Select is the sound switch (it used to flip key styles for the Workshop)
 window.addEventListener("keydown", (e) => {
   if (introPress()) { e.preventDefault(); return; }
-  // a keyboard types: letter keys spell the word in the glass (Chris's brother typed REAL and R retuned the radio), arrows move the
-  // cursor, Space adds the letter under it (or sends on the last one), Enter sends, Backspace takes a letter back, Tab retunes, Esc sound
-  const k = e.key, dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[k];
+  // keys (Chris: WASD and arrows, Space or Enter to pick; keep them few and clear): WASD/arrows move, Space or Enter picks the letter
+  // under the cursor (on the last letter it sends), Backspace takes one back, R retunes, M turns the sound on or off
+  const k = e.key.length === 1 ? e.key.toLowerCase() : e.key, dir = { ArrowLeft: [-1, 0], a: [-1, 0], ArrowRight: [1, 0], d: [1, 0], ArrowUp: [0, -1], w: [0, -1], ArrowDown: [0, 1], s: [0, 1] }[k];
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   if (dir) { e.preventDefault(); move(...dir); return; }
-  if (/^[a-zA-Z]$/.test(k)) { e.preventDefault(); if (S.phase === "play") typeLetter(k.toUpperCase()); else pressA(); return; }
-  if (k === " ") { e.preventDefault(); pressA(); return; }
-  if (k === "Enter") { e.preventDefault(); if (S.phase === "play") { dismissCard(); if (S.path.length) send(); else pressA(); } else pressA(); return; }
-  if (k === "Backspace") { e.preventDefault(); pressB(); return; }
-  if (k === "Tab") { e.preventDefault(); if (S.phase === "play") { dismissCard(); retune(); } else pressStart(); return; }
-  if (k === "Escape") { e.preventDefault(); if (S.phase === "swap") return pressB(); Sound.ensure(); Sound.toggle(); }
+  if (k === " " || k === "Enter") { e.preventDefault(); pressA(); return; }
+  if (k === "Backspace" || k === "Escape") { e.preventDefault(); pressB(); return; }
+  if (k === "r") { e.preventDefault(); pressStart(); return; }
+  if (k === "m") { e.preventDefault(); Sound.ensure(); Sound.toggle(); }
 });
 function toWorld(e) { const r = cv.getBoundingClientRect(), s = Math.min(r.width / W, r.height / H), ox = (r.width - W * s) / 2, oy = (r.height - H * s) / 2; return { x: (e.clientX - r.left - ox) / s, y: (e.clientY - r.top - oy) / s }; }
 function keyAt(p, strict) { for (let i = 0; i < 16; i++) { const c = tileC(i), mx = strict ? L.tw * .38 : L.tw * .6, my = strict ? L.th * .38 : L.th * .6; if (Math.abs(p.x - c.x) < mx && Math.abs(p.y - c.y) < my) return i; } return -1; }
