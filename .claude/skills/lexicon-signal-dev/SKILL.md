@@ -75,7 +75,7 @@ the same batch.
 - Input: buttons first (A add letter, A on the last letter sends, B back, Start/Y retune, Select/X/Tab key style, M sound),
   touch/mouse drag or tap. Gamepad standard mapping, bottom face = A.
 - Play area workshop (2026-11-12). Round 1 (six key styles: pixel keys, typewriter, glow tubes, neon glass, ivory tiles, brass keys;
-  KEY_STYLES 0..5): Chris picked glow tubes (index 2, the default) but wanted the play area to have more vibe. Round 2 (open) adds
+  KEY_STYLES 0..5): Chris picked glow tubes (index 2) but wanted the play area to have more vibe. Round 2 adds
   five whole play-area directions, KEY_STYLES 6..10: valve bank, signal scope, stencil plates, switchboard, dot glass. They draw the
   whole glass on the fine layer (`drawPlayArea`, one `pa...` function each, plus `paGlows` and `paFlyers`) and share a few clocks:
   `t.lit` (traced, eased), `t.land` (just landed), `lockK` (word can be sent), `addT`/`sendT`/`arriveT`, and `ghosts` (the places a
@@ -109,7 +109,8 @@ the same batch.
   feedback read/write owner, plus user; omit them on republish.
 - Read his answers: ArtifactData list on the Workshop, collection `feedback`, doc `<topic>-<round>` {pick, notes{id:text}, general,
   submitted}. Act on submitted ones, then mark the round decided (chosen) in workshop.json and republish.
-- Rounds: keys-r1 decided (glow tubes). Open: keys-r2 (play-area direction, 5 options, each with a clip and a close-up).
+- Rounds: keys-r1 decided (glow tubes), keys-r2 decided (signal scope: now the default key style, KS 7; the choice is stored per
+  browser as lexsig-keys2). Next: build signal scope out as THE play area, then drop the other styles and give Select back to sound.
 
 ## Art prompts (ChatGPT)
 - One layer at a time, the look target attached for style. Pixel-art wording: low-resolution late-1990s computer game look, crisp
