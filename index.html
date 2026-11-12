@@ -298,7 +298,7 @@ function layout() {
 function computeLayout() {
   const rw = R("radio")[2], wide = W >= 650;
   L.radioX = wide ? W - rw - 21 : W - rw - 5; L.radioY = 18;
-  L.winX = wide ? Math.max(18, Math.round((L.radioX - R("window")[2]) / 2)) : L.radioX - R("window")[2] + 10; L.winY = 46;
+  L.winX = wide ? Math.max(18, Math.round((L.radioX - R("window")[2]) / 2)) : L.radioX - R("window")[2] + 10; L.winY = 22;   // the tall window (225 high) sits higher
   const bp = P("window").beacon; L.beacon = { x: L.winX + bp[0], y: L.winY + bp[1] };
   const rp = P("radio");
   L.glass = { x: L.radioX + rp.glass0[0], y: L.radioY + rp.glass0[1], w: rp.glass1[0] - rp.glass0[0], h: rp.glass1[1] - rp.glass0[1] };
@@ -561,7 +561,7 @@ function draw() {
   wctx.save(); wctx.translate(sx, 0); drawBeacon(); drawRadioLive(); drawGrid(); drawSparks(); wctx.restore();
   wctx.drawImage(barCv, 0, L.barY); drawBarLive();
   ctx.drawImage(world, 0, 0, W * FINE, H * FINE);
-  ctx.save(); ctx.translate(sx * FINE, 0); drawDial(); drawMeter(); drawLamps(); drawKeyLetters(); drawGlows(); drawFlyers(); ctx.restore();
+  ctx.save(); ctx.translate(sx * FINE, 0); drawRain(); drawDial(); drawMeter(); drawLamps(); drawKeyLetters(); drawGlows(); drawFlyers(); ctx.restore();
   drawBarText(); if (nightCard > 0 && S.phase === "play") { drawNightCard(); nightCard--; }
   if (S.phase === "title" || S.phase === "shop" || S.phase === "swap" || S.phase === "over") {
     octx.clearRect(0, 0, W, H); octx.imageSmoothingEnabled = false;
@@ -649,6 +649,27 @@ function candidate() {
   if (S.path.length && !adjacent(S.path[S.path.length - 1], i)) return -1; return i;
 }
 function ftextDot(s, x, y, col) { for (const ch of s.toUpperCase()) { if (ch !== " ") { ctx.drawImage(glyphCv("dot", ch, C.dotDim), x - 1, y); ctx.drawImage(glyphCv("dot", ch, C.dotDim), x + 1, y); ctx.drawImage(glyphCv("dot", ch, col), x, y); } x += 18; } }
+/* rain on the window: streaks falling past outside (a slight slant, faint blue-white) and drops on the glass that slide down in fits
+   and starts, catching a little light. Drawn on the fine layer, clipped to the panes (never over the wooden frame and bars). */
+let rainS = null, rainD = null;
+function drawRain() {
+  const panes = (P("window_panes") || []).map(([x0, y0, x1, y1]) => [FX(L.winX + x0), FX(L.winY + y0), FX(x1 - x0), FX(y1 - y0)]); if (!panes.length) return;
+  const [bx, by, bw, bh] = panes[panes.length - 1], top = panes[0][1], H2 = by + bh - top;
+  if (!rainS) { rainS = []; for (let i = 0; i < 70; i++) rainS.push({ x: Math.random(), y: Math.random(), v: .018 + Math.random() * .014, l: 8 + Math.random() * 14, a: .12 + Math.random() * .2 });
+    rainD = []; for (let i = 0; i < 9; i++) rainD.push({ x: Math.random(), y: Math.random(), r: 1.5 + Math.random() * 2.2, v: 0, hold: Math.random() * 200 }); }
+  const rx = FX(L.radioX + 8);   // on narrow screens the radio covers part of the window: no rain on the radio
+  ctx.save(); ctx.beginPath(); panes.forEach(([x, y, w, hh]) => ctx.rect(x, y, Math.max(0, Math.min(w, rx - x)), hh)); ctx.clip();
+  ctx.lineWidth = 1.5; ctx.lineCap = "round";
+  for (const s of rainS) { s.y += s.v; s.x += s.v * .22; if (s.y > 1.05) { s.y = -.05; s.x = Math.random() * 1.1 - .1; } if (s.x > 1.05) s.x -= 1.1;
+    const x = bx + s.x * bw, y = top + s.y * H2; ctx.strokeStyle = `rgba(180,200,240,${s.a})`; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - s.l * .22, y - s.l); ctx.stroke(); }
+  for (const d of rainD) { if (d.hold > 0) d.hold--; else { d.v = Math.min(.012, d.v + .0006); d.y += d.v; if (Math.random() < .02) { d.hold = 20 + Math.random() * 120; d.v = 0; } }
+    if (d.y > 1.02) { d.y = -.02; d.x = Math.random(); d.r = 1.5 + Math.random() * 2.2; d.hold = Math.random() * 120; }
+    const x = bx + d.x * bw, y = top + d.y * H2;
+    ctx.fillStyle = "rgba(160,180,230,.10)"; ctx.fillRect(x - d.r * .4, y - 26, d.r * .8, 26);   // its wet trail
+    ctx.fillStyle = "rgba(190,205,245,.32)"; ctx.beginPath(); ctx.arc(x, y, d.r, 0, 6.283); ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,.55)"; ctx.fillRect(x - d.r * .45, y - d.r * .5, 1.5, 1.5); }
+  ctx.restore();
+}
 function drawLamp(x, y, r, low) {   // a lit dome lamp centred at (x, y) fine pixels: hot middle, amber body, darker rim, a glint up-left
   const g = ctx.createRadialGradient(x - r * .25, y - r * .25, r * .1, x, y, r); g.addColorStop(0, low ? "#ffd0b8" : "#fffbe0"); g.addColorStop(.45, low ? "#ff5a3c" : "#ffd65a"); g.addColorStop(1, low ? "#a0201a" : "#c88a1e");
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill(); ctx.fillStyle = "rgba(255,255,245,.9)"; ctx.beginPath(); ctx.arc(x - r * .38, y - r * .38, r * .2, 0, 6.283); ctx.fill(); }
@@ -1008,6 +1029,8 @@ function drawGlows() {
   const prog = S.phase === "play" ? Math.min(1, S.shown / S.target) : .5;   // the tower burns brighter as the night's signal fills
   bloom(FX(b.x), FX(b.y), 46 + prog * 60 + beaconFlash * 2, "255,60,40", (.25 + .55 * prog) * pulse + beaconFlash / 50);
   bloom(FX(b.x), FX(b.y), 20, "255,200,170", .5 + beaconFlash / 40);
+  for (const [x, y, n, kind] of P("window_lights") || []) { if (kind !== "warm") continue; const big = n > 40;
+    bloom(FX(L.winX + x), FX(L.winY + y), big ? FX(22) : 10 + Math.sqrt(n) * 3, "255,190,90", big ? .18 : Math.min(.35, .08 + n * .02)); }
   bloom(FX(W - 20), FX(SCENE_H - 30), FX(220), "255,150,60", .16 + .03 * Math.sin(frame / 50));     // the unseen lamp, breathing
   const lit = S.phase === "title" ? titleFX.lamps : Math.min(6, S.words);
   L.lamps.forEach((p, k) => { if (k < lit) bloom(FX(p.x), FX(p.y), 34, S.words === 1 && S.phase === "play" ? "255,70,50" : "255,190,90", .5); });
@@ -1441,7 +1464,7 @@ function move(dx, dy) { dismissCard();
   const x = S.cursor % 4 + dx, y = ((S.cursor / 4) | 0) + dy; S.cursor = ((y + 4) % 4) * 4 + ((x + 4) % 4); knobA.L += .35 * (dx + dy); Sound.tickMove();
 }
 function titleBusy() { if (S.phase === "title" && !titleSkip && titleT < TITLE_LEN[TS]) { titleSkip = true; return true; } return false; }
-function start() { Sound.ensure(); Sound.music(); newRun(); staticKick = .6; Sound.retune(); }
+function start() { Sound.ensure(); Sound.music(); newRun(); }
 function pressA() { Sound.ensure(); usingButtons = true; dismissCard(); if (titleBusy()) return; if (S.phase === "title" || S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
 function pressB() { if (S.phase === "swap") return swapCancel(); if (S.phase === "play") back(); }
 function pressStart() { Sound.ensure(); if (titleBusy()) return; if (S.phase === "title" || S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); retune(); }
@@ -1511,7 +1534,7 @@ window.addEventListener("resize", layout); if (window.ResizeObserver) new Resize
 
 /* ================= sound: Web Audio synth, 84 BPM night pulse ================= */
 const Sound = (() => {
-  let ac = null, master, mus, sfx, nb, stat, padF, playing = false, nextBeat = 0, beatN = 0, muted = false, lastTick = 0, lastType = 0, lastCell = 0;
+  let ac = null, master, mus, sfx, nb, stat, padF, playing = false, nextBeat = 0, beatN = 0, muted = false, lastTick = 0, lastType = 0, lastCell = 0, rainOn = false;
   const m2f = (m) => 440 * Math.pow(2, (m - 69) / 12), CH = [[57, 60, 64, 67], [53, 57, 60, 64], [48, 55, 59, 64], [55, 59, 62, 64]], RT = [45, 41, 36, 43], PENT = [69, 72, 74, 76, 79, 81, 84, 86, 88, 91, 93, 96, 98];
   // iPhone: the silent switch mutes web audio. Inside the press that starts the sound, say the page plays media (iOS 17+) and loop
   // a second of real silence in an audio element, so iOS treats the page like a music player and plays it (the studio's other games
@@ -1542,11 +1565,18 @@ const Sound = (() => {
         g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.032, t + 1.2); g.gain.setValueAtTime(.032, t + beat * 7); g.gain.exponentialRampToValueAtTime(.0001, t + beat * 8.4); o.connect(g); g.connect(padF); o.start(t); o.stop(t + beat * 8.5); }));
       nextBeat += beat; beatN++; }
     if (S && S.target) padF.frequency.setTargetAtTime(600 + Math.min(1, S.score / S.target) * 1800, ac.currentTime, .4); }
+  // rain on the window: a soft wash of filtered noise, a fine hiss on top, and now and then a drip on the sill
+  function startRain() { const t = ac.currentTime;
+    const mk = (type, f, q, g) => { const s = ac.createBufferSource(); s.buffer = nb; s.loop = true; s.playbackRate.value = .5 + Math.random() * .1; const fl = ac.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q; const gg = ac.createGain(); gg.gain.setValueAtTime(.0001, t); gg.gain.exponentialRampToValueAtTime(g, t + 3); s.connect(fl); fl.connect(gg); gg.connect(master); s.start(t); return gg; };
+    const wash = mk("lowpass", 1100, .5, .07), hiss = mk("bandpass", 6500, .4, .018);
+    const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = .07; lg.gain.value = .02; lfo.connect(lg); lg.connect(wash.gain); lfo.start();
+    setInterval(() => { if (!ac || Math.random() < .4) return; const t2 = ac.currentTime + Math.random() * .8, f = 1400 + Math.random() * 1600; osc("sine", f, t2, .002, .012 + Math.random() * .015, .06, sfx, f * .55); }, 700); }
   const chordNow = () => CH[(((beatN / 4) | 0) / 2 | 0) % 4];
   return { ensure, ac: () => ac, out: () => master, muted: () => muted,
-    music() { if (!ac || playing) return; playing = true; nextBeat = ac.currentTime + .1; setInterval(schedule, 60); },
+    music() { if (!ac) return; this.rain(); if (playing) return; playing = true; nextBeat = ac.currentTime + .1; setInterval(schedule, 60); },
     toggle() { muted = !muted; if (master) master.gain.setTargetAtTime(muted ? 0 : .8, ac.currentTime, .05); log(muted ? "Sound off." : "Sound on."); },
-    setStatic(l) { if (stat) stat.gain.setTargetAtTime(Math.min(.1, l * .3), ac.currentTime, .1); },
+    setStatic(l) {},   // (the constant static hiss is gone, Chris 2026-11-12: static is only a sound effect now; the rain is the room's sound)
+    rain() { if (!ac || rainOn) return; rainOn = true; startRain(); },
     blip(n) { if (!ac) return; const t = ac.currentTime, f = m2f(PENT[Math.min(PENT.length - 1, n - 1)]); osc("square", f, t, .003, .07, .1); osc("triangle", f / 2, t, .003, .1, .12); },
     lock() { if (!ac) return; const t = ac.currentTime; osc("square", m2f(93), t, .003, .05, .08); osc("square", m2f(100), t + .05, .003, .05, .12); },
     tickMove() { if (!ac) return; osc("square", 1600, ac.currentTime, .001, .03, .02); },

@@ -19,7 +19,9 @@ SRC = "art/pixel/src/"
 OUT = "art/pixel/"
 SQUARE = {"uikit": 3.197}     # sources whose fixed rows need evening out: real pixel size in source px (both axes)
 SPRITES = {
-    "window": {"src": "window", "points": {"beacon": (648, 574)}},
+    # the window (2026-11-12, Chris picked design 7 of 9: tall, stained glass across the top). Its source had no recoverable grid, so
+    # window7_fixed.png is a k-centroid downscale (art/pixel/kdown.py) to 141x233: same width as before, taller.
+    "window": {"src": "window7", "points": {"beacon": (174.5, 210.5)}},
     "radio": {"src": "radio", "points": {
         "glass0": (552, 214), "glass1": (1102, 688), "dial0": (462, 84), "dial1": (1148, 150), "meter": (1312, 146), "meterR": (1392, 146),
         "lamp0": (583, 783), "lamp1": (678, 783), "lamp2": (773, 783), "lamp3": (868, 783), "lamp4": (963, 783), "lamp5": (1062, 783),
@@ -39,6 +41,9 @@ SPRITES = {
     "slot": {"src": "uikit", "crop": (1320, 554, 1508, 760)},
     "button": {"src": "uikit", "crop": (1540, 610, 1634, 704)},
 }
+# the window's panes, measured on window7_fixed.png (x0, y0, x1, y1): the stained glass strip and the tall pane under the transom
+WIN_PANES = [(22, 22, 120, 55), (22, 61, 120, 210)]
+WIN_BOX = [0, 0]
 WALL = {"src": "wallpaper.png", "period": (156, 138), "px": 3.9, "area": (150, 160)}
 ICON_NAMES = ["amp", "battery", "vowel", "filter", "coil", "echo", "owl", "knob", "treble", "short", "carrier", "fuse"]
 
@@ -64,6 +69,12 @@ def main():
             x0, y0, x1, y1 = s["crop"]; box = (round(x0 * fx), round(y0 * fy), round(x1 * fx), round(y1 * fy))
         else:
             box = im.getbbox()
+        if name == "window":
+            from scipy import ndimage
+            src_im = Image.open(SRC + "window7_fixed.png").convert("RGB"); arr = np.asarray(src_im).astype(int)
+            mag = magenta(arr); lab, _ = ndimage.label(mag); edge = set(np.unique(np.concatenate([lab[0], lab[-1], lab[:, 0], lab[:, -1]]))) - {0}
+            keep = ~np.isin(lab, list(edge)); im = Image.fromarray(np.dstack([arr.astype(np.uint8), keep.astype(np.uint8) * 255]), "RGBA"); box = im.getbbox()
+            WIN_BOX[:] = [box[0], box[1]]
         piece = im.crop(box)
         if "crop" not in s: x0, y0 = box[0] / fx, box[1] / fy
         imgs[name] = piece
@@ -76,11 +87,27 @@ def main():
     imgs["wall_tile"] = Image.fromarray(pix.mode_shrink(tile, np.ones(tile.shape[:2], bool), round(PX / WALL["px"]), round(PY / WALL["px"]), big), "RGBA")
     # the window glass: which window pixels are the night view (they give their own light, so room light skips them)
     win = np.asarray(imgs["window"]).astype(int); rgb = win[..., :3]
-    seen = ((rgb[..., 2] > rgb[..., 0] + 10) | (rgb.max(-1) > 200)) & (win[..., 3] > 0); seen[:8] = seen[-14:] = False
-    ys, xs = np.where(seen); inside = np.zeros_like(seen); inside[ys.min():ys.max() + 1, xs.min():xs.max() + 1] = True
-    wood = (rgb[..., 0] > rgb[..., 2] + 25) & (rgb[..., 0] > 60) & (rgb[..., 1] > rgb[..., 0] * .3) & ~(rgb.max(-1) > 200)
-    glass = inside & ~wood & (win[..., 3] > 0)
+    # the glass is every pane inside the frame: the area the blue night covers, minus whole rows/columns that are wood (the transom bar);
+    # lit windows, the stained glass and the beacon inside it count as glass too (they light themselves)
+    glass = np.zeros(rgb.shape[:2], bool); ox, oy = WIN_BOX[0], WIN_BOX[1]
+    for x0, y0, x1, y1 in WIN_PANES: glass[y0 - oy:y1 - oy, x0 - ox:x1 - ox] = True
     imgs["window_glass"] = Image.fromarray(np.dstack([np.full(glass.shape + (3,), 255, np.uint8), glass.astype(np.uint8) * 255]), "RGBA")
+    # what in the window gives off light (for the glow pass): lit building windows, the stained glass sun, the beacon. Kept as a
+    # list of light spots (centre, size, colour) the game blooms, plus the night sky area (where the rain falls) as a box.
+    from scipy import ndimage
+    hsv_hot = (rgb[..., 0] > 170) & (rgb[..., 1] > 120) & (rgb[..., 2] < 140) & glass        # warm yellow / amber
+    red = (rgb[..., 0] > 190) & (rgb[..., 1] < 90) & (rgb[..., 2] < 90) & glass                # the beacon
+    lights = []
+    for m, kind in ((hsv_hot, "warm"), (red, "red")):
+        lab, n = ndimage.label(m, np.ones((3, 3)))
+        for i, sl in enumerate(ndimage.find_objects(lab)):
+            ys, xs = np.where(lab[sl] == i + 1)
+            if len(ys) < 2: continue
+            lights.append([round(float(xs.mean()) + sl[1].start, 1), round(float(ys.mean()) + sl[0].start, 1), int(len(ys)), kind])
+    gy, gx = np.where(glass & (rgb[..., 2] > rgb[..., 0]))
+    pts["window_lights"] = lights
+    pts["window_panes"] = [[x0 - ox, y0 - oy, x1 - ox, y1 - oy] for x0, y0, x1, y1 in WIN_PANES]
+    pts["window_sky"] = [int(gx.min()), int(gy.min()), int(gx.max()) + 1, int(gy.max()) + 1]
     # part icons: full size for the part picker, exactly half (2x2 cells, majority colour) for the bar's slots
     ic, fx, fy = fixed("icons"); ia = np.asarray(ic); al = ia[..., 3] > 0; H, W = al.shape
     for k, name in enumerate(ICON_NAMES):

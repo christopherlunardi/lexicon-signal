@@ -59,6 +59,15 @@ the same batch.
   bar is away; it rises into place with a thud when a run starts (`barShow` moves `L.barY`).
 - Lit lamps are drawn on the fine layer (`drawLamp`) at the socket's true middle (`L.lamps`: half a pixel right of the marked
   point, the fifth one more), radius 7 world px, so they sit dead centre (2026-11-12, Chris saw them off-centre).
+- The window (2026-11-12): Chris picked design 7 of 9 (stained glass sun across the top, tall pane below), 141 wide x 233 tall.
+  Its ChatGPT source had no recoverable pixel grid (fix_pixel_art standard found nonsense, neural redrew it), so it was shrunk with
+  our own k-centroid downscale (`art/pixel/kdown.py`): each pixel takes the main colour of what it covers, sharp and true. Use
+  that when fix_pixel_art can't find the grid. build.py marks the panes (WIN_PANES, the glass: emissive, rain falls there), the
+  light spots (window_lights: lit building windows, the stained glass; the game blooms them) and keeps the beacon's pink halo by
+  keying only magenta that touches the picture's edge.
+- Rain (drawRain): faint slanted streaks and drops sliding down the panes in fits and starts, clipped to the panes and kept off
+  the radio on narrow screens. The room's sound is rain (a soft filtered-noise wash, fine hiss, the odd drip); there is no constant
+  static hiss any more (static is only a sound effect, e.g. retune).
 - Bar contents always sit inside the bar's inner gold border, centred on one line with one equal gap.
 - Part icons (2026-11-12, Chris found the old ones not good enough): build.py cuts each icon as the biggest blob in its sheet cell
   (no neighbour bits or specks). Slots draw the full icon on the fine layer at one art pixel per fine pixel (full detail, no shrink),
