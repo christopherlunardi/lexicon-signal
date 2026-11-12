@@ -143,7 +143,9 @@ the same batch.
   submitted}. Act on submitted ones, then mark the round decided (chosen) in workshop.json and republish.
 - title-r1 (open, 2026-11-12): five title entrances in the game, TITLE_STYLES 1..5 (tuning in, from the tower, neon across the street,
   fill the tube, programme sheet, 6 radio close-up (Chris's sketch: no bar, radio at 3 fine px per art px, title lit as keys in the
-  glass, PRESS START plate); 0 = the old parchment box, still the default), `#title-N` opens one (`#title-N-step` for clips).
+  glass, PRESS START plate). The glass is Chris's painted picture (`art/title/`: build.py splits glass-title-src.jpg into
+  glass-lit/glass-dim + a box per letter; the game fades each letter's box of the lit one over the dim one: switch-on stutter,
+  breathing, the odd dropout). Publish art/title/glass-lit.png, glass-dim.png, glass.json with the game.; 0 = the old parchment box, still the default), `#title-N` opens one (`#title-N-step` for clips).
   The logo is a placeholder built in code (`buildLogo`/`drawLogo`: LEXICON in bevelled brass cells, SIGNAL in lit dot-matrix,
   waves); a real logo from ChatGPT replaces it later. A press during an entrance skips to its settled screen (`titleBusy`).
 - Rounds: keys-r1 decided (glow tubes), keys-r2 decided (signal scope: now the default key style, KS 7; the choice is stored per

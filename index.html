@@ -1146,6 +1146,9 @@ let TS = 0; { const m = location.hash.match(/title-(\d+)/); if (m) TS = Math.min
 const LD = 14, LP = 6 * LD;   // logo letter cell and letter pitch, in fine pixels
 let titleT = 0, titleSkip = false, logoCv = null, logoSig = null, logoNeon = null;
 const titleFX = { lamps: 6, tube: null, bar: false };
+const titleGlass = { ready: false };
+async function loadTitleGlass() { try { const j = await (await fetch("art/title/glass.json")).json(); const ld = (s) => { const i = new Image(); i.src = s; return i.decode().then(() => i); };
+  const [lit, dim] = await Promise.all([ld("art/title/glass-lit.png"), ld("art/title/glass-dim.png")]); Object.assign(titleGlass, j, { lit, dim, ready: true }); } catch (e) {} }
 const TITLE_LEN = [0, 200, 190, 200, 170, 150, 170];
 function buildLogo() {
   // LEXICON: 10 px cells, dark outline, brass from light at the top to deep amber at the bottom, a lit edge on top, a dark lip under
@@ -1262,21 +1265,20 @@ function drawTitleRadio(T) {
   // the glass: dark, a little static at first, then the keys light one by one in reading order
   const g = L.glass, gx = zx(g.x), gy = zy(g.y), gw = g.w * Z, gh = g.h * Z;
   ctx.fillStyle = "#0c0705"; ctx.fillRect(gx, gy, gw, gh);
-  if (T < 40) for (let i = 0; i < 260; i++) { ctx.fillStyle = `rgba(255,200,150,${Math.random() * .25 * (1 - T / 40)})`; ctx.fillRect(gx + Math.random() * gw, gy + Math.random() * gh, 3, 3); }
-  const rows = ["LEXI", " CON", "SIGN", " AL "], pad = 10, gap = 8, kw = Math.floor((gw - 2 * pad - 3 * gap) / 4), kh = Math.floor((gh - 2 * pad - 3 * gap) / 4), d = Math.max(5, Math.floor(Math.min(kw, kh) / 10));
-  let n = 0; const order = []; rows.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== " ") order.push(x + y * 4); }));
-  for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) {
-    const kx = gx + pad + x * (kw + gap), ky = gy + pad + y * (kh + gap), ch = rows[y][x], k = order.indexOf(x + y * 4), on = k >= 0 ? T - (40 + k * 6) : -1;
-    if (k >= 0 && on === 0) Sound.blip(1 + k % 12);
-    const lit = on < 0 ? 0 : on < 6 ? ((on & 1) ? 1 : .3) : .92 + .08 * Math.sin(frame / 9 + k);
-    ctx.fillStyle = lit ? `rgba(60,30,12,${.6 + .4 * lit})` : "#1d120c"; ctx.beginPath(); ctx.roundRect(kx, ky, kw, kh, 8); ctx.fill();
-    ctx.strokeStyle = lit ? `rgba(255,190,90,${.35 * lit})` : "#2c1b12"; ctx.lineWidth = 2; ctx.stroke();
-    if (ch === " " || !lit) continue;
-    ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(kx + kw / 2, ky + kh / 2, kw * .8, "255,150,50", .5 * lit); ctx.restore();
-    const lx = Math.round(kx + kw / 2 - 2.5 * d), ly = Math.round(ky + kh / 2 - 3.5 * d);
-    F5[ch].split(" ").forEach((row, r) => [...row].forEach((b, c) => { if (b !== "1") return; ctx.fillStyle = `rgba(255,${190 + 40 * (1 - r / 6)},${110 - 50 * (r / 6)},${lit})`; ctx.fillRect(lx + c * d, ly + r * d, d, d);
-      ctx.fillStyle = `rgba(255,248,225,${.85 * lit})`; ctx.fillRect(lx + c * d + 1, ly + r * d + 1, d - 3, Math.max(1, d / 3 | 0)); }));
+  // the title glass is Chris's painted picture, in two versions: everything unlit, and lit. Each letter's box of the lit one fades in
+  // over the unlit one, so letters switch on one at a time with a stutter, breathe, and now and then one drops out for a moment.
+  if (titleGlass.ready) {
+    const tg = titleGlass, sx = gw / tg.w, sy = gh / tg.h; ctx.save(); ctx.imageSmoothingEnabled = true; ctx.drawImage(tg.dim, gx, gy, gw, gh);
+    tg.boxes.forEach((b, k) => { const on = T - (40 + k * 7); if (on === 0) Sound.blip(1 + k % 12); if (on === 3 || on === 7) Sound.tick();
+      let v = on < 0 ? 0 : on < 10 ? [1, .2, .9, .1, 1, .6, 1, .3, 1, 1][on] : .9 + .1 * Math.sin(frame / 11 + k * 1.7);
+      if (on >= 10 && (frame + k * 53) % (211 + k * 23) < 5) v = [.25, .7, .2, .8, .4][(frame + k * 53) % (211 + k * 23)];
+      if (v <= 0) return; const bx = gx + b[0] * sx, by = gy + b[1] * sy, bw = (b[2] - b[0]) * sx, bh = (b[3] - b[1]) * sy;
+      ctx.globalAlpha = v; ctx.drawImage(tg.lit, b[0], b[1], b[2] - b[0], b[3] - b[1], bx, by, bw, bh);
+      ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 1;
+      bloom(bx + bw / 2, by + bh / 2, Math.max(bw, bh) * 1.1, "255,150,50", .3 * v); ctx.globalCompositeOperation = "source-over"; });
+    ctx.restore();
   }
+  if (T < 40) for (let i = 0; i < 300; i++) { ctx.fillStyle = `rgba(255,200,150,${Math.random() * .3 * (1 - T / 40)})`; ctx.fillRect(gx + Math.random() * gw, gy + Math.random() * gh, 3, 3); }
   // lamps come on after the title, left to right; the dial shows the station
   const P0 = P("radio"); for (let k = 0; k < 6; k++) { const on = T - (125 + k * 5); if (on === 0) Sound.tickMove(); const lx = zx(L.radioX + P0["lamp" + k][0]), ly = zy(L.radioY + P0["lamp" + k][1]);
     ctx.fillStyle = "#2a1a10"; ctx.beginPath(); ctx.arc(lx, ly, 6 * Z, 0, 6.283); ctx.fill();
@@ -1554,6 +1556,7 @@ async function boot() {
   atlasImg = new Image(); atlasImg.src = "art/pixel/atlas.png"; await atlasImg.decode();
   PAL = A.palette; const acc = new Set(A.accents.map(c => c.join(","))); ROOMPAL = PAL.filter(c => !acc.has(c.join(",")));
   makeColours(); buildLUT(); artReady = true;
+  loadTitleGlass();
   S = fresh(location.hash ? "title" : "splash"); barShow = 0; layout(); fillGrid(false);
   "LEXICONSIGNAL".split("").forEach((ch, k) => { S.grid[[0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13][k]].ch = ch; });
   [7, 14, 15].forEach(i => S.grid[i].ch = " ");
