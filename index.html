@@ -681,11 +681,17 @@ function drawRain() {
 function drawLamp(x, y, r, low) {   // a lit dome lamp centred at (x, y) fine pixels: hot middle, amber body, darker rim, a glint up-left
   const g = ctx.createRadialGradient(x - r * .25, y - r * .25, r * .1, x, y, r); g.addColorStop(0, low ? "#ffd0b8" : "#fffbe0"); g.addColorStop(.45, low ? "#ff5a3c" : "#ffd65a"); g.addColorStop(1, low ? "#a0201a" : "#c88a1e");
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill(); ctx.fillStyle = "rgba(255,255,245,.9)"; ctx.beginPath(); ctx.arc(x - r * .38, y - r * .38, r * .2, 0, 6.283); ctx.fill(); }
+let lampWas = null, lampOut = null;
 function drawLamps() {
   const lit = S.phase === "title" ? titleFX.lamps : Math.min(6, S.words), low = S.words === 1 && S.phase === "play" && (frame >> 4) & 1;
   L.lamps.forEach((p, k) => { if (k < lit) drawLamp(FX(p.x), FX(p.y), FX(7), low); });
   // the spare battery lamps: spent first (before the radio's own six), so they go dark as soon as a word is sent
   L.extraLamps.forEach((p, j) => { if (S.phase !== "title" && S.words > 6 + j) drawLamp(FX(p.x), FX(p.y), FX(7), false); });
+  // the lamp a word just used flares white, then dies down over a moment, so you see which one went (spare ones included)
+  if (S.phase === "play" && lampWas != null && S.words < lampWas) { const w = lampWas, p = w > 6 ? L.extraLamps[w - 7] : L.lamps[w - 1]; if (p) lampOut = { x: p.x, y: p.y, t: 0 }; Sound.lampOut(); }
+  lampWas = S.phase === "play" ? S.words : null;
+  if (lampOut) { const u = lampOut.t / 26; ctx.save(); ctx.globalAlpha = Math.max(0, 1 - u); drawLamp(FX(lampOut.x), FX(lampOut.y), FX(7), false);
+    ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 1; bloom(FX(lampOut.x), FX(lampOut.y), 50 + 30 * (1 - u), "255,240,200", .7 * (1 - u)); ctx.restore(); if (++lampOut.t > 26) lampOut = null; }
   if (S.phase !== "title" && L.extraLamps.length > 1 && S.words > 8) ftext("+" + (S.words - 8), FX(L.extraLamps[1].x) - 30, FX(L.extraLamps[1].y) - 8, "ink", C.gold, "r", { outline: C.dark });
   // retunes left: small lamps in an arc over the right (tuning) knob, one per retune you get each night, lit while unused
   if (S.phase === "play" || S.phase === "shop" || S.phase === "swap") { const n = maxRetunes(), k = L.knobR;
@@ -1614,6 +1620,7 @@ const Sound = (() => {
     full() { if (!ac) return; const t = ac.currentTime; [0, 4, 7, 12].forEach((d, k) => osc("square", m2f(81 + d), t + k * .045, .003, .06, .35)); noise(t, .5, .1, "highpass", 4000, .7, sfx); },
     part() { if (!ac) return; const t = ac.currentTime; osc("triangle", m2f(88), t, .003, .08, .18); osc("square", m2f(95), t + .06, .003, .05, .2); },
     buzz() { if (!ac) return; const t = ac.currentTime; osc("sawtooth", 120, t, .005, .05, .25, sfx); osc("square", 240, t, .002, .03, .08, sfx); noise(t, .12, .06, "highpass", 3000, .7, sfx); },
+    lampOut() { if (!ac) return; const t = ac.currentTime; osc("triangle", 1500, t, .002, .06, .12, sfx, 300); noise(t, .05, .05, "highpass", 5000, .7, sfx); },
     tick() { if (!ac) return; const t = ac.currentTime; if (t - lastTick < .04) return; lastTick = t; osc("square", 2400, t, .001, .02, .015); },
     type() { if (!ac) return; const t = ac.currentTime; if (t - lastType < .03) return; lastType = t; noise(t, .025, .05, "bandpass", 3000 + Math.random() * 1500, 3); },
     click() { if (!ac) return; osc("triangle", 900, ac.currentTime, .002, .1, .05); },
