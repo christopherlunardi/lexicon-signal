@@ -635,7 +635,7 @@ function drawDial() {
     if (gain) ftextDot(gain, x0 + (cols - num.length - 1 - gain.length) * 18, y0, pv);
     ftextDot(num, x0 + (cols - num.length) * 18, y0, ok ? C.hot : S.path.length ? C.amber : C.dotDim);
   }
-  else if (!dialFlash) { const msg = S.phase === "title" ? "  LEXICON SIGNAL * TUNE IN *" : S.phase === "play" ? `  ${freqFor(S.night).toFixed(1)} FM * NIGHT ${S.night} * REACH ${S.target} *` : `  ${freqFor(S.night).toFixed(1)} FM *`;
+  else if (!dialFlash) { const msg = S.phase === "title" ? `  ${tipNow()} *` : S.phase === "play" ? `  ${freqFor(S.night).toFixed(1)} FM * NIGHT ${S.night} * REACH ${S.target} *` : `  ${freqFor(S.night).toFixed(1)} FM *`;
     const full = msg.repeat(3), off = (marquee >> 3) % msg.length, sub = (marquee & 7) * 18 / 8; s = full.substr(off, cols + 1); ftextDot(s, x0 - sub, y0, C.amber); s = ""; dialVal = 0; }
   if (s && !(blink && dialFlash && dialFlash.t < 40 && (dialFlash.t >> 3) & 1)) ftextDot(s.slice(0, cols), x0, y0, col);
   ctx.restore();
@@ -1156,6 +1156,40 @@ const LD = 14, LP = 6 * LD;   // logo letter cell and letter pitch, in fine pixe
 let titleT = 0, titleSkip = false, logoCv = null, logoSig = null, logoNeon = null;
 const titleFX = { lamps: 6, tube: null, bar: false };
 const titleGlass = { ready: false };
+/* Tips shown scrolling on the dial of the title screen, one at a time in random order. KEEP THIS LIST TRUE TO THE GAME: whenever a
+   rule, number, control or part changes, fix the tips it touches, drop the ones that no longer hold and add tips for new things. */
+const TIPS = [
+  "TRACE TOUCHING LETTERS IN ANY OF 8 DIRECTIONS",
+  "A WORD NEEDS 3 LETTERS OR MORE",
+  "LONGER WORDS GET A BIGGER BOOST",
+  "EVERY WORD CARRIES +2 SIGNAL, SO SHORT WORDS STILL COUNT",
+  "THE DOTS ON A KEY SHOW WHAT ITS LETTER IS WORTH",
+  "Z, QU, X AND J ARE WORTH THE MOST",
+  "QU COMES AS ONE KEY",
+  "ONE LAMP GOES OUT FOR EVERY WORD YOU SEND",
+  "FILL THE SIGNAL TUBE BEFORE THE LAMPS GO DARK",
+  "STUCK? RETUNE FOR A FRESH SET OF LETTERS",
+  "THE FINE TUNING KNOB GIVES AN EXTRA RETUNE EVERY NIGHT",
+  "B TAKES BACK THE LAST LETTER",
+  "PRESS A ON THE LAST LETTER TO SEND THE WORD",
+  "THE DIAL LIGHTS UP WHEN YOUR WORD CAN BE SENT",
+  "SENT LETTERS DROP AWAY AND THE KEYS ABOVE FALL INTO PLACE",
+  "EACH NIGHT ASKS FOR MORE SIGNAL THAN THE LAST",
+  "CLEAR A NIGHT TO FIT ONE OF THREE RADIO PARTS",
+  "YOU HAVE 5 PART SLOTS. COPIES OF A PART STACK IN ONE",
+  "SLOTS FULL? TAKE A PART OUT TO FIT A NEW ONE",
+  "A PART'S SLOT LIGHTS UP WHEN IT WILL BOOST YOUR WORD",
+  "A SPARE BATTERY GIVES AN EXTRA WORD EVERY NIGHT",
+  "THE NIGHT OWL CLOCK TRIPLES YOUR LAST WORD OF THE NIGHT",
+  "THE ECHO TUBE DOUBLES YOUR FIRST WORD OF THE NIGHT",
+  "THE CARRIER LAMP'S RED KEY DOUBLES ANY WORD THAT USES IT",
+  "THE LONG WAVE COIL DOUBLES WORDS OF 6 LETTERS OR MORE",
+];
+let tipI = (Math.random() * TIPS.length) | 0;
+const tipNow = () => TIPS[tipI];
+function nextTip() { let k; do k = (Math.random() * TIPS.length) | 0; while (k === tipI && TIPS.length > 1); tipI = k; }
+// random flicker for the title glass letters: each letter keeps its own clock for when it next stutters, and how
+let glassFl = null, titleTipX = null;
 async function loadTitleGlass() { try { const j = await (await fetch("art/title/glass.json")).json(); const ld = (s) => { const i = new Image(); i.src = s; return i.decode().then(() => i); };
   const [lit, dim] = await Promise.all([ld("art/title/glass-lit.png"), ld("art/title/glass-dim.png")]); Object.assign(titleGlass, j, { lit, dim, ready: true }); } catch (e) {} }
 const TITLE_LEN = [0, 200, 190, 200, 170, 150, 170];
@@ -1278,9 +1312,17 @@ function drawTitleRadio(T) {
   // over the unlit one, so letters switch on one at a time with a stutter, breathe, and now and then one drops out for a moment.
   if (titleGlass.ready) {
     const tg = titleGlass, sx = gw / tg.w, sy = gh / tg.h; ctx.save(); ctx.imageSmoothingEnabled = true; ctx.drawImage(tg.dim, gx, gy, gw, gh);
-    tg.boxes.forEach((b, k) => { const on = T - (40 + k * 7); if (on === 0) Sound.blip(1 + k % 12); if (on === 3 || on === 7) Sound.tick();
-      let v = on < 0 ? 0 : on < 10 ? [1, .2, .9, .1, 1, .6, 1, .3, 1, 1][on] : .9 + .1 * Math.sin(frame / 11 + k * 1.7);
-      if (on >= 10 && (frame + k * 53) % (211 + k * 23) < 5) v = [.25, .7, .2, .8, .4][(frame + k * 53) % (211 + k * 23)];
+    if (!glassFl || T < 2) { let t = 36; glassFl = tg.boxes.map(() => { t += 3 + Math.random() * 8; const st = []; for (let i = 0, n = 4 + Math.random() * 10; i < n; i++) st.push(Math.random() < .5 ? .1 + Math.random() * .3 : .7 + Math.random() * .3);
+      return { on: Math.round(t), start: st, next: 0, seq: null, i: 0 }; }); }
+    tg.boxes.forEach((b, k) => { const f = glassFl[k], on = T - f.on; if (on === 0) Sound.blip(1 + k % 12);
+      let v = on < 0 ? 0 : on < f.start.length * 2 ? f.start[on >> 1] : .88 + .12 * Math.sin(frame / (9 + k) + k * 1.7);
+      if (on >= f.start.length * 2) {
+        // now and then (and fairly often) a letter stutters: a short random run of dips, sometimes a long fade-out-and-back
+        if (!f.next) f.next = frame + 20 + Math.random() * 160;
+        if (!f.seq && frame >= f.next) { const long = Math.random() < .2, s = []; if (long) { for (let i = 0; i < 18; i++) s.push(Math.abs(Math.cos(i / 18 * Math.PI)) * .9 + .05); }
+          else for (let i = 0, n = 2 + Math.random() * 7; i < n; i++) s.push(Math.random() < .6 ? Math.random() * .35 : .6 + Math.random() * .4);
+          f.seq = s; f.i = 0; if (!long && Math.random() < .3) Sound.tick(); }
+        if (f.seq) { v = f.seq[f.i >> (f.seq.length > 12 ? 0 : 1)] ?? 1; if (++f.i >= f.seq.length * (f.seq.length > 12 ? 1 : 2)) { f.seq = null; f.next = frame + 15 + Math.random() * (Math.random() < .3 ? 40 : 200); } } }
       if (v <= 0) return; const bx = gx + b[0] * sx, by = gy + b[1] * sy, bw = (b[2] - b[0]) * sx, bh = (b[3] - b[1]) * sy;
       ctx.globalAlpha = v; ctx.drawImage(tg.lit, b[0], b[1], b[2] - b[0], b[3] - b[1], bx, by, bw, bh);
       ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 1;
@@ -1292,7 +1334,8 @@ function drawTitleRadio(T) {
   for (let k = 0; k < 6; k++) { const on = T - (125 + k * 5); if (on === 0) Sound.tickMove(); const lx = zx(L.lamps[k].x), ly = zy(L.lamps[k].y);
     if (on >= 0) { drawLamp(lx, ly, 7 * Z, false); ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(lx, ly, 70, "255,190,90", .45); ctx.restore(); } }
   const dl = L.dial, dx = zx(dl.x), dy = zy(dl.y), dw = dl.w * Z, dh = dl.h * Z; ctx.fillStyle = "#0b0604"; ctx.fillRect(dx, dy, dw, dh);
-  if (T > 20) { ctx.save(); ctx.beginPath(); ctx.rect(dx, dy, dw, dh); ctx.clip(); const s = "  LATE NIGHT ON THE DIAL * LEXICON SIGNAL * TUNE IN *", px = dx + dw - ((frame * 2) % (s.length * 18 + dw)); ftextDot(s, px, dy + Math.round((dh - 21) / 2), C.amber); ctx.restore(); }
+  if (T > 20) { ctx.save(); ctx.beginPath(); ctx.rect(dx, dy, dw, dh); ctx.clip(); const s = tipNow(); titleTipX = titleTipX == null ? 0 : titleTipX + 2;
+    const px = dx + dw - titleTipX; if (px + s.length * 18 < dx) { nextTip(); titleTipX = 0; } ftextDot(s, px, dy + Math.round((dh - 21) / 2), C.amber); ctx.restore(); }
   { const m = L.meter, cx = zx(m.x), cy = zy(m.y) + 9 * Z, r = m.r * Z - 12, ratio = Math.min(1, T / 120) * .62 + Math.sin(frame / 37) * .02;
     for (let k = 0; k <= 10; k++) { const a = (-60 + k * 12) * Math.PI / 180, r0 = r - (k % 5 ? 6 : 11); ctx.strokeStyle = k >= 9 ? C.needle : C.inkSoft; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx + Math.sin(a) * r0, cy - Math.cos(a) * r0); ctx.lineTo(cx + Math.sin(a) * r, cy - Math.cos(a) * r); ctx.stroke(); }
     const a = (-60 + ratio * 110) * Math.PI / 180; ctx.strokeStyle = C.needle; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.sin(a) * (r - 3), cy - Math.cos(a) * (r - 3)); ctx.stroke(); }
@@ -1449,6 +1492,8 @@ function pollPad(now) {
   repeat("L", () => move(-1, 0)); repeat("R", () => move(1, 0)); repeat("U", () => move(0, -1)); repeat("D", () => move(0, 1));
   Object.assign(padPrev, st);
 }
+// some phones only let sound start when the finger comes up (or on a click or key), so every one of those wakes the sound too
+["pointerup", "touchend", "click", "keydown"].forEach(t => document.addEventListener(t, () => { if (S && S.phase !== "splash") Sound.ensure(); else if (t !== "keydown") Sound.ensure(); }, true));
 document.addEventListener("touchstart", () => { usingTouch = true; if (document.body.classList.contains("padmode")) { document.body.classList.remove("padmode"); setTimeout(layout, 30); } }, { passive: true });
 window.addEventListener("resize", layout); if (window.ResizeObserver) new ResizeObserver(layout).observe($("screenWrap"));
 
@@ -1456,7 +1501,19 @@ window.addEventListener("resize", layout); if (window.ResizeObserver) new Resize
 const Sound = (() => {
   let ac = null, master, mus, sfx, nb, stat, padF, playing = false, nextBeat = 0, beatN = 0, muted = false, lastTick = 0, lastType = 0, lastCell = 0;
   const m2f = (m) => 440 * Math.pow(2, (m - 69) / 12), CH = [[57, 60, 64, 67], [53, 57, 60, 64], [48, 55, 59, 64], [55, 59, 62, 64]], RT = [45, 41, 36, 43], PENT = [69, 72, 74, 76, 79, 81, 84, 86, 88, 91, 93, 96, 98];
-  function ensure() { if (ac) { if (ac.state === "suspended") ac.resume(); return; } try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+  // iPhone: the silent switch mutes web audio. Inside the press that starts the sound, say the page plays media (iOS 17+) and loop
+  // a second of real silence in an audio element, so iOS treats the page like a music player and plays it (the studio's other games
+  // do the same).
+  function silentWav() { const n = 8000, b = new Uint8Array(44 + n), v = new DataView(b.buffer), w = (o, t) => { for (let i = 0; i < t.length; i++) b[o + i] = t.charCodeAt(i); };
+    w(0, "RIFF"); v.setUint32(4, 36 + n, true); w(8, "WAVEfmt "); v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, 1, true); v.setUint32(24, 8000, true); v.setUint32(28, 8000, true);
+    v.setUint16(32, 1, true); v.setUint16(34, 8, true); w(36, "data"); v.setUint32(40, n, true); b.fill(128, 44); let s = ""; for (let i = 0; i < b.length; i++) s += String.fromCharCode(b[i]); return "data:audio/wav;base64," + btoa(s); }
+  function unlock() {
+    try { if (navigator.audioSession && navigator.audioSession.type !== "playback") navigator.audioSession.type = "playback"; } catch (e) {}
+    if (!window.__lexSilent) try { const a = document.createElement("audio"); a.setAttribute("playsinline", ""); a.setAttribute("webkit-playsinline", ""); a.loop = true; a.src = silentWav(); document.body.appendChild(a);
+      const pr = a.play(); if (pr && pr.catch) pr.catch(() => { window.__lexSilent = null; }); window.__lexSilent = a; } catch (e) {}
+  }
+  function ensure() { unlock(); if (ac) { if (ac.state === "suspended" || ac.state === "interrupted") ac.resume(); return; } try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+    if (ac.state !== "running") ac.resume();
     master = ac.createGain(); master.gain.value = .8; master.connect(ac.destination); mus = ac.createGain(); mus.gain.value = .5; mus.connect(master); sfx = ac.createGain(); sfx.gain.value = .7; sfx.connect(master);
     nb = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate); const d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     const n = ac.createBufferSource(); n.buffer = nb; n.loop = true; const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 2200; bp.Q.value = .5;

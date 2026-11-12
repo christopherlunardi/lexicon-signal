@@ -93,6 +93,15 @@ the same batch.
   `studioEnd`, picture on the sound's clock, any press skips) -> the title. Links with a hash (tests, Workshop copies) skip to the title.
   Publish studio.js with the game.
 
+## Title tips and sound
+- The title dial scrolls game tips, one at a time in random order (`TIPS` in index.html). Keep them true: every change to a rule,
+  number, control or part updates the tips it touches in the same batch; drop tips that no longer hold, add tips for new things.
+- The title glass letters flicker at random, each on its own clock (`glassFl`): a random stutter to switch on, then frequent short
+  random dips and the odd slow fade-out-and-back.
+- Sound on phones: `Sound.ensure` sets the page's audio session to playback and loops a second of silence in an audio element, so
+  an iPhone's silent switch doesn't mute the game (same fix as the studio's other games); finger-up, click and key presses also
+  wake the sound.
+
 ## Rules of play
 - 4x4 keys in the radio glass; trace touching letters (8 directions), 3+ letters. Score = signal (letter values) x boost (length-2)
   x part multipliers; every word carries +2 signal so short words count. 6 words a night (one per lamp), 1 retune; targets
