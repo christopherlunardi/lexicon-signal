@@ -47,3 +47,23 @@ def snap(rgb, pal, dither=0.0):
         x = x + t * dither * 48
     d = ((x[:, :, None, :] - pal[None, None]) ** 2).sum(-1)
     return pal[d.argmin(-1)].astype(np.uint8)
+
+
+def snap_index(rgb, pal):
+    """Palette index of the nearest colour per pixel (works in chunks so big images fit in memory)."""
+    h, w, _ = rgb.shape; flat = rgb.reshape(-1, 3).astype(float); out = np.empty(len(flat), np.int32)
+    for s in range(0, len(flat), 200000):
+        d = ((flat[s:s + 200000, None, :] - pal[None]) ** 2).sum(-1); out[s:s + 200000] = d.argmin(1)
+    return out.reshape(h, w)
+
+def mode_shrink(rgb, alpha, W, H, pal):
+    """Pixel-art-aware shrink: snap the big image to the palette first, then each small pixel takes the most common colour in its
+    block (opaque pixels only), so hard edges and flat colours stay crisp instead of being averaged into mud.
+    Returns (W,H,4) uint8 RGBA."""
+    h, w = alpha.shape; idx = snap_index(rgb, pal)
+    ys = (np.arange(h) * H // h); xs = (np.arange(w) * W // w); cell = ys[:, None] * W + xs[None, :]
+    k = len(pal); counts = np.zeros((W * H, k), np.int32)
+    np.add.at(counts, (cell[alpha], idx[alpha]), 1)
+    cov = np.bincount(cell.ravel(), weights=alpha.ravel().astype(float), minlength=W * H) / np.maximum(np.bincount(cell.ravel(), minlength=W * H), 1)
+    best = counts.argmax(1); rgbo = pal[best].reshape(H, W, 3).astype(np.uint8); a = (cov.reshape(H, W) > .5).astype(np.uint8) * 255
+    return np.dstack([rgbo, a])

@@ -5,7 +5,7 @@ import numpy as np
 from PIL import Image
 sys.path.insert(0, "art/pixel")
 import pix
-W, H = 480, 270
+W, H = 640, 360
 meta = json.load(open("art/pixel/sprites.json")); pal = np.array(meta["palette"], float)
 # the lit room never uses the glow accents (they are for things that give light), so dithering can't speckle them in
 pal = np.array([c for c in pal if tuple(int(v) for v in c) not in set(pix.ACCENTS)], float)

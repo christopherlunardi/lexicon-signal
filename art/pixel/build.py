@@ -13,27 +13,27 @@ SRC = "art/pixel/src/"
 OUT = "art/pixel/"
 # name: source file, native width (height follows), points of interest in source pixels (found by eye / measured)
 SPRITES = {
-    "window": {"src": "window.png", "w": 128, "points": {"beacon": (648, 574)}},
-    "radio": {"src": "radio.png", "w": 292, "points": {
+    "window": {"src": "window.png", "w": 170, "points": {"beacon": (648, 574)}},
+    "radio": {"src": "radio.png", "w": 390, "points": {
         "glass0": (552, 214), "glass1": (1102, 688), "dial0": (462, 84), "dial1": (1148, 150), "meter": (1312, 146), "meterR": (1392, 146),
         "lamp0": (583, 783), "lamp1": (678, 783), "lamp2": (773, 783), "lamp3": (868, 783), "lamp4": (963, 783), "lamp5": (1062, 783),
         "knobL": (358, 745), "knobR": (1300, 745)}},
     # the sideboard is cut into a left end, one repeating drawer bay and a right end, so it stretches to any width
-    "sb_left": {"src": "sideboard.png", "scale": .2, "crop": (12, 360, 72, 589)},
-    "sb_mid": {"src": "sideboard.png", "scale": .2, "crop": (72, 360, 327, 589)},
-    "sb_right": {"src": "sideboard.png", "scale": .2, "crop": (1585, 360, 1647, 589)},
+    "sb_left": {"src": "sideboard.png", "scale": .267, "crop": (12, 360, 72, 589)},
+    "sb_mid": {"src": "sideboard.png", "scale": .267, "crop": (72, 360, 327, 589)},
+    "sb_right": {"src": "sideboard.png", "scale": .267, "crop": (1585, 360, 1647, 589)},
     # interface kit (one scale for every piece): the bar stretches (left end, plain middle, right end) with the clasp centred on top
-    "bar_left": {"src": "uikit.png", "scale": .217, "crop": (14, 112, 138, 416)},
-    "bar_mid": {"src": "uikit.png", "scale": .217, "crop": (300, 112, 558, 416)},
-    "bar_right": {"src": "uikit.png", "scale": .217, "crop": (1524, 112, 1648, 416)},
-    "bar_clasp": {"src": "uikit.png", "scale": .217, "crop": (762, 112, 900, 170)},
-    "logbox": {"src": "uikit.png", "scale": .217, "crop": (24, 538, 642, 800)},
-    "plate": {"src": "uikit.png", "scale": .217, "crop": (674, 554, 1004, 646)},
-    "battery": {"src": "uikit.png", "scale": .217, "crop": (1040, 602, 1290, 720), "points": {"seg0": (1066, 632), "seg1": (1266, 690)}},
-    "slot": {"src": "uikit.png", "scale": .217, "crop": (1320, 554, 1508, 760)},
-    "button": {"src": "uikit.png", "scale": .217, "crop": (1540, 610, 1634, 704)},
+    "bar_left": {"src": "uikit.png", "scale": .289, "crop": (14, 112, 138, 416)},
+    "bar_mid": {"src": "uikit.png", "scale": .289, "crop": (300, 112, 558, 416)},
+    "bar_right": {"src": "uikit.png", "scale": .289, "crop": (1524, 112, 1648, 416)},
+    "bar_clasp": {"src": "uikit.png", "scale": .289, "crop": (762, 112, 900, 170)},
+    "logbox": {"src": "uikit.png", "scale": .289, "crop": (24, 538, 642, 800)},
+    "plate": {"src": "uikit.png", "scale": .289, "crop": (674, 554, 1004, 646)},
+    "battery": {"src": "uikit.png", "scale": .289, "crop": (1040, 602, 1290, 720), "points": {"seg0": (1066, 632), "seg1": (1266, 690)}},
+    "slot": {"src": "uikit.png", "scale": .289, "crop": (1320, 554, 1508, 760)},
+    "button": {"src": "uikit.png", "scale": .289, "crop": (1540, 610, 1634, 704)},
 }
-TILES = {"wall_tile": {"src": "wallpaper.png", "period": (156, 138), "native": (24, 21), "area": (150, 160)}}
+TILES = {"wall_tile": {"src": "wallpaper.png", "period": (156, 138), "native": (32, 28), "area": (150, 160)}}
 
 def keyed(path):
     a = np.asarray(Image.open(path).convert("RGB")).astype(float)
@@ -64,14 +64,7 @@ def main():
         W = s["w"] if "w" in s else round((x1 - x0) * s["scale"])
         H = round(W * (y1 - y0) / (x1 - x0)) if "w" in s else round((y1 - y0) * s["scale"])
         crop = a[y0:y1, x0:x1]; al = alpha[y0:y1, x0:x1]
-        # shrink colour using only opaque source pixels, so magenta never bleeds into edges
-        rgb = Image.fromarray((crop * al[..., None]).astype("uint8")).resize((W, H), Image.BOX)
-        cov = Image.fromarray((al * 255).astype("uint8")).resize((W, H), Image.BOX)
-        rgbn = np.asarray(rgb).astype(float); covn = np.asarray(cov).astype(float) / 255
-        col = rgbn / np.maximum(covn[..., None], 1e-3)
-        snapped = pix.snap(np.clip(col, 0, 255), pal)
-        a8 = (covn > .5).astype(np.uint8) * 255
-        Image.fromarray(np.dstack([snapped, a8]), "RGBA").save(OUT + name + ".png")
+        Image.fromarray(pix.mode_shrink(crop, al, W, H, pal), "RGBA").save(OUT + name + ".png")
         sx, sy = W / (x1 - x0), H / (y1 - y0)
         pts = {k: [round((px - x0) * sx), round((py - y0) * sy)] for k, (px, py) in s.get("points", {}).items()}
         meta["sprites"][name] = {"w": W, "h": H, "points": pts}
@@ -94,12 +87,9 @@ def icons(pal):
         cx0, cy0 = (k % 4) * Ww // 4, (k // 4) * Hh // 3
         al = alpha[cy0:cy0 + Hh // 3, cx0:cx0 + Ww // 4]; ys, xs = np.where(al)
         x0, x1, y0, y1 = cx0 + xs.min(), cx0 + xs.max() + 1, cy0 + ys.min(), cy0 + ys.max() + 1
-        s = 27 / max(x1 - x0, y1 - y0); W, H = max(1, round((x1 - x0) * s)), max(1, round((y1 - y0) * s))
-        crop = a[y0:y1, x0:x1]; m = alpha[y0:y1, x0:x1]
-        rgb = np.asarray(Image.fromarray((crop * m[..., None]).astype("uint8")).resize((W, H), Image.BOX)).astype(float)
-        cov = np.asarray(Image.fromarray((m * 255).astype("uint8")).resize((W, H), Image.BOX)).astype(float) / 255
-        col = pix.snap(np.clip(rgb / np.maximum(cov[..., None], 1e-3), 0, 255), pal)
-        out["icon_" + name] = Image.fromarray(np.dstack([col, (cov > .5).astype(np.uint8) * 255]), "RGBA")
+        for tag, size in (("icon_", 38), ("iconL_", 72)):
+            s = size / max(x1 - x0, y1 - y0); W, H = max(1, round((x1 - x0) * s)), max(1, round((y1 - y0) * s))
+            out[tag + name] = Image.fromarray(pix.mode_shrink(a[y0:y1, x0:x1], alpha[y0:y1, x0:x1], W, H, pal), "RGBA")
     return out
 
 def glyphs():
@@ -123,13 +113,13 @@ def atlas(meta, pal):
     win = np.asarray(imgs["window"]).astype(int); rgb = win[..., :3]
     seen = ((rgb[..., 2] > rgb[..., 0] + 10) | (rgb.max(-1) > 200)) & (win[..., 3] > 0); seen[:8] = seen[-14:] = False
     ys, xs = np.where(seen); inside = np.zeros_like(seen); inside[ys.min():ys.max() + 1, xs.min():xs.max() + 1] = True
-    wood = (rgb[..., 0] > rgb[..., 2] + 25) & (rgb[..., 0] > 60) & ~(rgb.max(-1) > 200)   # frame bars, not lit windows
+    wood = (rgb[..., 0] > rgb[..., 2] + 25) & (rgb[..., 0] > 60) & (rgb[..., 1] > rgb[..., 0] * .3) & ~(rgb.max(-1) > 200)   # frame bars, not lit windows or the red beacon
     glass = inside & ~wood & (win[..., 3] > 0)
     imgs["window_glass"] = Image.fromarray(np.dstack([np.full(glass.shape + (3,), 255, np.uint8), glass.astype(np.uint8) * 255]), "RGBA")
     imgs.update(icons(pal))
-    g, metrics = glyphs(); imgs.update(g)
+    metrics = {}
     # shelf packing
-    order = sorted(imgs, key=lambda n: -imgs[n].height); AW = 1024; x = y = sh = 0; rects = {}
+    order = sorted(imgs, key=lambda n: -imgs[n].height); AW = 1280; x = y = sh = 0; rects = {}
     for n in order:
         w, h = imgs[n].size
         if x + w > AW: x = 0; y += sh + 1; sh = 0

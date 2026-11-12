@@ -24,7 +24,7 @@ the same batch.
 - Late-90s computer-game pixel art: a night room with damask wallpaper, a window with a city and a radio tower (red beacon), a big
   1940s wooden radio on a sideboard, and a wood-and-brass interface bar along the bottom (text log, two brass plates, battery gauge,
   part slots). The target picture is `art/concept/look-target.png`.
-- Done the old-school way: the game draws at a real low resolution (W x 270, W = 360..640 from the screen's shape, 480 at 16:9) and
+- Done the old-school way: the game draws at a real low resolution (W x 360, W = 480..854 from the screen's shape, 640 at 16:9) and
   the canvas is scaled up with hard square pixels. Every sprite is snapped to ONE shared 64-colour palette (56 from the art + 8 fixed
   glow accents). The room's light (lamp low right, moonlight round the window, darker edges) is baked per layout with ordered
   dithering into the palette; the window glass is emissive (skips room light). Live things (keys, needle, lamps, beacon, sparks)
@@ -33,16 +33,22 @@ the same batch.
   are 9-sliced from the log box, the bar is made taller by repeating its plain middle rows. Narrow (4:3) screens tuck the window
   behind the radio's left edge (beacon still visible) and show fewer part slots.
 - Bar contents always sit inside the bar's inner gold border, centred on one line with one equal gap.
-- Open (Chris 2026-11-12): the screens and everything that changes (dial, log, plates, keys) need their own graphic rules; the
-  current text (DejaVu rendered without anti-aliasing) looks rough. Work that out with him as pictures before changing the game.
-
+- Resolution (2026-11-12): the world is W x 360 (W = 480..854, 640 at 16:9); sprites are shrunk with `pix.mode_shrink` (snap to
+  the palette first, then the most common colour per block) so edges stay hard. Part icons come in two sizes (icon_ 38px for the
+  slots, iconL_ 72px for the part picker).
+- Display rules: the screen canvas is twice the world size (FINE = 2). The room, keys, bar and menus panels draw in world pixels and
+  are scaled up; every display draws on the fine grid on top: the dial is a lit amber dot-matrix (all dot positions faintly visible,
+  marquee when idle), the meter needle and ticks are fine lines, the log types itself out in ink with a blinking cursor (older lines
+  fade), plates are stamped (dark letters, light edge under), counts on slots are outlined. All lettering is our own 5x7 font (F5 in
+  the script): ink = 5x7 at 2 fine px, dot = 5x7 dots, key = the same letters smoothed 2x and made bold. Selected keys light up
+  amber with dark letters. On small screens (phones) text scales 1.5x (TK) and the log shows 2 lines.
 ## Where things live
 - `index.html`: the whole game, written as a page body (the artifact host adds doctype/head). Shell CSS first (the studio's
   handheld: d-pad, A/B, Select/Start; `padmode` with a controller, `inapp` for the future launcher), then one canvas and one script.
 - `words.js`: `window.LEX_WORDS`, the ENABLE list (public domain), 3-12 letters.
 - `art/pixel/src/`: ChatGPT sources (wallpaper, window, radio, sideboard, uikit, icons). `art/pixel/build.py` builds the palette,
-  every sprite (key out magenta, crop, shrink to native, 1-bit alpha, snap), marked points, the 12 part icons, two bitmap fonts
-  (DejaVu, rendered without anti-aliasing) and packs it all into `art/pixel/atlas.png` + `atlas.json` (the only art the game loads).
+  every sprite (key out magenta, crop, mode-shrink to native, 1-bit alpha), marked points, the 12 part icons at two sizes
+  and packs it all into `art/pixel/atlas.png` + `atlas.json` (the only art the game loads).
   `art/pixel/preview.py` / `mock.py` render stills of the room / full screen for judging. `art/pixel/pix.py` = palette helpers.
 - The old painted version's layers and `art/compose.py` are kept in `art/` for reference; the game no longer uses them.
 - Live link: https://claude.ai/artifact/TcdvDWboTHP3Lh1RrqggS3 . Publish `index.html` with files
@@ -63,7 +69,7 @@ the same batch.
 2. Syntax check: extract the inline script and `node --check` it.
 3. Screenshots: copy index.html (wrapped in doctype/head), words.js and art/pixel/atlas.* into a scratch folder, serve it with
    `python3 -m http.server` (fetch needs http), shoot with Playwright (Chrome at /usr/bin/google-chrome) at 1280x800, phone
-   390x844 with touch, and 640x480.
+   390x844 with touch, and 640x480. Add `#test-shop` to the URL to open the part picker straight away.
 4. Name check, commit with a plain message, push, republish the link. Tell Chris in a few lines what changed.
 
 ## Art prompts (ChatGPT)
