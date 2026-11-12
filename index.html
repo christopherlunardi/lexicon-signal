@@ -373,13 +373,13 @@ const PARTS = [
   { id:"carrier", name:"Carrier Lamp",      desc:"One key glows red. Use it to double the word." },
 ];
 const PART = Object.fromEntries(PARTS.map(p => [p.id, p]));
-const BASE_WORDS = 5;
-const targetFor = (n) => Math.round(40 * Math.pow(1.42, n - 1) / 5) * 5;
+const BASE_WORDS = 6;   // one per battery lamp
+const targetFor = (n) => Math.round(30 * Math.pow(1.4, n - 1) / 5) * 5;   // 30, 40, 60, 80, 115, 160...
 const freqFor = (n) => +(88.1 + ((n - 1) * 1.9) % 19.8).toFixed(1);
 let S = null, uid = 0;
 const has = (id) => S.parts.filter(p => p === id).length;
 const maxWords = () => BASE_WORDS + has("battery");
-function fresh(phase) { return { phase, night: 1, score: 0, shown: 0, total: 0, parts: [], words: BASE_WORDS, retunes: 1, firstWord: true, grid: [], path: [], cursor: 5, best: { word: "", pts: 0 }, target: 40, log: [] }; }
+function fresh(phase) { return { phase, night: 1, score: 0, shown: 0, total: 0, parts: [], words: BASE_WORDS, retunes: 1, firstWord: true, grid: [], path: [], cursor: 5, best: { word: "", pts: 0 }, target: 30, log: [] }; }
 function pickLetter() {
   const filter = S && has("filter"), vowel = S && has("vowel"); let total = 0; const pool = [];
   for (const [k, w0] of Object.entries(WEIGHTS)) { if (filter && HARD.has(k)) continue; const w = w0 * (vowel && VOWELS.has(k) ? 1.7 : 1); pool.push([k, w]); total += w; }
@@ -413,7 +413,7 @@ const adjacent = (a, b) => a !== b && Math.abs((a % 4) - (b % 4)) <= 1 && Math.a
 const isValid = (p = S.path) => { const w = pathWord(p); return w.length >= 3 && DICT.has(w); };
 function scoreOf(p) {
   const tiles = p.map(i => S.grid[i]), word = pathWord(p), len = word.length;
-  let signal = tiles.reduce((s, t) => s + VALUES[t.ch], 0);
+  let signal = 2 + tiles.reduce((s, t) => s + VALUES[t.ch], 0);   // every word carries 2 signal, so short words still count
   if (has("treble")) signal += 4 * tiles.filter(t => VALUES[t.ch] >= 4).length;
   if (has("short") && len <= 4) signal += 6;
   const boost = Math.max(1, len - 2) + has("amp"); let mult = 1;
@@ -422,18 +422,19 @@ function scoreOf(p) {
 }
 // the log types itself out: each entry reveals a few letters per frame
 function log(s) { S.log.push({ s: s.toUpperCase(), n: 0 }); if (S.log.length > 14) S.log.shift(); }
-function newRun() { S = fresh("play"); log("Tuned in. Night 1."); startNight(); }
+function newRun() { S = fresh("play"); log("Tuned in."); startNight(); }
 function startNight() {
   S.score = 0; S.shown = 0; S.firstWord = true; S.target = targetFor(S.night); S.words = maxWords(); S.retunes = 1 + has("knob"); S.path = [];
-  fillGrid(true); S.phase = "play"; dialFlash = null; log(`Night ${S.night}: reach ${S.target}.`);
+  fillGrid(true); S.phase = "play"; dialFlash = null; nightCard = 170; log(`Night ${S.night}: beam ${S.target} signal to the tower in ${S.words} words.`);
 }
 
 /* ================= actions ================= */
-let busy = 0, dialFlash = null, knobA = { L: 0, R: 0 }, pathSound = 0, pending = null;
+let nightCard = 0, busy = 0, dialFlash = null, knobA = { L: 0, R: 0 }, pathSound = 0, pending = null;
 const canAct = () => S.phase === "play" && !busy && !moving();
+function dismissCard() { if (nightCard > 20) nightCard = 20; }
 function setPath(p) { const was = isValid(); if (p.length > S.path.length) addT = 0; S.path = p; if (p.length > pathSound) Sound.blip(p.length); pathSound = p.length; if (isValid() && !was) Sound.lock(); dialFlash = null; }
 function tapTile(i) {
-  if (!canAct()) return; S.cursor = i; const p = S.path, last = p[p.length - 1];
+  dismissCard(); if (!canAct()) return; S.cursor = i; const p = S.path, last = p[p.length - 1];
   if (!p.length) return setPath([i]);
   if (i === last) return send();
   if (p.length >= 2 && i === p[p.length - 2]) return setPath(p.slice(0, -1));
@@ -463,7 +464,7 @@ function arrive() {
   Sound.beacon(big); log(`${sc.word} +${sc.pts}${sc.mult > 1 ? " x" + sc.mult : ""}`);
   if (S.score >= S.target) { busy++; setTimeout(() => { busy--; nightClear(); }, 900); }
   else if (S.words <= 0) { busy++; setTimeout(() => { busy--; gameOver(); }, 900); }
-  else log(`${S.words} word${S.words === 1 ? "" : "s"} left.`);
+  else log(`${S.target - S.score} to go, ${S.words} word${S.words === 1 ? "" : "s"} left.`);
 }
 function retune() { if (!canAct() || S.retunes <= 0) return; S.retunes--; S.path = []; pathSound = 0; fillGrid(true); knobA.R += 2.4; staticKick = .5; Sound.retune(); log("Retuned."); }
 let shopChoices = [], shopFocus = 0;
@@ -514,7 +515,7 @@ function draw() {
   wctx.drawImage(barCv, 0, L.barY); drawBarLive();
   ctx.drawImage(world, 0, 0, W * FINE, H * FINE);
   ctx.save(); ctx.translate(sx * FINE, 0); drawDial(); drawMeter(); drawKeyLetters(); drawGlows(); drawFlyers(); ctx.restore();
-  drawBarText();
+  drawBarText(); if (nightCard > 0 && S.phase === "play") { drawNightCard(); nightCard--; }
   if (S.phase === "title" || S.phase === "shop" || S.phase === "over") {
     octx.clearRect(0, 0, W, H); octx.imageSmoothingEnabled = false;
     if (S.phase === "title") drawTitle(); else if (S.phase === "shop") drawShop(); else drawOver();
@@ -614,7 +615,7 @@ function drawMeter() {
 }
 /* ---------- key styles (workshop: Select cycles them, the choice is remembered) ---------- */
 const KEY_STYLES = ["Pixel keys", "Typewriter", "Glow tubes", "Neon glass", "Ivory tiles", "Brass keys", "Valve bank", "Signal scope", "Stencil plates", "Switchboard", "Dot glass"];
-let KS = 2; try { const v = localStorage.getItem("lexsig-keys"); if (v != null) KS = Math.max(0, Math.min(KEY_STYLES.length - 1, +v)); } catch (e) {}   // default: glow tubes (Chris picked it, keys-r1)
+let KS = 7; try { const v = localStorage.getItem("lexsig-keys2"); if (v != null) KS = Math.max(0, Math.min(KEY_STYLES.length - 1, +v)); } catch (e) {}   // default: signal scope (Chris picked it, keys-r2)
 { const m = location.hash.match(/keys-(\d+)/); if (m) KS = Math.min(KEY_STYLES.length - 1, +m[1]); }
 function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
 function pips(x, y, v, col) { ctx.fillStyle = col; for (let k = 0; k < Math.min(4, Math.ceil(v / 2)); k++) ctx.fillRect(x - k * 6, y, 4, 4); }
@@ -944,7 +945,8 @@ function bloom(x, y, r, rgb, a) { const g = ctx.createRadialGradient(x, y, 0, x,
 function drawGlows() {
   ctx.save(); ctx.globalCompositeOperation = "lighter";
   const pulse = .75 + .25 * Math.sin(frame / 9), b = L.beacon;
-  bloom(FX(b.x), FX(b.y), 70 + beaconFlash * 2, "255,60,40", .55 * pulse + beaconFlash / 50);
+  const prog = S.phase === "play" ? Math.min(1, S.shown / S.target) : .5;   // the tower burns brighter as the night's signal fills
+  bloom(FX(b.x), FX(b.y), 46 + prog * 60 + beaconFlash * 2, "255,60,40", (.25 + .55 * prog) * pulse + beaconFlash / 50);
   bloom(FX(b.x), FX(b.y), 20, "255,200,170", .5 + beaconFlash / 40);
   bloom(FX(W - 20), FX(SCENE_H - 30), FX(220), "255,150,60", .16 + .03 * Math.sin(frame / 50));     // the unseen lamp, breathing
   const lit = S.phase === "title" ? 6 : Math.min(6, S.words);
@@ -968,18 +970,30 @@ function drawFlyers() {
     ctx.drawImage(glyphCv("key", chs, C.keyShadow), FX(q.x) - 9, FX(q.y) - 12); ctx.drawImage(glyphCv("key", chs, C.hot), FX(q.x) - 11, FX(q.y) - 14); }
   for (const p of pops) ftext(p.text, FX(p.x), FX(p.y - p.t * .5) - 14, "key", (p.t >> 2) & 1 ? C.hot : C.gold, "c", { outline: C.dark });
 }
+// start of each night: what to do, said plainly, over the glass (any key press dismisses it)
+function drawNightCard() {
+  const a = Math.min(1, nightCard / 20), g = L.glass, x = FX(g.x) - 20, y = FX(g.y + g.h / 2) - 62, w = FX(g.w) + 40, hh = 124;
+  ctx.save(); ctx.globalAlpha = a * .88; ctx.fillStyle = "#0b0705"; rr(ctx, x, y, w, hh, 10); ctx.fill(); ctx.globalAlpha = a;
+  ctx.strokeStyle = "rgba(255,179,71,.7)"; ctx.lineWidth = 2; rr(ctx, x, y, w, hh, 10); ctx.stroke();
+  ftext(`NIGHT ${S.night}`, x + w / 2, y + 16, "key", C.hot, "c");
+  ftext(`BEAM ${S.target} SIGNAL`, x + w / 2, y + 58, "ink", C.amber, "c");
+  ftext(`IN ${S.words} WORDS`, x + w / 2, y + 58 + Math.round(22 * TK), "ink", C.amber, "c");
+  ctx.restore();
+}
 function drawBarText() {
   const by = L.barY;
   // the log: typed ink, newest at the bottom, older lines fade, a cursor blinks after the last letter
-  const lw = FX(L.log.w) - 52, lines = [];
+  const lw = FX(L.log.w) - 52 - ADV.ink, lines = [];
   S.log.forEach((e, k) => { if (e.n === 0) return; wrap("> " + e.s.slice(0, e.n), "ink", lw).forEach(s => lines.push({ s, age: S.log.length - 1 - k })); });
   const lh = Math.round(22 * TK), rows = TK > 1 ? 2 : 3, show = lines.slice(-rows), top = FX(by + L.log.y) + Math.round((FX(L.log.h) - rows * lh) / 2) + 4;
   show.forEach((ln, k) => ftext(ln.s, FX(L.log.x) + 26, top + k * lh, "ink", ln.age >= 2 ? C.inkSoft : C.ink));
-  if (show.length && (frame >> 4) & 1) { const last = show[show.length - 1]; ctx.fillStyle = C.ink; ctx.fillRect(FX(L.log.x) + 26 + last.s.length * ADV.ink, top + (show.length - 1) * lh + 12 * TK, 10 * TK, 2 * TK); }
+  if (show.length && (frame >> 4) & 1) { const last = show[show.length - 1]; ctx.fillStyle = C.ink; ctx.fillRect(Math.min(FX(L.log.x + L.log.w) - 26 - 10 * TK, FX(L.log.x) + 26 + last.s.length * ADV.ink), top + (show.length - 1) * lh + 12 * TK, 10 * TK, 2 * TK); }
   // stamped plates: dark letters with a light edge under them
   const [, , pw, ph] = R("plate"), pc = FX(L.plateX + pw / 2), opt = { under: C.brassHi, ux: 0, uy: 2 };
-  const t1 = S.phase === "title" ? "SIGNAL" : TK > 1 ? `${S.shown}/${S.target}` : `${S.shown} / ${S.target}`, t2 = S.phase === "title" ? "LEXICON" : `NIGHT ${S.night}`;
-  ftext(t1, pc, FX(by + L.plateY0) + Math.round((FX(ph) - 14 * TK) / 2) + 1, "ink", C.ink, "c", opt);
+  if (S.phase !== "title") { const fx0 = FX(L.plateX) + 14, fw = FX(pw) - 28, fy = FX(by + L.plateY0 + ph) - 9, pr = Math.min(1, S.shown / S.target);
+    ctx.fillStyle = C.inkSoft; ctx.fillRect(fx0, fy, fw, 4); ctx.fillStyle = pr >= 1 ? C.hot : C.amber; ctx.fillRect(fx0, fy, Math.round(fw * pr), 4); }
+  const left = S.target - S.shown, t1 = S.phase === "title" ? "SIGNAL" : left > 0 ? `${left} TO GO` : "LOCKED", t2 = S.phase === "title" ? "LEXICON" : `NIGHT ${S.night}`;
+  ftext(t1, pc, FX(by + L.plateY0) + Math.round((FX(ph) - 14 * TK) / 2) - (S.phase === "title" ? -1 : 3), "ink", C.ink, "c", opt);
   ftext(t2, pc, FX(by + L.plateY1) + Math.round((FX(ph) - 14 * TK) / 2) + 1, "ink", C.ink, "c", opt);
   // counters on the part slots
   const counts = []; S.parts.forEach(id => { const c = counts.find(c => c.id === id); if (c) c.n++; else counts.push({ id, n: 1 }); });
@@ -991,7 +1005,7 @@ function drawBarText() {
 function dim() { octx.fillStyle = C.shade; for (let y = 0; y < SCENE_H; y++) for (let x = (y & 1); x < W; x += 2) octx.fillRect(x, y, 1, 1); }
 function blitOver() { ctx.drawImage(over, 0, 0, W * FINE, H * FINE); }
 function drawTitle() {
-  const w = Math.min(W - 48, 360), lh = Math.round(22 * TK), body = wrap("Trace words in the radio glass. Beam them to the tower before the battery lamps go dark.", "ink", FX(w) - 60);
+  const w = Math.min(W - 48, 360), lh = Math.round(22 * TK), body = wrap("Spell words in the radio glass. Each word beams signal to the tower. Reach the night's target before the six lamps go dark.", "ink", FX(w) - 60);
   const h = Math.round((70 + body.length * lh + 16 + lh * 2 + 30) / FINE), x = Math.round(W / 2 - w / 2), y = Math.max(12, Math.round((SCENE_H - h) / 2) - 6);
   dim(); nine(octx, "logbox", x, y, w, h); blitOver();
   const cx = FX(W / 2); let ty = FX(y) + 26; ftext("LEXICON SIGNAL", cx, ty, "key", C.ink, "c", { under: C.brassHi, uy: 3 }); ty += 48;
@@ -1028,17 +1042,17 @@ function drawOver() {
 
 /* ================= input ================= */
 let usingButtons = false, usingTouch = matchMedia("(pointer:coarse)").matches;
-function move(dx, dy) {
+function move(dx, dy) { dismissCard();
   usingButtons = true; Sound.ensure();
   if (S.phase === "shop") { shopFocus = (shopFocus + (dx || dy) + shopChoices.length) % shopChoices.length; Sound.click(); return; }
   if (S.phase !== "play") return;
   const x = S.cursor % 4 + dx, y = ((S.cursor / 4) | 0) + dy; S.cursor = ((y + 4) % 4) * 4 + ((x + 4) % 4); knobA.L += .35 * (dx + dy); Sound.tickMove();
 }
 function start() { Sound.ensure(); Sound.music(); newRun(); staticKick = .6; Sound.retune(); }
-function pressA() { Sound.ensure(); usingButtons = true; if (S.phase === "title" || S.phase === "over") return start(); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
+function pressA() { Sound.ensure(); usingButtons = true; dismissCard(); if (S.phase === "title" || S.phase === "over") return start(); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
 function pressB() { if (S.phase === "play") back(); }
 function pressStart() { Sound.ensure(); if (S.phase === "title" || S.phase === "over") return start(); if (S.phase === "shop") return choosePart(shopFocus); retune(); }
-function pressSel() { Sound.ensure(); KS = (KS + 1) % KEY_STYLES.length; try { localStorage.setItem("lexsig-keys", KS); } catch (e) {} if (S.log) log(`Keys: ${KEY_STYLES[KS]} (${KS + 1}/${KEY_STYLES.length})`); Sound.click(); }
+function pressSel() { Sound.ensure(); KS = (KS + 1) % KEY_STYLES.length; try { localStorage.setItem("lexsig-keys2", KS); } catch (e) {} if (S.log) log(`Keys: ${KEY_STYLES[KS]} (${KS + 1}/${KEY_STYLES.length})`); Sound.click(); }
 window.addEventListener("keydown", (e) => {
   const k = e.key, dir = { ArrowLeft: [-1, 0], a: [-1, 0], ArrowRight: [1, 0], d: [1, 0], ArrowUp: [0, -1], w: [0, -1], ArrowDown: [0, 1], s: [0, 1] }[k];
   if (dir) { e.preventDefault(); move(...dir); return; }

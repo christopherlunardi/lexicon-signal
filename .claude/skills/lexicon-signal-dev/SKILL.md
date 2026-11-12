@@ -61,7 +61,11 @@ the same batch.
 
 ## Rules of play
 - 4x4 keys in the radio glass; trace touching letters (8 directions), 3+ letters. Score = signal (letter values) x boost (length-2)
-  x part multipliers. 5 words a night (lamps + battery gauge), 1 retune; targets 40 x 1.42^(n-1) rounded to 5; pick 1 of 3 parts.
+  x part multipliers; every word carries +2 signal so short words count. 6 words a night (one per lamp), 1 retune; targets
+  30 x 1.4^(n-1) rounded to 5 (30, 40, 60, 80...); pick 1 of 3 parts. Night 1 was too hard at 40 in 5 words (Chris kept losing).
+- The goal is said plainly: a night card over the glass at the start ("NIGHT 1 / BEAM 30 SIGNAL / IN 6 WORDS", any input dismisses
+  it), the top plate shows "N TO GO" with a fill bar, the log says what's left after each word, and the tower beacon burns brighter
+  as the night's signal fills.
 - Used keys vanish; the keys above fall down their column with a heavy drop, one short bounce and a thud; new keys fall in from
   the top. No input while keys are falling or letters are flying.
 - Sent letters fly to the tower beacon; it flashes and the score counts up on the plate; the log reports everything.

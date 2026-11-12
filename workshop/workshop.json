@@ -111,7 +111,7 @@
     },
     {
      "id": "r2",
-     "status": "open",
+     "status": "decided",
      "question": "Which play-area direction should we build on?",
      "found": "Five whole treatments of the glass, not just letter styles: how keys rest, light up, link together, lock when the word is good, leave for the tower and land. All stay dark with smooth warm glow and keep the value dots. In every one the glass flares when a word leaves, catches a red glint when the beacon answers, and its rim pulses red on your last word. Watch the clip, then play it. Pick one, or tell me which pieces to combine.",
      "options": [
@@ -195,7 +195,8 @@
        ],
        "play": "play.html#keys-10"
       }
-     ]
+     ],
+     "chosen": "2"
     }
    ]
   }
