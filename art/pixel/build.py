@@ -79,3 +79,67 @@ def main():
     print(json.dumps({k: v for k, v in meta["sprites"].items()}))
 
 main()
+
+# ---------------- icons, fonts and the atlas the game loads ----------------
+from PIL import ImageDraw, ImageFont
+ICON_NAMES = ["amp", "battery", "vowel", "filter", "coil", "echo", "owl", "knob", "treble", "short", "carrier", "fuse"]
+FONTS = {"small": ("/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf", 8),
+         "big": ("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 14)}
+CHARS = "".join(chr(c) for c in range(32, 96)) + "u"
+
+def icons(pal):
+    a, alpha, _ = keyed(SRC + "icons.png")
+    Hh, Ww = alpha.shape; out = {}
+    for k, name in enumerate(ICON_NAMES):
+        cx0, cy0 = (k % 4) * Ww // 4, (k // 4) * Hh // 3
+        al = alpha[cy0:cy0 + Hh // 3, cx0:cx0 + Ww // 4]; ys, xs = np.where(al)
+        x0, x1, y0, y1 = cx0 + xs.min(), cx0 + xs.max() + 1, cy0 + ys.min(), cy0 + ys.max() + 1
+        s = 27 / max(x1 - x0, y1 - y0); W, H = max(1, round((x1 - x0) * s)), max(1, round((y1 - y0) * s))
+        crop = a[y0:y1, x0:x1]; m = alpha[y0:y1, x0:x1]
+        rgb = np.asarray(Image.fromarray((crop * m[..., None]).astype("uint8")).resize((W, H), Image.BOX)).astype(float)
+        cov = np.asarray(Image.fromarray((m * 255).astype("uint8")).resize((W, H), Image.BOX)).astype(float) / 255
+        col = pix.snap(np.clip(rgb / np.maximum(cov[..., None], 1e-3), 0, 255), pal)
+        out["icon_" + name] = Image.fromarray(np.dstack([col, (cov > .5).astype(np.uint8) * 255]), "RGBA")
+    return out
+
+def glyphs():
+    out, metrics = {}, {}
+    for fname, (path, size) in FONTS.items():
+        f = ImageFont.truetype(path, size); asc, desc = f.getmetrics(); h = asc + desc
+        metrics[fname] = {"h": h, "adv": {}}
+        for ch in CHARS:
+            key = "Qu" if ch == "u" else ch
+            if ch == "u" and fname != "big": continue
+            txt = "Qu" if ch == "u" else ch
+            w = max(1, int(round(f.getlength(txt))))
+            im = Image.new("L", (w + 2, h + 2), 0); d = ImageDraw.Draw(im); d.fontmode = "1"; d.text((1, 1), txt, font=f, fill=255)
+            rgba = Image.new("RGBA", im.size, (255, 255, 255, 0)); rgba.putalpha(im.point(lambda v: 255 if v > 127 else 0))
+            out[f"g_{fname}_{ord(ch) if key != 'Qu' else 'Qu'}"] = rgba; metrics[fname]["adv"][key] = w
+    return out, metrics
+
+def atlas(meta, pal):
+    imgs = {n: Image.open(OUT + n + ".png").convert("RGBA") for n in meta["sprites"]}
+    # the window glass mask: which window pixels give their own light (the night view), so room light skips them
+    win = np.asarray(imgs["window"]).astype(int); rgb = win[..., :3]
+    seen = ((rgb[..., 2] > rgb[..., 0] + 10) | (rgb.max(-1) > 200)) & (win[..., 3] > 0); seen[:8] = seen[-14:] = False
+    ys, xs = np.where(seen); inside = np.zeros_like(seen); inside[ys.min():ys.max() + 1, xs.min():xs.max() + 1] = True
+    wood = (rgb[..., 0] > rgb[..., 2] + 25) & (rgb[..., 0] > 60) & ~(rgb.max(-1) > 200)   # frame bars, not lit windows
+    glass = inside & ~wood & (win[..., 3] > 0)
+    imgs["window_glass"] = Image.fromarray(np.dstack([np.full(glass.shape + (3,), 255, np.uint8), glass.astype(np.uint8) * 255]), "RGBA")
+    imgs.update(icons(pal))
+    g, metrics = glyphs(); imgs.update(g)
+    # shelf packing
+    order = sorted(imgs, key=lambda n: -imgs[n].height); AW = 1024; x = y = sh = 0; rects = {}
+    for n in order:
+        w, h = imgs[n].size
+        if x + w > AW: x = 0; y += sh + 1; sh = 0
+        rects[n] = [x, y, w, h]; x += w + 1; sh = max(sh, h)
+    AH = y + sh + 1; sheet = Image.new("RGBA", (AW, AH), (0, 0, 0, 0))
+    for n, (x, y, w, h) in rects.items(): sheet.alpha_composite(imgs[n], (x, y))
+    sheet.save(OUT + "atlas.png", optimize=True)
+    pts = {n: s.get("points", {}) for n, s in meta["sprites"].items()}
+    json.dump({"palette": meta["palette"], "accents": [list(c) for c in pix.ACCENTS], "rects": rects, "points": pts, "fonts": metrics},
+              open(OUT + "atlas.json", "w"))
+    print("atlas", AW, AH, len(rects), "pieces")
+
+atlas(json.load(open(OUT + "sprites.json")), np.array(json.load(open(OUT + "sprites.json"))["palette"], float))
