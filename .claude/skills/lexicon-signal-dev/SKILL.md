@@ -161,6 +161,16 @@ the same batch.
   Special Elite, Bungee Hairline, Bungee, Limelight, Share Tech Mono, Stardos Stencil, Alfa Slab One. Value dots stay in every style
   (Chris likes them), bright enough to read on unselected keys. He likes it dark with smooth glow. Select is the sound switch again.
 
+## Title menu and How to Play
+- The title's brass plate is a menu: START and HOW TO PLAY, an arrow by the one you're on (up/down, A or Start; tap a line).
+- HOW TO PLAY (`HOW_CARDS`): six cards over a live demo of the real game run by a small script (cursor moves, letters picked, words
+  sent, retune, the part picker): spell a word, letters must touch, send it, fill the tube, retune, radio parts. The card is a
+  parchment strip ABOVE the game; the game frame shrinks into the space below it (Chris: you must see the game while it's shown,
+  never cover the bar). Its words are smooth type at the page's real size (title Alfa Slab One, text Special Elite; Chris said the
+  big pixel letters looked terrible and off-centre), button chips with centred labels. A/right next, B/left back (B on the first: title), tap right/left half. The demo never clears the night.
+- ALWAYS keep How to Play true to the game (Chris): any change to a rule, number, control, part or what something looks like
+  updates the card text and its demo script in the same batch, along with the dial TIPS.
+
 ## Dev mode (owner only, the same as the studio's other games)
 - Ways in: on by itself from a file, a #dev link, unlocked before on this device (localStorage lexsig.devkey), or claude.ai says
   you own the artifact (window.claude.use("user").isOwner(); the game artifact declares the user capability); the secret combo on
