@@ -60,6 +60,9 @@ the same batch.
 - Used keys vanish; the keys above fall down their column with a heavy drop, one short bounce and a thud; new keys fall in from
   the top. No input while keys are falling or letters are flying.
 - Sent letters fly to the tower beacon; it flashes and the score counts up on the plate; the log reports everything.
+- The dial always shows the traced word's value on its right, counting up as letters go in (plain amber while it can't be sent).
+  When it can be sent the whole dial lights warm, the word and number go bright and the number gets a "+". A hovered key (mouse,
+  or the button cursor) previews dimly: its letter after the word and "+gain" before the number. Every key shows its value digit.
 - Input: buttons first (A add letter, A on the last letter sends, B back, Start/Y retune, Select/X sound), touch/mouse drag or tap.
   Gamepad standard mapping, bottom face = A.
 
@@ -69,7 +72,7 @@ the same batch.
 2. Syntax check: extract the inline script and `node --check` it.
 3. Screenshots: copy index.html (wrapped in doctype/head), words.js and art/pixel/atlas.* into a scratch folder, serve it with
    `python3 -m http.server` (fetch needs http), shoot with Playwright (Chrome at /usr/bin/google-chrome) at 1280x800, phone
-   390x844 with touch, and 640x480. Add `#test-shop` to the URL to open the part picker straight away.
+   390x844 with touch, and 640x480. Add `#test-shop` (part picker) or `#test-word` (RAT traced) to the URL for set-up screens.
 4. Name check, commit with a plain message, push, republish the link. Tell Chris in a few lines what changed.
 
 ## Art prompts (ChatGPT)
