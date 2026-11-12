@@ -1491,7 +1491,7 @@ function drawOver() {
 
 /* ================= input ================= */
 let usingButtons = false, usingTouch = matchMedia("(pointer:coarse)").matches;
-function move(dx, dy) { dismissCard();
+function move(dx, dy) { if (devKey(dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ? "up" : "down")) return; dismissCard();
   usingButtons = true; Sound.ensure();
   if (S.phase === "shop") { shopFocus = (shopFocus + (dx || dy) + shopChoices.length) % shopChoices.length; Sound.click(); return; }
   if (S.phase === "swap") { const n = partSlots().length; swapFocus = (swapFocus + (dx || dy) + n) % n; Sound.click(); return; }
@@ -1500,10 +1500,10 @@ function move(dx, dy) { dismissCard();
 }
 function titleBusy() { if (S.phase === "title" && !titleSkip && titleT < TITLE_LEN[TS]) { titleSkip = true; return true; } return false; }
 function start() { Sound.ensure(); Sound.music(); newRun(); }
-function pressA() { Sound.ensure(); usingButtons = true; dismissCard(); if (titleBusy()) return; if (S.phase === "title" || S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
-function pressB() { if (S.phase === "swap") return swapCancel(); if (S.phase === "play") back(); }
-function pressStart() { Sound.ensure(); if (titleBusy()) return; if (S.phase === "title" || S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); retune(); }
-function pressSel() { Sound.ensure(); Sound.toggle(); }   // Select is the sound switch (it used to flip key styles for the Workshop)
+function pressA() { if (devKey("a")) return; Sound.ensure(); usingButtons = true; dismissCard(); if (titleBusy()) return; if (S.phase === "title" || S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
+function pressB() { if (devKey("b")) return; if (S.phase === "swap") return swapCancel(); if (S.phase === "play") back(); }
+function pressStart() { if (devKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title" || S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); retune(); }
+function pressSel() { if (devKey("select")) return; Sound.ensure(); Sound.toggle(); }   // Select is the sound switch (it used to flip key styles for the Workshop)
 window.addEventListener("keydown", (e) => {
   if (introPress()) { e.preventDefault(); return; }
   // keys (Chris: WASD and arrows, Space or Enter to pick; keep them few and clear): WASD/arrows move, Space or Enter picks the letter
@@ -1550,7 +1550,10 @@ $("dpad").addEventListener("pointermove", () => {});
 $("dpad").addEventListener("pointermove", (e) => { if (padCur !== null) padSet(padDir(e)); });
 ["pointerup", "pointercancel"].forEach(ev => $("dpad").addEventListener(ev, () => padSet(null)));
 function bindBtn(id, fn) { const b = $(id); b.addEventListener("pointerdown", (e) => { e.preventDefault(); b.classList.add("on"); if (!introPress()) fn(); }); ["pointerup", "pointercancel", "pointerleave"].forEach(ev => b.addEventListener(ev, () => b.classList.remove("on"))); }
-bindBtn("btnA", pressA); bindBtn("btnB", pressB); bindBtn("btnSel", pressSel); bindBtn("btnStart", pressStart);
+bindBtn("btnA", pressA); bindBtn("btnB", pressB); bindBtn("btnStart", pressStart);
+{ const b = $("btnSel"); b.addEventListener("pointerdown", (e) => { e.preventDefault(); b.classList.add("on"); if (introPress()) return; selectDown(); });
+  b.addEventListener("pointerup", () => { b.classList.remove("on"); if (!selectUp()) pressSel(); });
+  ["pointercancel", "pointerleave"].forEach(ev => b.addEventListener(ev, () => { b.classList.remove("on"); clearTimeout(selHold); })); }
 const padPrev = {}, rep = {};
 function pollPad(now) {
   const gp = Array.from((navigator.getGamepads && navigator.getGamepads()) || []).find(Boolean); if (!gp) return;
@@ -1560,7 +1563,7 @@ function pollPad(now) {
   if (Object.keys(st).some(edge) && !document.body.classList.contains("padmode")) { document.body.classList.add("padmode"); setTimeout(layout, 30); }
   const repeat = (k, fn) => { if (edge(k)) { fn(); rep[k] = now + 260; } else if (st[k] && now > (rep[k] || 0)) { fn(); rep[k] = now + 110; } };
   if (Object.keys(st).some(edge) && introPress()) { Object.assign(padPrev, st); return; }
-  if (edge("A")) pressA(); if (edge("B")) pressB(); if (edge("Y") || edge("ST")) pressStart(); if (edge("SEL") || edge("X")) pressSel();
+  if (edge("A")) pressA(); if (edge("B")) pressB(); if (edge("Y") || edge("ST")) pressStart(); if (edge("X")) pressSel(); if (edge("SEL")) selectDown(); if (!st.SEL && padPrev.SEL && !selectUp()) pressSel();
   repeat("L", () => move(-1, 0)); repeat("R", () => move(1, 0)); repeat("U", () => move(0, -1)); repeat("D", () => move(0, 1));
   Object.assign(padPrev, st);
 }
@@ -1693,45 +1696,114 @@ function studioEnd() {
   studio.node = null; studio.skip = false; S.phase = "title"; titleT = 0; titleSkip = false; Sound.music();
   if (c2) { studio.fading = true; c2.style.opacity = "0"; setTimeout(() => { c2.remove(); studio.fading = false; }, 400); }
 }
-/* ================= dev mode =================
-   For testing (Chris 2026-11-12). Open with the ` key, a #dev link, or five quick taps on the "Lexicon Signal" name above the
-   screen. Fit or take out parts (they work at once, this night), add words, retunes and signal, win or lose the night, jump nights,
-   new letters, endless words and retunes, open the part picker, the title or the studio intro. Nothing here is saved. */
-let devInf = false;
+/* ================= dev mode (owner only) =================
+   The same ways in as the studio's other games (Chris 2026-11-12: "work just like Port Stacker"):
+   - on by itself when the page is opened from a file, when it was unlocked before on this device, or when claude.ai says you own
+     the artifact;
+   - the secret combo on any pad, the handheld's buttons or keys: DOWN DOWN UP UP RIGHT LEFT RIGHT LEFT B A;
+   - the dev code (same code as the other games): press and hold the name above the screen about a second, or tap it five times.
+   Once on, a DEV button sits in the name bar and ` opens the panel (Esc closes). With a controller or the handheld's buttons: hold
+   SELECT about a second and a half to open it; the d-pad moves, A presses, B, SELECT or START closes. Nothing in it is saved. */
+const DEV_HASH = "dedc4706412b6851ff84d9cda4a1f5a5a4bed17b184d497db4a27af8dee7f74d";
+const DEV = { on: false, inf: false, seq: [], open: false };
+const DEV_SEQ = ["down", "down", "up", "up", "right", "left", "right", "left", "b", "a"];
+function devNote(k) { DEV.seq.push(k); if (DEV.seq.length > 12) DEV.seq.shift();
+  if (DEV.on || DEV.seq.length < 10 || DEV_SEQ.some((x, i) => DEV.seq[DEV.seq.length - 10 + i] !== x)) return;
+  try { localStorage.setItem("lexsig.devkey", DEV_HASH); } catch (e) {} const cd = $("devCode"); if (cd) cd.remove(); devInstall(); Sound.clear(); log("Dev mode on.");
+}
+async function devCodeOk(code) { try { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(code.trim().toLowerCase())); return [...new Uint8Array(b)].map(v => v.toString(16).padStart(2, "0")).join("") === DEV_HASH; } catch (e) { return false; } }
+function devCodePrompt() {
+  if (DEV.on || $("devCode")) return; const box = document.createElement("form"); box.id = "devCode";
+  box.style.cssText = "position:fixed;left:50%;top:30%;transform:translateX(-50%);z-index:70;background:#241510;border:1px solid #e8b45a;border-radius:8px;padding:14px;display:flex;gap:8px;font:13px system-ui;color:#f7ecde";
+  box.innerHTML = '<input type="password" autocomplete="off" placeholder="Dev code" style="font:16px system-ui;padding:6px;width:140px"><button style="font:13px system-ui;padding:6px 10px">Unlock</button>';
+  box.addEventListener("submit", async (e) => { e.preventDefault(); const v = box.querySelector("input").value; if (await devCodeOk(v)) { try { localStorage.setItem("lexsig.devkey", DEV_HASH); } catch (_) {} box.remove(); devInstall(); } else box.remove(); });
+  document.body.appendChild(box); box.querySelector("input").focus();
+}
 function devFit(id) {
   if (!S.parts.includes(id) && partSlots().length >= PART_SLOTS) { log("Dev: slots full, take one out first."); return; }
   S.parts.push(id); if (id === "battery") S.words++; if (id === "knob") S.retunes++; if (id === "carrier") ensureHot(); log("Dev: fitted " + PART[id].name + ".");
 }
 function devTakeOut(id) { S.parts = S.parts.filter(x => x !== id); S.words = Math.min(S.words, maxWords()); S.retunes = Math.min(S.retunes, maxRetunes()); if (id === "carrier") ensureHot(); log("Dev: took out " + PART[id].name + "."); }
-function devPlay() { if (S.phase !== "play") { if (S.phase === "splash" || S.phase === "studio" || S.phase === "title" || S.phase === "over") { newRun(); barShow = 1; } } }
+function devPlay() { if (S.phase !== "play" && S.phase !== "shop" && S.phase !== "swap") { newRun(); barShow = 1; } }
 const DEV_ACTIONS = [
-  ["+1 word", () => { devPlay(); S.words++; }], ["+1 retune", () => { devPlay(); S.retunes++; }],
-  ["+10 signal", () => { devPlay(); S.score += 10; S.total += 10; if (S.score >= S.target) nightClear(); }],
-  ["Win night", () => { devPlay(); S.score = S.shown = S.target; nightClear(); }], ["Lose night", () => { devPlay(); gameOver(); }],
-  ["Next night", () => { devPlay(); S.night++; startNight(); }], ["Night back", () => { devPlay(); S.night = Math.max(1, S.night - 1); startNight(); }],
-  ["New letters", () => { devPlay(); fillGrid(true); }], ["Part picker", () => { devPlay(); nightClear(); }],
-  ["Endless words", () => { devInf = !devInf; log("Dev: endless words and retunes " + (devInf ? "on." : "off.")); }],
-  ["New run", () => { newRun(); barShow = 1; }], ["Title", () => { S.phase = "title"; titleT = 0; titleSkip = false; }],
-  ["Studio intro", () => { studioStart(); }], ["Sound on/off", () => { Sound.ensure(); Sound.toggle(); }],
+  [() => "ENDLESS WORDS " + (DEV.inf ? "ON" : "OFF"), () => { DEV.inf = !DEV.inf; }],
+  ["+1 WORD", () => { devPlay(); S.words++; }], ["+1 RETUNE", () => { devPlay(); S.retunes++; }],
+  ["+10 SIGNAL", () => { devPlay(); S.score += 10; S.total += 10; if (S.score >= S.target) nightClear(); }],
+  ["WIN NIGHT", () => { devPlay(); S.score = S.shown = S.target; nightClear(); }], ["LOSE NIGHT", () => { devPlay(); gameOver(); }],
+  ["NEXT NIGHT", () => { devPlay(); S.night++; startNight(); }], ["NIGHT BACK", () => { devPlay(); S.night = Math.max(1, S.night - 1); startNight(); }],
+  ["NEW LETTERS", () => { devPlay(); fillGrid(true); }], ["PART PICKER", () => { devPlay(); nightClear(); }],
+  ["NEW RUN", () => { newRun(); barShow = 1; }], ["TITLE SCREEN", () => { S.phase = "title"; titleT = 0; titleSkip = false; }],
+  ["STUDIO INTRO", () => { studioStart(); }], [() => "SOUND " + (Sound.muted() ? "OFF" : "ON"), () => { Sound.ensure(); Sound.toggle(); }],
 ];
-function devBuild() {
-  let d = $("dev"); if (!d) { d = document.createElement("div"); d.id = "dev"; document.body.appendChild(d);
-    const st = document.createElement("style"); st.textContent = `#dev{position:fixed;top:8px;right:8px;z-index:60;width:250px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:auto;background:rgba(18,10,6,.96);border:2px solid #c8912e;border-radius:8px;padding:8px;font:12px/1.3 ui-monospace,Menlo,monospace;color:#ffd9a0;box-shadow:0 6px 24px rgba(0,0,0,.6)}
-#dev h4{margin:6px 0 4px;font-size:11px;letter-spacing:.08em;color:#c8912e;text-transform:uppercase}#dev .row{display:flex;flex-wrap:wrap;gap:4px}
-#dev button{font:inherit;font-size:11px;color:#1a0e06;background:#e8b45a;border:0;border-radius:4px;padding:4px 6px;cursor:pointer}#dev button.out{background:#5a3418;color:#ffd9a0}#dev button.on{background:#fff0c8}
-#dev .x{float:right;background:#5a3418;color:#ffd9a0}#dev .st{color:#ffb24c;margin:2px 0 4px}@media (max-width:600px){#dev{top:auto;bottom:8px;left:8px;right:8px;width:auto;max-height:46vh}}`; document.head.appendChild(st); }
-  d.innerHTML = ""; const add = (tag, txt, cls) => { const e = document.createElement(tag); if (txt != null) e.textContent = txt; if (cls) e.className = cls; return e; };
-  const x = add("button", "close", "x"); x.onclick = () => devToggle(false); d.append(x, add("h4", "Dev mode"));
-  d.append(add("div", S.phase === "play" ? `Night ${S.night} · ${S.shown}/${S.target} signal · ${S.words} words · ${S.retunes} retunes` : `(${S.phase})`, "st"));
-  d.append(add("h4", "Fit a part (works now)")); let r = add("div", null, "row"); PARTS.forEach(p => { const b = add("button", p.name); b.onclick = () => { devPlay(); devFit(p.id); devBuild(); }; r.append(b); }); d.append(r);
-  d.append(add("h4", "Take out")); r = add("div", null, "row"); partSlots().forEach(s => { const b = add("button", PART[s.id].name + (s.n > 1 ? " x" + s.n : ""), "out"); b.onclick = () => { devTakeOut(s.id); devBuild(); }; r.append(b); });
-  if (!S.parts.length) r.append(add("span", "nothing fitted")); d.append(r);
-  d.append(add("h4", "Night")); r = add("div", null, "row"); DEV_ACTIONS.forEach(([t, f]) => { const b = add("button", t, t === "Endless words" && devInf ? "on" : ""); b.onclick = () => { f(); devBuild(); }; r.append(b); }); d.append(r);
+function devInstall() {
+  if (DEV.on) return; DEV.on = true;
+  const css = document.createElement("style");
+  css.textContent = `#devPanel,#devBtn{--shell:#241510;--shell-hi:#3a2216;--ink:#f7ecde;--muted:#c9a77a;--accent:#ffb84a;--button:#57331c;color-scheme:dark}
+  #devBtn{font:700 11px system-ui;letter-spacing:.14em;background:var(--accent);color:var(--shell);border:0;border-radius:4px;padding:4px 10px;cursor:pointer;margin-left:8px}
+  #devPanel{position:fixed;inset:0;z-index:60;background:rgba(10,6,4,.72);display:flex;justify-content:center;align-items:flex-start;overflow:auto;padding:max(16px,env(safe-area-inset-top,0px)) 16px 24px}
+  #devPanel[hidden]{display:none}
+  #devPanel .card{background:var(--shell-hi);color:var(--ink);border:1px solid var(--accent);border-radius:8px;max-width:560px;width:100%;padding:16px;display:flex;flex-direction:column;font:13px/1.4 system-ui}
+  #devPanel .card>*+*{margin-top:12px}
+  #devPanel h3{margin:0;font:700 12px system-ui;letter-spacing:.16em;color:var(--accent);text-transform:uppercase}
+  #devPanel .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px}
+  #devPanel button{font:11px system-ui;color:var(--ink);background:var(--button);border:1px solid transparent;border-radius:4px;padding:8px;text-align:left;cursor:pointer}
+  #devPanel button:hover,#devPanel button:focus-visible,#devPanel button.sel{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px var(--accent)}
+  #devPanel button.out{background:#2a1a10}
+  #devPanel .muted{color:var(--muted);font-size:11px;margin:0}`;
+  document.head.appendChild(css);
+  const top = document.querySelector("#console .top"), btn = document.createElement("button"); btn.id = "devBtn"; btn.textContent = "DEV"; if (top) top.appendChild(btn);
+  const panel = document.createElement("div"); panel.id = "devPanel"; panel.hidden = true; const card = document.createElement("div"); card.className = "card"; panel.appendChild(card); document.body.appendChild(panel);
+  let sel = 0;
+  const items = () => [...card.querySelectorAll("button")];
+  const mark = () => { const it = items(); sel = Math.max(0, Math.min(it.length - 1, sel)); it.forEach((b, i) => b.classList.toggle("sel", i === sel)); if (it[sel]) it[sel].scrollIntoView({ block: "nearest" }); };
+  function build() {
+    card.innerHTML = ""; const el = (t, txt, cls) => { const e = document.createElement(t); if (txt != null) e.textContent = txt; if (cls) e.className = cls; return e; };
+    const section = (title) => { card.appendChild(el("h3", title)); const g = el("div", null, "grid"); card.appendChild(g); return g; };
+    const button = (parent, label, fn, cls) => { const b = el("button", label, cls); b.onclick = () => { fn(); build(); mark(); }; parent.appendChild(b); return b; };
+    card.appendChild(el("p", S.phase === "play" ? `Night ${S.night} · ${S.shown} of ${S.target} signal · ${S.words} words · ${S.retunes} retunes` : `(${S.phase})`, "muted"));
+    const fit = section("Fit a part (works this night)"); PARTS.forEach(p => button(fit, p.name, () => { devPlay(); devFit(p.id); }));
+    const out = section("Take out"); partSlots().forEach(s => button(out, PART[s.id].name + (s.n > 1 ? " x" + s.n : ""), () => devTakeOut(s.id), "out"));
+    if (!S.parts.length) out.appendChild(el("p", "nothing fitted", "muted"));
+    const act = section("Night and screens"); DEV_ACTIONS.forEach(([l, f]) => button(act, typeof l === "function" ? l() : l, f));
+    card.appendChild(el("p", "` opens and closes this panel, Esc closes it. On a pad: hold SELECT to open, d-pad and A to use, B to close.", "muted"));
+  }
+  DEV.openPanel = () => { build(); panel.hidden = false; DEV.open = true; sel = Math.min(sel, items().length - 1); mark(); };
+  DEV.close = () => { panel.hidden = true; DEV.open = false; };
+  DEV.nav = (k) => { const it = items(), cur = it[sel]; if (!cur) return;
+    if (k === "a") { cur.click(); return; } if (k === "b" || k === "select" || k === "start") return DEV.close();
+    const r = cur.getBoundingClientRect(); if (k === "left" || k === "right") sel += k === "left" ? -1 : 1;
+    else { let best = sel, bd = 1e9; it.forEach((b, i) => { const q = b.getBoundingClientRect(), dy = k === "down" ? q.top - r.top : r.top - q.top; if (dy <= 4) return; const d = dy * 4 + Math.abs(q.left - r.left); if (d < bd) { bd = d; best = i; } }); sel = best; }
+    mark(); };
+  btn.onclick = () => DEV.openPanel();
+  panel.addEventListener("click", (e) => { if (e.target === panel) DEV.close(); });
+  setInterval(() => { if (DEV.inf && S && S.phase === "play") { S.words = Math.max(S.words, maxWords()); S.retunes = Math.max(S.retunes, maxRetunes()); } const m = card.querySelector(".muted"); if (DEV.open && m) m.textContent = S.phase === "play" ? `Night ${S.night} · ${S.shown} of ${S.target} signal · ${S.words} words · ${S.retunes} retunes` : `(${S.phase})`; }, 250);
 }
-function devToggle(on) { const d = $("dev"); if (on === undefined) on = !d || d.hidden; if (on) { devBuild(); $("dev").hidden = false; } else if (d) d.hidden = true; }
-window.addEventListener("keydown", (e) => { if (e.key === "`" || e.key === "~") { e.preventDefault(); devToggle(); } }, true);
-{ let taps = [], t0 = 0; document.querySelector("#console .top b").addEventListener("pointerdown", () => { const now = performance.now(); taps = taps.filter(t => now - t < 1500); taps.push(now); if (taps.length >= 5) { taps = []; devToggle(); } }); }
-setInterval(() => { if (devInf && S && S.phase === "play") { S.words = Math.max(S.words, maxWords()); S.retunes = Math.max(S.retunes, maxRetunes()); } const d = $("dev"); if (d && !d.hidden) { const st = d.querySelector(".st"); if (st) st.textContent = S.phase === "play" ? `Night ${S.night} · ${S.shown}/${S.target} signal · ${S.words} words · ${S.retunes} retunes` : `(${S.phase})`; } }, 250);
+// the game's buttons go to the panel while it's open; every press also feeds the secret combo
+function devKey(k) { if (DEV.open) { DEV.nav(k); return true; } devNote(k); return false; }
+window.addEventListener("keydown", (e) => {
+  if (e.code === "Backquote" && DEV.on) { e.preventDefault(); e.stopImmediatePropagation(); DEV.open ? DEV.close() : DEV.openPanel(); }
+  else if (e.code === "Escape" && DEV.open) { e.preventDefault(); e.stopImmediatePropagation(); DEV.close(); }
+  else if (DEV.open && /^(Arrow|Enter| |Backspace)/.test(e.key)) { e.preventDefault(); e.stopImmediatePropagation(); devKey({ ArrowUp: "up", ArrowDown: "down", ArrowLeft: "left", ArrowRight: "right", Enter: "a", " ": "a", Backspace: "b" }[e.key] || ""); }
+}, true);
+// holding SELECT about a second and a half opens the panel (once dev mode is on); a short press is still the sound switch
+let selHold = null, selLong = false;
+function selectDown() { selLong = false; clearTimeout(selHold); selHold = setTimeout(() => { if (DEV.on && !DEV.open) { selLong = true; DEV.openPanel(); } }, 1500); }
+function selectUp() { clearTimeout(selHold); if (selLong) { selLong = false; return true; } return false; }
+// the way in by hand on a phone: press and hold the name above the screen about a second, or tap it five times quickly
+function devHooks() {
+  const top = document.querySelector("#console .top"); if (top) { let n = 0, t0 = 0, hold = null;
+    top.addEventListener("click", (e) => { if (e.target.id === "devBtn") return; const now = Date.now(); n = now - t0 < 600 ? n + 1 : 1; t0 = now; if (n >= 5) { n = 0; devCodePrompt(); } });
+    top.addEventListener("pointerdown", (e) => { if (e.target.id === "devBtn") return; clearTimeout(hold); hold = setTimeout(devCodePrompt, 900); });
+    for (const ev of ["pointerup", "pointercancel", "pointerleave"]) top.addEventListener(ev, () => clearTimeout(hold));
+    top.addEventListener("contextmenu", (e) => { e.preventDefault(); devCodePrompt(); }); }
+  devCheck(); document.addEventListener("visibilitychange", () => { if (!document.hidden) devCheck(); });
+}
+async function devCheck() {
+  if (DEV.on) return; if (location.protocol === "file:" || /dev/.test(location.hash)) return devInstall();
+  try { if (localStorage.getItem("lexsig.devkey") === DEV_HASH) return devInstall(); } catch (e) {}
+  for (let i = 0; i < 40 && !(window.claude && window.claude.use); i++) await new Promise(r => setTimeout(r, 750));   // a phone can take a while to hand the page its claude.ai link
+  try { const u = window.claude && (await window.claude.use("user")); if (u && (await u.isOwner())) { try { localStorage.setItem("lexsig.devkey", DEV_HASH); } catch (_) {} devInstall(); } } catch (e) {}
+}
 
 /* ================= boot ================= */
 function loop(now) { update(); draw(); pollPad(now); requestAnimationFrame(loop); }
@@ -1746,7 +1818,7 @@ async function boot() {
   "LEXICONSIGNAL".split("").forEach((ch, k) => { S.grid[[0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13][k]].ch = ch; });
   [7, 14, 15].forEach(i => S.grid[i].ch = " ");
   // test hook: a hash ending in -step does not run by itself; window.LEXSTEP(n) advances n frames (for recording clips frame by frame)
-  if (/dev/.test(location.hash)) setTimeout(() => devToggle(true), 500);
+  devHooks();
   if (/-step$/.test(location.hash)) window.LEXSTEP = (n = 1) => { while (n-- > 0) { update(); draw(); } }; else requestAnimationFrame(loop);
   // test hook: #test-shop opens the part picker after night 1 (for screenshots)
   if (location.hash === "#test-shop") { newRun(); S.parts.push("amp", "coil"); nightClear(); }

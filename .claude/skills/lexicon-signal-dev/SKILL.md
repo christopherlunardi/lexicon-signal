@@ -161,12 +161,15 @@ the same batch.
   Special Elite, Bungee Hairline, Bungee, Limelight, Share Tech Mono, Stardos Stencil, Alfa Slab One. Value dots stay in every style
   (Chris likes them), bright enough to read on unselected keys. He likes it dark with smooth glow. Select is the sound switch again.
 
-## Dev mode (testing)
-- Open with the ` key, a #dev link, or five quick taps on the "Lexicon Signal" name above the screen (phone). A panel lists every
-  part to fit at once (it works this night: batteries add a word, knobs a retune), the fitted parts to take out, and +1 word,
-  +1 retune, +10 signal, win/lose night, next/previous night, new letters, endless words and retunes, part picker, new run, title,
-  studio intro, sound. Nothing is saved. Keep it in step with the game: new parts appear by themselves (it reads PARTS); add a
-  button for any new thing worth testing.
+## Dev mode (owner only, the same as the studio's other games)
+- Ways in: on by itself from a file, a #dev link, unlocked before on this device (localStorage lexsig.devkey), or claude.ai says
+  you own the artifact (window.claude.use("user").isOwner(); the game artifact declares the user capability); the secret combo on
+  any pad, the handheld's buttons or keys: DOWN DOWN UP UP RIGHT LEFT RIGHT LEFT B A; or the dev code (same code and hash as the
+  other games): press and hold the name above the screen about a second, or tap it five times.
+- Once on: a DEV button in the name bar and ` open the panel (Esc closes); on a pad or the handheld, hold SELECT ~1.5 s (a short
+  press is still sound, on release); the d-pad moves, A presses, B/SELECT/START close. The panel: fit any part (works this
+  night), take parts out, endless words, +1 word/retune, +10 signal, win/lose night, next/previous night, new letters, part
+  picker, new run, title, studio intro, sound. Nothing is saved. New parts appear by themselves (it reads PARTS).
 
 ## Every change
 1. Art: save the upload to `art/pixel/src/`, run it through fix_pixel_art (save as NAME_fixed.png), add its entry in `build.py`
