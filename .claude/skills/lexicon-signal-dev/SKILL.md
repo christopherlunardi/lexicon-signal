@@ -49,6 +49,12 @@ the same batch.
   then does the count run. Each cell pops on white and fades to its colour (deep amber to gold to white-hot along the tube) with a
   click that climbs in pitch; a sheen runs along the lit part; a word that can be sent blinks the cells it would add; a full tube
   flashes, bursts and pulses white-hot, then the night clears. A new night drains it. `#test-word-fill` starts at 17 of 30.
+- Slots show what their part is doing (2026-11-12, Chris: parts need a logical visual). Spare Battery and Fine Tuning Knob carry a
+  lamp per copy in their slot: a battery lamp is an extra word (spent before the radio's six lamps), a knob lamp an extra retune
+  (spent after the radio's own one); the log says when one is spent. A part that changes the traced word lights its slot frame;
+  parts waiting for their moment (Echo Tube first word, Night Owl last word, Carrier) glow softly; Echo dims once used. When a word
+  lands, every part that changed it flashes and a tag ("x2", "+6") rises off its slot (`partHits`, `slotState`, `drawSlotStates`).
+  `#test-word-parts` fits two batteries, a knob, an echo tube and an amp.
 - Bar contents always sit inside the bar's inner gold border, centred on one line with one equal gap.
 - Part icons: full size (iconL_) in the part picker, exactly half (icon_, 2x2 majority) in the bar's slots.
 - Display rules: the screen canvas is twice the world size (FINE = 2). The room, keys, bar and menu panels draw in world pixels and

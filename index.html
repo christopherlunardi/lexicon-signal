@@ -435,6 +435,18 @@ function scoreOf(p) {
   if (has("coil") && len >= 6) mult *= 2; if (has("echo") && S.firstWord) mult *= 2; if (has("owl") && S.words === 1) mult *= 3; if (tiles.some(t => t.hot)) mult *= 2;
   return { word, len, signal, boost, mult, pts: signal * boost * mult };
 }
+// which fitted parts change this word, and how (shown on their slots: lit while tracing, a flash and a tag when the signal lands)
+function partHits(p) {
+  const tiles = p.map(i => S.grid[i]), len = pathWord(p).length, hits = {};
+  if (has("amp")) hits.amp = "+" + has("amp");
+  if (has("treble") && tiles.some(t => VALUES[t.ch] >= 4)) hits.treble = "+" + 4 * has("treble") * tiles.filter(t => VALUES[t.ch] >= 4).length;
+  if (has("short") && len <= 4) hits.short = "+6";
+  if (has("coil") && len >= 6) hits.coil = "x2";
+  if (has("echo") && S.firstWord) hits.echo = "x2";
+  if (has("owl") && S.words === 1) hits.owl = "x3";
+  if (has("carrier") && tiles.some(t => t.hot)) hits.carrier = "x2";
+  return hits;
+}
 // the log types itself out: each entry reveals a few letters per frame
 function log(s) { S.log.push({ s: s.toUpperCase(), n: 0 }); if (S.log.length > 14) S.log.shift(); }
 function newRun() { S = fresh("play"); log("Tuned in."); startNight(); }
@@ -461,8 +473,8 @@ function back() { if (canAct() && S.path.length) setPath(S.path.slice(0, -1)); }
 function send() {
   if (!canAct() || !S.path.length) return;
   if (!isValid()) { const short = S.path.length < 3; dialFlash = { text: short ? "TOO SHORT" : "NO SIGNAL", bad: true, t: 70 }; shake = 6; staticKick = .4; Sound.fail(); log(short ? "Too short." : `${pathWord()}: no signal.`); return; }
-  const sc = scoreOf(S.path), used = [...S.path];
-  S.words -= 1; S.firstWord = false; if (sc.pts > S.best.pts) S.best = { word: sc.word, pts: sc.pts };
+  const sc = scoreOf(S.path), used = [...S.path], hits = partHits(S.path);
+  if (S.words > BASE_WORDS) log("Spare battery spent."); S.words -= 1; S.firstWord = false; if (sc.pts > S.best.pts) S.best = { word: sc.word, pts: sc.pts };
   const big = sc.len >= 6 || sc.pts >= 60; busy++;
   const letters = used.map(i => ({ ch: S.grid[i].ch, ...tileC(i) }));
   dialFlash = { text: sc.word.toUpperCase() + " +" + sc.pts, t: 100 };
@@ -470,18 +482,18 @@ function send() {
   letters.forEach((l, k) => { const t0 = PA() ? -10 - k * 3 : -k * 4, pv = letters[Math.max(0, k - 1)]; ghosts.push({ ch: l.ch, x: l.x, y: l.y, px: pv.x, py: pv.y, k, t: 0 });
     flyers.push({ ch: l.ch, k, t0, ax: l.x, ay: l.y, cx: (l.x + L.beacon.x) / 2, cy: Math.min(l.y, L.beacon.y) - 90 - Math.random() * 30, t: t0, dur: 46 + k * 2, last: k === letters.length - 1 });
     burst(l.x, l.y, big ? 12 : 7, C.amber); });
-  pending = { sc, big };
+  pending = { sc, big, hits };
 }
 function arrive() {
-  const { sc, big } = pending; pending = null; busy--; arriveT = 0;
+  const { sc, big, hits } = pending; pending = null; busy--; arriveT = 0;
   S.score += sc.pts; S.total += sc.pts; beaconFlash = big ? 40 : 24; burst(L.beacon.x, L.beacon.y, big ? 30 : 16, C.redHot);
   pops.push({ text: "+" + sc.pts, x: L.beacon.x, y: L.beacon.y - 14, t: 0, big }); if (big) shake = 5;
-  beams.push({ t: 0, dur: 24, big }); Sound.beacon(big); log(`${sc.word} +${sc.pts}${sc.mult > 1 ? " x" + sc.mult : ""}`);
+  beams.push({ t: 0, dur: 24, big, hits }); Sound.beacon(big); log(`${sc.word} +${sc.pts}${sc.mult > 1 ? " x" + sc.mult : ""}`);
   if (S.score >= S.target) { busy++; setTimeout(() => { busy--; nightClear(); }, 1700); }
   else if (S.words <= 0) { busy++; setTimeout(() => { busy--; gameOver(); }, 1400); }
   else log(`${S.target - S.score} to go, ${S.words} word${S.words === 1 ? "" : "s"} left.`);
 }
-function retune() { if (!canAct() || S.retunes <= 0) return; S.retunes--; S.path = []; pathSound = 0; fillGrid(true); knobA.R += 2.4; staticKick = .5; Sound.retune(); log("Retuned."); }
+function retune() { if (!canAct() || S.retunes <= 0) return; if (S.retunes > 1) log("Tuning knob spent."); S.retunes--; S.path = []; pathSound = 0; fillGrid(true); knobA.R += 2.4; staticKick = .5; Sound.retune(); log("Retuned."); }
 let shopChoices = [], shopFocus = 0;
 function nightClear() {
   S.phase = "shop"; Sound.clear(); log(`Night ${S.night} locked in.`);
@@ -521,7 +533,7 @@ function update() {
   for (const p of pops) p.t++; pops = pops.filter(p => p.t < 70);
   if (beaconFlash > 0) beaconFlash--; if (shake > 0) shake -= .5; if (dialFlash && dialFlash.t > 0 && --dialFlash.t === 0) dialFlash = null;
   // the tower sends the signal down into the tube; the count starts when it lands
-  for (const b of beams) b.t++; beams = beams.filter(b => { if (b.t < b.dur) return true; const q = tubeHead(); burst(q.x, q.y, b.big ? 18 : 10, C.amber); tubeKick = 1; Sound.land(b.big); return false; });
+  for (const b of beams) b.t++; beams = beams.filter(b => { if (b.t < b.dur) return true; const q = tubeHead(); burst(q.x, q.y, b.big ? 18 : 10, C.amber); tubeKick = 1; Sound.land(b.big); slotHits(b.hits); return false; });
   if (S.shown < S.score && !beams.length) S.shown = Math.min(S.score, S.shown + Math.max(1, Math.ceil((S.score - S.shown) / 12)));
   // type the log out, oldest unfinished entry first
   const e = S.log.find(e => e.n < e.s.length); if (e) { e.n = Math.min(e.s.length, e.n + 1); if (e.s[e.n - 1] !== " " && (e.n & 1)) Sound.type(); }
@@ -981,7 +993,7 @@ function drawGlows() {
     if (sel.has(i)) bloom(FX(c.x), FX(c.y + t.yOff), 56, okNow ? "255,225,150" : "255,170,70", .35);
     else if (KS === 2 || KS === 3) bloom(FX(c.x), FX(c.y + t.yOff), 34, "255,130,40", .08); });
   for (const f of flyers) if (f.t > 0) { const q = flyPos(f); if (q.u < .95) bloom(FX(q.x), FX(q.y), 40, "255,200,110", .45); }
-  tubeGlows();
+  tubeGlows(); slotGlows();
   for (const p of sparks) if (p.life > .3) bloom(FX(p.x), FX(p.y), 8, "255,190,110", p.life * .5);
   // lit windows across the city twinkle faintly
   ctx.restore();
@@ -1019,7 +1031,50 @@ function drawBarText() {
   ftext(t2, pc, FX(by + L.plateY1) + Math.round((FX(ph) - 14 * TK) / 2) + 1, "ink", C.ink, "c", opt);
   // counters on the part slots
   const [, , sw, sh] = R("slot");
-  partSlots().forEach((c, k) => { if (c.n > 1) ftext("x" + c.n, FX(L.slotX + k * L.slotStep + sw) - 12, FX(by + L.slotY + sh) - 26, "ink", C.hot, "r", { outline: C.dark }); });
+  drawSlotStates();
+  partSlots().forEach((c, k) => { if (c.n > 1 && c.id !== "battery" && c.id !== "knob") ftext("x" + c.n, FX(L.slotX + k * L.slotStep + sw) - 12, FX(by + L.slotY + sh) - 26, "ink", C.hot, "r", { outline: C.dark }); });
+}
+// ---------- the part slots show what each part is doing ----------
+// Spare Battery and Fine Tuning Knob carry a lamp per copy: a battery lamp is an extra word (spent before the radio's own six lamps),
+// a knob lamp an extra retune (spent after the radio's own one). Parts that change the traced word light their slot; parts waiting
+// for their moment (first word, last word) glow softly; the first-word part dims once its night's moment has passed. When a word's
+// signal lands, every part that changed it flashes and shows what it added.
+let slotFlash = {}, slotTags = [], slotPip = {};
+function slotHits(hits) { if (!hits) return; Object.entries(hits).forEach(([id, txt], j) => { slotFlash[id] = 1; slotTags.push({ id, txt, t: -j * 6 }); });
+  if (Object.keys(hits).length) Sound.part(); }
+function slotState(id, n) {
+  const play = S.phase === "play", tracing = play && S.path.length >= 3, h = tracing ? partHits(S.path) : {};
+  const st = { active: !!h[id], armed: false, spent: false, pips: 0, lit: 0 };
+  if (id === "battery") { st.pips = n; st.lit = play ? Math.max(0, Math.min(n, S.words - BASE_WORDS)) : n; }
+  if (id === "knob") { st.pips = n; st.lit = play ? Math.max(0, Math.min(n, S.retunes - 1)) : n; }
+  if (id === "echo") { st.armed = play && S.firstWord; st.spent = play && !S.firstWord; }
+  if (id === "owl") st.armed = play && S.words === 1;
+  if (id === "carrier") st.armed = play;
+  return st;
+}
+function slotBox(k) { const [, , sw, sh] = R("slot"); return { x: L.slotX + k * L.slotStep, y: L.barY + L.slotY, w: sw, h: sh }; }
+function drawSlotStates() {
+  partSlots().forEach((c, k) => { const st = slotState(c.id, c.n), b = slotBox(c.id ? k : k), f = slotFlash[c.id] || 0;
+    const x = FX(b.x) + 10, y = FX(b.y) + 10, w = FX(b.w) - 20, hh = FX(b.h) - 20;
+    if (st.spent && !f) { ctx.fillStyle = "rgba(10,6,4,.55)"; ctx.fillRect(x, y, w, hh); }
+    const glow = Math.max(f, st.active ? .8 : 0, st.armed ? .35 + .25 * Math.sin(frame / 8) : 0);
+    if (glow > .02) { ctx.save(); ctx.strokeStyle = c.id === "carrier" && !st.active ? `rgba(255,90,60,${glow})` : `rgba(255,214,120,${glow})`; ctx.lineWidth = 2; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 10;
+      ctx.strokeRect(x - 1, y - 1, w + 2, hh + 2); ctx.restore(); if (f) { ctx.fillStyle = `rgba(255,240,200,${f * .35})`; ctx.fillRect(x, y, w, hh); } }
+    if (st.pips) { const r = 5, step = 14, px0 = FX(b.x + b.w / 2) - ((st.pips - 1) * step) / 2, py = y + hh - 9;
+      const prev = slotPip[c.id]; if (prev != null && st.lit < prev) slotFlash[c.id] = Math.max(f, .8); slotPip[c.id] = st.lit;
+      for (let j = 0; j < st.pips; j++) { const on = j < st.lit; ctx.fillStyle = C.dark; ctx.beginPath(); ctx.arc(px0 + j * step, py, r + 2, 0, 6.283); ctx.fill();
+        ctx.fillStyle = on ? C.lamp : C.dotOff; ctx.beginPath(); ctx.arc(px0 + j * step, py, r, 0, 6.283); ctx.fill();
+        if (on) { ctx.fillStyle = C.hot; ctx.fillRect(px0 + j * step - 2, py - 3, 2, 2); } } }
+    if (f) slotFlash[c.id] = f > .03 ? f * .93 : 0; });
+  // tags rising off the slots: what each part added to the word that just landed
+  slotTags.forEach(g => { g.t++; if (g.t < 0) return; const k = partSlots().findIndex(s => s.id === g.id); if (k < 0) return; const b = slotBox(k);
+    if ((g.t >> 2) & 1 || g.t > 12) ftext(g.txt.toUpperCase(), FX(b.x + b.w / 2), FX(b.y) - 6 - g.t * .8, "key", g.t < 20 ? C.hot : C.gold, "c", { outline: C.dark }); });
+  slotTags = slotTags.filter(g => g.t < 60);
+}
+function slotGlows() {
+  partSlots().forEach((c, k) => { const st = slotState(c.id, c.n), b = slotBox(k), f = slotFlash[c.id] || 0, cx = FX(b.x + b.w / 2), cy = FX(b.y + b.h / 2);
+    const a = Math.max(f * .5, st.active ? .22 : 0, st.armed ? .1 + .06 * Math.sin(frame / 8) : 0); if (a > .01) bloom(cx, cy, FX(b.w) * .8, c.id === "carrier" && !st.active ? "255,80,50" : "255,190,90", a);
+    if (st.pips) { const step = 14, px0 = cx - ((st.pips - 1) * step) / 2, py = FX(b.y) + FX(b.h) - 19; for (let j = 0; j < st.lit; j++) bloom(px0 + j * step, py, 16, "255,200,100", .45); } });
 }
 // ---------- the night's signal tube ----------
 // a row of light cells along the top of the bar. Each cell pops on with a click that climbs in pitch as the night fills; a sheen runs
@@ -1227,6 +1282,7 @@ const Sound = (() => {
     cell(f) { if (!ac) return; const t = ac.currentTime; if (t - lastCell < .028) return; lastCell = t; const m = PENT[Math.min(PENT.length - 1, Math.floor(f * 9))] - 12; osc("square", m2f(m), t, .002, .035, .05); osc("sine", m2f(m + 12), t, .002, .03, .07); },
     land(big) { if (!ac) return; const t = ac.currentTime; osc("sine", 160, t, .003, .3, .16, sfx, 70); noise(t, .1, .1, "bandpass", 1400, 1.5, sfx); if (big) osc("triangle", 220, t, .005, .12, .3, sfx); },
     full() { if (!ac) return; const t = ac.currentTime; [0, 4, 7, 12].forEach((d, k) => osc("square", m2f(81 + d), t + k * .045, .003, .06, .35)); noise(t, .5, .1, "highpass", 4000, .7, sfx); },
+    part() { if (!ac) return; const t = ac.currentTime; osc("triangle", m2f(88), t, .003, .08, .18); osc("square", m2f(95), t + .06, .003, .05, .2); },
     tick() { if (!ac) return; const t = ac.currentTime; if (t - lastTick < .04) return; lastTick = t; osc("square", 2400, t, .001, .02, .015); },
     type() { if (!ac) return; const t = ac.currentTime; if (t - lastType < .03) return; lastType = t; noise(t, .025, .05, "bandpass", 3000 + Math.random() * 1500, 3); },
     click() { if (!ac) return; osc("triangle", 900, ac.currentTime, .002, .1, .05); },
@@ -1312,7 +1368,7 @@ async function boot() {
   // test hook: #test-shop opens the part picker after night 1 (for screenshots)
   if (location.hash === "#test-shop") { newRun(); S.parts.push("amp", "coil"); nightClear(); }
   if (location.hash === "#test-swap") { newRun(); S.parts.push("amp", "amp", "coil", "echo", "owl", "short"); nightClear(); const k = shopChoices.findIndex(c => !S.parts.includes(c.id)); if (k >= 0) choosePart(k); }
-  if (location.hash.startsWith("#test-word")) { newRun(); setTimeout(() => { "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[i].ch = ch); S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); S.path = [0, 1, 2]; usingButtons = true; S.cursor = 3; if (location.hash.includes("fill")) S.score = S.shown = 17; nightCard = 0; }, 300); }
+  if (location.hash.startsWith("#test-word")) { newRun(); setTimeout(() => { "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[i].ch = ch); S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); S.path = [0, 1, 2]; usingButtons = true; S.cursor = 3; if (location.hash.includes("fill")) S.score = S.shown = 17; if (location.hash.includes("parts")) { S.parts = ["battery", "battery", "knob", "echo", "amp"]; S.words = maxWords(); S.retunes = 1 + has("knob"); } nightCard = 0; }, 300); }
 }
 boot();
 })();
