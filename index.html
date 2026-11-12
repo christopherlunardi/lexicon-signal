@@ -933,7 +933,7 @@ let dotOkAt = 0, dotOkWas = false;
 function paDotGlass({ G, tiles, ok, low }) {
   if (ok && !dotOkWas) dotOkAt = frame; dotOkWas = ok;
   ctx.fillStyle = "#070403"; ctx.fillRect(G.x, G.y, G.w, G.h);
-  const OFF = dotSpr("#24120a"), BG = dotSpr("#6e330d"), BGH = dotSpr("#d88424"), ON = dotSpr("#ff9a36"), HOT = dotSpr("#fff2d4"), VAL = dotSpr("#ffe2b0"), w0 = FX(L.tw), h0 = FX(L.th);
+  const OFF = dotSpr("#24120a"), BG = dotSpr("#6e330d"), BGH = dotSpr("#d88424"), ON = dotSpr("#ffb24c"), HOT = dotSpr("#fff2d4"), VAL = dotSpr("#ffe2b0"), w0 = FX(L.tw), h0 = FX(L.th);
   const frameOf = (x, y, a) => { ctx.globalAlpha = a; ctx.fillStyle = "#0e0806"; rr(ctx, x + 1, y - 1, w0 - 2, h0 + 2, 5); ctx.fill(); ctx.strokeStyle = "rgba(130,86,52,.4)"; ctx.lineWidth = 1.5; ctx.stroke(); };
   for (const g of ghosts) if (g.t < 16) { const a = 1 - g.t / 16, x = FX(g.x) - w0 / 2, y = FX(g.y) - h0 / 2; frameOf(x, y, a);
     for (let r = 0; r < 7; r++) for (let c = 0; c < 9; c++) ctx.drawImage(OFF, x + 4 + c * 6, y + 4 + r * 6, 6, 6); ctx.globalAlpha = 1; }
@@ -956,7 +956,7 @@ function paDotGlass({ G, tiles, ok, low }) {
       const isV = c === 8 && r >= 7 - o.dots, dead = false;   // (dots used to fail one by one on a low battery; Chris didn't like single dots vanishing)
       ctx.globalAlpha = 1; const band = wipe > -9 ? Math.max(0, 1 - Math.abs((c + r) * .9 - wipe) / 1.6) * wa : 0;
       if (isV) { ctx.drawImage(VAL, dx, dy, 6, 6); continue; }
-      if (isL && !dead) { if (lit > .5) { ctx.globalAlpha = o.on && ok ? fl : 1; ctx.drawImage(HOT, dx, dy, 6, 6); } else { ctx.drawImage(OFF, dx, dy, 6, 6); ctx.globalAlpha = Math.min(1, dim * (.9 + (o.hv ? .1 : 0)) * fl + t.land); ctx.drawImage(scr ? HOT : ON, dx, dy, 6, 6); } continue; }
+      if (isL && !dead) { if (lit > .5) { ctx.globalAlpha = o.on && ok ? fl : 1; ctx.drawImage(HOT, dx, dy, 6, 6); } else { ctx.drawImage(OFF, dx, dy, 6, 6); ctx.globalAlpha = Math.min(1, dim * fl + t.land); ctx.drawImage(scr ? HOT : ON, dx, dy, 6, 6); } continue; }
       if ((6.6 - r) / 7 < lit * 1.2 && !dead) { ctx.drawImage(BG, dx, dy, 6, 6); if (wave) { ctx.globalAlpha = .5 + .5 * Math.sin(frame * .3 - (c + r) * .8 - o.k * 2); ctx.drawImage(BGH, dx, dy, 6, 6); }
         if (band > .02) { ctx.globalAlpha = band; ctx.drawImage(HOT, dx, dy, 6, 6); } }
       else ctx.drawImage(OFF, dx, dy, 6, 6); }
@@ -986,7 +986,7 @@ function drawPlayArea() {
   if (last) { ctx.strokeStyle = `rgba(255,60,40,${.35 + .25 * Math.sin(frame * .12)})`; ctx.shadowColor = "#ff3a2e"; ctx.shadowBlur = 26; ctx.lineWidth = 6; ctx.strokeRect(G.x - 3, G.y - 3, G.w + 6, G.h + 6); ctx.shadowBlur = 0; }
   ctx.restore(); ctx.imageSmoothingEnabled = false; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.globalAlpha = 1;
 }
-const PA_RGB = ["255,130,40", "120,255,170", "255,120,40", "255,180,80", "255,150,50"], PA_BASE = [.07, .04, .03, .02, .06];
+const PA_RGB = ["255,130,40", "120,255,170", "255,120,40", "255,180,80", "255,150,50"], PA_BASE = [.07, .04, .03, .02, .13];   // dot glass glows brighter (Chris: letters not bright enough in play)
 function paGlows(okNow) {
   const g = L.glass, rgb = PA_RGB[KS - 6];
   S.grid.forEach((t, i) => { if (!t || t.ch === " ") return; const c = tileC(i), lit = t.lit || 0, hot = okNow && lit > .5;
