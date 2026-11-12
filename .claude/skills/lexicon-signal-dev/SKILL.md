@@ -22,9 +22,10 @@ the same batch.
 
 ## The look (decided 2026-11-12)
 - Late-90s computer-game pixel art: a night room with damask wallpaper, a window with a city and a radio tower (red beacon), a big
-  1940s wooden radio on a sideboard, and a wood-and-brass interface bar along the bottom (text log, two brass plates, battery gauge,
-  part slots). The target picture is `art/concept/look-target.png`.
-- Done the old-school way: the game draws at a real low resolution (W x 400, W = 532..950 from the screen's shape, 712 at 16:9) and
+  1940s wooden radio on a sideboard, and a wood-and-brass interface bar along the bottom (text log, two brass plates, part slots;
+  the words-left gauge was dropped for more slots, the radio's six lamps show words left). The target picture is `art/concept/look-target.png`.
+- Done the old-school way: the game draws at a real low resolution (W x 400, W = 532..950 from the screen's shape, 712 at 16:9; screens narrower than 1.7:1, i.e. phones, get W x 470 with a
+  165-tall two-row bar) and
   the canvas is scaled up with hard square pixels. Every art piece is shown at its TRUE pixel size, never resized (2026-11-12):
   ChatGPT's pixel art is fake pixels of uneven size, so each source is run once through RetroDiffusion's fix_pixel_art (standard
   engine, $0.002; pass the raw.githubusercontent.com URL of the source in the public repo; the result comes back as base64 in a saved
@@ -36,7 +37,12 @@ the same batch.
   lamps, dial, meter, lit keys, flying letters, sparks. Never dithered pixel halos (Chris doesn't like them).
 - Things rearrange by screen shape: the wallpaper is a tile, the sideboard and bar are left end + repeated middle + right end, panels
   are 9-sliced from the log box, the bar is made taller by repeating its plain middle rows. Narrow (4:3) screens tuck the window
-  behind the radio's left edge (beacon still visible) and show fewer part slots.
+  behind the radio's left edge (beacon still visible).
+- Part slots (2026-11-12): always 5, on every screen (a rule of play, PART_SLOTS). Copies of one part stack in its slot (x2, x3).
+  Wide screens: log | plates | 5 slots in one row. Narrow: log and plates on top, the 5 slots centred in a row under them.
+  All 5 full and a new kind of part picked: the swap screen (phase "swap") asks which part to take out (all its copies go);
+  left/right + A, or tap the slot; B or a tap on the room goes back to the picker. Picker cards say "STACKS: XN" or
+  "SLOTS FULL: SWAP ONE". `#test-swap` opens the swap screen.
 - Bar contents always sit inside the bar's inner gold border, centred on one line with one equal gap.
 - Part icons: full size (iconL_) in the part picker, exactly half (icon_, 2x2 majority) in the bar's slots.
 - Display rules: the screen canvas is twice the world size (FINE = 2). The room, keys, bar and menu panels draw in world pixels and
