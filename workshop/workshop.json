@@ -1,6 +1,100 @@
 {
  "topics": [
   {
+   "id": "title",
+   "title": "Title screen",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "Which title screen should the game open on?",
+     "found": "Five ways for the logo to arrive. The logo is a placeholder made from the game's own letters (LEXICON in brass, SIGNAL in lit dot-matrix); the real one drops into the same spot later. Watch the clips, or play each one: press A once to skip the entrance, again to start. You can mix (e.g. the tube from 4 with the stamp from 5).",
+     "options": [
+      {
+       "id": "1",
+       "title": "Tuning in",
+       "note": "The room starts dark with static and the dial hunting. Scrambled letters flicker and lock into the logo left to right, it lands with a thump, then the six lamps come on one by one.",
+       "images": [
+        {
+         "src": "img/title-r1/1.mp4",
+         "label": "The entrance"
+        },
+        {
+         "src": "img/title-r1/1-still.png",
+         "label": "Where it settles"
+        }
+       ],
+       "play": "play.html#title-1"
+      },
+      {
+       "id": "2",
+       "title": "From the tower",
+       "note": "Rings of red signal leave the tower's beacon and wash across the room. The logo forms out of wavy lines that settle into the letters, then it burns in.",
+       "images": [
+        {
+         "src": "img/title-r1/2.mp4",
+         "label": "The entrance"
+        },
+        {
+         "src": "img/title-r1/2-still.png",
+         "label": "Where it settles"
+        }
+       ],
+       "play": "play.html#title-2"
+      },
+      {
+       "id": "3",
+       "title": "Neon across the street",
+       "note": "The logo is a neon sign on a dark board. The letters buzz on one at a time, stutter, and flood the room red; SIGNAL lights up in amber under it.",
+       "images": [
+        {
+         "src": "img/title-r1/3.mp4",
+         "label": "The entrance"
+        },
+        {
+         "src": "img/title-r1/3-still.png",
+         "label": "Where it settles"
+        }
+       ],
+       "play": "play.html#title-3"
+      },
+      {
+       "id": "4",
+       "title": "Fill the tube",
+       "note": "The signal tube along the bar fills itself cell by cell. When it's full the room flashes and the logo drops in on a brass plate with a heavy clunk and a bounce.",
+       "images": [
+        {
+         "src": "img/title-r1/4.mp4",
+         "label": "The entrance"
+        },
+        {
+         "src": "img/title-r1/4-still.png",
+         "label": "Where it settles"
+        }
+       ],
+       "play": "play.html#title-4"
+      },
+      {
+       "id": "5",
+       "title": "Programme sheet",
+       "note": "Parchment, like the old title box: a sheet slides up, the logo is stamped onto it, SIGNAL comes up in red ink and the two lines of how to play type out.",
+       "images": [
+        {
+         "src": "img/title-r1/5.mp4",
+         "label": "The entrance"
+        },
+        {
+         "src": "img/title-r1/5-still.png",
+         "label": "Where it settles"
+        }
+       ],
+       "play": "play.html#title-5"
+      }
+     ]
+    }
+   ]
+  },
+  {
    "id": "keys",
    "title": "Letter keys",
    "rounds": [

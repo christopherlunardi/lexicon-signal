@@ -569,7 +569,7 @@ function drawRadioLive() {
   // the dial becomes a lit display window
   const d = L.dial; wctx.fillStyle = C.glass; wctx.fillRect(d.x, d.y, d.w, d.h);
   // lamps = words left
-  const lit = S.phase === "title" ? 6 : Math.min(6, S.words);
+  const lit = S.phase === "title" ? titleFX.lamps : Math.min(6, S.words);
   L.lamps.forEach((p, k) => { if (k < lit) { const low = S.words === 1 && S.phase === "play" && (frame >> 4) & 1; disc(wctx, p.x, p.y, 6, low ? C.red : C.lamp); disc(wctx, p.x - 2, p.y - 2, 1, C.hot); } });
   for (const [k, p] of [["L", L.knobL], ["R", L.knobR]]) { const a = knobA[k] - .6; line(wctx, p.x + Math.cos(a) * 5, p.y + Math.sin(a) * 5, p.x + Math.cos(a) * 13, p.y + Math.sin(a) * 13, C.gold); }
   if (knobA.R > 0) knobA.R = Math.max(0, knobA.R - .04);
@@ -983,7 +983,7 @@ function drawGlows() {
   bloom(FX(b.x), FX(b.y), 46 + prog * 60 + beaconFlash * 2, "255,60,40", (.25 + .55 * prog) * pulse + beaconFlash / 50);
   bloom(FX(b.x), FX(b.y), 20, "255,200,170", .5 + beaconFlash / 40);
   bloom(FX(W - 20), FX(SCENE_H - 30), FX(220), "255,150,60", .16 + .03 * Math.sin(frame / 50));     // the unseen lamp, breathing
-  const lit = S.phase === "title" ? 6 : Math.min(6, S.words);
+  const lit = S.phase === "title" ? titleFX.lamps : Math.min(6, S.words);
   L.lamps.forEach((p, k) => { if (k < lit) bloom(FX(p.x), FX(p.y), 34, S.words === 1 && S.phase === "play" ? "255,70,50" : "255,190,90", .5); });
   const d = L.dial, okNow = S.phase === "play" && S.path.length >= 3 && isValid();
   bloom(FX(d.x + d.w / 2), FX(d.y + d.h / 2), FX(d.w * .6), "255,170,70", okNow ? .3 : .12);
@@ -1092,7 +1092,7 @@ function tubeHead() { const t = L.tube; return { x: t.x + 4 + (t.w - 8) * Math.m
 function tubeRGB(f) { const a = [255, 120, 40], b = [255, 200, 90], c = [255, 246, 220], m = f < .6 ? f / .6 : (f - .6) / .4, p = f < .6 ? a : b, q = f < .6 ? b : c;
   return p.map((v, i) => Math.round(v + (q[i] - v) * m)).join(","); }
 function drawTube() {
-  const G = tubeGeom(), play = S.phase !== "title", pr = play ? Math.min(1, S.shown / S.target) : 0;
+  const G = tubeGeom(), play = S.phase !== "title" || titleFX.tube != null, pr = S.phase === "title" ? titleFX.tube || 0 : Math.min(1, S.shown / S.target);
   // up as fast as the count, down (a new night) as a quick drain
   tubeV = pr >= tubeV ? pr : tubeV + (pr - tubeV) * .12; if (Math.abs(tubeV - pr) < .002) tubeV = pr;
   const lit = Math.floor(tubeV * G.n + 1e-6);
@@ -1130,7 +1130,118 @@ function tubeGlows() {
 // ---------- menus: dim the room with a checker of dark pixels, parchment panels, then fine text ----------
 function dim() { octx.fillStyle = C.shade; for (let y = 0; y < SCENE_H; y++) for (let x = (y & 1); x < W; x += 2) octx.fillRect(x, y, 1, 1); }
 function blitOver() { ctx.drawImage(over, 0, 0, W * FINE, H * FINE); }
+/* ---------- title screens (Workshop topic "title", round 1) ----------
+   Each style brings the logo in its own way, then settles on the logo and "PRESS A TO TUNE IN". A press during the entrance jumps to
+   the settled screen; the next press starts. Style 0 is the old parchment box. #title-N opens style N. The logo is a placeholder made
+   in code from our own 5x7 letters until the real one is drawn: LEXICON in chunky bevelled brass, SIGNAL in lit amber dot-matrix. */
+const TITLE_STYLES = ["Parchment box (now)", "Tuning in", "From the tower", "Neon across the street", "Fill the tube", "Programme sheet"];
+let TS = 0; { const m = location.hash.match(/title-(\d+)/); if (m) TS = Math.min(TITLE_STYLES.length - 1, +m[1]); }
+const LD = 14, LP = 6 * LD;   // logo letter cell and letter pitch, in fine pixels
+let titleT = 0, titleSkip = false, logoCv = null, logoSig = null, logoNeon = null;
+const titleFX = { lamps: 6, tube: null };
+const TITLE_LEN = [0, 200, 190, 200, 170, 150];
+function buildLogo() {
+  // LEXICON: 10 px cells, dark outline, brass from light at the top to deep amber at the bottom, a lit edge on top, a dark lip under
+  const d = LD, pitch = 6 * d, lw = 7 * pitch - d, c = document.createElement("canvas"); c.width = lw + 16; c.height = 7 * d + 16; const x = c.getContext("2d");
+  const cells = []; "LEXICON".split("").forEach((ch, k) => F5[ch].split(" ").forEach((row, r) => [...row].forEach((b, col) => { if (b === "1") cells.push({ k, r, col, X: 8 + k * pitch + col * d, Y: 8 + r * d }); })));
+  const has = new Set(cells.map(q => q.k + "," + q.r + "," + q.col)), on = (k, r, col) => has.has(k + "," + r + "," + col);
+  x.fillStyle = "#1a0c06"; cells.forEach(q => x.fillRect(q.X - 4, q.Y - 4, d + 8, d + 8));
+  cells.forEach(q => { const t = q.r / 6, col = [255 - 50 * t, 226 - 120 * t, 150 - 115 * t].map(Math.round); x.fillStyle = `rgb(${col})`; x.fillRect(q.X, q.Y, d, d);
+    if (!on(q.k, q.r - 1, q.col)) { x.fillStyle = "#fff6d8"; x.fillRect(q.X, q.Y, d, 2); }
+    if (!on(q.k, q.r + 1, q.col)) { x.fillStyle = "#6e3714"; x.fillRect(q.X, q.Y + d - 3, d, 3); }
+    if (!on(q.k, q.r, q.col - 1)) { x.fillStyle = "rgba(255,240,200,.35)"; x.fillRect(q.X, q.Y, 2, d); } });
+  logoCv = c;
+  // the same letters as neon tubes: a red glass tube per cell run, a hot white core
+  const n = document.createElement("canvas"); n.width = c.width; n.height = c.height; const nx = n.getContext("2d");
+  nx.fillStyle = "#2a0806"; cells.forEach(q => nx.fillRect(q.X - 2, q.Y - 2, d + 4, d + 4));
+  nx.fillStyle = "#ff3d2e"; cells.forEach(q => nx.fillRect(q.X + 1, q.Y + 1, d - 2, d - 2));
+  nx.fillStyle = "#ffb6a0"; cells.forEach(q => { nx.fillRect(q.X + 3, q.Y + 3, d - 6, d - 6); if (on(q.k, q.r, q.col + 1)) nx.fillRect(q.X + 3, q.Y + 3, d, d - 6); if (on(q.k, q.r + 1, q.col)) nx.fillRect(q.X + 3, q.Y + 3, d - 6, d); });
+  logoNeon = n;
+  // SIGNAL: lit dot positions (drawn live so they can glow and switch on)
+  const p = 11, sp = 6 * p; logoSig = { dots: [], w: 6 * sp - p * 2 };
+  "SIGNAL".split("").forEach((ch, k) => F5[ch].split(" ").forEach((row, r) => [...row].forEach((b, col) => { if (b === "1") logoSig.dots.push({ k, x: k * sp + col * p, y: r * p }); })));
+}
+// the logo at (cx, top) in fine pixels. o: { lex: 0..1 brass reveal, sig: 0..1 signal dots, waves, wob (wave distortion), scramble, neon, flick }
+function drawLogo(cx, top, o) {
+  if (!logoCv) buildLogo(); const lw = logoCv.width, lh = logoCv.height, x0 = Math.round(cx - lw / 2);
+  if (o.neon) {   // neon tubes: each letter its own colour flicker; LEXICON red, glowing
+    const pitch = LP; for (let k = 0; k < 7; k++) { const a = o.flick ? o.flick[k] : 1; if (a <= 0) continue;
+      ctx.save(); ctx.globalAlpha = a; ctx.drawImage(logoNeon, 4 + k * pitch, 0, pitch, lh, x0 + 4 + k * pitch, top, pitch, lh); ctx.restore(); }
+  } else if (o.wob) {   // formed out of waves: each row of the logo slides on a sine that settles
+    for (let y = 0; y < lh; y += 2) { const off = Math.sin(y * .25 + frame * .3) * o.wob * 40 + Math.sin(y * .07 - frame * .1) * o.wob * 20;
+      ctx.globalAlpha = Math.min(1, o.lex); ctx.drawImage(logoCv, 0, y, lw, 2, x0 + off, top + y, lw, 2); } ctx.globalAlpha = 1;
+  } else if (o.scramble != null) {   // letters cycle through random letters until each locks in, left to right
+    for (let k = 0; k < 7; k++) { const lockAt = k / 7; if (o.scramble > lockAt) ctx.drawImage(logoCv, 4 + k * LP, 0, LP, lh, x0 + 4 + k * LP, top, LP, lh);
+      else if (o.scramble > lockAt - .35) { const ch = "ABDEGHKMNRSTUWXZ"[(frame + k * 5) >> 1 & 15]; ftextDot(ch, x0 + 8 + k * LP + LD, top + LD * 2, C.dotDim); } }
+  } else { ctx.save(); ctx.beginPath(); ctx.rect(x0, top, lw * Math.min(1, o.lex ?? 1), lh); ctx.clip(); ctx.drawImage(logoCv, x0, top); ctx.restore(); }
+  // SIGNAL under it, with three signal waves to each side
+  const sy = top + lh + 16, sx = Math.round(cx - logoSig.w / 2), n = Math.floor((o.sig ?? 1) * logoSig.dots.length);
+  logoSig.dots.forEach((q, j) => { const lit = j < n || (o.sig ?? 1) >= 1; ctx.fillStyle = lit ? (o.sigCol || (o.neon ? "#ffd27a" : C.amber)) : (o.sigCol ? "rgba(120,60,30,.18)" : C.dotOff); ctx.fillRect(sx + q.x, sy + q.y, 8, 8); if (lit) { ctx.fillStyle = "rgba(255,246,220,.8)"; ctx.fillRect(sx + q.x + 1, sy + q.y + 1, 4, 2); } });
+  if ((o.waves ?? 1) > 0) { ctx.save(); ctx.lineWidth = 3; for (let i = 0; i < 3; i++) { const a = Math.max(0, Math.min(1, (o.waves ?? 1) * 3 - i)) * (.55 + .45 * Math.sin(frame / 12 - i)); ctx.strokeStyle = `rgba(255,176,64,${a})`;
+      for (const s of [-1, 1]) { ctx.beginPath(); ctx.arc(cx + s * (logoSig.w / 2 + 8), sy + 34, 28 + i * 17, s < 0 ? Math.PI * .75 : -Math.PI * .25, s < 0 ? Math.PI * 1.25 : Math.PI * .25); ctx.stroke(); } } ctx.restore(); }
+  return sy + 80;
+}
+function logoGlow(cx, top, a, rgb) { if (!logoCv) buildLogo(); ctx.save(); ctx.globalCompositeOperation = "lighter"; const lw = logoCv.width;
+  for (let x = -lw / 2 + LP / 2; x < lw / 2; x += LP) bloom(cx + x, top + 55, 110, rgb || "255,170,70", a * .35); bloom(cx, top + logoCv.height + 40, 160, "255,170,70", a * .3); ctx.restore(); }
+function pressLines(cx, y, a) {
+  if (a <= 0) return; ctx.save(); ctx.globalAlpha = a;
+  if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO TUNE IN" : "PRESS A TO TUNE IN", cx, y, "ink", C.gold, "c", { outline: C.dark });
+  const b = bestLine(); if (b) ftext(b, cx, y + Math.round(26 * TK), "ink", C.amber, "c", { outline: C.dark }); ctx.restore();
+}
+function shade(a) { ctx.fillStyle = `rgba(6,3,2,${a})`; ctx.fillRect(0, 0, cv.width, FX(SCENE_H)); }
 function drawTitle() {
+  titleT++; const T = titleSkip ? 999 : titleT, cx = FX(W / 2), ease = (u) => { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); };
+  titleFX.lamps = 6; titleFX.tube = null;
+  if (TS === 0) return drawTitleOld();
+  const top = FX(34);
+  if (TS === 1) {   // tuning in: dark static room, the dial hunts, scrambled letters lock into the logo, then the lamps come on
+    if (T === 2) { Sound.retune(); staticKick = 1; }
+    titleFX.lamps = Math.max(0, Math.min(6, Math.floor((T - 120) / 7)));
+    if (T > 120 && T < 165 && (T - 120) % 7 === 0) Sound.blip(1 + (T - 120) / 7);
+    shade(.62 - .3 * ease((T - 110) / 50)); const sc = ease((T - 30) / 75);
+    if (T === 105) { Sound.thud(3); shake = 4; } if (T > 30 && T < 105 && T % 3 === 0) Sound.type();
+    if (T >= 105) logoGlow(cx, top, Math.max(.6, 1.5 - (T - 105) / 30));
+    const end = drawLogo(cx, top, { scramble: T >= 105 ? 1 : sc * 1.02, sig: ease((T - 105) / 40), waves: ease((T - 140) / 40) });
+    pressLines(cx, end + 18, ease((T - 165) / 20));
+  } else if (TS === 2) {   // from the tower: rings of signal leave the beacon and the logo forms out of the waves
+    shade(.45); const b = L.beacon;
+    ctx.save(); ctx.lineWidth = 3; for (let i = 0; i < 6; i++) { const r = ((T * 4 + i * 80) % 480), a = Math.max(0, 1 - r / 480) * .5 * (T < 150 ? 1 : .5); ctx.strokeStyle = `rgba(255,90,60,${a})`; ctx.beginPath(); ctx.arc(FX(b.x), FX(b.y), r * 2, 0, 6.283); ctx.stroke(); } ctx.restore();
+    if (T % 30 === 0 && T < 120) Sound.beacon(false); if (T === 125) { Sound.full(); }
+    const u = ease((T - 20) / 105); logoGlow(cx, top, u * (T > 125 ? 1 + Math.max(0, 1 - (T - 125) / 20) : .5));
+    const end = drawLogo(cx, top, { wob: 1 - u, lex: u, sig: ease((T - 120) / 30), waves: ease((T - 130) / 30) });
+    pressLines(cx, end + 18, ease((T - 155) / 20));
+  } else if (TS === 3) {   // neon across the street: the sign buzzes on letter by letter, flickers, and floods the room red
+    const fl = []; for (let k = 0; k < 7; k++) { const on = 30 + k * 14, s = T - on; fl.push(s < 0 ? 0 : s < 10 ? ((s * 7 + k) % 3 ? 1 : .15) : (T % (97 + k * 13) < 3 ? .3 : 1)); if (s === 0) Sound.buzz(); }
+    const lit = fl.reduce((a, b) => a + b, 0) / 7; shade(.55 - .15 * lit);
+    ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(cx, top + 50, FX(W) * .6, "255,40,30", .25 * lit); bloom(cx, FX(SCENE_H) * .7, FX(W) * .7, "255,60,40", .08 * lit); ctx.restore();
+    // a dark sign board behind the tubes, bolted to the building
+    if (!logoCv) buildLogo(); ctx.fillStyle = "rgba(14,8,6,.85)"; ctx.fillRect(cx - logoCv.width / 2 - 24, top - 16, logoCv.width + 48, logoCv.height + 32 + 120); ctx.strokeStyle = "#3a2216"; ctx.lineWidth = 4; ctx.strokeRect(cx - logoCv.width / 2 - 24, top - 16, logoCv.width + 48, logoCv.height + 32 + 120);
+    ctx.save(); ctx.globalCompositeOperation = "lighter"; for (let k = 0; k < 7; k++) if (fl[k] > 0) bloom(cx - logoCv.width / 2 + 8 + LP / 2 + k * LP, top + 50, 95, "255,60,40", .45 * fl[k]); ctx.restore();
+    const end = drawLogo(cx, top, { neon: true, flick: fl, sig: ease((T - 140) / 30), waves: ease((T - 150) / 30) });
+    if (T === 140) Sound.buzz();
+    pressLines(cx, end + 30, ease((T - 175) / 20));
+  } else if (TS === 4) {   // fill the tube: the tube along the bar fills itself, the room flashes, the logo drops in on a brass plate
+    const f = ease((T - 10) / 80); titleFX.tube = f; shade(.5 - .2 * (T > 95 ? 1 : 0));
+    if (T === 95) { shake = 3; } const drop = T < 95 ? -1 : Math.min(1, (T - 95) / 16), by = drop < 0 ? -400 : -300 * (1 - drop * drop);
+    let bounce = 0; if (T >= 111 && T < 125) bounce = -Math.sin((T - 111) / 14 * Math.PI) * 14; if (T === 111) { Sound.thud(4); shake = 6; }
+    if (T > 95 && T < 110) { ctx.fillStyle = `rgba(255,240,210,${.35 * (1 - (T - 95) / 15)})`; ctx.fillRect(0, 0, cv.width, cv.height); }
+    if (drop >= 0) { if (!logoCv) buildLogo(); const pw = logoCv.width + 80, ph = logoCv.height + 150, px = cx - pw / 2, py = top - 20 + by + bounce;
+      octx.clearRect(0, 0, W, H); plate3(octx, Math.round(px / FINE), Math.round(py / FINE), Math.round(pw / FINE), Math.round(ph / FINE)); blitOver();
+      ctx.fillStyle = "rgba(20,10,5,.88)"; ctx.fillRect(px + 22, py + 18, pw - 44, ph - 36);
+      logoGlow(cx, top + by + bounce, .7); const end = drawLogo(cx, top + by + bounce, { sig: 1, waves: ease((T - 125) / 30) }); }
+    pressLines(cx, top + 320, ease((T - 140) / 20));
+  } else if (TS === 5) {   // programme sheet: a parchment sheet slides up, the logo is stamped on it in brass, then the lines type out
+    shade(.4); const u = ease(T / 40), w = Math.min(W - 30, 360), hh = 250, x = Math.round(W / 2 - w / 2), y = Math.round(18 + (1 - u) * 260);
+    octx.clearRect(0, 0, W, H); nine(octx, "logbox", x, y, w, hh); blitOver();
+    if (T === 60) { Sound.thud(2); shake = 3; }
+    if (T >= 60) { const s = Math.max(1, 1.25 - (T - 60) / 20), top2 = FX(y) + 30; ctx.save(); ctx.translate(cx, top2); ctx.scale(s, s); ctx.translate(-cx, -top2);
+      const end = drawLogo(cx, top2, { sig: ease((T - 70) / 25), waves: 0, sigCol: C.inkRed }); ctx.restore();
+      const body = wrap("Spell words in the radio glass. Each word beams signal to the tower. Reach the night's target before the lamps go dark.", "ink", FX(w) - 60);
+      const n = Math.max(0, Math.floor((T - 95) * 2)); let left = n, ty = end + 14; body.forEach(s => { if (left > 0) ftext(s.slice(0, left), cx, ty, "ink", C.ink, "c"); left -= s.length; ty += Math.round(22 * TK); });
+      if (T > 130 && (frame >> 5) & 1) ftext(usingTouch ? "TAP TO TUNE IN" : "PRESS A TO TUNE IN", cx, ty + 10, "ink", C.inkRed, "c"); }
+  }
+}
+function drawTitleOld() {
   const w = Math.min(W - 48, 360), lh = Math.round(22 * TK), body = wrap("Spell words in the radio glass. Each word beams signal to the tower. Reach the night's target before the six lamps go dark.", "ink", FX(w) - 60);
   const h = Math.round((70 + body.length * lh + 16 + lh * 2 + 30) / FINE), x = Math.round(W / 2 - w / 2), y = Math.max(12, Math.round((SCENE_H - h) / 2) - 6);
   dim(); nine(octx, "logbox", x, y, w, h); blitOver();
@@ -1211,10 +1322,11 @@ function move(dx, dy) { dismissCard();
   if (S.phase !== "play") return;
   const x = S.cursor % 4 + dx, y = ((S.cursor / 4) | 0) + dy; S.cursor = ((y + 4) % 4) * 4 + ((x + 4) % 4); knobA.L += .35 * (dx + dy); Sound.tickMove();
 }
+function titleBusy() { if (S.phase === "title" && !titleSkip && titleT < TITLE_LEN[TS]) { titleSkip = true; return true; } return false; }
 function start() { Sound.ensure(); Sound.music(); newRun(); staticKick = .6; Sound.retune(); }
-function pressA() { Sound.ensure(); usingButtons = true; dismissCard(); if (S.phase === "title" || S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
+function pressA() { Sound.ensure(); usingButtons = true; dismissCard(); if (titleBusy()) return; if (S.phase === "title" || S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
 function pressB() { if (S.phase === "swap") return swapCancel(); if (S.phase === "play") back(); }
-function pressStart() { Sound.ensure(); if (S.phase === "title" || S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); retune(); }
+function pressStart() { Sound.ensure(); if (titleBusy()) return; if (S.phase === "title" || S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); retune(); }
 function pressSel() { Sound.ensure(); KS = (KS + 1) % KEY_STYLES.length; try { localStorage.setItem("lexsig-keys2", KS); } catch (e) {} if (S.log) log(`Keys: ${KEY_STYLES[KS]} (${KS + 1}/${KEY_STYLES.length})`); Sound.click(); }
 window.addEventListener("keydown", (e) => {
   if (introPress()) { e.preventDefault(); return; }
@@ -1231,7 +1343,7 @@ function keyAt(p, strict) { for (let i = 0; i < 16; i++) { const c = tileC(i), m
 let down = null, dragging = false;
 cv.addEventListener("pointerdown", (e) => {
   Sound.ensure(); usingButtons = false; e.preventDefault(); if (introPress()) return; const p = toWorld(e);
-  if (S.phase === "title" || S.phase === "over") { start(); return; }
+  if (titleBusy()) return; if (S.phase === "title" || S.phase === "over") { start(); return; }
   if (S.phase === "swap") { const [, , sw, sh] = R("slot"), y0 = L.barY + L.slotY, k = Math.floor((p.x - L.slotX) / L.slotStep);
     if (p.y >= y0 && p.y <= y0 + sh && k >= 0 && k < partSlots().length && p.x - L.slotX - k * L.slotStep <= sw) { if (swapFocus === k || usingTouch) swapConfirm(k); else swapFocus = k; }
     else if (p.y < SCENE_H) swapCancel(); return; }
@@ -1310,6 +1422,7 @@ const Sound = (() => {
     land(big) { if (!ac) return; const t = ac.currentTime; osc("sine", 160, t, .003, .3, .16, sfx, 70); noise(t, .1, .1, "bandpass", 1400, 1.5, sfx); if (big) osc("triangle", 220, t, .005, .12, .3, sfx); },
     full() { if (!ac) return; const t = ac.currentTime; [0, 4, 7, 12].forEach((d, k) => osc("square", m2f(81 + d), t + k * .045, .003, .06, .35)); noise(t, .5, .1, "highpass", 4000, .7, sfx); },
     part() { if (!ac) return; const t = ac.currentTime; osc("triangle", m2f(88), t, .003, .08, .18); osc("square", m2f(95), t + .06, .003, .05, .2); },
+    buzz() { if (!ac) return; const t = ac.currentTime; osc("sawtooth", 120, t, .005, .05, .25, sfx); osc("square", 240, t, .002, .03, .08, sfx); noise(t, .12, .06, "highpass", 3000, .7, sfx); },
     tick() { if (!ac) return; const t = ac.currentTime; if (t - lastTick < .04) return; lastTick = t; osc("square", 2400, t, .001, .02, .015); },
     type() { if (!ac) return; const t = ac.currentTime; if (t - lastType < .03) return; lastType = t; noise(t, .025, .05, "bandpass", 3000 + Math.random() * 1500, 3); },
     click() { if (!ac) return; osc("triangle", 900, ac.currentTime, .002, .1, .05); },
@@ -1377,7 +1490,7 @@ function studioFrame() {
 function studioEnd() {
   const c2 = studio.cv; studio.cv = null;
   if (studio.node && studio.skip) try { studio.node.stop(); } catch (e) {}
-  studio.node = null; studio.skip = false; S.phase = "title"; Sound.music();
+  studio.node = null; studio.skip = false; S.phase = "title"; titleT = 0; titleSkip = false; Sound.music();
   if (c2) { studio.fading = true; c2.style.opacity = "0"; setTimeout(() => { c2.remove(); studio.fading = false; }, 400); }
 }
 /* ================= boot ================= */
