@@ -164,9 +164,10 @@ the same batch.
 ## Title menu and How to Play
 - The title's brass plate is a menu: START and HOW TO PLAY, an arrow by the one you're on (up/down, A or Start; tap a line).
 - HOW TO PLAY (`HOW_CARDS`): six cards over a live demo of the real game run by a small script (cursor moves, letters picked, words
-  sent, retune, the part picker): spell a word, letters must touch, send it, fill the tube, retune, radio parts. The card is a
-  parchment strip ABOVE the game; the game frame shrinks into the space below it (Chris: you must see the game while it's shown,
-  never cover the bar). Its words are smooth type at the page's real size (title Alfa Slab One, text Special Elite; Chris said the
+  sent, retune, the part picker): spell a word, letters must touch, send it, fill the tube, retune, radio parts. The card pops up in a
+  spot that doesn't matter for what's shown (HOW_AT: the wall left of the radio; below the tower light when the beam matters; on
+  phones, the bar under the tube, or between the picker and slots for parts), and what it's about is ringed with a moving dashed
+  glow (howTarget). NEVER shrink the game or cover what's being shown (Chris). Its words are smooth type at the page's real size (title Alfa Slab One, text Special Elite; Chris said the
   big pixel letters looked terrible and off-centre), button chips with centred labels. A/right next, B/left back (B on the first: title), tap right/left half. The demo never clears the night.
 - ALWAYS keep How to Play true to the game (Chris): any change to a rule, number, control, part or what something looks like
   updates the card text and its demo script in the same batch, along with the dial TIPS.

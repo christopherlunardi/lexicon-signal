@@ -1479,29 +1479,58 @@ function keyChip(x, y, k, u) {   // a button as it looks on the handheld (A and 
   else if (k === "START") { w = 64 * u; ctx.fillStyle = "#6b5a52"; ctx.beginPath(); ctx.roundRect(x, y - 10 * u, w, 20 * u, 10 * u); ctx.fill(); ctx.fillStyle = "#f3e6d0"; ctx.font = `${Math.round(11 * u)}px ${HOWF.chip}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("START", x + w / 2, y + 1); }
   else { const r = 14 * u; w = r * 2; ctx.fillStyle = k === "A" ? "#a8402c" : "#7a3a2a"; ctx.beginPath(); ctx.arc(x + r, y, r, 0, 6.283); ctx.fill(); ctx.fillStyle = "#f7ecde"; ctx.font = `${Math.round(15 * u)}px ${HOWF.chip}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(k, x + r, y + 1 * u); }
   ctx.restore(); return w; }
-// the card sits ABOVE the game, never over it (Chris: you have to see the game while it's being shown): the finished frame is
-// shrunk into the lower part of the screen and the card fills a strip across the top
-let howSnap = null;
+// The card never shrinks or covers the game (Chris): it pops up in a spot that doesn't matter for what's being shown (the wall
+// round the window, or over the log), sized to fit there, and the part of the screen it's about is ringed with light and pointed to.
+const HOW_AT = {   // per card: where the card goes on wide screens and on narrow ones, and what it points at
+  "SPELL A WORD": ["wall", "wall", ["glass"]], "LETTERS MUST TOUCH": ["wall", "wall", ["glass"]], "SEND IT": ["low", "low", ["glass", "tower"]],
+  "FILL THE TUBE": ["wall", "wall", ["tube", "lamps"]], "STUCK? RETUNE": ["wall", "wall", ["glass", "knob"]], "RADIO PARTS": ["barup", "barup", ["slots"]] };
+function howTarget(k) { const g = L.glass, by = L.barY;
+  if (k === "glass") return [g.x - 4, g.y - 4, g.w + 8, g.h + 8];
+  if (k === "tower") return [L.beacon.x - 18, L.beacon.y - 16, 36, 70];
+  if (k === "tube") return [L.tube.x, by + L.tube.y - 2, L.tube.w, L.tube.h + 4];
+  if (k === "lamps") { const a = L.lamps; return [a[0].x - 13, a[0].y - 13, a[5].x - a[0].x + 26, 26]; }
+  if (k === "knob") return [L.knobR.x - 22, L.knobR.y - 36, 44, 58];
+  if (k === "slots") { const [, , sw, sh] = R("slot"); return [L.slotX - 4, by + L.slotY - 4, PART_SLOTS * L.slotStep - 9 + 8, sh + 8]; } }
+function howBox(at) {   // the spot, in world pixels: [x, y, width, most height, anchored at the bottom?]
+  const w = L.radioX - 16 >= 250 ? Math.min(L.radioX - 16, 340) : L.glass.x - 18;   // the wall left of the radio, or (narrow screens) left of the glass
+  if (at === "bar") { const y = L.barY + L.tube.y + L.tube.h + 4; return [BIN.l + 2, y, W - BIN.l - BIN.r - 4, L.barY + BAR_H - BIN.b - 2 - y, false]; }
+  if (at === "top") { const G = shopGeom(), y = G.y0 + G.ch + 30, y1 = L.barY + L.slotY - 6; return [BIN.l + 2, y, W - BIN.l - BIN.r - 4, y1 - y, true]; }   // between the part picker and the slots, both left clear
+  if (at === "wall") return [6, 6, w, SCENE_H - 12, false];
+  if (at === "low") { const top = L.beacon.y + 34; return [6, top, w, SCENE_H - 6 - top, true]; }   // below the tower's light, so the beam stays in view
+  const [, , pw] = R("plate"), x = L.log.x, ww = L.plateX + pw - x, bottom = L.barY + L.log.y + L.log.h;   // over the log and plates, growing up
+  return [x, bottom - 200, ww, 200, true]; }
+let howAnim = { card: -1, t: 0 };
 function drawHowCard() {
-  const c = HOW_CARDS[HOW.card], cssW = cv.getBoundingClientRect().width || cv.width, u = cv.width / cssW * (cssW < 500 ? .85 : 1);   // u: canvas pixels per page pixel
-  const tf = `${Math.round(21 * u)}px ${HOWF.title}`, bf = `${Math.round(15 * u)}px ${HOWF.body}`, ff = `${Math.round(12 * u)}px ${HOWF.body}`, lh = Math.round(20 * u), PAD = Math.round(26 * u);
-  const lines = wrapPx(c.text, bf, cv.width - 2 * PAD - 16), th = Math.round(28 * u), band = Math.round(PAD * .8 + th + 8 * u + lines.length * lh + 10 * u + 16 * u + PAD * .7);
-  if (!howSnap) howSnap = document.createElement("canvas"); if (howSnap.width !== cv.width || howSnap.height !== cv.height) { howSnap.width = cv.width; howSnap.height = cv.height; }
-  const hs = howSnap.getContext("2d"); hs.clearRect(0, 0, cv.width, cv.height); hs.drawImage(cv, 0, 0);
-  const sc = (cv.height - band) / cv.height, gw = Math.round(cv.width * sc), gx = Math.round((cv.width - gw) / 2);
-  ctx.fillStyle = "#0b0705"; ctx.fillRect(0, 0, cv.width, cv.height);
-  ctx.save(); ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = "high"; ctx.drawImage(howSnap, 0, 0, cv.width, cv.height, gx, band, gw, cv.height - band); ctx.restore();
-  // the parchment strip across the top (the same 9-sliced parchment as the log)
-  const bh = Math.ceil(band / FINE) - 4; octx.clearRect(0, 0, W, H); nine(octx, "logbox", 3, 2, W - 6, bh); ctx.drawImage(over, 0, 0, W, bh + 4, 0, 0, cv.width, (bh + 4) * FINE);
-  ctx.save(); const X = PAD + 8, ty0 = Math.round(PAD * .8 + th / 2);
+  // phones (the tall layout) have no free wall beside the radio: the card goes in the bar under the tube (the log, plates and slots
+  // aren't what the early cards are about), or across the top for the parts card, whose subject is the bar's slots
+  const c = HOW_CARDS[HOW.card], cfg = HOW_AT[c.title] || ["wall", "wall", []], at = BAR_H > 140 ? (c.title === "RADIO PARTS" ? "top" : "bar") : cfg[0];
+  if (howAnim.card !== HOW.card) howAnim = { card: HOW.card, t: 0 }; howAnim.t++;
+  const cssW = cv.getBoundingClientRect().width || cv.width, u = cv.width / cssW;   // canvas pixels per page pixel
+  // light round what the card is about, pulsing gently
+  ctx.save(); const pulse = .55 + .45 * Math.sin(frame / 10);
+  for (const k of cfg[2]) { const [x, y, w, hh] = howTarget(k), o = 5; ctx.strokeStyle = `rgba(255,226,150,${.55 + .45 * pulse})`; ctx.lineWidth = 4 * u; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 22 * u;
+    ctx.setLineDash([14 * u, 8 * u]); ctx.lineDashOffset = -frame * .8 * u; ctx.beginPath(); ctx.roundRect(FX(x - o), FX(y - o), FX(w + 2 * o), FX(hh + 2 * o), 12 * u); ctx.stroke(); }
+  ctx.setLineDash([]);
+  ctx.restore();
+  // the card: fit the text into the spot (smaller type if it must, never below a readable size)
+  let [bx, by, bw, bmax, low] = howBox(at); const PAD = 12 * u, maxH = FX(bmax);
+  let size = 15, lines, tf, bf, lh, th, need, chipW = c.keys.length * 40;
+  for (; size >= 10; size -= .5) { tf = `${Math.round(size * 1.35 * u)}px ${HOWF.title}`; bf = `${Math.round(size * u)}px ${HOWF.body}`; lh = Math.round(size * 1.32 * u); th = Math.round(size * 1.8 * u);
+    ctx.font = tf; const titleOk = ctx.measureText(c.title).width + chipW * u * size / 15 <= FX(bw) - 2 * PAD - 8;
+    lines = wrapPx(c.text, bf, FX(bw) - 2 * PAD - 8); need = PAD + th + 4 * u + lines.length * lh + 6 * u + size * 1.1 * u + PAD; if (need <= maxH && titleOk) break; }
+  const ch = Math.min(maxH, Math.round(need)), cw = FX(bw), cx0 = FX(bx), cy0 = low ? FX(by) + maxH - ch : FX(by);
+  const e = Math.min(1, howAnim.t / 10), slide = Math.round((1 - e * e) * 30 * u);
+  ctx.save(); ctx.globalAlpha = e;
+  octx.clearRect(0, 0, W, H); const ww = Math.round(cw / FINE), hh2 = Math.round(ch / FINE); nine(octx, "logbox", 0, 0, ww, hh2); ctx.drawImage(over, 0, 0, ww, hh2, cx0, cy0 - slide, ww * FINE, hh2 * FINE);
+  const X = cx0 + PAD + 6, ty0 = cy0 - slide + PAD + th / 2;
   ctx.textBaseline = "middle"; ctx.textAlign = "left"; ctx.font = tf; ctx.fillStyle = "rgba(255,240,200,.6)"; ctx.fillText(c.title, X, ty0 + 2); ctx.fillStyle = C.ink; ctx.fillText(c.title, X, ty0);
-  let kx = X + ctx.measureText(c.title).width + 14 * u; for (const k of c.keys) kx += keyChip(kx, ty0, k, u) + 8 * u;
-  const n = HOW_CARDS.length, dot = 8 * u, dx = cv.width - PAD - 8 - (n - 1) * dot * 1.8 - dot * 1.4;   // a dot for each card, the current one long and red
-  for (let i = 0; i < n; i++) { ctx.fillStyle = i === HOW.card ? C.inkRed : C.inkSoft; const cx = dx + i * dot * 1.8 + (i > HOW.card ? dot * 1.4 : 0); ctx.beginPath(); ctx.roundRect(cx, ty0 - dot / 2, i === HOW.card ? dot * 2.4 : dot, dot, dot / 2); ctx.fill(); }
-  ctx.font = bf; ctx.fillStyle = C.ink; ctx.textBaseline = "top"; let y = Math.round(PAD * .8 + th + 8 * u); lines.forEach(s => { ctx.fillText(s, X, y); y += lh; });
-  const fy = y + 10 * u, last = HOW.card === n - 1; ctx.font = ff;
-  ctx.fillStyle = C.inkSoft; ctx.fillText(usingTouch ? (HOW.card ? "← tap left: back" : "← tap left: title") : (HOW.card ? "B  back" : "B  title"), X, fy);
-  ctx.textAlign = "right"; ctx.fillStyle = C.inkRed; ctx.fillText((usingTouch ? "tap right: " : "A  ") + (last ? "done" : "next") + ((frame >> 4) & 1 ? " →" : "  →"), cv.width - PAD - 8, fy);
+  let kx = X + ctx.measureText(c.title).width + 10 * u; for (const k of c.keys) kx += keyChip(kx, ty0, k, u * size / 15) + 6 * u;
+  const n = HOW_CARDS.length, dot = 6 * u, dx = cx0 + cw - PAD - 6 - (n - 1) * dot * 1.8 - dot * 1.4;
+  if (dx > kx + 6 * u) for (let i = 0; i < n; i++) { ctx.fillStyle = i === HOW.card ? C.inkRed : C.inkSoft; const px = dx + i * dot * 1.8 + (i > HOW.card ? dot * 1.4 : 0); ctx.beginPath(); ctx.roundRect(px, ty0 - dot / 2, i === HOW.card ? dot * 2.4 : dot, dot, dot / 2); ctx.fill(); }
+  ctx.font = bf; ctx.fillStyle = C.ink; ctx.textBaseline = "top"; let y = cy0 - slide + PAD + th + 4 * u; lines.forEach(s => { ctx.fillText(s, X, y); y += lh; });
+  const last = HOW.card === n - 1; ctx.font = `${Math.round(size * .82 * u)}px ${HOWF.body}`; y += 4 * u;
+  ctx.fillStyle = C.inkSoft; ctx.fillText(usingTouch ? (HOW.card ? "← tap left: back" : "← tap left: title") : (HOW.card ? "B  back" : "B  title"), X, y);
+  ctx.textAlign = "right"; ctx.fillStyle = C.inkRed; ctx.fillText((usingTouch ? "tap right: " : "A  ") + (last ? "done" : "next") + ((frame >> 4) & 1 ? " →" : "  →"), cx0 + cw - PAD - 6, y);
   ctx.restore();
 }
 function drawTitleOld() {
