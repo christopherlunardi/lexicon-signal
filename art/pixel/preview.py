@@ -11,6 +11,15 @@ PLACE = {"window": (22, 18), "radio": (172, 14)}          # native top-left of e
 t = np.asarray(Image.open("art/pixel/wall_tile.png").convert("RGB")).astype(float)
 img = np.tile(t, (H // t.shape[0] + 1, W // t.shape[1] + 1, 1))[:H, :W].copy()
 emis = np.zeros((H, W))               # 1 = gives its own light (window glass), skips room lighting
+# the sideboard: left end, repeated bay, right end, from x=150 to the right edge of the screen
+sbx, sby = 150, 178
+parts = ["sb_left"] + ["sb_mid"] * 7 + ["sb_right"]
+for nm in parts:
+    s = np.asarray(Image.open(f"art/pixel/{nm}.png").convert("RGBA")).astype(float); h, w = s.shape[:2]
+    ww_ = min(w, W - sbx)
+    if ww_ <= 0: break
+    a = s[:, :ww_, 3:] / 255; img[sby:sby + h, sbx:sbx + ww_] = img[sby:sby + h, sbx:sbx + ww_] * (1 - a) + s[:, :ww_, :3] * a
+    sbx += w
 for name, (px, py) in PLACE.items():
     s = np.asarray(Image.open(f"art/pixel/{name}.png").convert("RGBA")).astype(float)
     h, w = s.shape[:2]; a = s[..., 3:] / 255

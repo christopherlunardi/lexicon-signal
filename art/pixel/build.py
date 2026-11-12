@@ -18,6 +18,10 @@ SPRITES = {
         "glass0": (552, 214), "glass1": (1102, 688), "dial0": (462, 84), "dial1": (1148, 150), "meter": (1312, 146), "meterR": (1392, 146),
         "lamp0": (583, 783), "lamp1": (678, 783), "lamp2": (773, 783), "lamp3": (868, 783), "lamp4": (963, 783), "lamp5": (1062, 783),
         "knobL": (358, 745), "knobR": (1300, 745)}},
+    # the sideboard is cut into a left end, one repeating drawer bay and a right end, so it stretches to any width
+    "sb_left": {"src": "sideboard.png", "scale": .2, "crop": (12, 360, 72, 589)},
+    "sb_mid": {"src": "sideboard.png", "scale": .2, "crop": (72, 360, 327, 589)},
+    "sb_right": {"src": "sideboard.png", "scale": .2, "crop": (1585, 360, 1647, 589)},
 }
 TILES = {"wall_tile": {"src": "wallpaper.png", "period": (156, 138), "native": (24, 21), "area": (150, 160)}}
 
@@ -46,7 +50,9 @@ def main():
         meta["sprites"][name] = {"w": t["native"][0], "h": t["native"][1], "tile": True}
     for name, s in SPRITES.items():
         a, alpha, (x0, y0, x1, y1) = keyed(SRC + s["src"])
-        W = s["w"]; H = round(W * (y1 - y0) / (x1 - x0))
+        if "crop" in s: x0, y0, x1, y1 = s["crop"]
+        W = s["w"] if "w" in s else round((x1 - x0) * s["scale"])
+        H = round(W * (y1 - y0) / (x1 - x0)) if "w" in s else round((y1 - y0) * s["scale"])
         crop = a[y0:y1, x0:x1]; al = alpha[y0:y1, x0:x1]
         # shrink colour using only opaque source pixels, so magenta never bleeds into edges
         rgb = Image.fromarray((crop * al[..., None]).astype("uint8")).resize((W, H), Image.BOX)
