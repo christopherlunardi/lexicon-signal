@@ -42,6 +42,8 @@ the same batch.
 - Rules of play: 4x4 grid, trace touching letters (8 directions), 3+ letters, word score = signal (letter values) x boost (length-2)
   x part multipliers; 5 words a night (lamps), 1 retune; night targets 40 x 1.42^(n-1) rounded to 5; pick 1 of 3 parts after each
   night. Letter weights and values are our own tables in the script.
+- Planned (Chris 2026-11-12): used letters don't get replaced in place. The letters above them fall down their column with a heavy,
+  mechanical drop (bounce + thud), and new letters slide in from the top to fill each column.
 - Input: controller/keys first (A add letter, A on the last letter sends, B back, Start/Y retune, Select/X cycles the vibe), touch and
   mouse drag or tap on the glass. Gamepad standard mapping, bottom face = A.
 - Effects: letters fly on a curve into the beacon, beacon flash + rings, score counts up on the shade, needle on the meter, sparks and
