@@ -24,20 +24,21 @@ the same batch.
 - Late-90s computer-game pixel art: a night room with damask wallpaper, a window with a city and a radio tower (red beacon), a big
   1940s wooden radio on a sideboard, and a wood-and-brass interface bar along the bottom (text log, two brass plates, battery gauge,
   part slots). The target picture is `art/concept/look-target.png`.
-- Done the old-school way: the game draws at a real low resolution (W x 360, W = 480..854 from the screen's shape, 640 at 16:9) and
-  the canvas is scaled up with hard square pixels. Every sprite is snapped to ONE shared 64-colour palette (56 from the art + 8 fixed
-  glow accents). The room's light (lamp low right, moonlight round the window, darker edges) is baked per layout with ordered
-  dithering into the palette; the window glass is emissive (skips room light). Live things (keys, needle, lamps, beacon, sparks)
-  are drawn with palette colours and pixel lines; no CRT filter. Light is a smooth glow pass on the fine layer (`drawGlows`, added
-  light): beacon, the unseen lamp, battery lamps, dial, meter, lit keys, flying letters, sparks. Never dithered pixel halos (Chris
-  doesn't like them). The room is lit fairly bright (ambient ~.55), not dark.
+- Done the old-school way: the game draws at a real low resolution (W x 400, W = 532..950 from the screen's shape, 712 at 16:9) and
+  the canvas is scaled up with hard square pixels. Every art piece is shown at its TRUE pixel size, never resized (2026-11-12):
+  ChatGPT's pixel art is fake pixels of uneven size, so each source is run once through RetroDiffusion's fix_pixel_art (standard
+  engine, $0.002; pass the raw.githubusercontent.com URL of the source in the public repo; the result comes back as base64 in a saved
+  tool-result file) and saved as `src/NAME_fixed.png`. If a fixed image comes back with non-square pixels (the UI kit did), its rows
+  are evened out (SQUARE in build.py). Resizing art to fit a layout is what made it look rough: size the layout to the art instead.
+  The room's light (lamp low right, moonlight round the window, darker edges) is applied smoothly per layout, no palette snapping,
+  fairly dark (ambient ~.44; Chris found brighter too much). The window glass is emissive (skips room light). Live things are drawn
+  with pixel lines; no CRT filter. Light is a smooth glow pass on the fine layer (`drawGlows`): beacon, the unseen lamp, battery
+  lamps, dial, meter, lit keys, flying letters, sparks. Never dithered pixel halos (Chris doesn't like them).
 - Things rearrange by screen shape: the wallpaper is a tile, the sideboard and bar are left end + repeated middle + right end, panels
   are 9-sliced from the log box, the bar is made taller by repeating its plain middle rows. Narrow (4:3) screens tuck the window
   behind the radio's left edge (beacon still visible) and show fewer part slots.
 - Bar contents always sit inside the bar's inner gold border, centred on one line with one equal gap.
-- Resolution (2026-11-12): the world is W x 360 (W = 480..854, 640 at 16:9); sprites are shrunk with `pix.mode_shrink` (snap to
-  the palette first, then the most common colour per block) so edges stay hard. Part icons come in two sizes (icon_ 38px for the
-  slots, iconL_ 72px for the part picker).
+- Part icons: full size (iconL_) in the part picker, exactly half (icon_, 2x2 majority) in the bar's slots.
 - Display rules: the screen canvas is twice the world size (FINE = 2). The room, keys, bar and menus panels draw in world pixels and
   are scaled up; every display draws on the fine grid on top: the dial is a lit amber dot-matrix (all dot positions faintly visible,
   marquee when idle), the meter needle and ticks are fine lines, the log types itself out in ink with a blinking cursor (older lines
@@ -48,9 +49,10 @@ the same batch.
 - `index.html`: the whole game, written as a page body (the artifact host adds doctype/head). Shell CSS first (the studio's
   handheld: d-pad, A/B, Select/Start; `padmode` with a controller, `inapp` for the future launcher), then one canvas and one script.
 - `words.js`: `window.LEX_WORDS`, the ENABLE list (public domain), 3-12 letters.
-- `art/pixel/src/`: ChatGPT sources (wallpaper, window, radio, sideboard, uikit, icons). `art/pixel/build.py` builds the palette,
-  every sprite (key out magenta, crop, mode-shrink to native, 1-bit alpha), marked points, the 12 part icons at two sizes
-  and packs it all into `art/pixel/atlas.png` + `atlas.json` (the only art the game loads).
+- `art/pixel/src/`: ChatGPT sources (wallpaper, window, radio, sideboard, uikit, icons) and their `_fixed` versions.
+  `art/pixel/build.py` cuts every sprite from the fixed images at true size (crops and points written in source pixels), builds the
+  wallpaper tile, the window glass mask, the 12 part icons at two sizes and the interface palette, and packs it all into
+  `art/pixel/atlas.png` + `atlas.json` (the only art the game loads).
   `art/pixel/preview.py` / `mock.py` render stills of the room / full screen for judging. `art/pixel/pix.py` = palette helpers.
 - The old painted version's layers and `art/compose.py` are kept in `art/` for reference; the game no longer uses them.
 - Live link: https://claude.ai/artifact/TcdvDWboTHP3Lh1RrqggS3 . Publish `index.html` with files
@@ -69,18 +71,30 @@ the same batch.
   touch/mouse drag or tap.
 - Key area workshop (open, 2026-11-12): six key styles live in the game (KEY_STYLES: pixel keys, typewriter, glow tubes, neon glass,
   ivory tiles, brass keys), Select cycles them, remembered per browser; `#test-word-keys-N` opens style N. Smooth styles draw on the
-  fine layer with web fonts (Special Elite, Bungee Hairline, Bungee, Limelight). Value dots stay in every style (Chris likes them).
+  fine layer with web fonts (Special Elite, Bungee Hairline, Bungee, Limelight). Value dots stay in every style (Chris likes them), bright enough to read on unselected keys.
   When he picks one, keep it, drop the rest, and give Select back to sound.
   Gamepad standard mapping, bottom face = A.
 
 ## Every change
-1. Art: save the upload to `art/pixel/src/`, add/adjust its entry in `build.py` (native width or scale, crop, marked points), run
+1. Art: save the upload to `art/pixel/src/`, run it through fix_pixel_art (save as NAME_fixed.png), add its entry in `build.py`
+   (crop and marked points in source pixels), run
    `python3 -I art/pixel/build.py`, check a still with `mock.py`. Code: edit `index.html`.
 2. Syntax check: extract the inline script and `node --check` it.
 3. Screenshots: copy index.html (wrapped in doctype/head), words.js and art/pixel/atlas.* into a scratch folder, serve it with
    `python3 -m http.server` (fetch needs http), shoot with Playwright (Chrome at /usr/bin/google-chrome) at 1280x800, phone
    390x844 with touch, and 640x480. Add `#test-shop` (part picker) or `#test-word` (RAT traced) to the URL for set-up screens.
 4. Name check, commit with a plain message, push, republish the link. Tell Chris in a few lines what changed.
+
+## Workshop (options Chris looks at and plays, like the other games)
+- Lexicon Signal Workshop: https://claude.ai/artifact/LuTEWxDDeCazkUDjiXCrdj , built from `workshop/` (index.html + workshop.json +
+  img/<topic>-<round>/). `python3 -I workshop/build.py` makes the playable copy `workshop/play.html` (+ words.js, art/pixel/atlas.*,
+  generated, not in git); an option's `play` is `play.html#...` (the game reads `#keys-N`, `#test-word`, `#test-shop` from the hash).
+- A round in workshop.json: question, found, status open|decided (+chosen), options {id, title, note, images [{src,label}], play}.
+- Publish index.html with `root` workshop and a files map of everything new (unchanged files are kept). Capabilities on first publish:
+  db rule feedback read/write owner, plus user; omit them on republish.
+- Read his answers: ArtifactData list on the Workshop, collection `feedback`, doc `<topic>-<round>` {pick, notes{id:text}, general,
+  submitted}. Act on submitted ones, then mark the round decided (chosen) in workshop.json and republish.
+- Open rounds: keys-r1 (letter key look, 6 options).
 
 ## Art prompts (ChatGPT)
 - One layer at a time, the look target attached for style. Pixel-art wording: low-resolution late-1990s computer game look, crisp

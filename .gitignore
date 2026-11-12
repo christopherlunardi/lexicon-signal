@@ -1,2 +1,5 @@
 __pycache__/
 *.pyc
+workshop/play.html
+workshop/words.js
+workshop/art/
