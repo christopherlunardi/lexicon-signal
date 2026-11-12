@@ -13,10 +13,12 @@ A late-night radio word game. Trace words through a grid of glowing letters, kee
 ## Controls
 
 - **Touch:** drag through letters and let go to send, or tap letters one by one and tap the last one again to send.
-- **D-pad / gamepad:** move the cursor, A adds a letter (press it on the last letter to send), B steps back, Y retunes.
-- **Keyboard:** arrows or WASD, Space/Enter, Backspace, R.
+- **D-pad / gamepad:** move the cursor, A adds a letter (press it on the last letter to send), B steps back, Start or Y retunes, Select or X changes the look.
+- **Keyboard:** arrows or WASD, Space or Z, Backspace or X, Enter or R, Tab.
 
 ## Files
 
 - `index.html` — the whole game (markup, styles, script).
 - `words.js` — the word list (ENABLE, public domain), 3–12 letters.
+- `art/` — the painted layers and `compose.py`, which builds `scene.jpg`.
+- `CLAUDE.md` and `.claude/skills/lexicon-signal-dev/` — project rules and the dev workflow.
