@@ -119,6 +119,8 @@ the same batch.
   wake the sound.
 
 ## Dot glass keys (the play area)
+- The traced word's path (Chris: its order wasn't clear): a lit line from key to key through their middles (soft glow + bright core,
+  brighter once it's a real word), a ring on the first key, and three bright beads running along it from first letter to last.
 - Letters flicker randomly and subtly: each key has its own random clock and now and then dips gently for a few frames; the whole
   letter dims at once: never single dots dropping out (Chris dislikes it; low-battery dot failure and per-dot shimmer were removed). Picked letters stay steady while the traced letters aren't a word yet; once they are, they flicker too, and a
   light wipe sweeps corner to corner across the word's keys one after another (`dotOkAt`), then a faint one runs through now and
