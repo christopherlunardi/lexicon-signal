@@ -85,6 +85,18 @@ def main():
     tile = np.median(np.stack([a[y:y + PY, x:x + PX] for y in range(Y0, a.shape[0] - PY - 20, PY) for x in range(X0, a.shape[1] - PX - 20, PX)]), 0)
     big = pix.kmeans(tile.reshape(-1, 3)[::3], 24)
     imgs["wall_tile"] = Image.fromarray(pix.mode_shrink(tile, np.ones(tile.shape[:2], bool), round(PX / WALL["px"]), round(PY / WALL["px"]), big), "RGBA")
+    # the night: Chris liked option 2's teal-green sky (2026-11-12). Every blue pixel of the tall pane (sky, buildings, tower) is
+    # recoloured by brightness rank to option 2's teal night, sampled from the design sheet, so darks stay dark and lights stay light.
+    ref = np.asarray(Image.open(SRC + "windows9.png").convert("RGB")).astype(float)[60:440, 400:625]
+    tl = ref[(ref[..., 1] > ref[..., 0] + 8) & (ref[..., 2] > ref[..., 0])]; tl = tl[np.argsort(tl @ [.3, .59, .11])]
+    wa = np.asarray(imgs["window"]).copy(); wr = wa[..., :3].astype(float); ox, oy = WIN_BOX
+    for x0, y0, x1, y1 in WIN_PANES:   # both panes (the stained glass strip's blue corner pieces too)
+        sub = wr[y0 - oy:y1 - oy, x0 - ox:x1 - ox]; blue = (sub[..., 2] > sub[..., 0] + 8) & (sub[..., 2] >= sub[..., 1])
+        if not blue.any(): continue
+        lum = sub[blue] @ [.3, .59, .11]; rank = np.argsort(np.argsort(lum)) / max(1, len(lum) - 1)
+        q = (rank * (len(tl) - 1)).astype(int); sub[blue] = np.array([tl[max(0, i - 40):i + 41].mean(0) for i in q])
+        wr[y0 - oy:y1 - oy, x0 - ox:x1 - ox] = sub
+    wa[..., :3] = np.clip(wr.round(), 0, 255).astype(np.uint8); imgs["window"] = Image.fromarray(wa, "RGBA")
     # the window glass: which window pixels are the night view (they give their own light, so room light skips them)
     win = np.asarray(imgs["window"]).astype(int); rgb = win[..., :3]
     # the glass is every pane inside the frame: the area the blue night covers, minus whole rows/columns that are wood (the transom bar);

@@ -661,12 +661,12 @@ function drawRain() {
   ctx.save(); ctx.beginPath(); panes.forEach(([x, y, w, hh]) => ctx.rect(x, y, Math.max(0, Math.min(w, rx - x)), hh)); ctx.clip();
   ctx.lineWidth = 1.5; ctx.lineCap = "round";
   for (const s of rainS) { s.y += s.v; s.x += s.v * .22; if (s.y > 1.05) { s.y = -.05; s.x = Math.random() * 1.1 - .1; } if (s.x > 1.05) s.x -= 1.1;
-    const x = bx + s.x * bw, y = top + s.y * H2; ctx.strokeStyle = `rgba(180,200,240,${s.a})`; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - s.l * .22, y - s.l); ctx.stroke(); }
+    const x = bx + s.x * bw, y = top + s.y * H2; ctx.strokeStyle = `rgba(170,225,210,${s.a})`; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - s.l * .22, y - s.l); ctx.stroke(); }
   for (const d of rainD) { if (d.hold > 0) d.hold--; else { d.v = Math.min(.012, d.v + .0006); d.y += d.v; if (Math.random() < .02) { d.hold = 20 + Math.random() * 120; d.v = 0; } }
     if (d.y > 1.02) { d.y = -.02; d.x = Math.random(); d.r = 1.5 + Math.random() * 2.2; d.hold = Math.random() * 120; }
     const x = bx + d.x * bw, y = top + d.y * H2;
-    ctx.fillStyle = "rgba(160,180,230,.10)"; ctx.fillRect(x - d.r * .4, y - 26, d.r * .8, 26);   // its wet trail
-    ctx.fillStyle = "rgba(190,205,245,.32)"; ctx.beginPath(); ctx.arc(x, y, d.r, 0, 6.283); ctx.fill();
+    ctx.fillStyle = "rgba(150,210,195,.10)"; ctx.fillRect(x - d.r * .4, y - 26, d.r * .8, 26);   // its wet trail
+    ctx.fillStyle = "rgba(185,235,220,.32)"; ctx.beginPath(); ctx.arc(x, y, d.r, 0, 6.283); ctx.fill();
     ctx.fillStyle = "rgba(255,255,255,.55)"; ctx.fillRect(x - d.r * .45, y - d.r * .5, 1.5, 1.5); }
   ctx.restore();
 }

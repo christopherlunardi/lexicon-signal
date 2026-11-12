@@ -65,6 +65,8 @@ the same batch.
   that when fix_pixel_art can't find the grid. build.py marks the panes (WIN_PANES, the glass: emissive, rain falls there), the
   light spots (window_lights: lit building windows, the stained glass; the game blooms them) and keeps the beacon's pink halo by
   keying only magenta that touches the picture's edge.
+  The night is option 2's teal-green (Chris): build.py recolours the panes' blue pixels by brightness rank to option 2's colours,
+  sampled from windows9.png; the rain is tinted to match.
 - Rain (drawRain): faint slanted streaks and drops sliding down the panes in fits and starts, clipped to the panes and kept off
   the radio on narrow screens. The room's sound is rain (a soft filtered-noise wash, fine hiss, the odd drip); there is no constant
   static hiss any more (static is only a sound effect, e.g. retune).
