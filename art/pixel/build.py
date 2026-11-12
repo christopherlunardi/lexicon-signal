@@ -10,6 +10,7 @@ image's pixels. Outputs: atlas.png + atlas.json (palette for interface colours, 
 Run from the repo root: python3 -I art/pixel/build.py"""
 import json, sys
 import numpy as np
+from scipy import ndimage
 from PIL import Image
 sys.path.insert(0, "art/pixel")
 import pix
@@ -84,8 +85,12 @@ def main():
     ic, fx, fy = fixed("icons"); ia = np.asarray(ic); al = ia[..., 3] > 0; H, W = al.shape
     for k, name in enumerate(ICON_NAMES):
         cx0, cy0, cx1, cy1 = (k % 4) * W // 4, (k // 4) * H // 3, (k % 4 + 1) * W // 4, (k // 4 + 1) * H // 3
-        ys, xs = np.where(al[cy0:cy1, cx0:cx1]); box = (cx0 + xs.min(), cy0 + ys.min(), cx0 + xs.max() + 1, cy0 + ys.max() + 1)
-        full = ic.crop(box); imgs["iconL_" + name] = full
+        # keep only the icon itself: the biggest blob in its cell plus anything touching it (bits of the neighbours and stray specks go)
+        cell = al[cy0:cy1, cx0:cx1]; lab, n = ndimage.label(cell, np.ones((3, 3))); sizes = ndimage.sum(cell, lab, range(1, n + 1)); big = int(np.argmax(sizes)) + 1
+        keep = ndimage.binary_dilation(lab == big, iterations=2) & cell; lab2, _ = ndimage.label(keep, np.ones((3, 3))); keep = np.isin(lab, np.unique(lab[keep & (lab > 0)]))
+        ys, xs = np.where(keep); box = (cx0 + xs.min(), cy0 + ys.min(), cx0 + xs.max() + 1, cy0 + ys.max() + 1)
+        fa0 = np.asarray(ic).copy(); m = np.zeros(al.shape, bool); m[cy0:cy1, cx0:cx1] = keep; fa0[..., 3] = np.where(m, fa0[..., 3], 0)
+        full = Image.fromarray(fa0, "RGBA").crop(box); imgs["iconL_" + name] = full
         fa = np.asarray(full); hw, hh = max(1, fa.shape[1] // 2), max(1, fa.shape[0] // 2)
         pal = np.unique(fa[..., :3][fa[..., 3] > 0].reshape(-1, 3), axis=0).astype(float)
         imgs["icon_" + name] = Image.fromarray(pix.mode_shrink(fa[..., :3].astype(float), fa[..., 3] > 0, hw, hh, pal), "RGBA")

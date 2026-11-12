@@ -56,7 +56,12 @@ the same batch.
   lands, every part that changed it flashes and a tag ("x2", "+6") rises off its slot (`partHits`, `slotState`, `drawSlotStates`).
   `#test-word-parts` fits two batteries, a knob, an echo tube and an amp.
 - Bar contents always sit inside the bar's inner gold border, centred on one line with one equal gap.
-- Part icons: full size (iconL_) in the part picker, exactly half (icon_, 2x2 majority) in the bar's slots.
+- Part icons (2026-11-12, Chris found the old ones not good enough): build.py cuts each icon as the biggest blob in its sheet cell
+  (no neighbour bits or specks). Slots draw the full icon on the fine layer at one art pixel per fine pixel (full detail, no shrink),
+  lit softly from behind; never make the slots bigger (Chris). Stackable parts show a lamp per copy instead of an "x2".
+  The part picker is three display cases 9-sliced from the slot frame, the icon at world size lit from behind, the name stamped on a
+  brass plate (plate3, two lines on a taller plate if needed), the effect in lit amber, and a lamp label (NEW / STACKS X2 / SWAP A
+  PART). The chosen case rises with a warm frame; the others dim. Score tags are small dark chips with dot-matrix figures.
 - Display rules: the screen canvas is twice the world size (FINE = 2). The room, keys, bar and menu panels draw in world pixels and
   are scaled up; every display draws on the fine grid on top: the dial is a lit amber dot-matrix (all dot positions faintly visible,
   marquee when idle), the meter needle and ticks are fine lines, the log types itself out in ink with a blinking cursor (older lines
