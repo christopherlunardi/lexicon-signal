@@ -162,6 +162,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 </div>
 
 <script src="words.js"></script>
+<script src="studio.js"></script>
 <script>
 (() => {
 "use strict";
@@ -500,7 +501,7 @@ function update() {
   if (S.shown < S.score) { S.shown = Math.min(S.score, S.shown + Math.max(1, Math.ceil((S.score - S.shown) / 10))); Sound.tick(); }
   // type the log out, oldest unfinished entry first
   const e = S.log.find(e => e.n < e.s.length); if (e) { e.n = Math.min(e.s.length, e.n + 1); if (e.s[e.n - 1] !== " " && (e.n & 1)) Sound.type(); }
-  staticKick *= .95; const tgt = S.phase === "play" ? .05 + (1 - S.words / maxWords()) * .35 : .05; staticLvl += (tgt + staticKick - staticLvl) * .08; Sound.setStatic(staticLvl);
+  staticKick *= .95; const tgt = S.phase === "splash" || S.phase === "studio" ? 0 : S.phase === "play" ? .05 + (1 - S.words / maxWords()) * .35 : .05; staticLvl += (tgt + staticKick - staticLvl) * .08; Sound.setStatic(staticLvl);
   marquee++; paUpdate();
 }
 
@@ -509,6 +510,8 @@ function update() {
 let frame = 0;
 function draw() {
   frame++; wctx.imageSmoothingEnabled = false; ctx.imageSmoothingEnabled = false;
+  if (S.phase === "splash") { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, cv.width, cv.height);
+    if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO START" : "PRESS ANY BUTTON", cv.width / 2, cv.height / 2 - 8, "dot", C.amber, "c"); return; }
   const sx = shake > 0 ? Math.round((Math.random() - .5) * Math.min(2, shake)) : 0;
   wctx.fillStyle = "#000"; wctx.fillRect(0, 0, W, H); wctx.drawImage(roomCv, sx, 0);
   wctx.save(); wctx.translate(sx, 0); drawBeacon(); drawRadioLive(); drawGrid(); drawSparks(); wctx.restore();
@@ -1054,6 +1057,7 @@ function pressB() { if (S.phase === "play") back(); }
 function pressStart() { Sound.ensure(); if (S.phase === "title" || S.phase === "over") return start(); if (S.phase === "shop") return choosePart(shopFocus); retune(); }
 function pressSel() { Sound.ensure(); KS = (KS + 1) % KEY_STYLES.length; try { localStorage.setItem("lexsig-keys2", KS); } catch (e) {} if (S.log) log(`Keys: ${KEY_STYLES[KS]} (${KS + 1}/${KEY_STYLES.length})`); Sound.click(); }
 window.addEventListener("keydown", (e) => {
+  if (introPress()) { e.preventDefault(); return; }
   const k = e.key, dir = { ArrowLeft: [-1, 0], a: [-1, 0], ArrowRight: [1, 0], d: [1, 0], ArrowUp: [0, -1], w: [0, -1], ArrowDown: [0, 1], s: [0, 1] }[k];
   if (dir) { e.preventDefault(); move(...dir); return; }
   if (k === " " || k === "z") { e.preventDefault(); pressA(); return; }
@@ -1066,7 +1070,7 @@ function toWorld(e) { const r = cv.getBoundingClientRect(), s = Math.min(r.width
 function keyAt(p, strict) { for (let i = 0; i < 16; i++) { const c = tileC(i), mx = strict ? L.tw * .38 : L.tw * .6, my = strict ? L.th * .38 : L.th * .6; if (Math.abs(p.x - c.x) < mx && Math.abs(p.y - c.y) < my) return i; } return -1; }
 let down = null, dragging = false;
 cv.addEventListener("pointerdown", (e) => {
-  Sound.ensure(); usingButtons = false; e.preventDefault(); const p = toWorld(e);
+  Sound.ensure(); usingButtons = false; e.preventDefault(); if (introPress()) return; const p = toWorld(e);
   if (S.phase === "title" || S.phase === "over") { start(); return; }
   if (S.phase === "shop") { const G = shopGeom(), k = Math.floor((p.x - G.x0) / (G.cw + 10)); if (k >= 0 && k < G.n && p.y > G.y0 - 6 && p.y < G.y0 + G.ch) { if (shopFocus === k || usingTouch) choosePart(k); else shopFocus = k; } return; }
   if (!canAct()) return; const i = keyAt(p, false); if (i < 0) return;
@@ -1088,11 +1092,11 @@ function padDir(e) { const r = $("dpad").getBoundingClientRect(), x = e.clientX 
 const DV = { lf: [-1, 0], rt: [1, 0], up: [0, -1], dn: [0, 1] };
 function padSet(d) { const dp = $("dpad"); ["up", "dn", "lf", "rt"].forEach(k => dp.classList.toggle("on-" + k, k === d));
   if (d === padCur) return; padCur = d; clearTimeout(padTimer); clearInterval(padTimer); if (!d) return; move(...DV[d]); padTimer = setTimeout(() => { padTimer = setInterval(() => move(...DV[d]), 120); }, 300); }
-$("dpad").addEventListener("pointerdown", (e) => { try { $("dpad").setPointerCapture(e.pointerId); } catch (er) {} padSet(padDir(e)); e.preventDefault(); });
+$("dpad").addEventListener("pointerdown", (e) => { if (introPress()) { e.preventDefault(); return; } try { $("dpad").setPointerCapture(e.pointerId); } catch (er) {} padSet(padDir(e)); e.preventDefault(); });
 $("dpad").addEventListener("pointermove", () => {});
 $("dpad").addEventListener("pointermove", (e) => { if (padCur !== null) padSet(padDir(e)); });
 ["pointerup", "pointercancel"].forEach(ev => $("dpad").addEventListener(ev, () => padSet(null)));
-function bindBtn(id, fn) { const b = $(id); b.addEventListener("pointerdown", (e) => { e.preventDefault(); b.classList.add("on"); fn(); }); ["pointerup", "pointercancel", "pointerleave"].forEach(ev => b.addEventListener(ev, () => b.classList.remove("on"))); }
+function bindBtn(id, fn) { const b = $(id); b.addEventListener("pointerdown", (e) => { e.preventDefault(); b.classList.add("on"); if (!introPress()) fn(); }); ["pointerup", "pointercancel", "pointerleave"].forEach(ev => b.addEventListener(ev, () => b.classList.remove("on"))); }
 bindBtn("btnA", pressA); bindBtn("btnB", pressB); bindBtn("btnSel", pressSel); bindBtn("btnStart", pressStart);
 const padPrev = {}, rep = {};
 function pollPad(now) {
@@ -1102,6 +1106,7 @@ function pollPad(now) {
   const edge = (k) => st[k] && !padPrev[k];
   if (Object.keys(st).some(edge) && !document.body.classList.contains("padmode")) { document.body.classList.add("padmode"); setTimeout(layout, 30); }
   const repeat = (k, fn) => { if (edge(k)) { fn(); rep[k] = now + 260; } else if (st[k] && now > (rep[k] || 0)) { fn(); rep[k] = now + 110; } };
+  if (Object.keys(st).some(edge) && introPress()) { Object.assign(padPrev, st); return; }
   if (edge("A")) pressA(); if (edge("B")) pressB(); if (edge("Y") || edge("ST")) pressStart(); if (edge("SEL") || edge("X")) pressSel();
   repeat("L", () => move(-1, 0)); repeat("R", () => move(1, 0)); repeat("U", () => move(0, -1)); repeat("D", () => move(0, 1));
   Object.assign(padPrev, st);
@@ -1131,7 +1136,7 @@ const Sound = (() => {
       nextBeat += beat; beatN++; }
     if (S && S.target) padF.frequency.setTargetAtTime(600 + Math.min(1, S.score / S.target) * 1800, ac.currentTime, .4); }
   const chordNow = () => CH[(((beatN / 4) | 0) / 2 | 0) % 4];
-  return { ensure,
+  return { ensure, ac: () => ac, out: () => master, muted: () => muted,
     music() { if (!ac || playing) return; playing = true; nextBeat = ac.currentTime + .1; setInterval(schedule, 60); },
     toggle() { muted = !muted; if (master) master.gain.setTargetAtTime(muted ? 0 : .8, ac.currentTime, .05); log(muted ? "Sound off." : "Sound on."); },
     setStatic(l) { if (stat) stat.gain.setTargetAtTime(Math.min(.1, l * .3), ac.currentTime, .1); },
@@ -1152,6 +1157,62 @@ const Sound = (() => {
   };
 })();
 
+/* ================= the studio intro (Idle Looping Studios) =================
+   studio.js is the studio's own intro (the logo animation and its sound), shared with the studio's other games. After the first
+   press it plays over the game screen with its sound, then fades to the title. Any press skips it. Its picture runs on the sound's
+   clock so the two stay together; if the sound stalls, the picture carries on alone. */
+const studio = { cv: null, clock: null, node: null, ac0: 0, t0: 0, skip: false, done: false, fading: false };
+function introPress() {
+  if (S.phase === "splash") { Sound.ensure(); studioStart(); return true; }
+  if (S.phase === "studio") { studio.skip = true; return true; }
+  return false;
+}
+function studioStart() {
+  S.phase = "studio"; studio.skip = false; studio.done = false; studio.clock = null;
+  if (typeof STUDIO === "undefined") { studioEnd(); return; }
+  const cv2 = document.createElement("canvas");
+  cv2.style.cssText = "position:absolute;left:0;top:0;width:100%;height:100%;z-index:5;background:#000;opacity:1;transition:opacity .35s;touch-action:none";
+  $("screenWrap").appendChild(cv2); cv2.addEventListener("pointerdown", (e) => { e.preventDefault(); studio.skip = true; }); studio.cv = cv2;
+  let art = false, buf;   // buf: undefined while decoding, null when there is no sound
+  const go = () => { if (!art || buf === undefined || studio.clock || !studio.cv) return; studioPlay(buf); requestAnimationFrame(studioFrame); };
+  STUDIO.load(() => { art = true; go(); });
+  const ac = Sound.ac();
+  if (ac && !Sound.muted()) {
+    try { const bin = atob(STUDIO.snd.split(",")[1]), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+      const pr = ac.decodeAudioData(u8.buffer, (b) => { if (buf === undefined) { buf = b; go(); } }, () => { if (buf === undefined) { buf = null; go(); } }); if (pr && pr.catch) pr.catch(() => {}); }
+    catch (e) { buf = null; }
+  } else buf = null;
+  setTimeout(() => { if (buf === undefined) { buf = null; go(); } }, 1500);   // a sound that never decodes doesn't hold the intro up
+}
+function studioPlay(b) {
+  const ac = Sound.ac();
+  if (ac && b) { try { if (ac.state !== "running" && ac.resume) ac.resume();
+      const s = ac.createBufferSource(), g = ac.createGain(); g.gain.value = 1.6; s.buffer = b; s.connect(g); g.connect(Sound.out());
+      const at = ac.currentTime + .15, lag = (ac.outputLatency || 0) + (ac.baseLatency || 0); s.start(at); studio.node = s;
+      studio.clock = () => ac.currentTime - at - lag; studio.t0 = performance.now(); studio.ac0 = ac.currentTime; return; } catch (e) {} }
+  const t0 = performance.now() + 150; studio.clock = () => (performance.now() - t0) / 1000;
+}
+function studioFrame() {
+  const c2 = studio.cv; if (!c2) return;
+  const ac = Sound.ac();
+  if (studio.node && ac) { const now = performance.now(); if (ac.currentTime !== studio.ac0) { studio.ac0 = ac.currentTime; studio.t0 = now; }
+    if (now - studio.t0 > 400) { const t = studio.clock(), p0 = now; studio.clock = () => t + (performance.now() - p0) / 1000; try { studio.node.stop(); } catch (e) {} studio.node = null; } }
+  const dpr = Math.min(2, window.devicePixelRatio || 1), r = c2.getBoundingClientRect(), w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+  if (c2.width !== w || c2.height !== h) { c2.width = w; c2.height = h; }
+  const c = c2.getContext("2d"), t = studio.clock(), k = Math.min(w / STUDIO.W, h / STUDIO.H);
+  c.setTransform(1, 0, 0, 1, 0, 0); c.fillStyle = "#000"; c.fillRect(0, 0, w, h);
+  c.setTransform(k, 0, 0, k, (w - STUDIO.W * k) / 2, (h - STUDIO.H * k) / 2);
+  if (t <= STUDIO.len) STUDIO.draw(c, Math.max(0, t)); else STUDIO.outro(c, Math.min(STUDIO.outroLen, t - STUDIO.len));
+  if (t >= STUDIO.len + STUDIO.outroLen + .3) studio.done = true;
+  if (studio.done || studio.skip) { studioEnd(); return; }
+  requestAnimationFrame(studioFrame);
+}
+function studioEnd() {
+  const c2 = studio.cv; studio.cv = null;
+  if (studio.node && studio.skip) try { studio.node.stop(); } catch (e) {}
+  studio.node = null; studio.skip = false; S.phase = "title"; Sound.music();
+  if (c2) { studio.fading = true; c2.style.opacity = "0"; setTimeout(() => { c2.remove(); studio.fading = false; }, 400); }
+}
 /* ================= boot ================= */
 function loop(now) { update(); draw(); pollPad(now); requestAnimationFrame(loop); }
 async function boot() {
@@ -1159,7 +1220,7 @@ async function boot() {
   atlasImg = new Image(); atlasImg.src = "art/pixel/atlas.png"; await atlasImg.decode();
   PAL = A.palette; const acc = new Set(A.accents.map(c => c.join(","))); ROOMPAL = PAL.filter(c => !acc.has(c.join(",")));
   makeColours(); buildLUT();
-  S = fresh("title"); layout(); fillGrid(false);
+  S = fresh(location.hash ? "title" : "splash"); layout(); fillGrid(false);
   "LEXICONSIGNAL".split("").forEach((ch, k) => { S.grid[[0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13][k]].ch = ch; });
   [7, 14, 15].forEach(i => S.grid[i].ch = " ");
   // test hook: a hash ending in -step does not run by itself; window.LEXSTEP(n) advances n frames (for recording clips frame by frame)

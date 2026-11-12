@@ -57,7 +57,14 @@ the same batch.
   `art/pixel/preview.py` / `mock.py` render stills of the room / full screen for judging. `art/pixel/pix.py` = palette helpers.
 - The old painted version's layers and `art/compose.py` are kept in `art/` for reference; the game no longer uses them.
 - Live link: https://claude.ai/artifact/TcdvDWboTHP3Lh1RrqggS3 . Publish `index.html` with files
-  `{"words.js": "words.js", "art/pixel/atlas.png": "art/pixel/atlas.png", "art/pixel/atlas.json": "art/pixel/atlas.json"}`.
+  `{"words.js": "words.js", "studio.js": "studio.js", "art/pixel/atlas.png": "art/pixel/atlas.png", "art/pixel/atlas.json":
+  "art/pixel/atlas.json"}`.
+
+## Start of the game
+- Splash ("PRESS ANY BUTTON"/"TAP TO START": a phone needs one press before it plays sound) -> the Idle Looping Studios intro
+  (`studio.js`, copied unchanged from port-stacker's generated game/src/js/09c-studio.js; its player is in index.html, `studioStart`...
+  `studioEnd`, picture on the sound's clock, any press skips) -> the title. Links with a hash (tests, Workshop copies) skip to the title.
+  Publish studio.js with the game.
 
 ## Rules of play
 - 4x4 keys in the radio glass; trace touching letters (8 directions), 3+ letters. Score = signal (letter values) x boost (length-2)
