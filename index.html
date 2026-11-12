@@ -584,7 +584,7 @@ function drawBeacon() {
   wctx.fillStyle = C.hot; wctx.fillRect(b.x, b.y, 1, 1);
 }
 function drawRadioLive() {
-  { const n = S.phase === "title" ? 0 : Math.max(0, maxWords() - 6), a = L.lamps, cx = (a[0].x + a[5].x) / 2, y = a[0].y + 23;
+  { const n = S.phase === "title" ? 0 : Math.max(0, maxWords() - 6), a = L.lamps, cx = (a[0].x + a[5].x) / 2, y = a[0].y + 31;   // the middle of the radio's base lip
     L.extraLamps = []; for (let j = 0; j < n; j++) L.extraLamps.push({ x: cx + (j - (n - 1) / 2) * 13, y }); }
   // the dial becomes a lit display window
   const d = L.dial; wctx.fillStyle = C.glass; wctx.fillRect(d.x, d.y, d.w, d.h);
@@ -699,9 +699,9 @@ function drawLamps() {
   lampWas = S.phase === "play" ? S.words : null;
   if (lampOut) { const u = lampOut.t / 26; ctx.save(); ctx.globalAlpha = Math.max(0, 1 - u); drawLamp(FX(lampOut.x), FX(lampOut.y), lampOut.r, false);
     ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 1; bloom(FX(lampOut.x), FX(lampOut.y), 50 + 30 * (1 - u), "255,240,200", .7 * (1 - u)); ctx.restore(); if (++lampOut.t > 26) lampOut = null; }
-  // retunes left: small lamps in an arc over the right (tuning) knob, one per retune you get each night, lit while unused
+  // retunes left: small lamps in a row on the base lip under the right (tuning) knob, one per retune each night, lit while unused
   if (S.phase === "play" || S.phase === "shop" || S.phase === "swap") { const n = maxRetunes(), k = L.knobR;
-    for (let i = 0; i < n; i++) { const a = -Math.PI / 2 + (i - (n - 1) / 2) * .42, x = FX(k.x + .5 + Math.cos(a) * 22), y = FX(k.y + Math.sin(a) * 22);
+    for (let i = 0; i < n; i++) { const x = FX(k.x + .5 + (i - (n - 1) / 2) * 13), y = FX(L.lamps[0].y + 31);
       ctx.fillStyle = "#1a0e08"; ctx.beginPath(); ctx.arc(x, y, 6, 0, 6.283); ctx.fill(); ctx.strokeStyle = "#b07a2a"; ctx.lineWidth = 1.5; ctx.stroke();
       if (i < S.retunes) drawLamp(x, y, 4.5, false);
       if (i === S.retunes && retOut > 0) { const u = 1 - retOut / 26; ctx.save(); ctx.globalAlpha = 1 - u; drawLamp(x, y, 4.5, false); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 1; bloom(x, y, 30 + 20 * (1 - u), "255,240,200", .7 * (1 - u)); ctx.restore(); } }
@@ -1246,7 +1246,7 @@ const TIPS = [
   "ONE LAMP GOES OUT FOR EVERY WORD YOU SEND",
   "FILL THE SIGNAL TUBE BEFORE THE LAMPS GO DARK",
   "STUCK? RETUNE FOR A FRESH SET OF LETTERS",
-  "THE LIGHTS OVER THE TUNING KNOB ARE YOUR RETUNES",
+  "THE LIGHTS UNDER THE TUNING KNOB ARE YOUR RETUNES",
   "THE FINE TUNING KNOB GIVES AN EXTRA RETUNE EVERY NIGHT",
   "B TAKES BACK THE LAST LETTER",
   "SELECT OR M TURNS THE SOUND ON AND OFF",
@@ -1450,7 +1450,7 @@ const HOW_CARDS = [
     setup() {}, steps: [...[[30, 8], [58, 9], [86, 10], [114, 11]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(11))]] },
   { title: "FILL THE TUBE", keys: [], len: 340, text: "Fill the signal tube before the lamps go dark. Every word you send uses one lamp. Longer words and letters with more dots fill it faster.",
     setup() { S.score = S.shown = 18; S.words = 3; }, steps: [...[[30, 12], [58, 13], [86, 14], [114, 15]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(15))]] },
-  { title: "STUCK? RETUNE", keys: ["START"], len: 220, text: "Retune swaps every letter for new ones, once a night. The small light over the right knob shows you still have it.",
+  { title: "STUCK? RETUNE", keys: ["START"], len: 220, text: "Retune swaps every letter for new ones, once a night. The small light under the right knob shows you still have it.",
     setup() {}, steps: [[80, () => retune()]] },
   { title: "RADIO PARTS", keys: [], len: 260, text: "Clear a night to fit one of three radio parts. They sit in the slots below and light up when they help. That's the basics!",
     setup() { S.parts = ["battery", "echo"]; S.words = maxWords(); HOW.shop = true; nightClear(); HOW.shop = false; }, steps: [[70, () => { shopFocus = 1; Sound.click(); }], [140, () => { shopFocus = 2; Sound.click(); }], [210, () => { shopFocus = 0; Sound.click(); }]] },
