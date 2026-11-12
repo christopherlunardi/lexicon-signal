@@ -33,6 +33,8 @@ the same batch.
   are 9-sliced from the log box, the bar is made taller by repeating its plain middle rows. Narrow (4:3) screens tuck the window
   behind the radio's left edge (beacon still visible) and show fewer part slots.
 - Bar contents always sit inside the bar's inner gold border, centred on one line with one equal gap.
+- Open (Chris 2026-11-12): the screens and everything that changes (dial, log, plates, keys) need their own graphic rules; the
+  current text (DejaVu rendered without anti-aliasing) looks rough. Work that out with him as pictures before changing the game.
 
 ## Where things live
 - `index.html`: the whole game, written as a page body (the artifact host adds doctype/head). Shell CSS first (the studio's
