@@ -28,7 +28,9 @@ the same batch.
   the canvas is scaled up with hard square pixels. Every sprite is snapped to ONE shared 64-colour palette (56 from the art + 8 fixed
   glow accents). The room's light (lamp low right, moonlight round the window, darker edges) is baked per layout with ordered
   dithering into the palette; the window glass is emissive (skips room light). Live things (keys, needle, lamps, beacon, sparks)
-  are drawn with palette colours only, pixel lines and dithered glows; no blur, no CRT filter.
+  are drawn with palette colours and pixel lines; no CRT filter. Light is a smooth glow pass on the fine layer (`drawGlows`, added
+  light): beacon, the unseen lamp, battery lamps, dial, meter, lit keys, flying letters, sparks. Never dithered pixel halos (Chris
+  doesn't like them). The room is lit fairly bright (ambient ~.55), not dark.
 - Things rearrange by screen shape: the wallpaper is a tile, the sideboard and bar are left end + repeated middle + right end, panels
   are 9-sliced from the log box, the bar is made taller by repeating its plain middle rows. Narrow (4:3) screens tuck the window
   behind the radio's left edge (beacon still visible) and show fewer part slots.
@@ -62,8 +64,13 @@ the same batch.
 - Sent letters fly to the tower beacon; it flashes and the score counts up on the plate; the log reports everything.
 - The dial always shows the traced word's value on its right, counting up as letters go in (plain amber while it can't be sent).
   When it can be sent the whole dial lights warm, the word and number go bright and the number gets a "+". A hovered key (mouse,
-  or the button cursor) previews dimly: its letter after the word and "+gain" before the number. Every key shows its value digit.
-- Input: buttons first (A add letter, A on the last letter sends, B back, Start/Y retune, Select/X sound), touch/mouse drag or tap.
+  or the button cursor) previews dimly: its letter after the word and "+gain" before the number. Every key shows its value as dots.
+- Input: buttons first (A add letter, A on the last letter sends, B back, Start/Y retune, Select/X/Tab key style, M sound),
+  touch/mouse drag or tap.
+- Key area workshop (open, 2026-11-12): six key styles live in the game (KEY_STYLES: pixel keys, typewriter, glow tubes, neon glass,
+  ivory tiles, brass keys), Select cycles them, remembered per browser; `#test-word-keys-N` opens style N. Smooth styles draw on the
+  fine layer with web fonts (Special Elite, Bungee Hairline, Bungee, Limelight). Value dots stay in every style (Chris likes them).
+  When he picks one, keep it, drop the rest, and give Select back to sound.
   Gamepad standard mapping, bottom face = A.
 
 ## Every change
