@@ -57,6 +57,8 @@ the same batch.
   `#test-word-parts` fits two batteries, a knob, an echo tube and an amp.
 - The room is built the full screen height (the sideboard's drawer rows carry on down, fading into shadow). On the title screen the
   bar is away; it rises into place with a thud when a run starts (`barShow` moves `L.barY`).
+- Lit lamps are drawn on the fine layer (`drawLamp`) at the socket's true middle (`L.lamps`: half a pixel right of the marked
+  point, the fifth one more), radius 7 world px, so they sit dead centre (2026-11-12, Chris saw them off-centre).
 - Bar contents always sit inside the bar's inner gold border, centred on one line with one equal gap.
 - Part icons (2026-11-12, Chris found the old ones not good enough): build.py cuts each icon as the biggest blob in its sheet cell
   (no neighbour bits or specks). Slots draw the full icon on the fine layer at one art pixel per fine pixel (full detail, no shrink),
@@ -145,7 +147,7 @@ the same batch.
   fill the tube, programme sheet, 6 radio close-up (Chris's sketch: no bar, radio at 3 fine px per art px, title lit as keys in the
   glass, PRESS START plate). The glass is Chris's painted picture (`art/title/`: build.py splits glass-title-src.jpg into
   glass-lit/glass-dim + a box per letter; the game fades each letter's box of the lit one over the dim one: switch-on stutter,
-  breathing, the odd dropout). Publish art/title/glass-lit.png, glass-dim.png, glass.json with the game.; 0 = the old parchment box, still the default), `#title-N` opens one (`#title-N-step` for clips).
+  breathing, the odd dropout). Publish art/title/glass-lit.png, glass-dim.png, glass.json with the game.; 0 = the old parchment box). The game opens on 6 now (Chris: put it in while we tweak it), `#title-N` opens one (`#title-N-step` for clips).
   The logo is a placeholder built in code (`buildLogo`/`drawLogo`: LEXICON in bevelled brass cells, SIGNAL in lit dot-matrix,
   waves); a real logo from ChatGPT replaces it later. A press during an entrance skips to its settled screen (`titleBusy`).
 - Rounds: keys-r1 decided (glow tubes), keys-r2 decided (signal scope: now the default key style, KS 7; the choice is stored per

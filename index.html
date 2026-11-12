@@ -306,7 +306,8 @@ function computeLayout() {
   L.gx = L.glass.x + Math.floor((L.glass.w - (4 * L.tw + 3 * L.gap)) / 2); L.gy = L.glass.y + Math.floor((L.glass.h - (4 * L.th + 3 * L.gap)) / 2);
   L.dial = { x: L.radioX + rp.dial0[0] + 1, y: L.radioY + rp.dial0[1] + 1, w: rp.dial1[0] - rp.dial0[0] - 2, h: rp.dial1[1] - rp.dial0[1] - 2 };
   L.meter = { x: L.radioX + rp.meter[0], y: L.radioY + rp.meter[1], r: rp.meterR[0] - rp.meter[0] };
-  L.lamps = [0, 1, 2, 3, 4, 5].map(k => ({ x: L.radioX + rp["lamp" + k][0], y: L.radioY + rp["lamp" + k][1] }));
+  // the true middle of each lamp socket (measured on the art: half a pixel right of the marked point, and the fifth socket one more)
+  L.lamps = [0, 1, 2, 3, 4, 5].map(k => ({ x: L.radioX + rp["lamp" + k][0] + .5 + (k === 4 ? 1 : 0), y: L.radioY + rp["lamp" + k][1] }));
   L.knobL = { x: L.radioX + rp.knobL[0], y: L.radioY + rp.knobL[1] }; L.knobR = { x: L.radioX + rp.knobR[0], y: L.radioY + rp.knobR[1] };
   L.sbX = L.radioX - 29; L.sbY = L.radioY + R("radio")[3] - 10;
   // the bar, inside its gold border with one even gap: log | two plates | the part slots. Wide screens: one row, all centred on the
@@ -560,7 +561,7 @@ function draw() {
   wctx.save(); wctx.translate(sx, 0); drawBeacon(); drawRadioLive(); drawGrid(); drawSparks(); wctx.restore();
   wctx.drawImage(barCv, 0, L.barY); drawBarLive();
   ctx.drawImage(world, 0, 0, W * FINE, H * FINE);
-  ctx.save(); ctx.translate(sx * FINE, 0); drawDial(); drawMeter(); drawKeyLetters(); drawGlows(); drawFlyers(); ctx.restore();
+  ctx.save(); ctx.translate(sx * FINE, 0); drawDial(); drawMeter(); drawLamps(); drawKeyLetters(); drawGlows(); drawFlyers(); ctx.restore();
   drawBarText(); if (nightCard > 0 && S.phase === "play") { drawNightCard(); nightCard--; }
   if (S.phase === "title" || S.phase === "shop" || S.phase === "swap" || S.phase === "over") {
     octx.clearRect(0, 0, W, H); octx.imageSmoothingEnabled = false;
@@ -577,7 +578,7 @@ function drawRadioLive() {
   const d = L.dial; wctx.fillStyle = C.glass; wctx.fillRect(d.x, d.y, d.w, d.h);
   // lamps = words left
   const lit = S.phase === "title" ? titleFX.lamps : Math.min(6, S.words);
-  L.lamps.forEach((p, k) => { if (k < lit) { const low = S.words === 1 && S.phase === "play" && (frame >> 4) & 1; disc(wctx, p.x, p.y, 6, low ? C.red : C.lamp); disc(wctx, p.x - 2, p.y - 2, 1, C.hot); } });
+  // (the lit lamps are drawn on the fine layer, drawLamps, so each sits exactly in the middle of its socket)
   for (const [k, p] of [["L", L.knobL], ["R", L.knobR]]) { const a = knobA[k] - .6; line(wctx, p.x + Math.cos(a) * 5, p.y + Math.sin(a) * 5, p.x + Math.cos(a) * 13, p.y + Math.sin(a) * 13, C.gold); }
   if (knobA.R > 0) knobA.R = Math.max(0, knobA.R - .04);
 }
@@ -648,6 +649,13 @@ function candidate() {
   if (S.path.length && !adjacent(S.path[S.path.length - 1], i)) return -1; return i;
 }
 function ftextDot(s, x, y, col) { for (const ch of s.toUpperCase()) { if (ch !== " ") { ctx.drawImage(glyphCv("dot", ch, C.dotDim), x - 1, y); ctx.drawImage(glyphCv("dot", ch, C.dotDim), x + 1, y); ctx.drawImage(glyphCv("dot", ch, col), x, y); } x += 18; } }
+function drawLamp(x, y, r, low) {   // a lit dome lamp centred at (x, y) fine pixels: hot middle, amber body, darker rim, a glint up-left
+  const g = ctx.createRadialGradient(x - r * .25, y - r * .25, r * .1, x, y, r); g.addColorStop(0, low ? "#ffd0b8" : "#fffbe0"); g.addColorStop(.45, low ? "#ff5a3c" : "#ffd65a"); g.addColorStop(1, low ? "#a0201a" : "#c88a1e");
+  ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill(); ctx.fillStyle = "rgba(255,255,245,.9)"; ctx.beginPath(); ctx.arc(x - r * .38, y - r * .38, r * .2, 0, 6.283); ctx.fill(); }
+function drawLamps() {
+  const lit = S.phase === "title" ? titleFX.lamps : Math.min(6, S.words), low = S.words === 1 && S.phase === "play" && (frame >> 4) & 1;
+  L.lamps.forEach((p, k) => { if (k < lit) drawLamp(FX(p.x), FX(p.y), FX(7), low); });
+}
 function drawMeter() {
   const m = L.meter, cx = FX(m.x), cy = FX(m.y) + 18, ratio = S.phase === "title" ? 0 : Math.min(1.1, S.shown / S.target), r = FX(m.r) - 8;
   for (let k = 0; k <= 10; k++) { const a = (-60 + k * 12) * Math.PI / 180, r0 = r - (k % 5 ? 4 : 7); line(ctx, cx + Math.sin(a) * r0, cy - Math.cos(a) * r0, cx + Math.sin(a) * r, cy - Math.cos(a) * r, k >= 9 ? C.needle : C.inkSoft); }
@@ -1142,7 +1150,8 @@ function blitOver() { ctx.drawImage(over, 0, 0, W * FINE, H * FINE); }
    the settled screen; the next press starts. Style 0 is the old parchment box. #title-N opens style N. The logo is a placeholder made
    in code from our own 5x7 letters until the real one is drawn: LEXICON in chunky bevelled brass, SIGNAL in lit amber dot-matrix. */
 const TITLE_STYLES = ["Parchment box (now)", "Tuning in", "From the tower", "Neon across the street", "Fill the tube", "Programme sheet", "Radio close-up"];
-let TS = 0; { const m = location.hash.match(/title-(\d+)/); if (m) TS = Math.min(TITLE_STYLES.length - 1, +m[1]); }
+let TS = 6; {   // default: radio close-up (Chris, 2026-11-12, still being tweaked)
+ const m = location.hash.match(/title-(\d+)/); if (m) TS = Math.min(TITLE_STYLES.length - 1, +m[1]); }
 const LD = 14, LP = 6 * LD;   // logo letter cell and letter pitch, in fine pixels
 let titleT = 0, titleSkip = false, logoCv = null, logoSig = null, logoNeon = null;
 const titleFX = { lamps: 6, tube: null, bar: false };
@@ -1280,10 +1289,8 @@ function drawTitleRadio(T) {
   }
   if (T < 40) for (let i = 0; i < 300; i++) { ctx.fillStyle = `rgba(255,200,150,${Math.random() * .3 * (1 - T / 40)})`; ctx.fillRect(gx + Math.random() * gw, gy + Math.random() * gh, 3, 3); }
   // lamps come on after the title, left to right; the dial shows the station
-  const P0 = P("radio"); for (let k = 0; k < 6; k++) { const on = T - (125 + k * 5); if (on === 0) Sound.tickMove(); const lx = zx(L.radioX + P0["lamp" + k][0]), ly = zy(L.radioY + P0["lamp" + k][1]);
-    ctx.fillStyle = "#2a1a10"; ctx.beginPath(); ctx.arc(lx, ly, 6 * Z, 0, 6.283); ctx.fill();
-    if (on >= 0) { ctx.fillStyle = C.lamp; ctx.beginPath(); ctx.arc(lx, ly, 5.5 * Z, 0, 6.283); ctx.fill(); ctx.fillStyle = C.hot; ctx.beginPath(); ctx.arc(lx - 5, ly - 5, 4, 0, 6.283); ctx.fill();
-      ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(lx, ly, 70, "255,190,90", .45); ctx.restore(); } }
+  for (let k = 0; k < 6; k++) { const on = T - (125 + k * 5); if (on === 0) Sound.tickMove(); const lx = zx(L.lamps[k].x), ly = zy(L.lamps[k].y);
+    if (on >= 0) { drawLamp(lx, ly, 7 * Z, false); ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(lx, ly, 70, "255,190,90", .45); ctx.restore(); } }
   const dl = L.dial, dx = zx(dl.x), dy = zy(dl.y), dw = dl.w * Z, dh = dl.h * Z; ctx.fillStyle = "#0b0604"; ctx.fillRect(dx, dy, dw, dh);
   if (T > 20) { ctx.save(); ctx.beginPath(); ctx.rect(dx, dy, dw, dh); ctx.clip(); const s = "  LATE NIGHT ON THE DIAL * LEXICON SIGNAL * TUNE IN *", px = dx + dw - ((frame * 2) % (s.length * 18 + dw)); ftextDot(s, px, dy + Math.round((dh - 21) / 2), C.amber); ctx.restore(); }
   { const m = L.meter, cx = zx(m.x), cy = zy(m.y) + 9 * Z, r = m.r * Z - 12, ratio = Math.min(1, T / 120) * .62 + Math.sin(frame / 37) * .02;
