@@ -565,7 +565,7 @@ function draw() {
   wctx.save(); wctx.translate(sx, 0); drawBeacon(); drawRadioLive(); drawGrid(); drawSparks(); wctx.restore();
   wctx.drawImage(barCv, 0, L.barY); drawBarLive();
   ctx.drawImage(world, 0, 0, W * FINE, H * FINE);
-  ctx.save(); ctx.translate(sx * FINE, 0); drawRain(); drawDial(); drawMeter(); drawLamps(); drawKeyLetters(); drawGlows(); drawFlyers(); ctx.restore();
+  ctx.save(); ctx.translate(sx * FINE, 0); drawRain(); drawDial(); drawLamps(); drawKeyLetters(); drawGlows(); drawFlyers(); ctx.restore();
   drawBarText(); if (nightCard > 0 && S.phase === "play") { drawNightCard(); nightCard--; }
   if (S.phase === "title" || S.phase === "shop" || S.phase === "swap" || S.phase === "over") {
     octx.clearRect(0, 0, W, H); octx.imageSmoothingEnabled = false;
@@ -693,6 +693,7 @@ function drawLamps() {
       ctx.fillStyle = "#1a0e08"; ctx.beginPath(); ctx.arc(x, y, 6, 0, 6.283); ctx.fill(); ctx.strokeStyle = "#b07a2a"; ctx.lineWidth = 1.5; ctx.stroke();
       if (i < S.retunes) drawLamp(x, y, 4.5, false); } }
 }
+// (unused: the round meter was painted out of the radio art, Chris 2026-11-12; kept in case the spot gets a gauge again)
 function drawMeter() {
   const m = L.meter, cx = FX(m.x), cy = FX(m.y) + 18, ratio = S.phase === "title" ? 0 : Math.min(1.1, S.shown / S.target), r = FX(m.r) - 8;
   for (let k = 0; k <= 10; k++) { const a = (-60 + k * 12) * Math.PI / 180, r0 = r - (k % 5 ? 4 : 7); line(ctx, cx + Math.sin(a) * r0, cy - Math.cos(a) * r0, cx + Math.sin(a) * r, cy - Math.cos(a) * r, k >= 9 ? C.needle : C.inkSoft); }
@@ -1059,7 +1060,6 @@ function drawGlows() {
   L.lamps.forEach((p, k) => { if (k < lit) bloom(FX(p.x), FX(p.y), 34, S.words === 1 && S.phase === "play" ? "255,70,50" : "255,190,90", .5); });
   const d = L.dial, okNow = S.phase === "play" && S.path.length >= 3 && isValid();
   bloom(FX(d.x + d.w / 2), FX(d.y + d.h / 2), FX(d.w * .6), "255,170,70", okNow ? .3 : .12);
-  bloom(FX(L.meter.x), FX(L.meter.y), FX(L.meter.r * 1.6), "255,220,160", .12);
   const sel = new Set(S.path); if (PA()) paGlows(okNow); else S.grid.forEach((t, i) => { if (!t) return; const c = tileC(i);
     if (sel.has(i)) bloom(FX(c.x), FX(c.y + t.yOff), 56, okNow ? "255,225,150" : "255,170,70", .35);
     else if (KS === 2 || KS === 3) bloom(FX(c.x), FX(c.y + t.yOff), 34, "255,130,40", .08); });
@@ -1401,9 +1401,6 @@ function drawTitleRadio(T) {
   const dl = L.dial, dx = zx(dl.x), dy = zy(dl.y), dw = dl.w * Z, dh = dl.h * Z; ctx.fillStyle = "#0b0604"; ctx.fillRect(dx, dy, dw, dh);
   if (T > 20) { ctx.save(); ctx.beginPath(); ctx.rect(dx, dy, dw, dh); ctx.clip(); const s = tipNow(); titleTipX = titleTipX == null ? 0 : titleTipX + 2;
     const px = dx + dw - titleTipX; if (px + s.length * 18 < dx) { nextTip(); titleTipX = 0; } ftextDot(s, px, dy + Math.round((dh - 21) / 2), C.amber); ctx.restore(); }
-  { const m = L.meter, cx = zx(m.x), cy = zy(m.y) + 9 * Z, r = m.r * Z - 12, ratio = Math.min(1, T / 120) * .62 + Math.sin(frame / 37) * .02;
-    for (let k = 0; k <= 10; k++) { const a = (-60 + k * 12) * Math.PI / 180, r0 = r - (k % 5 ? 6 : 11); ctx.strokeStyle = k >= 9 ? C.needle : C.inkSoft; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx + Math.sin(a) * r0, cy - Math.cos(a) * r0); ctx.lineTo(cx + Math.sin(a) * r, cy - Math.cos(a) * r); ctx.stroke(); }
-    const a = (-60 + ratio * 110) * Math.PI / 180; ctx.strokeStyle = C.needle; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.sin(a) * (r - 3), cy - Math.cos(a) * (r - 3)); ctx.stroke(); }
   // the room around falls into shadow so the radio carries the screen
   const v = ctx.createRadialGradient(cv.width / 2, cv.height * .42, cv.height * .45, cv.width / 2, cv.height * .45, cv.width * .62); v.addColorStop(0, "rgba(6,3,2,0)"); v.addColorStop(1, "rgba(6,3,2,.85)"); ctx.fillStyle = v; ctx.fillRect(0, 0, cv.width, cv.height);
   // PRESS START on a brass plate on the radio's base

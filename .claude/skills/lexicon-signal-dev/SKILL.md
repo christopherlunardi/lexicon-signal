@@ -75,6 +75,9 @@ the same batch.
   a lamp socket (copied from the radio's own) to the lamp row: the 7th word right of the six, the 8th left of them, "+N" past that;
   these spare lamps go out first. Retunes are small lamps in an arc over the right (tuning) knob, one per retune a night, lit while
   unused (a Fine Tuning Knob adds one). Slot lamps still show copies too. Any new part gets a visual like this in the same batch.
+- The radio's round meter (top right) was painted out in build.py (a mirror of the cabinet's plain left side, plus plain wood
+  beside it); the spot is free for something better later. drawMeter is unused.
+- Never put a // comment in the middle of a line of code: it silently cuts off the calls after it (it hid the whole play area once).
 - Bar contents always sit inside the bar's inner gold border, centred on one line with one equal gap.
 - Part icons (2026-11-12, Chris found the old ones not good enough): build.py cuts each icon as the biggest blob in its sheet cell
   (no neighbour bits or specks). Slots draw the full icon on the fine layer at one art pixel per fine pixel (full detail, no shrink),

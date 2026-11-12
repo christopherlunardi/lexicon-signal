@@ -78,6 +78,13 @@ def main():
             WIN_BOX[:] = [box[0], box[1]]
         piece = im.crop(box)
         if "crop" not in s: x0, y0 = box[0] / fx, box[1] / fy
+        if name == "radio":
+            # the round meter top right did nothing (Chris 2026-11-12): wood over it, a mirror of the same spot on the left of the
+            # cabinet (the cabinet is symmetrical), so the space is clean and free for something better later
+            ra = np.asarray(piece).copy(); x0, y0, x1, y1 = 308, 5, 364, 60; rw_ = ra.shape[1]
+            ra[y0:y1, x0:x1] = ra[y0:y1, rw_ - x1:rw_ - x0][:, ::-1]
+            ra[y0:54, 298:313] = ra[y0:54, 318:333]   # the meter's left rim: plain wood from just beside it
+            piece = Image.fromarray(ra, "RGBA")
         imgs[name] = piece
         pts[name] = {k: [round(px * fx - box[0]), round(py * fy - box[1])] for k, (px, py) in s.get("points", {}).items()}
     # wallpaper: the median of many repeats (removes the source's uneven edges), one cell per real pixel
