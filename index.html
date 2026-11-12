@@ -1621,7 +1621,8 @@ async function boot() {
   PAL = A.palette; const acc = new Set(A.accents.map(c => c.join(","))); ROOMPAL = PAL.filter(c => !acc.has(c.join(",")));
   makeColours(); buildLUT(); artReady = true;
   loadTitleGlass();
-  S = fresh(location.hash ? "title" : "splash"); barShow = 0; layout(); fillGrid(false);
+  // only our own test and Workshop links skip straight to the title (the page can be opened with other hashes, which must not skip the intro)
+  S = fresh(/^#(test-|keys-|title-)/.test(location.hash) ? "title" : "splash"); barShow = 0; layout(); fillGrid(false);
   "LEXICONSIGNAL".split("").forEach((ch, k) => { S.grid[[0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13][k]].ch = ch; });
   [7, 14, 15].forEach(i => S.grid[i].ch = " ");
   // test hook: a hash ending in -step does not run by itself; window.LEXSTEP(n) advances n frames (for recording clips frame by frame)

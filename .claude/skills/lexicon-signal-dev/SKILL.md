@@ -90,7 +90,7 @@ the same batch.
 ## Start of the game
 - Splash ("PRESS ANY BUTTON"/"TAP TO START": a phone needs one press before it plays sound) -> the Idle Looping Studios intro
   (`studio.js`, copied unchanged from port-stacker's generated game/src/js/09c-studio.js; its player is in index.html, `studioStart`...
-  `studioEnd`, picture on the sound's clock, any press skips) -> the title. Links with a hash (tests, Workshop copies) skip to the title.
+  `studioEnd`, picture on the sound's clock, any press skips) -> the title. Only our own hashes (#test-, #keys-, #title-) skip to the title; any other hash (the host can add one) still gets the splash and intro.
   Publish studio.js with the game.
 
 ## Title tips and sound
