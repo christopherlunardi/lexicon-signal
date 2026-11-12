@@ -662,10 +662,10 @@ function drawMeter() {
   const a = (-60 + ratio * 110) * Math.PI / 180; line(ctx, cx + 1, cy + 1, cx + 1 + Math.sin(a) * (r - 2), cy + 1 - Math.cos(a) * (r - 2), C.inkSoft, 2); line(ctx, cx, cy, cx + Math.sin(a) * (r - 2), cy - Math.cos(a) * (r - 2), C.needle, 2);
   disc(ctx, cx, cy, 3, C.ink);
 }
-/* ---------- key styles (the Workshop rounds' looks; the game always uses signal scope, #keys-N opens another for comparing) ---------- */
+/* ---------- key styles: the game has one look, dot glass. The other looks from the Workshop rounds are still in the code for now and
+   are never shown; they go when dot glass is built out as the play area. ---------- */
 const KEY_STYLES = ["Pixel keys", "Typewriter", "Glow tubes", "Neon glass", "Ivory tiles", "Brass keys", "Valve bank", "Signal scope", "Stencil plates", "Switchboard", "Dot glass"];
-let KS = 7;   // signal scope, the play area (Chris picked it, keys-r2). Always this one now, in every browser; only #keys-N links show the others
-{ const m = location.hash.match(/keys-(\d+)/); if (m) KS = Math.min(KEY_STYLES.length - 1, +m[1]); }
+const KS = 10;   // dot glass (Chris saw it on his phone and chose it over signal scope, 2026-11-12): every link, every browser, one game
 function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
 function pips(x, y, v, col) { ctx.fillStyle = col; for (let k = 0; k < Math.min(4, Math.ceil(v / 2)); k++) ctx.fillRect(x - k * 6, y, 4, 4); }
 function vtext(s, x, y, font, col, blur, glowCol) { ctx.font = font; ctx.textAlign = "center"; ctx.textBaseline = "middle";

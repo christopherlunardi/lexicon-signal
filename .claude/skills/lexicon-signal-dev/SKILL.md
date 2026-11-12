@@ -123,8 +123,8 @@ the same batch.
   whole glass on the fine layer (`drawPlayArea`, one `pa...` function each, plus `paGlows` and `paFlyers`) and share a few clocks:
   `t.lit` (traced, eased), `t.land` (just landed), `lockK` (word can be sent), `addT`/`sendT`/`arriveT`, and `ghosts` (the places a
   sent word left). In these looks letters lift off before they fly and the keys above wait a little longer before falling.
-  The game always uses signal scope (KS 7) in every browser (2026-11-12: a style remembered in one browser made Chris's phone
-  and Claude window look different); `#keys-N` opens style N for comparing (`#test-word-keys-N` with a word traced). Web fonts:
+  The game is one game with one look: dot glass (KS 10, a const) on every link and in every browser (Chris: no versions) (2026-11-12: a style remembered in one browser made Chris's phone
+  and Claude window look different); `#keys-N` no longer switches looks (`#test-word-keys-N` with a word traced). Web fonts:
   Special Elite, Bungee Hairline, Bungee, Limelight, Share Tech Mono, Stardos Stencil, Alfa Slab One. Value dots stay in every style
   (Chris likes them), bright enough to read on unselected keys. He likes it dark with smooth glow. Select is the sound switch again.
 
@@ -159,8 +159,8 @@ the same batch.
   breathing, the odd dropout). Publish art/title/glass-lit.png, glass-dim.png, glass.json with the game.; 0 = the old parchment box). The game opens on 6 now (Chris: put it in while we tweak it), `#title-N` opens one (`#title-N-step` for clips).
   The logo is a placeholder built in code (`buildLogo`/`drawLogo`: LEXICON in bevelled brass cells, SIGNAL in lit dot-matrix,
   waves); a real logo from ChatGPT replaces it later. A press during an entrance skips to its settled screen (`titleBusy`).
-- Rounds: keys-r1 decided (glow tubes), keys-r2 decided (signal scope, KS 7, always on). Next: build signal scope out as THE play area and drop the
-  other styles' code.
+- Rounds: keys-r1 decided (glow tubes), keys-r2 decided: first signal scope, then Chris saw dot glass on his phone and switched to it (KS 10, always on).
+  Next: build dot glass out as THE play area and drop the other styles' code.
 
 ## Art prompts (ChatGPT)
 - One layer at a time, the look target attached for style. Pixel-art wording: low-resolution late-1990s computer game look, crisp
