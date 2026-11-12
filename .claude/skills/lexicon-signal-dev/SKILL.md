@@ -72,8 +72,8 @@ the same batch.
   the radio on narrow screens. The room's sound is rain (a soft filtered-noise wash, fine hiss, the odd drip); there is no constant
   static hiss any more (static is only a sound effect, e.g. retune).
 - Every part's effect shows where it acts (Chris 2026-11-12: "no visual indicator that I have another word"). A Spare Battery adds
-  a lamp socket (copied from the radio's own) to the lamp row: the 7th word right of the six, the 8th left of them, "+N" past that;
-  these spare lamps go out first. Retunes are small lamps in an arc over the right (tuning) knob, one per retune a night, lit while
+  a small light on the radio's bottom lip under the lamp row (one per battery, centred), separate from the tuning lights; spare
+  words are spent first. A used lamp or light flares white and fades with a click. Retunes are small lamps in an arc over the right (tuning) knob, one per retune a night, lit while
   unused (a Fine Tuning Knob adds one). Slot lamps still show copies too. Any new part gets a visual like this in the same batch.
 - The radio's round meter (top right) was painted out in build.py (a mirror of the cabinet's plain left side, plus plain wood
   beside it); the spot is free for something better later. drawMeter is unused.

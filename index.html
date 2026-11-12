@@ -578,15 +578,14 @@ function drawBeacon() {
   wctx.fillStyle = C.hot; wctx.fillRect(b.x, b.y, 1, 1);
 }
 function drawRadioLive() {
-  { const n = S.phase === "title" ? 0 : Math.min(2, maxWords() - 6), a = L.lamps; L.extraLamps = [{ x: a[5].x + 26, y: a[5].y }, { x: a[0].x - 26, y: a[0].y }].slice(0, Math.max(0, n)); }
+  { const n = S.phase === "title" ? 0 : Math.max(0, maxWords() - 6), a = L.lamps, cx = (a[0].x + a[5].x) / 2, y = a[0].y + 23;
+    L.extraLamps = []; for (let j = 0; j < n; j++) L.extraLamps.push({ x: cx + (j - (n - 1) / 2) * 13, y }); }
   // the dial becomes a lit display window
   const d = L.dial; wctx.fillStyle = C.glass; wctx.fillRect(d.x, d.y, d.w, d.h);
   // lamps = words left
   const lit = S.phase === "title" ? titleFX.lamps : Math.min(6, S.words);
   // (the lit lamps are drawn on the fine layer, drawLamps, so each sits exactly in the middle of its socket)
-  // a Spare Battery adds a lamp to the row: a socket copied from the radio's own appears right of the six, a second one left of them
-  const rp = P("radio"), rr0 = R("radio"); L.extraLamps.forEach((p) => { const sx = rp.lamp5[0] - 11, sy = rp.lamp5[1] - 11;
-    wctx.drawImage(atlasImg, rr0[0] + sx, rr0[1] + sy, 23, 23, Math.round(p.x - .5) - 11, p.y - 11, 23, 23); });
+
   for (const [k, p] of [["L", L.knobL], ["R", L.knobR]]) { const a = knobA[k] - .6; line(wctx, p.x + Math.cos(a) * 5, p.y + Math.sin(a) * 5, p.x + Math.cos(a) * 13, p.y + Math.sin(a) * 13, C.gold); }
   if (knobA.R > 0) knobA.R = Math.max(0, knobA.R - .04);
 }
@@ -686,13 +685,14 @@ function drawLamps() {
   const lit = S.phase === "title" ? titleFX.lamps : Math.min(6, S.words), low = S.words === 1 && S.phase === "play" && (frame >> 4) & 1;
   L.lamps.forEach((p, k) => { if (k < lit) drawLamp(FX(p.x), FX(p.y), FX(7), low); });
   // the spare battery lamps: spent first (before the radio's own six), so they go dark as soon as a word is sent
-  L.extraLamps.forEach((p, j) => { if (S.phase !== "title" && S.words > 6 + j) drawLamp(FX(p.x), FX(p.y), FX(7), false); });
+  // spare words (Spare Battery): small lights on the radio's bottom lip under the row, separate from the tuning lights; spent first
+  L.extraLamps.forEach((p, j) => { const x = FX(p.x), y = FX(p.y); ctx.fillStyle = "#1a0e08"; ctx.beginPath(); ctx.arc(x, y, 6, 0, 6.283); ctx.fill(); ctx.strokeStyle = "#b07a2a"; ctx.lineWidth = 1.5; ctx.stroke();
+    if (S.phase !== "title" && S.words > 6 + j) drawLamp(x, y, 4.5, false); });
   // the lamp a word just used flares white, then dies down over a moment, so you see which one went (spare ones included)
-  if (S.phase === "play" && lampWas != null && S.words < lampWas) { const w = lampWas, p = w > 6 ? L.extraLamps[w - 7] : L.lamps[w - 1]; if (p) lampOut = { x: p.x, y: p.y, t: 0 }; Sound.lampOut(); }
+  if (S.phase === "play" && lampWas != null && S.words < lampWas) { const w = lampWas, p = w > 6 ? L.extraLamps[w - 7] : L.lamps[w - 1]; if (p) lampOut = { x: p.x, y: p.y, t: 0, r: w > 6 ? 4.5 : FX(7) }; Sound.lampOut(); }
   lampWas = S.phase === "play" ? S.words : null;
-  if (lampOut) { const u = lampOut.t / 26; ctx.save(); ctx.globalAlpha = Math.max(0, 1 - u); drawLamp(FX(lampOut.x), FX(lampOut.y), FX(7), false);
+  if (lampOut) { const u = lampOut.t / 26; ctx.save(); ctx.globalAlpha = Math.max(0, 1 - u); drawLamp(FX(lampOut.x), FX(lampOut.y), lampOut.r, false);
     ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 1; bloom(FX(lampOut.x), FX(lampOut.y), 50 + 30 * (1 - u), "255,240,200", .7 * (1 - u)); ctx.restore(); if (++lampOut.t > 26) lampOut = null; }
-  if (S.phase !== "title" && L.extraLamps.length > 1 && S.words > 8) ftext("+" + (S.words - 8), FX(L.extraLamps[1].x) - 30, FX(L.extraLamps[1].y) - 8, "ink", C.gold, "r", { outline: C.dark });
   // retunes left: small lamps in an arc over the right (tuning) knob, one per retune you get each night, lit while unused
   if (S.phase === "play" || S.phase === "shop" || S.phase === "swap") { const n = maxRetunes(), k = L.knobR;
     for (let i = 0; i < n; i++) { const a = -Math.PI / 2 + (i - (n - 1) / 2) * .42, x = FX(k.x + .5 + Math.cos(a) * 22), y = FX(k.y + Math.sin(a) * 22);
@@ -1064,7 +1064,7 @@ function drawGlows() {
     bloom(FX(L.winX + x), FX(L.winY + y), big ? FX(22) : 10 + Math.sqrt(n) * 3, "255,190,90", big ? .18 : Math.min(.35, .08 + n * .02)); }
   bloom(FX(W - 20), FX(SCENE_H - 30), FX(220), "255,150,60", .16 + .03 * Math.sin(frame / 50));     // the unseen lamp, breathing
   const lit = S.phase === "title" ? titleFX.lamps : Math.min(6, S.words);
-  L.extraLamps.forEach((p, j) => { if (S.phase !== "title" && S.words > 6 + j) bloom(FX(p.x), FX(p.y), 34, "255,190,90", .5); });
+  L.extraLamps.forEach((p, j) => { if (S.phase !== "title" && S.words > 6 + j) bloom(FX(p.x), FX(p.y), 20, "255,190,90", .5); });
   L.lamps.forEach((p, k) => { if (k < lit) bloom(FX(p.x), FX(p.y), 34, S.words === 1 && S.phase === "play" ? "255,70,50" : "255,190,90", .5); });
   const d = L.dial, okNow = S.phase === "play" && S.path.length >= 3 && isValid();
   bloom(FX(d.x + d.w / 2), FX(d.y + d.h / 2), FX(d.w * .6), "255,170,70", okNow ? .3 : .12);
@@ -1252,7 +1252,7 @@ const TIPS = [
   "YOU HAVE 5 PART SLOTS. COPIES OF A PART STACK IN ONE",
   "SLOTS FULL? TAKE A PART OUT TO FIT A NEW ONE",
   "A PART'S SLOT LIGHTS UP WHEN IT WILL BOOST YOUR WORD",
-  "A SPARE BATTERY ADDS A LAMP TO THE ROW: AN EXTRA WORD EVERY NIGHT",
+  "A SPARE BATTERY ADDS A LIGHT UNDER THE LAMPS: AN EXTRA WORD EVERY NIGHT",
   "THE NIGHT OWL CLOCK TRIPLES YOUR LAST WORD OF THE NIGHT",
   "THE ECHO TUBE DOUBLES YOUR FIRST WORD OF THE NIGHT",
   "THE CARRIER LAMP'S RED KEY DOUBLES ANY WORD THAT USES IT",
