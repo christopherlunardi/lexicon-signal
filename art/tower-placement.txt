@@ -1,0 +1,2 @@
+tower.png is pre-placed in view.png coordinates (941x1672): same size, overlay at 0,0.
+Beacon center approx x=740, y=178.
