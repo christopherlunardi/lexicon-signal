@@ -334,18 +334,19 @@ const tileC = (i) => { const p = tileXY(i); return { x: p.x + L.tw / 2, y: p.y +
 /* ---- the room: drawn once per layout, lit with a baked light map, dithered into the palette ---- */
 let roomCv = null, barCv = null;
 function buildRoom() {
-  roomCv = document.createElement("canvas"); roomCv.width = W; roomCv.height = SCENE_H; const c = roomCv.getContext("2d"); c.imageSmoothingEnabled = false;
-  const t = R("wall_tile"); for (let y = 0; y < SCENE_H; y += t[3]) for (let x = 0; x < W; x += t[2]) spr(c, "wall_tile", x, y);
+  roomCv = document.createElement("canvas"); roomCv.width = W; roomCv.height = H; const c = roomCv.getContext("2d"); c.imageSmoothingEnabled = false;
+  const t = R("wall_tile"); for (let y = 0; y < H; y += t[3]) for (let x = 0; x < W; x += t[2]) spr(c, "wall_tile", x, y);
   spr(c, "window", L.winX, L.winY);
-  let x = L.sbX; spr(c, "sb_left", x, L.sbY); x += R("sb_left")[2]; while (x < W) { spr(c, "sb_mid", x, L.sbY); x += R("sb_mid")[2]; }
+  for (let y = L.sbY; y < H; y += R("sb_mid")[3] - 4) { let x = L.sbX; spr(c, "sb_left", x, y); x += R("sb_left")[2]; while (x < W) { spr(c, "sb_mid", x, y); x += R("sb_mid")[2]; } }
+  spr(c, "radio", L.radioX, L.radioY);   // (again below, over the lower rows)
   spr(c, "radio", L.radioX, L.radioY);
-  const img = c.getImageData(0, 0, W, SCENE_H), d = img.data;
-  const m = document.createElement("canvas"); m.width = W; m.height = SCENE_H; const mc = m.getContext("2d"); spr(mc, "window_glass", L.winX, L.winY);
+  const img = c.getImageData(0, 0, W, H), d = img.data;
+  const m = document.createElement("canvas"); m.width = W; m.height = H; const mc = m.getContext("2d"); spr(mc, "window_glass", L.winX, L.winY);
   mc.globalCompositeOperation = "destination-out"; spr(mc, "radio", L.radioX, L.radioY);
-  const md = mc.getImageData(0, 0, W, SCENE_H).data;
+  const md = mc.getImageData(0, 0, W, H).data;
   const wcx = L.winX + R("window")[2] / 2, wcy = L.winY + R("window")[3] / 2, lx = W - 13, ly = SCENE_H * .87, K = H / 270;
   // smooth light over the clean art: warm lamp low right, cool moon round the window, slightly darker edges (no palette snapping)
-  for (let y = 0; y < SCENE_H; y++) for (let x = 0; x < W; x++) {
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
     const i = (y * W + x) * 4; let lr, lg, lb;
     if (md[i + 3] > 0) { lr = .74; lg = .76; lb = .86; }
     else { const lamp = Math.max(0, 1 - Math.hypot((x - lx) / (330 * K), (y - ly) / (260 * K))) ** 1.6, moon = Math.max(0, 1 - Math.hypot((x - wcx) / (150 * K), (y - wcy) / (130 * K))) ** 2;
@@ -353,6 +354,8 @@ function buildRoom() {
       lr = (.44 + lamp * 1.0 + moon * .22) * v; lg = (.43 + lamp * .74 + moon * .3) * v; lb = (.44 + lamp * .48 + moon * .5) * v; }
     d[i] = Math.min(255, d[i] * lr); d[i + 1] = Math.min(255, d[i + 1] * lg); d[i + 2] = Math.min(255, d[i + 2] * lb); d[i + 3] = 255; }
   c.putImageData(img, 0, 0);
+  // below the bar's line the room falls away into shadow (only seen on the title screen, with the bar away)
+  const g = c.createLinearGradient(0, SCENE_H, 0, H); g.addColorStop(0, "rgba(6,3,2,.1)"); g.addColorStop(1, "rgba(6,3,2,.7)"); c.fillStyle = g; c.fillRect(0, SCENE_H, W, H - SCENE_H);
 }
 function buildBar() {
   barCv = document.createElement("canvas"); barCv.width = W; barCv.height = BAR_H; const c = barCv.getContext("2d"); c.imageSmoothingEnabled = false;
@@ -543,9 +546,13 @@ function update() {
 
 /* ================= draw ================= */
 // order: world (room, keys, bar) at world pixels -> scaled 2x -> fine displays and letters -> menus (world pixels, 2x) -> menu text
-let frame = 0;
+let frame = 0, barShow = 1;
 function draw() {
-  frame++; wctx.imageSmoothingEnabled = false; ctx.imageSmoothingEnabled = false;
+  frame++;
+  { const want = (S.phase === "title" && !titleFX.bar) || S.phase === "splash" || S.phase === "studio" ? 0 : 1, was = barShow;
+    barShow = want > barShow ? Math.min(1, barShow + .045) : want < barShow ? Math.max(0, barShow - .08) : barShow;
+    if (was < 1 && barShow === 1 && want === 1) { Sound.thud(3); shake = Math.max(shake, 4); }
+    const u = 1 - barShow, e = u * u; L.barY = SCENE_H + Math.round(e * (BAR_H + 4)); } wctx.imageSmoothingEnabled = false; ctx.imageSmoothingEnabled = false;
   if (S.phase === "splash") { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, cv.width, cv.height);
     if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO START" : "PRESS ANY BUTTON", cv.width / 2, cv.height / 2 - 8, "dot", C.amber, "c"); return; }
   const sx = shake > 0 ? Math.round((Math.random() - .5) * Math.min(2, shake)) : 0;
@@ -1128,18 +1135,18 @@ function tubeGlows() {
   for (const bm of beams) if (bm.hx != null) bloom(FX(bm.hx), FX(bm.hy), bm.big ? 46 : 34, "255,190,110", .55);
 }
 // ---------- menus: dim the room with a checker of dark pixels, parchment panels, then fine text ----------
-function dim() { octx.fillStyle = C.shade; for (let y = 0; y < SCENE_H; y++) for (let x = (y & 1); x < W; x += 2) octx.fillRect(x, y, 1, 1); }
+function dim() { octx.fillStyle = C.shade; for (let y = 0; y < L.barY; y++) for (let x = (y & 1); x < W; x += 2) octx.fillRect(x, y, 1, 1); }
 function blitOver() { ctx.drawImage(over, 0, 0, W * FINE, H * FINE); }
 /* ---------- title screens (Workshop topic "title", round 1) ----------
    Each style brings the logo in its own way, then settles on the logo and "PRESS A TO TUNE IN". A press during the entrance jumps to
    the settled screen; the next press starts. Style 0 is the old parchment box. #title-N opens style N. The logo is a placeholder made
    in code from our own 5x7 letters until the real one is drawn: LEXICON in chunky bevelled brass, SIGNAL in lit amber dot-matrix. */
-const TITLE_STYLES = ["Parchment box (now)", "Tuning in", "From the tower", "Neon across the street", "Fill the tube", "Programme sheet"];
+const TITLE_STYLES = ["Parchment box (now)", "Tuning in", "From the tower", "Neon across the street", "Fill the tube", "Programme sheet", "Radio close-up"];
 let TS = 0; { const m = location.hash.match(/title-(\d+)/); if (m) TS = Math.min(TITLE_STYLES.length - 1, +m[1]); }
 const LD = 14, LP = 6 * LD;   // logo letter cell and letter pitch, in fine pixels
 let titleT = 0, titleSkip = false, logoCv = null, logoSig = null, logoNeon = null;
-const titleFX = { lamps: 6, tube: null };
-const TITLE_LEN = [0, 200, 190, 200, 170, 150];
+const titleFX = { lamps: 6, tube: null, bar: false };
+const TITLE_LEN = [0, 200, 190, 200, 170, 150, 170];
 function buildLogo() {
   // LEXICON: 10 px cells, dark outline, brass from light at the top to deep amber at the bottom, a lit edge on top, a dark lip under
   const d = LD, pitch = 6 * d, lw = 7 * pitch - d, c = document.createElement("canvas"); c.width = lw + 16; c.height = 7 * d + 16; const x = c.getContext("2d");
@@ -1188,11 +1195,12 @@ function pressLines(cx, y, a) {
   if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO TUNE IN" : "PRESS A TO TUNE IN", cx, y, "ink", C.gold, "c", { outline: C.dark });
   const b = bestLine(); if (b) ftext(b, cx, y + Math.round(26 * TK), "ink", C.amber, "c", { outline: C.dark }); ctx.restore();
 }
-function shade(a) { ctx.fillStyle = `rgba(6,3,2,${a})`; ctx.fillRect(0, 0, cv.width, FX(SCENE_H)); }
+function shade(a) { ctx.fillStyle = `rgba(6,3,2,${a})`; ctx.fillRect(0, 0, cv.width, FX(L.barY)); }
 function drawTitle() {
   titleT++; const T = titleSkip ? 999 : titleT, cx = FX(W / 2), ease = (u) => { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); };
-  titleFX.lamps = 6; titleFX.tube = null;
+  titleFX.lamps = 6; titleFX.tube = null; titleFX.bar = TS === 4;
   if (TS === 0) return drawTitleOld();
+  if (TS === 6) return drawTitleRadio(T);
   const top = FX(34);
   if (TS === 1) {   // tuning in: dark static room, the dial hunts, scrambled letters lock into the logo, then the lamps come on
     if (T === 2) { Sound.retune(); staticKick = 1; }
@@ -1240,6 +1248,52 @@ function drawTitle() {
       const n = Math.max(0, Math.floor((T - 95) * 2)); let left = n, ty = end + 14; body.forEach(s => { if (left > 0) ftext(s.slice(0, left), cx, ty, "ink", C.ink, "c"); left -= s.length; ty += Math.round(22 * TK); });
       if (T > 130 && (frame >> 5) & 1) ftext(usingTouch ? "TAP TO TUNE IN" : "PRESS A TO TUNE IN", cx, ty + 10, "ink", C.inkRed, "c"); }
   }
+}
+// radio close-up: the room seen closer (every art pixel 3 fine pixels, a clean 1.5x), the radio centred and filling the screen. The
+// title lights up in its glass as keys (LEXI / CON / SIGN / AL), one key at a time, then the lamps, then a brass PRESS START plate.
+function drawTitleRadio(T) {
+  const ease = (u) => { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); }, Z = 3, rw = R("radio")[2], rh = R("radio")[3];
+  const ox = Math.round(cv.width / 2 - rw * Z / 2), oy = Math.max(10, Math.round((cv.height - rh * Z) / 2) - 70);
+  const zx = (wx) => ox + (wx - L.radioX) * Z, zy = (wy) => oy + (wy - L.radioY) * Z;
+  // wallpaper first (the room canvas doesn't reach every edge this close), dimmed to the room's light, then the room itself
+  ctx.save(); ctx.setTransform(Z, 0, 0, Z, ox - L.radioX * Z, oy - L.radioY * Z); const t = R("wall_tile");
+  for (let y = -t[3] * 2; y < H + t[3]; y += t[3]) for (let x = -t[2] * 3; x < W + t[2] * 3; x += t[2]) ctx.drawImage(atlasImg, t[0], t[1], t[2], t[3], x, y, t[2], t[3]);
+  ctx.fillStyle = "rgba(8,4,3,.6)"; ctx.fillRect(-W, -H, W * 3, H * 3); ctx.drawImage(roomCv, 0, 0); ctx.restore();
+  // the glass: dark, a little static at first, then the keys light one by one in reading order
+  const g = L.glass, gx = zx(g.x), gy = zy(g.y), gw = g.w * Z, gh = g.h * Z;
+  ctx.fillStyle = "#0c0705"; ctx.fillRect(gx, gy, gw, gh);
+  if (T < 40) for (let i = 0; i < 260; i++) { ctx.fillStyle = `rgba(255,200,150,${Math.random() * .25 * (1 - T / 40)})`; ctx.fillRect(gx + Math.random() * gw, gy + Math.random() * gh, 3, 3); }
+  const rows = ["LEXI", " CON", "SIGN", " AL "], pad = 10, gap = 8, kw = Math.floor((gw - 2 * pad - 3 * gap) / 4), kh = Math.floor((gh - 2 * pad - 3 * gap) / 4), d = Math.max(5, Math.floor(Math.min(kw, kh) / 10));
+  let n = 0; const order = []; rows.forEach((r, y) => [...r].forEach((ch, x) => { if (ch !== " ") order.push(x + y * 4); }));
+  for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) {
+    const kx = gx + pad + x * (kw + gap), ky = gy + pad + y * (kh + gap), ch = rows[y][x], k = order.indexOf(x + y * 4), on = k >= 0 ? T - (40 + k * 6) : -1;
+    if (k >= 0 && on === 0) Sound.blip(1 + k % 12);
+    const lit = on < 0 ? 0 : on < 6 ? ((on & 1) ? 1 : .3) : .92 + .08 * Math.sin(frame / 9 + k);
+    ctx.fillStyle = lit ? `rgba(60,30,12,${.6 + .4 * lit})` : "#1d120c"; ctx.beginPath(); ctx.roundRect(kx, ky, kw, kh, 8); ctx.fill();
+    ctx.strokeStyle = lit ? `rgba(255,190,90,${.35 * lit})` : "#2c1b12"; ctx.lineWidth = 2; ctx.stroke();
+    if (ch === " " || !lit) continue;
+    ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(kx + kw / 2, ky + kh / 2, kw * .8, "255,150,50", .5 * lit); ctx.restore();
+    const lx = Math.round(kx + kw / 2 - 2.5 * d), ly = Math.round(ky + kh / 2 - 3.5 * d);
+    F5[ch].split(" ").forEach((row, r) => [...row].forEach((b, c) => { if (b !== "1") return; ctx.fillStyle = `rgba(255,${190 + 40 * (1 - r / 6)},${110 - 50 * (r / 6)},${lit})`; ctx.fillRect(lx + c * d, ly + r * d, d, d);
+      ctx.fillStyle = `rgba(255,248,225,${.85 * lit})`; ctx.fillRect(lx + c * d + 1, ly + r * d + 1, d - 3, Math.max(1, d / 3 | 0)); }));
+  }
+  // lamps come on after the title, left to right; the dial shows the station
+  const P0 = P("radio"); for (let k = 0; k < 6; k++) { const on = T - (125 + k * 5); if (on === 0) Sound.tickMove(); const lx = zx(L.radioX + P0["lamp" + k][0]), ly = zy(L.radioY + P0["lamp" + k][1]);
+    ctx.fillStyle = "#2a1a10"; ctx.beginPath(); ctx.arc(lx, ly, 6 * Z, 0, 6.283); ctx.fill();
+    if (on >= 0) { ctx.fillStyle = C.lamp; ctx.beginPath(); ctx.arc(lx, ly, 5.5 * Z, 0, 6.283); ctx.fill(); ctx.fillStyle = C.hot; ctx.beginPath(); ctx.arc(lx - 5, ly - 5, 4, 0, 6.283); ctx.fill();
+      ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(lx, ly, 70, "255,190,90", .45); ctx.restore(); } }
+  const dl = L.dial, dx = zx(dl.x), dy = zy(dl.y), dw = dl.w * Z, dh = dl.h * Z; ctx.fillStyle = "#0b0604"; ctx.fillRect(dx, dy, dw, dh);
+  if (T > 20) { ctx.save(); ctx.beginPath(); ctx.rect(dx, dy, dw, dh); ctx.clip(); const s = "  LATE NIGHT ON THE DIAL * LEXICON SIGNAL * TUNE IN *", px = dx + dw - ((frame * 2) % (s.length * 18 + dw)); ftextDot(s, px, dy + Math.round((dh - 21) / 2), C.amber); ctx.restore(); }
+  { const m = L.meter, cx = zx(m.x), cy = zy(m.y) + 9 * Z, r = m.r * Z - 12, ratio = Math.min(1, T / 120) * .62 + Math.sin(frame / 37) * .02;
+    for (let k = 0; k <= 10; k++) { const a = (-60 + k * 12) * Math.PI / 180, r0 = r - (k % 5 ? 6 : 11); ctx.strokeStyle = k >= 9 ? C.needle : C.inkSoft; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx + Math.sin(a) * r0, cy - Math.cos(a) * r0); ctx.lineTo(cx + Math.sin(a) * r, cy - Math.cos(a) * r); ctx.stroke(); }
+    const a = (-60 + ratio * 110) * Math.PI / 180; ctx.strokeStyle = C.needle; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.sin(a) * (r - 3), cy - Math.cos(a) * (r - 3)); ctx.stroke(); }
+  // the room around falls into shadow so the radio carries the screen
+  const v = ctx.createRadialGradient(cv.width / 2, cv.height * .42, cv.height * .45, cv.width / 2, cv.height * .45, cv.width * .62); v.addColorStop(0, "rgba(6,3,2,0)"); v.addColorStop(1, "rgba(6,3,2,.85)"); ctx.fillStyle = v; ctx.fillRect(0, 0, cv.width, cv.height);
+  // PRESS START on a brass plate on the radio's base
+  const a = ease((T - 150) / 15); if (a > 0) { const [px0, py0, pw, ph] = R("plate"), W3 = Math.round(pw * Z * 1.25), H3 = ph * Z, bx = Math.round(cv.width / 2 - W3 / 2), by = zy(L.radioY + rh) - H3 + 6;
+    ctx.save(); ctx.globalAlpha = a; octx.clearRect(0, 0, W, H); plate3(octx, 0, 0, Math.round(W3 / Z), ph); ctx.drawImage(over, 0, 0, Math.round(W3 / Z), ph, bx, by, W3, H3);
+    ctx.globalAlpha = a * (.8 + .2 * Math.sin(frame / 12)); ftext(usingTouch ? "TAP TO START" : "PRESS START", cv.width / 2, by + Math.round((H3 - 14 * TK) / 2) + 2, "key", C.ink, "c", { under: C.brassHi, uy: 3 }); ctx.restore();
+    const b = bestLine(); if (b) ftext(b, cv.width / 2, by + H3 + 16, "ink", C.amber, "c", { outline: C.dark }); }
 }
 function drawTitleOld() {
   const w = Math.min(W - 48, 360), lh = Math.round(22 * TK), body = wrap("Spell words in the radio glass. Each word beams signal to the tower. Reach the night's target before the six lamps go dark.", "ink", FX(w) - 60);
@@ -1500,7 +1554,7 @@ async function boot() {
   atlasImg = new Image(); atlasImg.src = "art/pixel/atlas.png"; await atlasImg.decode();
   PAL = A.palette; const acc = new Set(A.accents.map(c => c.join(","))); ROOMPAL = PAL.filter(c => !acc.has(c.join(",")));
   makeColours(); buildLUT(); artReady = true;
-  S = fresh(location.hash ? "title" : "splash"); layout(); fillGrid(false);
+  S = fresh(location.hash ? "title" : "splash"); barShow = 0; layout(); fillGrid(false);
   "LEXICONSIGNAL".split("").forEach((ch, k) => { S.grid[[0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13][k]].ch = ch; });
   [7, 14, 15].forEach(i => S.grid[i].ch = " ");
   // test hook: a hash ending in -step does not run by itself; window.LEXSTEP(n) advances n frames (for recording clips frame by frame)

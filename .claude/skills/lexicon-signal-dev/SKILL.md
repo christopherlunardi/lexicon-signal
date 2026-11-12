@@ -55,6 +55,8 @@ the same batch.
   parts waiting for their moment (Echo Tube first word, Night Owl last word, Carrier) glow softly; Echo dims once used. When a word
   lands, every part that changed it flashes and a tag ("x2", "+6") rises off its slot (`partHits`, `slotState`, `drawSlotStates`).
   `#test-word-parts` fits two batteries, a knob, an echo tube and an amp.
+- The room is built the full screen height (the sideboard's drawer rows carry on down, fading into shadow). On the title screen the
+  bar is away; it rises into place with a thud when a run starts (`barShow` moves `L.barY`).
 - Bar contents always sit inside the bar's inner gold border, centred on one line with one equal gap.
 - Part icons (2026-11-12, Chris found the old ones not good enough): build.py cuts each icon as the biggest blob in its sheet cell
   (no neighbour bits or specks). Slots draw the full icon on the fine layer at one art pixel per fine pixel (full detail, no shrink),
@@ -140,7 +142,8 @@ the same batch.
 - Read his answers: ArtifactData list on the Workshop, collection `feedback`, doc `<topic>-<round>` {pick, notes{id:text}, general,
   submitted}. Act on submitted ones, then mark the round decided (chosen) in workshop.json and republish.
 - title-r1 (open, 2026-11-12): five title entrances in the game, TITLE_STYLES 1..5 (tuning in, from the tower, neon across the street,
-  fill the tube, programme sheet; 0 = the old parchment box, still the default), `#title-N` opens one (`#title-N-step` for clips).
+  fill the tube, programme sheet, 6 radio close-up (Chris's sketch: no bar, radio at 3 fine px per art px, title lit as keys in the
+  glass, PRESS START plate); 0 = the old parchment box, still the default), `#title-N` opens one (`#title-N-step` for clips).
   The logo is a placeholder built in code (`buildLogo`/`drawLogo`: LEXICON in bevelled brass cells, SIGNAL in lit dot-matrix,
   waves); a real logo from ChatGPT replaces it later. A press during an entrance skips to its settled screen (`titleBusy`).
 - Rounds: keys-r1 decided (glow tubes), keys-r2 decided (signal scope: now the default key style, KS 7; the choice is stored per

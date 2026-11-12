@@ -8,7 +8,7 @@
      "id": "r1",
      "status": "open",
      "question": "Which title screen should the game open on?",
-     "found": "Five ways for the logo to arrive. The logo is a placeholder made from the game's own letters (LEXICON in brass, SIGNAL in lit dot-matrix); the real one drops into the same spot later. Watch the clips, or play each one: press A once to skip the entrance, again to start. You can mix (e.g. the tube from 4 with the stamp from 5).",
+     "found": "Six ways in. The bar is now away on the title screen and rises into place with a clunk when you start. Options 1-5 use a placeholder logo made from the game's own letters (the real one drops into the same spot later); 6 spells the title in the radio's keys. Watch the clips, or play each one: press A once to skip the entrance, again to start. You can mix pieces.",
      "options": [
       {
        "id": "1",
@@ -89,6 +89,22 @@
         }
        ],
        "play": "play.html#title-5"
+      },
+      {
+       "id": "6",
+       "title": "Radio close-up",
+       "note": "Your sketch: no bar, the radio big and centred (seen closer, every pixel a clean 1.5x). Static in the glass, then the title lights up as keys, LEXI / CON / SIGN / AL, one at a time with a rising blip; the dial scrolls, the meter swings up, the six lamps come on and a brass PRESS START plate appears on the radio's base.",
+       "images": [
+        {
+         "src": "img/title-r1/6.mp4",
+         "label": "The entrance"
+        },
+        {
+         "src": "img/title-r1/6-still.png",
+         "label": "Where it settles"
+        }
+       ],
+       "play": "play.html#title-6"
       }
      ]
     }
