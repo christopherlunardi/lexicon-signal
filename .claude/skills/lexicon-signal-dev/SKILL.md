@@ -102,6 +102,12 @@ the same batch.
   an iPhone's silent switch doesn't mute the game (same fix as the studio's other games); finger-up, click and key presses also
   wake the sound.
 
+## Dot glass keys (the play area)
+- Letters flicker randomly and subtly: each key has its own random clock and now and then dips gently for a few frames; its dots
+  shimmer faintly. Picked letters stay steady while the traced letters aren't a word yet; once they are, they flicker too, and a
+  light wipe sweeps corner to corner across the word's keys one after another (`dotOkAt`), then a faint one runs through now and
+  then while the word stays good (Chris, 2026-11-12: subtle, and the wipe only for a real word).
+
 ## Rules of play
 - 4x4 keys in the radio glass; trace touching letters (8 directions), 3+ letters. Score = signal (letter values) x boost (length-2)
   x part multipliers; every word carries +2 signal so short words count. 6 words a night (one per lamp), 1 retune; targets

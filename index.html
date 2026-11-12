@@ -908,7 +908,9 @@ function paBoard({ G, tiles, ok, low, last }) {
 const dotSprs = {};
 function dotSpr(col) { let c = dotSprs[col]; if (!c) { c = dotSprs[col] = document.createElement("canvas"); c.width = c.height = 12; const x = c.getContext("2d"); x.fillStyle = col; x.beginPath(); x.arc(6, 6, 4.7, 0, 7); x.fill(); } return c; }
 const U3 = [[1, 0, 1], [1, 0, 1], [1, 1, 1]];
+let dotOkAt = 0, dotOkWas = false;
 function paDotGlass({ G, tiles, ok, low }) {
+  if (ok && !dotOkWas) dotOkAt = frame; dotOkWas = ok;
   ctx.fillStyle = "#070403"; ctx.fillRect(G.x, G.y, G.w, G.h);
   const OFF = dotSpr("#24120a"), BG = dotSpr("#6e330d"), BGH = dotSpr("#d88424"), ON = dotSpr("#ff9a36"), HOT = dotSpr("#fff2d4"), VAL = dotSpr("#ffe2b0"), w0 = FX(L.tw), h0 = FX(L.th);
   const frameOf = (x, y, a) => { ctx.globalAlpha = a; ctx.fillStyle = "#0e0806"; rr(ctx, x + 1, y - 1, w0 - 2, h0 + 2, 5); ctx.fill(); ctx.strokeStyle = "rgba(130,86,52,.4)"; ctx.lineWidth = 1.5; ctx.stroke(); };
@@ -916,6 +918,14 @@ function paDotGlass({ G, tiles, ok, low }) {
     for (let r = 0; r < 7; r++) for (let c = 0; c < 9; c++) ctx.drawImage(OFF, x + 4 + c * 6, y + 4 + r * 6, 6, 6); ctx.globalAlpha = 1; }
   for (const o of tiles) { const { t, x, y, w, hh } = o, lit = t.lit, mx = x + 4, my = y + 4, b = bits(o.ch === "Qu" ? "Q" : o.ch), qu = o.ch === "Qu", lc = qu ? 1 : 2;
     const scr = t.land > .4, dim = 1 - low * .35 * (1 - lit), wave = o.on && ok;
+    // (picked letters stay steady until the traced word is a real word; then they flicker too)
+    // flicker: now and then a module's letter stutters for a few frames (each module on its own random clock), and its dots shimmer faintly
+    if (t.flN == null || t.flN < frame - 600) t.flN = frame + 60 + Math.random() * 500;
+    if (frame >= t.flN) { t.flE = frame + 2 + Math.random() * 10; t.flN = frame + 40 + Math.random() * (Math.random() < .3 ? 120 : 700); }
+    const fl = t.flE > frame ? .68 + .27 * hsh(frame >> 1, t.seed * 7) : 1;   // a gentle random dip, not a blink
+    // light wipe: the moment the traced word becomes a real word, a bright band sweeps corner to corner across its modules, one after
+    // another; while the word stays good, a faint one runs through now and then
+    const ws = frame - dotOkAt - (o.k || 0) * 4, wipe = o.on && ok && ws >= 0 ? (ws < 22 ? ws * .75 - 2 : ((ws - 22) % 150) * .5 - 2) : -9, wa = ws < 22 ? .6 : .2;
     frameOf(x, y, 1);
     if (lit > .03) { ctx.strokeStyle = `rgba(255,${ok ? 226 : 180},${ok ? 160 : 96},${lit * .85})`; ctx.shadowColor = "#ff8a20"; ctx.shadowBlur = 10; ctx.lineWidth = 2; ctx.stroke(); ctx.shadowBlur = 0; }
     else if (o.hv) { ctx.strokeStyle = "rgba(255,200,130,.6)"; ctx.stroke(); }
@@ -923,10 +933,11 @@ function paDotGlass({ G, tiles, ok, low }) {
       let isL = c >= lc && c < lc + 5 && b[r][c - lc]; if (qu && c >= 6 && r < 3 && U3[r][c - 6]) isL = 1;
       if (scr) isL = c > 0 && c < 8 && hsh(c + r * 9 + (frame >> 1) * 3.1, t.seed * 17) < .42;
       const isV = c === 8 && r >= 7 - o.dots, dead = low > 0 && hsh(c * 7 + r, t.seed * 13 + (frame >> 4)) < low * .12;
-      ctx.globalAlpha = 1;
+      ctx.globalAlpha = 1; const band = wipe > -9 ? Math.max(0, 1 - Math.abs((c + r) * .9 - wipe) / 1.6) * wa : 0;
       if (isV) { ctx.drawImage(VAL, dx, dy, 6, 6); continue; }
-      if (isL && !dead) { if (lit > .5) ctx.drawImage(HOT, dx, dy, 6, 6); else { ctx.drawImage(OFF, dx, dy, 6, 6); ctx.globalAlpha = Math.min(1, dim * (.9 + (o.hv ? .1 : 0)) + t.land); ctx.drawImage(scr ? HOT : ON, dx, dy, 6, 6); } continue; }
-      if ((6.6 - r) / 7 < lit * 1.2 && !dead) { ctx.drawImage(BG, dx, dy, 6, 6); if (wave) { ctx.globalAlpha = .5 + .5 * Math.sin(frame * .3 - (c + r) * .8 - o.k * 2); ctx.drawImage(BGH, dx, dy, 6, 6); } }
+      if (isL && !dead) { if (lit > .5) { ctx.globalAlpha = o.on && ok ? fl * (.92 + .08 * hsh(c + r * 9 + (frame >> 3), t.seed * 5)) : 1; ctx.drawImage(HOT, dx, dy, 6, 6); } else { ctx.drawImage(OFF, dx, dy, 6, 6); ctx.globalAlpha = Math.min(1, dim * (.9 + (o.hv ? .1 : 0)) * fl * (.9 + .1 * hsh(c + r * 9 + (frame >> 3), t.seed * 5)) + t.land); ctx.drawImage(scr ? HOT : ON, dx, dy, 6, 6); } continue; }
+      if ((6.6 - r) / 7 < lit * 1.2 && !dead) { ctx.drawImage(BG, dx, dy, 6, 6); if (wave) { ctx.globalAlpha = .5 + .5 * Math.sin(frame * .3 - (c + r) * .8 - o.k * 2); ctx.drawImage(BGH, dx, dy, 6, 6); }
+        if (band > .02) { ctx.globalAlpha = band; ctx.drawImage(HOT, dx, dy, 6, 6); } }
       else ctx.drawImage(OFF, dx, dy, 6, 6); }
     ctx.globalAlpha = 1;
   }
