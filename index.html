@@ -169,7 +169,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 const $ = (id) => document.getElementById(id);
 const DICT = new Set((window.LEX_WORDS || "").split(" "));
 const cv = $("screen"), ctx = cv.getContext("2d");          // the screen: 2 fine pixels per world pixel
-let H = 400, BAR_H = 95, SCENE_H = 305; const FINE = 2;   // narrower screens (phones) get a taller world with a two-row bar (H 470, bar 165)
+let H = 425, BAR_H = 120, SCENE_H = 305; const FINE = 2;   // narrower screens (phones) get a taller world with a two-row bar (H 495, bar 190)
 const PART_SLOTS = 5;   // a game rule, the same on every screen: copies of one part stack in one slot
 const BIN = { t: 12, b: 12, l: 14, r: 14 };                  // the bar's inner gold border: everything sits inside it
 let W = 712, TK = 1;   // TK: text scale, 1.5 when the screen is small (phones) so typed text stays readable
@@ -290,9 +290,9 @@ const L = {};
 function layout() {
   if (!artReady) return;   // never build the room before the art has fully loaded (a fresh load used to build it from a blank image)
   const wrapEl = $("screenWrap"); const ww = wrapEl.clientWidth || 640, wh = wrapEl.clientHeight || 360;
-  const tall = ww / wh < 1.7, nH = tall ? 470 : 400, nW = Math.max(532, Math.min(950, Math.round(nH * ww / wh / 2) * 2));
+  const tall = ww / wh < 1.7, nH = tall ? 495 : 425, nW = Math.max(532, Math.min(950, Math.round(nH * ww / wh / 2) * 2));
   const nTK = ww / nW < 1.15 ? 1.5 : 1; if (nTK !== TK) { TK = nTK; glyphCache.clear(); ADV.ink = 12 * TK; }
-  if (nW !== W || nH !== H || !L.ready) { W = nW; H = nH; BAR_H = tall ? 165 : 95; SCENE_H = H - BAR_H; world.width = W; world.height = H; over.width = W; over.height = H; cv.width = W * FINE; cv.height = H * FINE;
+  if (nW !== W || nH !== H || !L.ready) { W = nW; H = nH; BAR_H = tall ? 190 : 120; SCENE_H = H - BAR_H; world.width = W; world.height = H; over.width = W; over.height = H; cv.width = W * FINE; cv.height = H * FINE;
     computeLayout(); buildRoom(); buildBar(); L.ready = true; }
 }
 function computeLayout() {
@@ -314,13 +314,15 @@ function computeLayout() {
   L.barY = SCENE_H; L.nSlots = PART_SLOTS;
   const [, , pw, ph] = R("plate"), [, , sw, sh] = R("slot");
   const GAP = 9, ix0 = BIN.l + 4, ix1 = W - BIN.r - 4, slotsW = PART_SLOTS * sw + (PART_SLOTS - 1) * GAP; L.slotStep = sw + GAP;
-  if (BAR_H > 120) {
-    const mid1 = BIN.t + 4 + 33, mid2 = BAR_H - BIN.b - 4 - sh / 2;
+  // the night's signal tube runs the whole width along the top of the bar; everything else sits under it
+  L.tube = { x: ix0, y: BIN.t + 3, w: ix1 - ix0, h: 17 }; const top = L.tube.y + L.tube.h;
+  if (BAR_H > 140) {
+    const mid1 = top + 5 + 33, mid2 = BAR_H - BIN.b - 4 - sh / 2;
     L.logW = ix1 - ix0 - pw - GAP; L.log = { x: ix0, y: Math.round(mid1 - 33), w: L.logW, h: 66 };
     L.plateX = ix0 + L.logW + GAP; L.plateY0 = Math.round(mid1 - ph - 4); L.plateY1 = Math.round(mid1 + 4);
     L.slotX = Math.round(W / 2 - slotsW / 2); L.slotY = Math.round(mid2 - sh / 2);
   } else {
-    const mid = (BIN.t + BAR_H - BIN.b) / 2;
+    const mid = (top + BAR_H - BIN.b) / 2;
     L.logW = ix1 - ix0 - slotsW - pw - 2 * GAP; L.log = { x: ix0, y: Math.round(mid - 33), w: L.logW, h: 66 };
     L.plateX = ix0 + L.logW + GAP; L.slotX = L.plateX + pw + GAP;
     L.plateY0 = Math.round(mid - ph - 4); L.plateY1 = Math.round(mid + 4); L.slotY = Math.round(mid - sh / 2);
@@ -359,6 +361,10 @@ function buildBar() {
   piece("bar_left", 0, R("bar_left")[2]); let x = R("bar_left")[2]; const rw = R("bar_right")[2];
   while (x < W - rw) { const mw = Math.min(R("bar_mid")[2], W - rw - x); piece("bar_mid", x, mw); x += mw; }
   piece("bar_right", W - rw, rw); spr(c, "bar_clasp", Math.round(W / 2 - R("bar_clasp")[2] / 2), 0);
+  // the signal tube's housing: dark glass in a brass frame, a brass cap with a rivet at each end
+  const t = L.tube; c.fillStyle = C.dark; c.fillRect(t.x, t.y, t.w, t.h); c.fillStyle = C.brassHi; c.fillRect(t.x + 1, t.y + t.h - 1, t.w - 2, 1);
+  c.fillStyle = C.glass; c.fillRect(t.x + 4, t.y + 2, t.w - 8, t.h - 4); c.fillStyle = C.keyShadow; c.fillRect(t.x + 4, t.y + 2, t.w - 8, 1);
+  [t.x, t.x + t.w - 4].forEach(x => { c.fillStyle = C.gold; c.fillRect(x, t.y + 1, 4, t.h - 2); c.fillStyle = C.brassHi; c.fillRect(x, t.y + 1, 4, 1); c.fillStyle = C.ink; c.fillRect(x + 1, t.y + 7, 2, 2); });
   nine(c, "logbox", L.log.x, L.log.y, L.log.w, L.log.h);
   spr(c, "plate", L.plateX, L.plateY0); spr(c, "plate", L.plateX, L.plateY1);
   for (let k = 0; k < L.nSlots; k++) spr(c, "slot", L.slotX + k * L.slotStep, L.slotY);
@@ -470,9 +476,9 @@ function arrive() {
   const { sc, big } = pending; pending = null; busy--; arriveT = 0;
   S.score += sc.pts; S.total += sc.pts; beaconFlash = big ? 40 : 24; burst(L.beacon.x, L.beacon.y, big ? 30 : 16, C.redHot);
   pops.push({ text: "+" + sc.pts, x: L.beacon.x, y: L.beacon.y - 14, t: 0, big }); if (big) shake = 5;
-  Sound.beacon(big); log(`${sc.word} +${sc.pts}${sc.mult > 1 ? " x" + sc.mult : ""}`);
-  if (S.score >= S.target) { busy++; setTimeout(() => { busy--; nightClear(); }, 900); }
-  else if (S.words <= 0) { busy++; setTimeout(() => { busy--; gameOver(); }, 900); }
+  beams.push({ t: 0, dur: 24, big }); Sound.beacon(big); log(`${sc.word} +${sc.pts}${sc.mult > 1 ? " x" + sc.mult : ""}`);
+  if (S.score >= S.target) { busy++; setTimeout(() => { busy--; nightClear(); }, 1700); }
+  else if (S.words <= 0) { busy++; setTimeout(() => { busy--; gameOver(); }, 1400); }
   else log(`${S.target - S.score} to go, ${S.words} word${S.words === 1 ? "" : "s"} left.`);
 }
 function retune() { if (!canAct() || S.retunes <= 0) return; S.retunes--; S.path = []; pathSound = 0; fillGrid(true); knobA.R += 2.4; staticKick = .5; Sound.retune(); log("Retuned."); }
@@ -502,7 +508,7 @@ function gameOver() {
 function bestLine() { try { const b = JSON.parse(localStorage.getItem("lexsig-best") || "null"); return b ? `BEST: ${b.nights} NIGHTS, ${b.total} SIGNAL` : ""; } catch (e) { return ""; } }
 
 /* ================= effects + update ================= */
-let flyers = [], sparks = [], pops = [], beaconFlash = 0, shake = 0, staticLvl = .05, staticKick = 0, marquee = 0;
+let flyers = [], sparks = [], pops = [], beams = [], beaconFlash = 0, shake = 0, staticLvl = .05, staticKick = 0, marquee = 0;
 function burst(x, y, n, col) { for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, s = .8 + Math.random() * 2.6; sparks.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 1, life: 1, d: .025 + Math.random() * .03, col }); } }
 function update() {
   const thudCols = new Set();
@@ -514,7 +520,9 @@ function update() {
   for (const p of sparks) { p.x += p.vx; p.y += p.vy; p.vy += .08; p.vx *= .97; p.life -= p.d; } sparks = sparks.filter(p => p.life > 0);
   for (const p of pops) p.t++; pops = pops.filter(p => p.t < 70);
   if (beaconFlash > 0) beaconFlash--; if (shake > 0) shake -= .5; if (dialFlash && dialFlash.t > 0 && --dialFlash.t === 0) dialFlash = null;
-  if (S.shown < S.score) { S.shown = Math.min(S.score, S.shown + Math.max(1, Math.ceil((S.score - S.shown) / 10))); Sound.tick(); }
+  // the tower sends the signal down into the tube; the count starts when it lands
+  for (const b of beams) b.t++; beams = beams.filter(b => { if (b.t < b.dur) return true; const q = tubeHead(); burst(q.x, q.y, b.big ? 18 : 10, C.amber); tubeKick = 1; Sound.land(b.big); return false; });
+  if (S.shown < S.score && !beams.length) S.shown = Math.min(S.score, S.shown + Math.max(1, Math.ceil((S.score - S.shown) / 12)));
   // type the log out, oldest unfinished entry first
   const e = S.log.find(e => e.n < e.s.length); if (e) { e.n = Math.min(e.s.length, e.n + 1); if (e.s[e.n - 1] !== " " && (e.n & 1)) Sound.type(); }
   staticKick *= .95; const tgt = S.phase === "splash" || S.phase === "studio" ? 0 : S.phase === "play" ? .05 + (1 - S.words / maxWords()) * .35 : .05; staticLvl += (tgt + staticKick - staticLvl) * .08; Sound.setStatic(staticLvl);
@@ -973,6 +981,7 @@ function drawGlows() {
     if (sel.has(i)) bloom(FX(c.x), FX(c.y + t.yOff), 56, okNow ? "255,225,150" : "255,170,70", .35);
     else if (KS === 2 || KS === 3) bloom(FX(c.x), FX(c.y + t.yOff), 34, "255,130,40", .08); });
   for (const f of flyers) if (f.t > 0) { const q = flyPos(f); if (q.u < .95) bloom(FX(q.x), FX(q.y), 40, "255,200,110", .45); }
+  tubeGlows();
   for (const p of sparks) if (p.life > .3) bloom(FX(p.x), FX(p.y), 8, "255,190,110", p.life * .5);
   // lit windows across the city twinkle faintly
   ctx.restore();
@@ -996,7 +1005,7 @@ function drawNightCard() {
   ctx.restore();
 }
 function drawBarText() {
-  const by = L.barY;
+  const by = L.barY; drawTube();
   // the log: typed ink, newest at the bottom, older lines fade, a cursor blinks after the last letter
   const lw = FX(L.log.w) - 52 - ADV.ink, lines = [];
   S.log.forEach((e, k) => { if (e.n === 0) return; wrap("> " + e.s.slice(0, e.n), "ink", lw).forEach(s => lines.push({ s, age: S.log.length - 1 - k })); });
@@ -1005,14 +1014,57 @@ function drawBarText() {
   if (show.length && (frame >> 4) & 1) { const last = show[show.length - 1]; ctx.fillStyle = C.ink; ctx.fillRect(Math.min(FX(L.log.x + L.log.w) - 26 - 10 * TK, FX(L.log.x) + 26 + last.s.length * ADV.ink), top + (show.length - 1) * lh + 12 * TK, 10 * TK, 2 * TK); }
   // stamped plates: dark letters with a light edge under them
   const [, , pw, ph] = R("plate"), pc = FX(L.plateX + pw / 2), opt = { under: C.brassHi, ux: 0, uy: 2 };
-  if (S.phase !== "title") { const fx0 = FX(L.plateX) + 14, fw = FX(pw) - 28, fy = FX(by + L.plateY0 + ph) - 9, pr = Math.min(1, S.shown / S.target);
-    ctx.fillStyle = C.inkSoft; ctx.fillRect(fx0, fy, fw, 4); ctx.fillStyle = pr >= 1 ? C.hot : C.amber; ctx.fillRect(fx0, fy, Math.round(fw * pr), 4); }
   const left = S.target - S.shown, t1 = S.phase === "title" ? "SIGNAL" : left > 0 ? `${left} TO GO` : "LOCKED", t2 = S.phase === "title" ? "LEXICON" : `NIGHT ${S.night}`;
-  ftext(t1, pc, FX(by + L.plateY0) + Math.round((FX(ph) - 14 * TK) / 2) - (S.phase === "title" ? -1 : 3), "ink", C.ink, "c", opt);
+  ftext(t1, pc, FX(by + L.plateY0) + Math.round((FX(ph) - 14 * TK) / 2) + 1, "ink", C.ink, "c", opt);
   ftext(t2, pc, FX(by + L.plateY1) + Math.round((FX(ph) - 14 * TK) / 2) + 1, "ink", C.ink, "c", opt);
   // counters on the part slots
   const [, , sw, sh] = R("slot");
   partSlots().forEach((c, k) => { if (c.n > 1) ftext("x" + c.n, FX(L.slotX + k * L.slotStep + sw) - 12, FX(by + L.slotY + sh) - 26, "ink", C.hot, "r", { outline: C.dark }); });
+}
+// ---------- the night's signal tube ----------
+// a row of light cells along the top of the bar. Each cell pops on with a click that climbs in pitch as the night fills; a sheen runs
+// along the lit part; a word that can be sent shows what it would add as blinking cells; a full tube flashes and burns white.
+let tubeV = 0, tubeLit = 0, tubeFlash = [], tubeKick = 0, tubeFull = false;
+function tubeGeom() { const t = L.tube, ix = FX(t.x + 4) + 3, iw = FX(t.w - 8) - 6, cw = 16, gap = 4, n = Math.floor((iw + gap) / (cw + gap));
+  return { ix: ix + Math.floor((iw - (n * (cw + gap) - gap)) / 2), iy: FX(L.barY + t.y + 2) + 3, ih: FX(t.h - 4) - 6, cw, gap, n }; }
+function tubeHead() { const t = L.tube; return { x: t.x + 4 + (t.w - 8) * Math.min(1, tubeV), y: L.barY + t.y + t.h / 2 }; }
+function tubeRGB(f) { const a = [255, 120, 40], b = [255, 200, 90], c = [255, 246, 220], m = f < .6 ? f / .6 : (f - .6) / .4, p = f < .6 ? a : b, q = f < .6 ? b : c;
+  return p.map((v, i) => Math.round(v + (q[i] - v) * m)).join(","); }
+function drawTube() {
+  const G = tubeGeom(), play = S.phase !== "title", pr = play ? Math.min(1, S.shown / S.target) : 0;
+  // up as fast as the count, down (a new night) as a quick drain
+  tubeV = pr >= tubeV ? pr : tubeV + (pr - tubeV) * .12; if (Math.abs(tubeV - pr) < .002) tubeV = pr;
+  const lit = Math.floor(tubeV * G.n + 1e-6);
+  if (lit > tubeLit) { for (let k = tubeLit; k < lit; k++) tubeFlash[k] = 1; Sound.cell(lit / G.n); }
+  tubeLit = lit; const full = play && pr >= 1; if (full && !tubeFull) { tubeFlash = tubeFlash.map(() => 1); tubeKick = 1.5; Sound.full(); const t = L.tube; for (let x = 0; x < t.w; x += 24) burst(t.x + x, L.barY + t.y + t.h / 2, 2, C.gold); }
+  tubeFull = full;
+  // what the traced word would add, blinking
+  const ok = S.phase === "play" && S.path.length >= 3 && isValid(), add = ok ? Math.ceil(Math.min(1, (S.shown + scoreOf(S.path).pts) / S.target) * G.n) : 0;
+  const sheen = ((frame * 9) % (G.n * (G.cw + G.gap) + 400)) - 200, blink = .45 + .3 * Math.sin(frame / 4);
+  for (let k = 0; k < G.n; k++) {
+    const x = G.ix + k * (G.cw + G.gap), f = tubeFlash[k] || 0;
+    if (k < lit) {
+      const b = full ? .85 + .15 * Math.sin(frame / 6 - k * .25) : 1, rgb = tubeRGB(full ? 1 : k / G.n), d = Math.abs(x - sheen) < 60 ? (1 - Math.abs(x - sheen) / 60) * .5 : 0;
+      ctx.fillStyle = `rgba(${rgb},${b})`; ctx.fillRect(x, G.iy, G.cw, G.ih);
+      ctx.fillStyle = `rgba(255,255,240,${Math.min(1, .25 + f * .75 + d + tubeKick * .2)})`; ctx.fillRect(x, G.iy, G.cw, 3);   // lit edge on top
+      if (f + d > .02) { ctx.fillStyle = `rgba(255,255,235,${Math.min(.9, f * .8 + d * .4)})`; ctx.fillRect(x, G.iy, G.cw, G.ih); }
+    } else if (k === lit && tubeV * G.n - lit > .05) { ctx.fillStyle = `rgba(${tubeRGB(k / G.n)},${(tubeV * G.n - lit) * .8})`; ctx.fillRect(x, G.iy, G.cw, G.ih); }
+    else if (k < add) { ctx.fillStyle = `rgba(255,214,120,${blink * .55})`; ctx.fillRect(x, G.iy, G.cw, G.ih); }
+    else if (!play) { const s = ((frame / 3) % (G.n + 20)) - 10, a = Math.max(0, 1 - Math.abs(k - s) / 6) * .35; ctx.fillStyle = a > .02 ? `rgba(255,150,60,${a})` : C.dotOff; ctx.fillRect(x, G.iy, G.cw, G.ih); }
+    else { ctx.fillStyle = C.dotOff; ctx.fillRect(x, G.iy, G.cw, G.ih); }
+    if (f) tubeFlash[k] = f > .03 ? f * .9 : 0;
+  }
+  tubeKick *= .9;
+  // the signal travelling down from the tower: a bright head with a fading tail
+  for (const bm of beams) { const q = tubeHead(), b = L.beacon, cx = (b.x + q.x) / 2, cy = Math.min(b.y, q.y) - 30;
+    for (let j = 10; j >= 0; j--) { const u = Math.max(0, Math.min(1, (bm.t - j * .8) / bm.dur)), e = u * u, x = (1 - e) ** 2 * b.x + 2 * (1 - e) * e * cx + e * e * q.x, y = (1 - e) ** 2 * b.y + 2 * (1 - e) * e * cy + e * e * q.y;
+      const r = (bm.big ? 7 : 5) * (1 - j / 12); ctx.fillStyle = j ? `rgba(255,170,80,${.5 * (1 - j / 11)})` : C.hot; ctx.beginPath(); ctx.arc(FX(x), FX(y), r, 0, 6.283); ctx.fill(); bm.hx = x; bm.hy = y; } }
+}
+function tubeGlows() {
+  const G = tubeGeom(), q = tubeHead(), cy = FX(q.y), full = tubeFull;
+  if (tubeV > 0) { for (let x = G.ix; x < FX(q.x); x += 70) bloom(x + 35, cy, 46, "255,160,70", full ? .12 + .05 * Math.sin(frame / 6) : .07);
+    bloom(FX(q.x), cy, 40 + tubeKick * 30, "255,210,130", full ? .3 : .3 + tubeKick * .3); }
+  for (const bm of beams) if (bm.hx != null) bloom(FX(bm.hx), FX(bm.hy), bm.big ? 46 : 34, "255,190,110", .55);
 }
 // ---------- menus: dim the room with a checker of dark pixels, parchment panels, then fine text ----------
 function dim() { octx.fillStyle = C.shade; for (let y = 0; y < SCENE_H; y++) for (let x = (y & 1); x < W; x += 2) octx.fillRect(x, y, 1, 1); }
@@ -1145,7 +1197,7 @@ window.addEventListener("resize", layout); if (window.ResizeObserver) new Resize
 
 /* ================= sound: Web Audio synth, 84 BPM night pulse ================= */
 const Sound = (() => {
-  let ac = null, master, mus, sfx, nb, stat, padF, playing = false, nextBeat = 0, beatN = 0, muted = false, lastTick = 0, lastType = 0;
+  let ac = null, master, mus, sfx, nb, stat, padF, playing = false, nextBeat = 0, beatN = 0, muted = false, lastTick = 0, lastType = 0, lastCell = 0;
   const m2f = (m) => 440 * Math.pow(2, (m - 69) / 12), CH = [[57, 60, 64, 67], [53, 57, 60, 64], [48, 55, 59, 64], [55, 59, 62, 64]], RT = [45, 41, 36, 43], PENT = [69, 72, 74, 76, 79, 81, 84, 86, 88, 91, 93, 96, 98];
   function ensure() { if (ac) { if (ac.state === "suspended") ac.resume(); return; } try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
     master = ac.createGain(); master.gain.value = .8; master.connect(ac.destination); mus = ac.createGain(); mus.gain.value = .5; mus.connect(master); sfx = ac.createGain(); sfx.gain.value = .7; sfx.connect(master);
@@ -1172,6 +1224,9 @@ const Sound = (() => {
     blip(n) { if (!ac) return; const t = ac.currentTime, f = m2f(PENT[Math.min(PENT.length - 1, n - 1)]); osc("square", f, t, .003, .07, .1); osc("triangle", f / 2, t, .003, .1, .12); },
     lock() { if (!ac) return; const t = ac.currentTime; osc("square", m2f(93), t, .003, .05, .08); osc("square", m2f(100), t + .05, .003, .05, .12); },
     tickMove() { if (!ac) return; osc("square", 1600, ac.currentTime, .001, .03, .02); },
+    cell(f) { if (!ac) return; const t = ac.currentTime; if (t - lastCell < .028) return; lastCell = t; const m = PENT[Math.min(PENT.length - 1, Math.floor(f * 9))] - 12; osc("square", m2f(m), t, .002, .035, .05); osc("sine", m2f(m + 12), t, .002, .03, .07); },
+    land(big) { if (!ac) return; const t = ac.currentTime; osc("sine", 160, t, .003, .3, .16, sfx, 70); noise(t, .1, .1, "bandpass", 1400, 1.5, sfx); if (big) osc("triangle", 220, t, .005, .12, .3, sfx); },
+    full() { if (!ac) return; const t = ac.currentTime; [0, 4, 7, 12].forEach((d, k) => osc("square", m2f(81 + d), t + k * .045, .003, .06, .35)); noise(t, .5, .1, "highpass", 4000, .7, sfx); },
     tick() { if (!ac) return; const t = ac.currentTime; if (t - lastTick < .04) return; lastTick = t; osc("square", 2400, t, .001, .02, .015); },
     type() { if (!ac) return; const t = ac.currentTime; if (t - lastType < .03) return; lastType = t; noise(t, .025, .05, "bandpass", 3000 + Math.random() * 1500, 3); },
     click() { if (!ac) return; osc("triangle", 900, ac.currentTime, .002, .1, .05); },
@@ -1257,7 +1312,7 @@ async function boot() {
   // test hook: #test-shop opens the part picker after night 1 (for screenshots)
   if (location.hash === "#test-shop") { newRun(); S.parts.push("amp", "coil"); nightClear(); }
   if (location.hash === "#test-swap") { newRun(); S.parts.push("amp", "amp", "coil", "echo", "owl", "short"); nightClear(); const k = shopChoices.findIndex(c => !S.parts.includes(c.id)); if (k >= 0) choosePart(k); }
-  if (location.hash.startsWith("#test-word")) { newRun(); setTimeout(() => { "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[i].ch = ch); S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); S.path = [0, 1, 2]; usingButtons = true; S.cursor = 3; }, 300); }
+  if (location.hash.startsWith("#test-word")) { newRun(); setTimeout(() => { "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[i].ch = ch); S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); S.path = [0, 1, 2]; usingButtons = true; S.cursor = 3; if (location.hash.includes("fill")) S.score = S.shown = 17; nightCard = 0; }, 300); }
 }
 boot();
 })();

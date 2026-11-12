@@ -24,8 +24,8 @@ the same batch.
 - Late-90s computer-game pixel art: a night room with damask wallpaper, a window with a city and a radio tower (red beacon), a big
   1940s wooden radio on a sideboard, and a wood-and-brass interface bar along the bottom (text log, two brass plates, part slots;
   the words-left gauge was dropped for more slots, the radio's six lamps show words left). The target picture is `art/concept/look-target.png`.
-- Done the old-school way: the game draws at a real low resolution (W x 400, W = 532..950 from the screen's shape, 712 at 16:9; screens narrower than 1.7:1, i.e. phones, get W x 470 with a
-  165-tall two-row bar) and
+- Done the old-school way: the game draws at a real low resolution (W x 400, W = 532..950 from the screen's shape, 712 at 16:9; W x 425 with a 120-tall bar; screens narrower than 1.7:1, i.e. phones, get
+  W x 495 with a 190-tall two-row bar; the room is 305 tall either way) and
   the canvas is scaled up with hard square pixels. Every art piece is shown at its TRUE pixel size, never resized (2026-11-12):
   ChatGPT's pixel art is fake pixels of uneven size, so each source is run once through RetroDiffusion's fix_pixel_art (standard
   engine, $0.002; pass the raw.githubusercontent.com URL of the source in the public repo; the result comes back as base64 in a saved
@@ -43,6 +43,12 @@ the same batch.
   All 5 full and a new kind of part picked: the swap screen (phase "swap") asks which part to take out (all its copies go);
   left/right + A, or tap the slot; B or a tap on the room goes back to the picker. Picker cards say "STACKS: XN" or
   "SLOTS FULL: SWAP ONE". `#test-swap` opens the swap screen.
+- The night's goal is a signal tube along the top of the bar, the full inner width (2026-11-12, Chris wanted a satisfying fill bar):
+  a brass-capped glass channel (drawn in buildBar) with a row of light cells drawn on the fine layer (`drawTube`, `tubeGlows`).
+  When a word reaches the tower, a glowing beam arcs from the beacon down to the tube's head and lands with a thump and sparks; only
+  then does the count run. Each cell pops on white and fades to its colour (deep amber to gold to white-hot along the tube) with a
+  click that climbs in pitch; a sheen runs along the lit part; a word that can be sent blinks the cells it would add; a full tube
+  flashes, bursts and pulses white-hot, then the night clears. A new night drains it. `#test-word-fill` starts at 17 of 30.
 - Bar contents always sit inside the bar's inner gold border, centred on one line with one equal gap.
 - Part icons: full size (iconL_) in the part picker, exactly half (icon_, 2x2 majority) in the bar's slots.
 - Display rules: the screen canvas is twice the world size (FINE = 2). The room, keys, bar and menu panels draw in world pixels and
