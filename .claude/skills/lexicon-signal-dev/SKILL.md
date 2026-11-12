@@ -70,10 +70,16 @@ the same batch.
   or the button cursor) previews dimly: its letter after the word and "+gain" before the number. Every key shows its value as dots.
 - Input: buttons first (A add letter, A on the last letter sends, B back, Start/Y retune, Select/X/Tab key style, M sound),
   touch/mouse drag or tap. Gamepad standard mapping, bottom face = A.
-- Key area workshop (open, 2026-11-12): six key styles live in the game (KEY_STYLES: pixel keys, typewriter, glow tubes, neon glass,
-  ivory tiles, brass keys), Select cycles them, remembered per browser; `#test-word-keys-N` opens style N. Smooth styles draw on the
-  fine layer with web fonts (Special Elite, Bungee Hairline, Bungee, Limelight). Value dots stay in every style (Chris likes them),
-  bright enough to read on unselected keys. When he picks one, keep it, drop the rest, and give Select back to sound.
+- Play area workshop (2026-11-12). Round 1 (six key styles: pixel keys, typewriter, glow tubes, neon glass, ivory tiles, brass keys;
+  KEY_STYLES 0..5): Chris picked glow tubes (index 2, the default) but wanted the play area to have more vibe. Round 2 (open) adds
+  five whole play-area directions, KEY_STYLES 6..10: valve bank, signal scope, stencil plates, switchboard, dot glass. They draw the
+  whole glass on the fine layer (`drawPlayArea`, one `pa...` function each, plus `paGlows` and `paFlyers`) and share a few clocks:
+  `t.lit` (traced, eased), `t.land` (just landed), `lockK` (word can be sent), `addT`/`sendT`/`arriveT`, and `ghosts` (the places a
+  sent word left). In these looks letters lift off before they fly and the keys above wait a little longer before falling.
+  Select cycles all styles, remembered per browser; `#keys-N` opens style N (`#test-word-keys-N` with a word traced). Web fonts:
+  Special Elite, Bungee Hairline, Bungee, Limelight, Share Tech Mono, Stardos Stencil, Alfa Slab One. Value dots stay in every style
+  (Chris likes them), bright enough to read on unselected keys. He likes it dark with smooth glow. When he picks one, keep it, drop
+  the rest, and give Select back to sound.
 
 ## Every change
 1. Art: save the upload to `art/pixel/src/`, run it through fix_pixel_art (save as NAME_fixed.png), add its entry in `build.py`
@@ -84,6 +90,9 @@ the same batch.
    `python3 -m http.server` (fetch needs http), shoot with Playwright (Chrome at /usr/bin/google-chrome) at 1280x800, phone
    390x844 with touch, and 640x480. Add `#test-shop` (part picker) or `#test-word` (RAT traced) to the URL for set-up screens.
    The web fonts are blocked in the sandbox: install @fontsource packages with npm and add local @font-face rules to the test page.
+   Clips: a hash ending in `-step` (e.g. `#test-word-keys-6-step`) stops the game running by itself; `LEXSTEP(n)` advances n
+   frames. Press keys with Playwright, step 2 frames, screenshot the canvas, repeat, then encode with ffmpeg (30 fps, H.264,
+   yuv420p, no sound) into `workshop/img/<topic>-<round>/`. A Workshop option's images may be .mp4 files.
 4. Name check, commit with a plain message, push, republish the link. Tell Chris in a few lines what changed.
 
 ## Workshop (options Chris looks at and plays, like the other games)
@@ -96,7 +105,7 @@ the same batch.
   feedback read/write owner, plus user; omit them on republish.
 - Read his answers: ArtifactData list on the Workshop, collection `feedback`, doc `<topic>-<round>` {pick, notes{id:text}, general,
   submitted}. Act on submitted ones, then mark the round decided (chosen) in workshop.json and republish.
-- Open rounds: keys-r1 (letter key look, 6 options).
+- Rounds: keys-r1 decided (glow tubes). Open: keys-r2 (play-area direction, 5 options, each with a clip and a close-up).
 
 ## Art prompts (ChatGPT)
 - One layer at a time, the look target attached for style. Pixel-art wording: low-resolution late-1990s computer game look, crisp

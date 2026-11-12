@@ -108,6 +108,94 @@
       }
      ],
      "chosen": "3"
+    },
+    {
+     "id": "r2",
+     "status": "open",
+     "question": "Which play-area direction should we build on?",
+     "found": "Five whole treatments of the glass, not just letter styles: how keys rest, light up, link together, lock when the word is good, leave for the tower and land. All stay dark with smooth warm glow and keep the value dots. In every one the glass flares when a word leaves, catches a red glint when the beacon answers, and its rim pulses red on your last word. Watch the clip, then play it. Pick one, or tell me which pieces to combine.",
+     "options": [
+      {
+       "id": "1",
+       "title": "Valve bank",
+       "note": "Your glow tubes taken all the way. Every key is a little valve: the letter is a hot filament that flutters, flares when the key lands and fills its glass with haze when traced. A live wire with current running down it joins the letters, and a sent letter leaves its valve dark for a moment.",
+       "images": [
+        {
+         "src": "img/keys-r2/1.mp4",
+         "label": "Play"
+        },
+        {
+         "src": "img/keys-r2/1-close.png",
+         "label": "Close-up"
+        }
+       ],
+       "play": "play.html#keys-6"
+      },
+      {
+       "id": "2",
+       "title": "Signal scope",
+       "note": "No keys at all: the glass is one instrument screen. Green letters on a fine grid; the trace is a live wave that wanders while you search, then stands clean and turns gold when the word locks. Rings close in on traced letters and falling letters leave an afterglow.",
+       "images": [
+        {
+         "src": "img/keys-r2/2.mp4",
+         "label": "Play"
+        },
+        {
+         "src": "img/keys-r2/2-close.png",
+         "label": "Close-up"
+        }
+       ],
+       "play": "play.html#keys-7"
+      },
+      {
+       "id": "3",
+       "title": "Stencil plates",
+       "note": "Heavy dark iron plates with the letters cut through them, and the radio's valves burning behind. You read the letters by the light in the cuts. Sent plates leave holes you can see the valves through, until the next plates slam down and shut the light off. Value dots are small drilled holes.",
+       "images": [
+        {
+         "src": "img/keys-r2/3.mp4",
+         "label": "Play"
+        },
+        {
+         "src": "img/keys-r2/3-close.png",
+         "label": "Close-up"
+        }
+       ],
+       "play": "play.html#keys-8"
+      },
+      {
+       "id": "4",
+       "title": "Switchboard",
+       "note": "Every key is a jewel lamp in a brass ring. Tracing plugs a braided cord from lamp to lamp (it swings, then settles) and the lamp lights up. When the word locks the cords pull tight and a chase runs down the lamps; when you send, the cords drop away.",
+       "images": [
+        {
+         "src": "img/keys-r2/4.mp4",
+         "label": "Play"
+        },
+        {
+         "src": "img/keys-r2/4-close.png",
+         "label": "Close-up"
+        }
+       ],
+       "play": "play.html#keys-9"
+      },
+      {
+       "id": "5",
+       "title": "Dot glass",
+       "note": "The keys are small lamp boards, cousins of the dial. A traced board fills up from the bottom and its letter goes white. A sent word comes apart into its dots, which stream out to the tower. Boards scramble for a blink when they land.",
+       "images": [
+        {
+         "src": "img/keys-r2/5.mp4",
+         "label": "Play"
+        },
+        {
+         "src": "img/keys-r2/5-close.png",
+         "label": "Close-up"
+        }
+       ],
+       "play": "play.html#keys-10"
+      }
+     ]
     }
    ]
   }

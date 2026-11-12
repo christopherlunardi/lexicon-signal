@@ -3,7 +3,7 @@
 <meta name="color-scheme" content="dark light">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Bungee+Hairline&family=Limelight&family=Special+Elite&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Bungee&family=Bungee+Hairline&family=Limelight&family=Share+Tech+Mono&family=Special+Elite&family=Stardos+Stencil:wght@700&display=swap">
 <style>
 /* ===== Shell: the studio's handheld. Screen on top, d-pad and buttons below (beside it sideways on phones).
    With a controller (padmode) or inside the Android app (inapp) it's just the screen, as big as it goes. ===== */
@@ -385,7 +385,7 @@ function pickLetter() {
   for (const [k, w0] of Object.entries(WEIGHTS)) { if (filter && HARD.has(k)) continue; const w = w0 * (vowel && VOWELS.has(k) ? 1.7 : 1); pool.push([k, w]); total += w; }
   let r = Math.random() * total; for (const [k, w] of pool) if ((r -= w) <= 0) return k; return "E";
 }
-const newTile = () => ({ id: ++uid, ch: pickLetter(), hot: false, yOff: 0, vy: 0, wait: 0 });
+const newTile = () => ({ id: ++uid, ch: pickLetter(), hot: false, yOff: 0, vy: 0, wait: 0, lit: 0, land: 0, seed: Math.random() });
 const vowelCount = () => S.grid.filter(t => VOWELS.has(t.ch)).length;
 function ensureHot() { if (!has("carrier")) { S.grid.forEach(t => t.hot = false); return; } if (!S.grid.some(t => t.hot)) S.grid[(Math.random() * 16) | 0].hot = true; }
 function fillGrid(dropIn) {
@@ -396,13 +396,13 @@ function fillGrid(dropIn) {
 }
 // used letters vanish; letters above fall down their column; new letters fall in from the top
 function collapse(used) {
-  const step = L.th + L.gap, usedSet = new Set(used);
+  const step = L.th + L.gap, usedSet = new Set(used), hold = PA() ? 12 : 0;   // the round-2 looks let the letters lift off first
   for (let col = 0; col < 4; col++) {
     const keep = []; for (let row = 3; row >= 0; row--) { const i = row * 4 + col; if (!usedSet.has(i)) keep.push({ t: S.grid[i], from: row }); }
     const k = 4 - keep.length;
     for (let j = 0; j < 4; j++) { const row = 3 - j, i = row * 4 + col;
-      if (j < keep.length) { const { t, from } = keep[j]; t.yOff += (from - row) * step; t.vy = 0; t.wait = 4 + col * 2; S.grid[i] = t; }
-      else { const t = newTile(), n = j - keep.length; t.yOff = -(k - n) * step - 14 - (k - n) * 5; t.wait = 10 + col * 2; S.grid[i] = t; } }
+      if (j < keep.length) { const { t, from } = keep[j]; t.yOff += (from - row) * step; t.vy = 0; t.wait = 4 + col * 2 + hold; S.grid[i] = t; }
+      else { const t = newTile(), n = j - keep.length; t.yOff = -(k - n) * step - 14 - (k - n) * 5; t.wait = 10 + col * 2 + hold; S.grid[i] = t; } }
   }
   let g = 0; while (vowelCount() < 3 && g++ < 50) { const fr = S.grid.filter(t => t.yOff < -1 && !VOWELS.has(t.ch)); if (!fr.length) break; fr[(Math.random() * fr.length) | 0].ch = "AEIOU"[(Math.random() * 5) | 0]; }
   ensureHot();
@@ -431,7 +431,7 @@ function startNight() {
 /* ================= actions ================= */
 let busy = 0, dialFlash = null, knobA = { L: 0, R: 0 }, pathSound = 0, pending = null;
 const canAct = () => S.phase === "play" && !busy && !moving();
-function setPath(p) { const was = isValid(); S.path = p; if (p.length > pathSound) Sound.blip(p.length); pathSound = p.length; if (isValid() && !was) Sound.lock(); dialFlash = null; }
+function setPath(p) { const was = isValid(); if (p.length > S.path.length) addT = 0; S.path = p; if (p.length > pathSound) Sound.blip(p.length); pathSound = p.length; if (isValid() && !was) Sound.lock(); dialFlash = null; }
 function tapTile(i) {
   if (!canAct()) return; S.cursor = i; const p = S.path, last = p[p.length - 1];
   if (!p.length) return setPath([i]);
@@ -450,13 +450,14 @@ function send() {
   const big = sc.len >= 6 || sc.pts >= 60; busy++;
   const letters = used.map(i => ({ ch: S.grid[i].ch, ...tileC(i) }));
   dialFlash = { text: sc.word.toUpperCase() + " +" + sc.pts, t: 100 };
-  S.path = []; pathSound = 0; collapse(used); Sound.send(big);
-  letters.forEach((l, k) => { flyers.push({ ch: l.ch, ax: l.x, ay: l.y, cx: (l.x + L.beacon.x) / 2, cy: Math.min(l.y, L.beacon.y) - 90 - Math.random() * 30, t: -k * 4, dur: 46 + k * 2, last: k === letters.length - 1 });
+  S.path = []; pathSound = 0; collapse(used); Sound.send(big); sendT = 0;
+  letters.forEach((l, k) => { const t0 = PA() ? -10 - k * 3 : -k * 4, pv = letters[Math.max(0, k - 1)]; ghosts.push({ ch: l.ch, x: l.x, y: l.y, px: pv.x, py: pv.y, k, t: 0 });
+    flyers.push({ ch: l.ch, k, t0, ax: l.x, ay: l.y, cx: (l.x + L.beacon.x) / 2, cy: Math.min(l.y, L.beacon.y) - 90 - Math.random() * 30, t: t0, dur: 46 + k * 2, last: k === letters.length - 1 });
     burst(l.x, l.y, big ? 12 : 7, C.amber); });
   pending = { sc, big };
 }
 function arrive() {
-  const { sc, big } = pending; pending = null; busy--;
+  const { sc, big } = pending; pending = null; busy--; arriveT = 0;
   S.score += sc.pts; S.total += sc.pts; beaconFlash = big ? 40 : 24; burst(L.beacon.x, L.beacon.y, big ? 30 : 16, C.redHot);
   pops.push({ text: "+" + sc.pts, x: L.beacon.x, y: L.beacon.y - 14, t: 0, big }); if (big) shake = 5;
   Sound.beacon(big); log(`${sc.word} +${sc.pts}${sc.mult > 1 ? " x" + sc.mult : ""}`);
@@ -489,7 +490,7 @@ function update() {
   const thudCols = new Set();
   for (let i = 0; i < 16; i++) { const t = S.grid[i]; if (!t) continue; if (t.wait > 0) { t.wait--; continue; }
     if (t.yOff < 0 || t.vy !== 0) { t.vy += .72; t.yOff += t.vy;
-      if (t.yOff >= 0) { if (t.vy > 2.8) { t.yOff = 0; t.vy = -t.vy * .22; thudCols.add(i % 4); } else { t.yOff = 0; t.vy = 0; } } } }
+      if (t.yOff >= 0) { if (t.vy > 2.8) { t.yOff = 0; t.vy = -t.vy * .22; thudCols.add(i % 4); t.land = 1; if (KS === 8) { const c = tileC(i); burst(c.x, c.y + L.th / 2, 4, C.amber); } } else { t.yOff = 0; t.vy = 0; } } } }
   if (thudCols.size) { Sound.thud(thudCols.size); shake = Math.max(shake, 2); }
   for (let k = flyers.length - 1; k >= 0; k--) { const f = flyers[k]; f.t++; if (f.t >= f.dur) { flyers.splice(k, 1); if (f.last && pending) arrive(); } }
   for (const p of sparks) { p.x += p.vx; p.y += p.vy; p.vy += .08; p.vx *= .97; p.life -= p.d; } sparks = sparks.filter(p => p.life > 0);
@@ -499,7 +500,7 @@ function update() {
   // type the log out, oldest unfinished entry first
   const e = S.log.find(e => e.n < e.s.length); if (e) { e.n = Math.min(e.s.length, e.n + 1); if (e.s[e.n - 1] !== " " && (e.n & 1)) Sound.type(); }
   staticKick *= .95; const tgt = S.phase === "play" ? .05 + (1 - S.words / maxWords()) * .35 : .05; staticLvl += (tgt + staticKick - staticLvl) * .08; Sound.setStatic(staticLvl);
-  marquee++;
+  marquee++; paUpdate();
 }
 
 /* ================= draw ================= */
@@ -534,6 +535,7 @@ function drawRadioLive() {
   if (knobA.R > 0) knobA.R = Math.max(0, knobA.R - .04);
 }
 function drawGrid() {
+  if (PA()) return;   // the round-2 looks draw the whole glass on the fine layer (drawPlayArea)
   const g = L.glass; wctx.save(); wctx.beginPath(); wctx.rect(g.x, g.y, g.w, g.h); wctx.clip();
   const n = Math.floor(staticLvl * 340); for (let k = 0; k < n; k++) dot(wctx, g.x + Math.random() * g.w, g.y + Math.random() * g.h, Math.random() < .5 ? C.snow : C.snowDim);
   const ok = S.phase === "play" && isValid(), sel = new Set(S.path);
@@ -611,14 +613,15 @@ function drawMeter() {
   disc(ctx, cx, cy, 3, C.ink);
 }
 /* ---------- key styles (workshop: Select cycles them, the choice is remembered) ---------- */
-const KEY_STYLES = ["Pixel keys", "Typewriter", "Glow tubes", "Neon glass", "Ivory tiles", "Brass keys"];
+const KEY_STYLES = ["Pixel keys", "Typewriter", "Glow tubes", "Neon glass", "Ivory tiles", "Brass keys", "Valve bank", "Signal scope", "Stencil plates", "Switchboard", "Dot glass"];
 let KS = 2; try { const v = localStorage.getItem("lexsig-keys"); if (v != null) KS = Math.max(0, Math.min(KEY_STYLES.length - 1, +v)); } catch (e) {}   // default: glow tubes (Chris picked it, keys-r1)
-{ const m = location.hash.match(/keys-(\d)/); if (m) KS = Math.min(KEY_STYLES.length - 1, +m[1]); }
+{ const m = location.hash.match(/keys-(\d+)/); if (m) KS = Math.min(KEY_STYLES.length - 1, +m[1]); }
 function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
 function pips(x, y, v, col) { ctx.fillStyle = col; for (let k = 0; k < Math.min(4, Math.ceil(v / 2)); k++) ctx.fillRect(x - k * 6, y, 4, 4); }
 function vtext(s, x, y, font, col, blur, glowCol) { ctx.font = font; ctx.textAlign = "center"; ctx.textBaseline = "middle";
   if (blur) { ctx.shadowColor = glowCol || col; ctx.shadowBlur = blur; } ctx.fillStyle = col; ctx.fillText(s, x, y); ctx.shadowBlur = 0; }
 function drawKeyLetters() {
+  if (PA()) return drawPlayArea();
   const g = L.glass; ctx.save(); ctx.beginPath(); ctx.rect(FX(g.x), FX(g.y), FX(g.w), FX(g.h)); ctx.clip();
   const ok = S.phase === "play" && isValid(), sel = new Set(S.path), cand = candidate();
   ctx.imageSmoothingEnabled = true;
@@ -680,6 +683,262 @@ function drawKeyLetters() {
   ctx.imageSmoothingEnabled = false; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
   ctx.restore();
 }
+/* ---------- play-area directions, round 2 (KS 6..10) ----------
+   Each one treats the whole glass: how keys rest, light up, link, lock, leave and land. They share a few clocks and helpers:
+   t.lit eases 0..1 while a key is traced, t.land jumps to 1 when a key lands and dies away, lockK eases to 1 while the word can be sent,
+   addT/sendT/arriveT count frames since a letter was added / a word was sent / it reached the tower, ghosts are the places a sent word left. */
+const PA = () => KS >= 6;
+let validT = 0, addT = 99, sendT = 999, arriveT = 999, lockK = 0, ghosts = [];
+const hsh = (a, b) => { const s = Math.sin(a * 127.1 + b * 311.7) * 43758.5453; return s - Math.floor(s); };
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
+const mix3 = (a, b, k) => a.map((v, i) => Math.round(v + (b[i] - v) * k));
+const mixc = (a, b, k) => `rgb(${mix3(a, b, k).join(",")})`;
+function paUpdate() {
+  const sel = new Set(S.path), ok = S.phase === "play" && isValid();
+  validT = ok ? validT + 1 : 0; lockK += ((ok ? 1 : 0) - lockK) * .2; addT++; sendT++; arriveT++;
+  S.grid.forEach((t, i) => { if (!t) return; t.lit += ((sel.has(i) ? 1 : 0) - t.lit) * .3; t.land *= .9; });
+  for (const g of ghosts) g.t++; ghosts = ghosts.filter(g => g.t < 44);
+}
+// the traced path as segments between keys, pulled back from each key's middle by trim; the newest segment grows in
+function paLinks(trim) {
+  const pts = S.path.map(i => { const c = tileC(i); return { x: FX(c.x), y: FX(c.y + S.grid[i].yOff) }; }), out = [];
+  for (let k = 1; k < pts.length; k++) { const a = pts[k - 1], b = pts[k], d = Math.hypot(b.x - a.x, b.y - a.y) || 1, ux = (b.x - a.x) / d, uy = (b.y - a.y) / d;
+    const grow = k === pts.length - 1 ? clamp01((addT + 1) / 7) : 1, len = Math.max(0, d - trim * 2) * (1 - (1 - grow) ** 2);
+    out.push({ ax: a.x + ux * trim, ay: a.y + uy * trim, bx: a.x + ux * (trim + len), by: a.y + uy * (trim + len), ex: b.x, ey: b.y, ux, uy, len, d, k, newest: k === pts.length - 1 }); }
+  return out;
+}
+// value dots: round, lit, always there. Drawn from (x, y) leftwards.
+function paPips(o, x, y, col, glowCol, step = 7, r = 2.4) { ctx.fillStyle = col; if (glowCol) { ctx.shadowColor = glowCol; ctx.shadowBlur = 6; }
+  for (let k = 0; k < o.dots; k++) { ctx.beginPath(); ctx.arc(x - k * step, y, r, 0, 7); ctx.fill(); } ctx.shadowBlur = 0; }
+function paCursor(o, col, glowCol) { const b = Math.sin(frame * .16) * 1.5, x = o.x - 3 - b, y = o.y - 3 - b, w = o.w + 6 + 2 * b, h = o.hh + 6 + 2 * b, n = 12;
+  ctx.strokeStyle = col; ctx.lineWidth = 2.5; ctx.shadowColor = glowCol; ctx.shadowBlur = 8; ctx.beginPath();
+  for (const [cx, cy, sx, sy] of [[x, y, 1, 1], [x + w, y, -1, 1], [x, y + h, 1, -1], [x + w, y + h, -1, -1]]) { ctx.moveTo(cx + sx * n, cy); ctx.lineTo(cx + sx * 4, cy); ctx.quadraticCurveTo(cx, cy, cx, cy + sy * 4); ctx.lineTo(cx, cy + sy * n); }
+  ctx.stroke(); ctx.shadowBlur = 0; }
+const keyFont = (o, big, small, fam) => `${o.ch === "Qu" ? small : big}px ${fam}`;
+
+/* 6. Valve bank: the glow tubes taken all the way. Every key is a little valve: mesh, a hot filament letter, a glass glint, pin lamps
+   for the value. Filaments flutter, flare when a key lands, fill the glass with haze when traced; a live wire joins them. */
+let meshP = null;
+function meshPat() { if (!meshP) { const c = document.createElement("canvas"); c.width = 4; c.height = 8; const x = c.getContext("2d"); x.fillStyle = "#ffa050"; x.fillRect(0, 0, 1, 1); x.fillRect(2, 4, 1, 1); meshP = ctx.createPattern(c, "repeat"); } return meshP; }
+const F_VALVE = '"Bungee Hairline", "Arial Narrow", sans-serif';
+function paValve({ G, tiles, ok, low }) {
+  let gr = ctx.createLinearGradient(0, G.y, 0, G.y + G.h); gr.addColorStop(0, "#080403"); gr.addColorStop(1, "#130a06"); ctx.fillStyle = gr; ctx.fillRect(G.x, G.y, G.w, G.h);
+  for (let r = 0; r < 4; r++) { const y = FX(L.gy + r * (L.th + L.gap) + L.th) - 1; ctx.fillStyle = "#1e120b"; ctx.fillRect(G.x, y, G.w, 5); ctx.fillStyle = "#3b2414"; ctx.fillRect(G.x, y, G.w, 1); }   // socket rails
+  const w0 = FX(L.tw), h0 = FX(L.th);
+  for (const g of ghosts) if (g.t < 24) { const a = 1 - g.t / 24, x = FX(g.x) - w0 / 2, y = FX(g.y) - h0 / 2;   // a sent letter leaves its valve dark, the ember dying
+    ctx.fillStyle = "#0b0605"; rr(ctx, x + 3, y + 1, w0 - 6, h0 - 3, 13); ctx.fill(); ctx.strokeStyle = `rgba(120,82,52,${.55 * a})`; ctx.lineWidth = 2; ctx.stroke();
+    ctx.font = keyFont(g, 38, 26, F_VALVE); ctx.strokeStyle = `rgba(255,${60 + 90 * a * a | 0},10,${a * .8})`; ctx.lineWidth = 2; ctx.strokeText(g.ch, FX(g.x), FX(g.y) + 1); }
+  for (const o of tiles) { const { t, x, y, w, hh, cx, cy } = o, lit = t.lit;
+    let br = .82 + .08 * Math.sin(frame * .07 + t.seed * 40); if (hsh(Math.floor(frame / 3), t.seed * 99) < .008 + low * .07) br *= .5;   // the filament flutters, more as the battery runs down
+    br = br * (1 - low * .4 * (1 - lit)) + t.land * .8 + (o.hv ? .25 : 0);
+    const wave = o.on && ok ? .5 + .5 * Math.sin(frame * .24 - o.k * .9) : 0, heat = clamp01(lit * .75 + wave * .25);
+    ctx.fillStyle = "#0b0605"; rr(ctx, x + 3, y + 1, w - 6, hh - 3, 13); ctx.fill();
+    ctx.save(); ctx.clip();
+    gr = ctx.createRadialGradient(cx, cy + 4, 2, cx, cy + 2, w * .62); gr.addColorStop(0, `rgba(255,${130 + 70 * heat | 0},${40 + 60 * heat | 0},${Math.min(.8, .13 * br + .42 * heat)})`); gr.addColorStop(1, "rgba(255,90,20,0)");
+    ctx.fillStyle = gr; ctx.fillRect(x, y, w, hh);
+    ctx.translate(x, y); ctx.globalAlpha = Math.min(1, .07 + .12 * heat + .12 * t.land); ctx.fillStyle = meshPat(); ctx.fillRect(4, 3, w - 8, hh - 8); ctx.restore();
+    ctx.font = keyFont(o, 38, 26, F_VALVE);
+    ctx.globalAlpha = Math.min(1, br + lit); ctx.shadowColor = "#ff5a08"; ctx.shadowBlur = 12 + 12 * heat; ctx.lineWidth = 3; ctx.strokeStyle = mixc([255, 150, 56], ok && o.on ? [255, 246, 228] : [255, 214, 160], heat); ctx.strokeText(o.ch, cx, cy + 1);
+    ctx.shadowBlur = 0; ctx.lineWidth = 1.1; ctx.strokeStyle = `rgba(255,246,225,${.45 + .55 * heat})`; ctx.strokeText(o.ch, cx, cy + 1); ctx.globalAlpha = 1;
+    ctx.strokeStyle = "rgba(255,255,255,.11)"; ctx.lineWidth = 2.5; ctx.beginPath(); ctx.moveTo(x + 10, y + 9); ctx.lineTo(x + 10, y + hh - 17); ctx.stroke();   // glint down the glass
+    ctx.strokeStyle = mixc([120, 82, 52], [255, 196, 120], heat); ctx.globalAlpha = .6 + .4 * heat; ctx.lineWidth = 2; rr(ctx, x + 3, y + 1, w - 6, hh - 3, 13); ctx.stroke(); ctx.globalAlpha = 1;
+    paPips(o, x + w - 12, y + hh - 9, mixc([255, 176, 90], [255, 244, 214], heat), "#ff7a18");
+  }
+  for (const s of paLinks(22)) { ctx.beginPath(); ctx.moveTo(s.ax, s.ay); ctx.lineTo(s.bx, s.by); ctx.shadowColor = "#ff7a18"; ctx.shadowBlur = 14; ctx.strokeStyle = ok ? "#ffe6b8" : "#ffab4a"; ctx.lineWidth = ok ? 5 : 4; ctx.stroke(); ctx.shadowBlur = 0;
+    ctx.setLineDash([5, 13]); ctx.lineDashOffset = -frame * 1.5; ctx.strokeStyle = "#fffdf2"; ctx.lineWidth = 2; ctx.stroke(); ctx.setLineDash([]); }   // current running down the wire
+}
+
+/* 7. Signal scope: no keys at all, the glass is one instrument screen. Green phosphor letters on a graticule; the trace is a live wave
+   that wanders while you search and stands clean and gold when the word locks. Letters leave an afterglow as they fall. */
+const F_SCOPE = '"Share Tech Mono", ui-monospace, Menlo, monospace', GREEN = [120, 255, 170], GOLD = [255, 216, 128];
+function paScope({ G, tiles, ok, low }) {
+  const cx0 = G.x + G.w / 2, cy0 = G.y + G.h / 2, sig = mix3(GREEN, GOLD, lockK), sigc = (a) => `rgba(${sig.join(",")},${a})`, grn = (a) => `rgba(120,255,170,${a})`;
+  let gr = ctx.createRadialGradient(cx0, cy0, 20, cx0, cy0, G.w * .75); gr.addColorStop(0, "#07170f"); gr.addColorStop(1, "#020604"); ctx.fillStyle = gr; ctx.fillRect(G.x, G.y, G.w, G.h);
+  if (sendT < 12) { ctx.fillStyle = `rgba(255,216,128,${.12 * (1 - sendT / 12)})`; ctx.fillRect(G.x, G.y, G.w, G.h); }
+  const gxs = [1, 2, 3].map(c => FX(L.gx + c * (L.tw + L.gap)) - FX(L.gap) / 2 + .5), gys = [1, 2, 3].map(r => FX(L.gy + r * (L.th + L.gap)) - FX(L.gap) / 2 + .5);
+  ctx.strokeStyle = grn(.1); ctx.lineWidth = 1; ctx.beginPath(); for (const x of gxs) { ctx.moveTo(x, G.y); ctx.lineTo(x, G.y + G.h); } for (const y of gys) { ctx.moveTo(G.x, y); ctx.lineTo(G.x + G.w, y); } ctx.stroke();
+  ctx.fillStyle = grn(.2); for (let x = G.x + 5; x < G.x + G.w; x += 10) ctx.fillRect(x, gys[1] - 3, 1, 6); for (let y = G.y + 4; y < G.y + G.h; y += 10) ctx.fillRect(gxs[1] - 3, y, 6, 1);
+  ctx.beginPath(); const ny = G.y + G.h - 6, amp = 1.5 + staticLvl * 16;   // the noise floor: it grows as the battery runs down
+  for (let x = G.x; x <= G.x + G.w; x += 4) { const y = ny + (hsh(x, frame >> 1) - .5) * amp; x === G.x ? ctx.moveTo(x, y) : ctx.lineTo(x, y); } ctx.strokeStyle = grn(.32); ctx.lineWidth = 1.5; ctx.stroke();
+  for (const g of ghosts) if (g.t < 22) { ctx.strokeStyle = `rgba(255,216,128,${(1 - g.t / 22) * .8})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(FX(g.x), FX(g.y), 21 + g.t * 2.6, 0, 7); ctx.stroke(); }   // pings where a sent word was
+  for (const o of tiles) { const { t, x, y, w, hh, cx, cy } = o, lit = t.lit, R0 = 21;
+    const jx = low > .5 && hsh(frame >> 1, t.seed * 50) < low * .2 ? (hsh(frame, t.seed) - .5) * 4 : 0;
+    const col = mix3(GREEN, mix3(sig, [255, 255, 255], .35), lit).join(","), a = Math.min(1, .62 - low * .22 + .38 * lit + t.land * .4 + (o.hv ? .22 : 0));
+    ctx.font = keyFont(o, 37, 25, F_SCOPE);
+    if (t.yOff < -1) for (let j = 1; j <= 3; j++) { ctx.fillStyle = grn(.2 / j); ctx.fillText(o.ch, cx, cy + 1 - j * (4 + Math.abs(t.vy) * 1.3)); }   // afterglow on the way down
+    ctx.save(); ctx.translate(cx + jx, y + hh - 8); ctx.scale(1 + t.land * .14, 1 - t.land * .26);
+    ctx.shadowColor = `rgba(${col},.9)`; ctx.shadowBlur = 8 + 8 * lit; ctx.fillStyle = `rgba(${col},${a})`; ctx.fillText(o.ch, 0, -(hh / 2 - 8) + 1); ctx.shadowBlur = 0;
+    ctx.lineWidth = 1.5; ctx.strokeStyle = `rgba(${col},${a})`; ctx.strokeText(o.ch, 0, -(hh / 2 - 8) + 1); ctx.restore();
+    if (t.land > .05) { const hw = w * .5 * (1.1 - t.land); ctx.strokeStyle = grn(t.land); ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx - hw, y + hh - 1); ctx.lineTo(cx + hw, y + hh - 1); ctx.stroke(); }
+    if (lit > .04) { ctx.shadowColor = sigc(.9); ctx.shadowBlur = 8; ctx.strokeStyle = sigc(lit * .95); ctx.lineWidth = 1.8; ctx.beginPath(); ctx.arc(cx, cy, R0 + (1 - lit) * 9, 0, 7); ctx.stroke(); ctx.shadowBlur = 0;   // the ring closes in on a traced letter
+      if (ok) { ctx.strokeStyle = sigc(.3 + .2 * Math.sin(frame * .2 - o.k)); ctx.lineWidth = 1.2; ctx.beginPath(); ctx.arc(cx, cy, R0 + 4 + 1.5 * Math.sin(frame * .2 - o.k), 0, 7); ctx.stroke(); } }
+    else if (o.hv) { ctx.strokeStyle = grn(.45); ctx.lineWidth = 1.2; ctx.setLineDash([4, 5]); ctx.beginPath(); ctx.arc(cx, cy, R0, 0, 7); ctx.stroke(); ctx.setLineDash([]); }
+    paPips(o, x + w - 4, y + hh - 4, `rgba(${mix3([190, 255, 215], [255, 240, 200], lit * lockK).join(",")},${.95 - low * .2})`, null, 6.5, 2.2);
+  }
+  ctx.shadowColor = sigc(.9); ctx.shadowBlur = 10; ctx.strokeStyle = sigc(1); ctx.lineWidth = 2.2;
+  for (const s of paLinks(21)) { const nx = -s.uy, ny2 = s.ux, n = Math.max(5, Math.round(s.len / 2.5)); ctx.beginPath();
+    for (let j = 0; j <= n; j++) { const u = j / n, d = u * s.len, e = Math.sin(Math.PI * u);
+      const off = e * ((3.5 + 3 * lockK) * Math.sin(d * .5 - frame * .32) + (1 - lockK) * (hsh(j + s.k * 31, frame >> 1) - .5) * 6);
+      const px = s.ax + s.ux * d + nx * off, py = s.ay + s.uy * d + ny2 * off; j ? ctx.lineTo(px, py) : ctx.moveTo(px, py); }
+    ctx.stroke(); }
+  ctx.shadowBlur = 0;
+}
+function curScope(o) { const r = 28 + Math.sin(frame * .16) * 1.5; ctx.strokeStyle = "#e6fff0"; ctx.lineWidth = 2.2; ctx.shadowColor = "#78ffaa"; ctx.shadowBlur = 8;
+  for (let q = 0; q < 4; q++) { const a = Math.PI / 4 + q * Math.PI / 2 + frame * .01; ctx.beginPath(); ctx.arc(o.cx, o.cy, r, a - .42, a + .42); ctx.stroke(); } ctx.shadowBlur = 0; }
+
+/* 8. Stencil plates: heavy dark iron plates with the letters cut through them, and the radio's valves burning behind. You read the
+   letters by the light in the cuts; thin seams glow between plates. Sent plates leave holes you can see the valves through until the
+   next plates slam down and shut the light off. Value dots are small drilled holes. */
+const F_PLATE = '"Stardos Stencil", Georgia, serif';
+function paPlates({ G, tiles, ok, low, last }) {
+  const surge = clamp01(1 - sendT / 18), flick = last && hsh(frame >> 2, 7) < .18 ? .6 : 1;
+  const base = (1 - low * .45) * flick * (.85 + .07 * Math.sin(frame * .05)), pw = base + lockK * (.3 + .15 * Math.sin(frame * .25)) + surge * .9;   // how hard the valves burn
+  ctx.fillStyle = "#120502"; ctx.fillRect(G.x, G.y, G.w, G.h);
+  [0, 1, 2, 3].forEach((j) => { const vx = FX(tileC(j).x), vy = G.y + G.h * .5, b = pw * (.9 + .1 * Math.sin(frame * .04 + j * 2));
+    const gr = ctx.createRadialGradient(vx, vy, 4, vx, vy, 130); gr.addColorStop(0, `rgba(255,150,50,${Math.min(1, .5 * b)})`); gr.addColorStop(.35, `rgba(230,80,16,${Math.min(1, .28 * b)})`); gr.addColorStop(1, "rgba(120,20,0,0)");
+    ctx.fillStyle = gr; ctx.fillRect(G.x, G.y, G.w, G.h);
+    ctx.fillStyle = `rgba(255,180,96,${Math.min(1, .45 * b)})`; rr(ctx, vx - 17, G.y + 8, 34, G.h - 16, 17); ctx.fill();
+    ctx.strokeStyle = `rgba(90,30,8,${Math.min(1, .5 * b)})`; ctx.lineWidth = 2; ctx.stroke();
+    ctx.strokeStyle = `rgba(255,246,224,${Math.min(1, .85 * b)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(vx - 4, G.y + 26); ctx.lineTo(vx - 4, G.y + G.h - 22); ctx.moveTo(vx + 4, G.y + 26); ctx.lineTo(vx + 4, G.y + G.h - 22); ctx.stroke(); });
+  for (const o of tiles) { const { t, x, y, w, hh, cx, cy } = o, lit = t.lit, wave = o.on && ok ? .5 + .5 * Math.sin(frame * .24 - o.k * .9) : 0;
+    const px = x - 2, py = y - 2, pw2 = w + 4, ph = hh + 4;
+    const gr = ctx.createLinearGradient(0, py, 0, py + ph); gr.addColorStop(0, "#241c18"); gr.addColorStop(.5, "#16110f"); gr.addColorStop(1, "#0b0807"); ctx.fillStyle = gr; rr(ctx, px, py, pw2, ph, 3); ctx.fill();
+    ctx.fillStyle = "rgba(255,210,170,.11)"; ctx.fillRect(px + 3, py + 1, pw2 - 6, 1.5); ctx.fillStyle = "rgba(0,0,0,.5)"; ctx.fillRect(px + 3, py + ph - 2.5, pw2 - 6, 1.5);
+    for (const [rx, ry] of [[px + 6, py + 6], [px + pw2 - 6, py + 6], [px + 6, py + ph - 6]]) { ctx.fillStyle = "#3d2f28"; ctx.beginPath(); ctx.arc(rx, ry, 1.9, 0, 7); ctx.fill(); ctx.fillStyle = "rgba(255,220,190,.25)"; ctx.fillRect(rx - 1, ry - 1.2, 1, 1); }
+    const glowK = clamp01((.72 + .08 * Math.sin(frame * .06 + t.seed * 30)) * base + t.land * .5 + (o.hv ? .25 : 0) + surge * .3), heat = clamp01(lit * .8 + wave * .2);
+    const col = mixc(mix3([110, 38, 8], [255, 150, 56], glowK), ok && o.on ? [255, 248, 228] : [255, 224, 168], heat);
+    ctx.font = "700 " + keyFont(o, 38, 26, F_PLATE);
+    ctx.fillStyle = "#030101"; ctx.fillText(o.ch, cx + 1.5, cy + 4);   // the wall of the cut
+    ctx.shadowColor = "#ff6a10"; ctx.shadowBlur = 5 + 15 * heat; ctx.fillStyle = col; ctx.fillText(o.ch, cx, cy + 2.5); ctx.shadowBlur = 0;
+    if (lit > .03) { ctx.strokeStyle = `rgba(255,${180 + 50 * wave | 0},${96 + 90 * wave | 0},${lit * .9})`; ctx.shadowColor = "#ff8a20"; ctx.shadowBlur = 12; ctx.lineWidth = 2; rr(ctx, px - 1, py - 1, pw2 + 2, ph + 2, 4); ctx.stroke(); ctx.shadowBlur = 0; }
+    if (t.land > .05) { ctx.fillStyle = `rgba(255,200,120,${t.land})`; ctx.fillRect(px, py + ph - 1, pw2, 2.5); }   // light squeezed out as it slams down
+    paPips(o, px + pw2 - 8, py + ph - 8, mixc(mix3([170, 70, 20], [255, 176, 90], clamp01(glowK + .25)), [255, 244, 214], heat), "#ff7a18");
+  }
+  for (const s of paLinks(24)) { ctx.beginPath(); ctx.moveTo(s.ax, s.ay); ctx.lineTo(s.bx, s.by); ctx.shadowColor = "#ff7a18"; ctx.shadowBlur = 14; ctx.strokeStyle = ok ? "#fff3d8" : "#ffc878"; ctx.lineWidth = ok ? 6 : 5; ctx.stroke(); ctx.shadowBlur = 0; }
+}
+
+/* 9. Switchboard: every key is a jewel lamp in a brass ring on a black panel. Tracing plugs a braided cord from lamp to lamp (it
+   swings, then settles); lamps light with dark letters. When the word locks the cords pull tight and a chase runs down the lamps;
+   when it's sent the cords drop away. */
+const F_BOARD = '"Alfa Slab One", Georgia, serif';
+function paCord(ax, ay, bx, by, sx, sy, a, pulse, plug) { const mx = (ax + bx) / 2 + sx, my = (ay + by) / 2 + sy; ctx.globalAlpha = a;
+  ctx.beginPath(); ctx.moveTo(ax + 2, ay + 4); ctx.quadraticCurveTo(mx + 2, my + 5, bx + 2, by + 4); ctx.strokeStyle = "rgba(0,0,0,.55)"; ctx.lineWidth = 8; ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(ax, ay); ctx.quadraticCurveTo(mx, my, bx, by); ctx.strokeStyle = "#5c1d12"; ctx.lineWidth = 7; ctx.stroke();
+  ctx.setLineDash([3, 5]); ctx.lineCap = "butt"; ctx.strokeStyle = "#a8502e"; ctx.lineWidth = 4; ctx.stroke(); ctx.setLineDash([]); ctx.lineCap = "round";
+  if (plug) for (const [px, py, tx, ty] of [[ax, ay, mx, my], [bx, by, mx, my]]) { const d = Math.hypot(tx - px, ty - py) || 1; ctx.fillStyle = "#d8ab58"; ctx.beginPath(); ctx.arc(px + (tx - px) / d * 26, py + (ty - py) / d * 26, 4.6, 0, 7); ctx.fill(); ctx.fillStyle = "#6a4418"; ctx.beginPath(); ctx.arc(px + (tx - px) / d * 26, py + (ty - py) / d * 26, 2, 0, 7); ctx.fill(); }
+  if (pulse >= 0) { const u = pulse, q = 1 - u; ctx.fillStyle = "#fff6dc"; ctx.shadowColor = "#ffc060"; ctx.shadowBlur = 12; ctx.beginPath(); ctx.arc(q * q * ax + 2 * q * u * mx + u * u * bx, q * q * ay + 2 * q * u * my + u * u * by, 3.5, 0, 7); ctx.fill(); ctx.shadowBlur = 0; }
+  ctx.globalAlpha = 1; }
+function paBoard({ G, tiles, ok, low, last }) {
+  ctx.fillStyle = "#0b0706"; ctx.fillRect(G.x, G.y, G.w, G.h);
+  ctx.fillStyle = "rgba(255,200,140,.06)"; for (let r = 1; r < 4; r++) ctx.fillRect(G.x + 10, FX(L.gy + r * (L.th + L.gap)) - FX(L.gap) / 2, G.w - 20, 1);
+  for (const g of ghosts) if (g.k > 0 && g.t < 30) { const f = g.t * g.t * .3; paCord(FX(g.px), FX(g.py) + f * .8, FX(g.x), FX(g.y) + f, 0, 4 + g.t * 1.2, 1 - g.t / 30, -1); }   // a sent word's cords drop away
+  for (const s of paLinks(0)) { const sw = s.newest ? 8 * Math.cos(addT * .45) * Math.exp(-addT * .07) : 0, sag = (9 + sw) * (1 - .8 * lockK);
+    paCord(s.ax, s.ay, s.bx, s.by, -s.uy * sag * .6, sag * (.3 + .7 * Math.abs(s.ux)), 1, ok ? ((frame * .05 - s.k * .3) % 1 + 1) % 1 : -1, s.len > 52); }
+  for (const o of tiles) { const { t, x, y, w, hh, cx, cy } = o, lit = t.lit, R0 = 23, rl = R0 - 5.5;
+    const chase = o.on && ok ? Math.max(0, Math.sin(frame * .28 - o.k * 1.05)) : 0;
+    let br = (.9 + .06 * Math.sin(frame * .06 + t.seed * 30)) * (1 - low * .45); if (last && hsh(frame >> 2, t.seed * 77) < .12) br *= .5;
+    ctx.fillStyle = "rgba(0,0,0,.6)"; ctx.beginPath(); ctx.arc(cx + 1.5, cy + 3, R0, 0, 7); ctx.fill();
+    let gr = ctx.createLinearGradient(0, cy - R0, 0, cy + R0); gr.addColorStop(0, "#e9c070"); gr.addColorStop(.5, "#a87a34"); gr.addColorStop(1, "#5a3812"); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(cx, cy, R0 - 1, 0, 7); ctx.fill();
+    ctx.fillStyle = "#120904"; ctx.beginPath(); ctx.arc(cx, cy, R0 - 4.5, 0, 7); ctx.fill();
+    gr = ctx.createRadialGradient(cx - 5, cy - 6, 1, cx, cy, rl); gr.addColorStop(0, "#4c2611"); gr.addColorStop(1, "#1c0d06"); ctx.fillStyle = gr; ctx.beginPath(); ctx.arc(cx, cy, rl, 0, 7); ctx.fill();
+    if (lit > .02) { ctx.globalAlpha = lit; gr = ctx.createRadialGradient(cx - 4, cy - 5, 1, cx, cy, rl); gr.addColorStop(0, ok ? "#fffbe6" : "#ffe6a8"); gr.addColorStop(1, ok ? "#ffc452" : "#f09a2c"); ctx.fillStyle = gr; ctx.fill(); ctx.globalAlpha = 1; }
+    const ov = .4 * chase + .3 * t.land + (o.hv ? .14 : 0); if (ov > .01) { ctx.fillStyle = `rgba(255,236,190,${Math.min(.8, ov)})`; ctx.fill(); }
+    if (t.land > .05) { ctx.strokeStyle = `rgba(255,250,230,${t.land})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(cx, cy, R0 - 2, -2.4, -.8); ctx.stroke(); }   // the ring catches the light as it lands
+    ctx.font = keyFont(o, 24, 17, F_BOARD);
+    if (lit < .5) { ctx.shadowColor = "#ff7a18"; ctx.shadowBlur = 7; ctx.fillStyle = `rgba(255,182,92,${Math.min(1, br + t.land)})`; } else ctx.fillStyle = "#2c1206";
+    ctx.fillText(o.ch, cx, cy + 2); ctx.shadowBlur = 0;
+    ctx.fillStyle = "rgba(255,255,255,.15)"; ctx.beginPath(); ctx.ellipse(cx - 6, cy - 9, 6.5, 3.2, -.5, 0, 7); ctx.fill();
+    paPips(o, x + w - 3, y + hh - 4, lit > .5 ? "#fff0cc" : `rgba(255,186,100,${.6 + .4 * br})`, "#ff7a18", 6.5, 2.3);
+  }
+}
+
+/* 10. Dot glass: the keys are small lamp-matrix modules, cousins of the dial. Letters are lit dots; a traced module fills up from the
+   bottom and its letter goes white; the link is a run of dots between modules. A sent word comes apart into its dots, which stream
+   to the tower. Modules scramble for a moment when they land, and dots start failing when the battery is low. */
+const dotSprs = {};
+function dotSpr(col) { let c = dotSprs[col]; if (!c) { c = dotSprs[col] = document.createElement("canvas"); c.width = c.height = 12; const x = c.getContext("2d"); x.fillStyle = col; x.beginPath(); x.arc(6, 6, 4.7, 0, 7); x.fill(); } return c; }
+const U3 = [[1, 0, 1], [1, 0, 1], [1, 1, 1]];
+function paDotGlass({ G, tiles, ok, low }) {
+  ctx.fillStyle = "#070403"; ctx.fillRect(G.x, G.y, G.w, G.h);
+  const OFF = dotSpr("#24120a"), BG = dotSpr("#6e330d"), BGH = dotSpr("#d88424"), ON = dotSpr("#ff9a36"), HOT = dotSpr("#fff2d4"), VAL = dotSpr("#ffe2b0"), w0 = FX(L.tw), h0 = FX(L.th);
+  const frameOf = (x, y, a) => { ctx.globalAlpha = a; ctx.fillStyle = "#0e0806"; rr(ctx, x + 1, y - 1, w0 - 2, h0 + 2, 5); ctx.fill(); ctx.strokeStyle = "rgba(130,86,52,.4)"; ctx.lineWidth = 1.5; ctx.stroke(); };
+  for (const g of ghosts) if (g.t < 16) { const a = 1 - g.t / 16, x = FX(g.x) - w0 / 2, y = FX(g.y) - h0 / 2; frameOf(x, y, a);
+    for (let r = 0; r < 7; r++) for (let c = 0; c < 9; c++) ctx.drawImage(OFF, x + 4 + c * 6, y + 4 + r * 6, 6, 6); ctx.globalAlpha = 1; }
+  for (const o of tiles) { const { t, x, y, w, hh } = o, lit = t.lit, mx = x + 4, my = y + 4, b = bits(o.ch === "Qu" ? "Q" : o.ch), qu = o.ch === "Qu", lc = qu ? 1 : 2;
+    const scr = t.land > .4, dim = 1 - low * .35 * (1 - lit), wave = o.on && ok;
+    frameOf(x, y, 1);
+    if (lit > .03) { ctx.strokeStyle = `rgba(255,${ok ? 226 : 180},${ok ? 160 : 96},${lit * .85})`; ctx.shadowColor = "#ff8a20"; ctx.shadowBlur = 10; ctx.lineWidth = 2; ctx.stroke(); ctx.shadowBlur = 0; }
+    else if (o.hv) { ctx.strokeStyle = "rgba(255,200,130,.6)"; ctx.stroke(); }
+    for (let r = 0; r < 7; r++) for (let c = 0; c < 9; c++) { const dx = mx + c * 6, dy = my + r * 6;
+      let isL = c >= lc && c < lc + 5 && b[r][c - lc]; if (qu && c >= 6 && r < 3 && U3[r][c - 6]) isL = 1;
+      if (scr) isL = c > 0 && c < 8 && hsh(c + r * 9 + (frame >> 1) * 3.1, t.seed * 17) < .42;
+      const isV = c === 8 && r >= 7 - o.dots, dead = low > 0 && hsh(c * 7 + r, t.seed * 13 + (frame >> 4)) < low * .12;
+      ctx.globalAlpha = 1;
+      if (isV) { ctx.drawImage(VAL, dx, dy, 6, 6); continue; }
+      if (isL && !dead) { if (lit > .5) ctx.drawImage(HOT, dx, dy, 6, 6); else { ctx.drawImage(OFF, dx, dy, 6, 6); ctx.globalAlpha = Math.min(1, dim * (.9 + (o.hv ? .1 : 0)) + t.land); ctx.drawImage(scr ? HOT : ON, dx, dy, 6, 6); } continue; }
+      if ((6.6 - r) / 7 < lit * 1.2 && !dead) { ctx.drawImage(BG, dx, dy, 6, 6); if (wave) { ctx.globalAlpha = .5 + .5 * Math.sin(frame * .3 - (c + r) * .8 - o.k * 2); ctx.drawImage(BGH, dx, dy, 6, 6); } }
+      else ctx.drawImage(OFF, dx, dy, 6, 6); }
+    ctx.globalAlpha = 1;
+  }
+  for (const s of paLinks(0)) for (let d = 0; d <= s.len; d += 6) { const px = s.ax + s.ux * d, py = s.ay + s.uy * d;   // a run of dots across the gap
+    if ((Math.abs(px - s.ax) < w0 / 2 && Math.abs(py - s.ay) < h0 / 2 + 1) || (Math.abs(px - s.ex) < w0 / 2 && Math.abs(py - s.ey) < h0 / 2 + 1)) continue;
+    ctx.globalAlpha = ok ? .6 + .4 * Math.sin(frame * .35 - d * .25 - s.k) : 1; ctx.drawImage(ok ? HOT : ON, px - 3.5, py - 3.5, 7, 7); }
+  ctx.globalAlpha = 1;
+}
+
+const PA_DRAW = [paValve, paScope, paPlates, paBoard, paDotGlass];
+const PA_CUR = [["#ffe9c4", "#ff8a20"], null, ["#ffe9c4", "#ff8a20"], ["#fff3d6", "#ffb040"], ["#ffe9c4", "#ff8a20"]];
+function drawPlayArea() {
+  const g = L.glass, G = { x: FX(g.x), y: FX(g.y), w: FX(g.w), h: FX(g.h) }, play = S.phase === "play", ok = play && isValid(), cand = candidate(), low = play ? clamp01(1 - S.words / maxWords()) : 0, last = play && S.words === 1;
+  ctx.save(); ctx.beginPath(); ctx.rect(G.x, G.y, G.w, G.h); ctx.clip(); ctx.imageSmoothingEnabled = true; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineCap = ctx.lineJoin = "round";
+  const tiles = []; for (let i = 0; i < 16; i++) { const t = S.grid[i]; if (!t || t.ch === " ") continue; const p = tileXY(i), x = FX(p.x), y = FX(p.y + t.yOff), w = FX(L.tw), hh = FX(L.th), k = S.path.indexOf(i);
+    tiles.push({ t, i, x, y, w, hh, cx: x + w / 2, cy: y + hh / 2, on: k >= 0, k, hv: i === cand, v: VALUES[t.ch], dots: Math.min(4, Math.ceil(VALUES[t.ch] / 2)), ch: t.ch }); }
+  PA_DRAW[KS - 6]({ G, tiles, ok, low, last, play });
+  for (const o of tiles) if (o.t.hot) { ctx.strokeStyle = (frame >> 3) & 1 ? "#ff3a2e" : "#ff8060"; ctx.lineWidth = 3; ctx.shadowColor = "#ff3a2e"; ctx.shadowBlur = 14; rr(ctx, o.x - 1, o.y - 2, o.w + 1, o.hh + 2, 9); ctx.stroke(); ctx.shadowBlur = 0; }
+  if (play && usingButtons) { const o = tiles.find(o => o.i === S.cursor); if (o) { const c = PA_CUR[KS - 6]; c ? paCursor(o, c[0], c[1]) : curScope(o); } }
+  // the glass itself: a recessed pane with a soft slanted reflection; its rim pulses red on the last word
+  let gr = ctx.createLinearGradient(G.x, G.y, G.x + G.w * .9, G.y + G.h); gr.addColorStop(.16, "rgba(255,240,220,0)"); gr.addColorStop(.28, "rgba(255,240,220,.055)"); gr.addColorStop(.35, "rgba(255,240,220,.012)"); gr.addColorStop(.42, "rgba(255,240,220,.04)"); gr.addColorStop(.5, "rgba(255,240,220,0)");
+  ctx.fillStyle = gr; ctx.fillRect(G.x, G.y, G.w, G.h);
+  gr = ctx.createLinearGradient(0, G.y, 0, G.y + 16); gr.addColorStop(0, "rgba(0,0,0,.6)"); gr.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = gr; ctx.fillRect(G.x, G.y, G.w, 16);
+  gr = ctx.createLinearGradient(G.x, 0, G.x + 12, 0); gr.addColorStop(0, "rgba(0,0,0,.45)"); gr.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = gr; ctx.fillRect(G.x, G.y, 12, G.h);
+  if (last) { ctx.strokeStyle = `rgba(255,60,40,${.35 + .25 * Math.sin(frame * .12)})`; ctx.shadowColor = "#ff3a2e"; ctx.shadowBlur = 26; ctx.lineWidth = 6; ctx.strokeRect(G.x - 3, G.y - 3, G.w + 6, G.h + 6); ctx.shadowBlur = 0; }
+  ctx.restore(); ctx.imageSmoothingEnabled = false; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.globalAlpha = 1;
+}
+const PA_RGB = ["255,130,40", "120,255,170", "255,120,40", "255,180,80", "255,150,50"], PA_BASE = [.07, .04, .03, .02, .06];
+function paGlows(okNow) {
+  const g = L.glass, rgb = PA_RGB[KS - 6];
+  S.grid.forEach((t, i) => { if (!t || t.ch === " ") return; const c = tileC(i), lit = t.lit || 0, hot = okNow && lit > .5;
+    bloom(FX(c.x), FX(c.y + t.yOff), 40 + 20 * lit, hot ? "255,225,160" : rgb, PA_BASE[KS - 6] + (KS === 9 ? .42 : .3) * lit + .22 * (t.land || 0)); });
+  if (sendT < 18) bloom(FX(g.x + g.w / 2), FX(g.y + g.h / 2), FX(g.w) * .9, KS === 7 ? "255,216,128" : "255,190,110", .32 * (1 - sendT / 18));   // the glass flares as a word leaves
+  if (arriveT < 26) bloom(FX(g.x) + 14, FX(g.y) + FX(g.h) * .3, 170, "255,70,50", .2 * (1 - arriveT / 26));   // and catches the beacon's answer
+}
+const flyAt = (f, t) => { const u = clamp01(t / f.dur), e = u * u * (3 - 2 * u);
+  return { x: (1 - e) ** 2 * f.ax + 2 * (1 - e) * e * f.cx + e * e * L.beacon.x, y: (1 - e) ** 2 * f.ay + 2 * (1 - e) * e * f.cy + e * e * L.beacon.y, u, e }; };
+const PA_FLY = [[F_VALVE, 38, "255,170,80", 1], [F_SCOPE, 37, "255,216,128", 0], ["700 " + F_PLATE, 38, "255,160,70", 0], [F_BOARD, 26, "255,200,110", 0]];
+function paFlyers() {
+  ctx.save(); ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineCap = "round"; ctx.imageSmoothingEnabled = true;
+  for (const f of flyers) {
+    const chg = f.t < 0 ? clamp01(1 - f.t / (f.t0 || -1)) : 1, q = flyAt(f, f.t); if (q.u > .93) continue;
+    if (KS === 10) { const b = bits(f.ch === "Qu" ? "Q" : f.ch), HOT = dotSpr("#fff2d4"), TAIL = dotSpr("#ffb050");   // the letter comes apart into its dots
+      for (let r = 0; r < 7; r++) for (let c = 0; c < 5; c++) if (b[r][c]) { const tt = f.t - hsh(c + f.k * 5, r) * 12, p = flyAt(f, tt), sp = (1 - p.e) ** 1.5, ox = (c - 2) * 6 * sp, oy = (r - 3) * 6 * sp - (f.t < 0 ? chg * 4 : 0), sz = 7 - 3.5 * p.u;
+        if (p.u > .93) continue;
+        if (tt > 2) { const p2 = flyAt(f, tt - 2.5); ctx.globalAlpha = .4; ctx.drawImage(TAIL, FX(p2.x) + ox - sz / 2, FX(p2.y) + oy - sz / 2, sz, sz); }
+        ctx.globalAlpha = 1; ctx.drawImage(HOT, FX(p.x) + ox - sz / 2, FX(p.y) + oy - sz / 2, sz, sz); }
+      continue; }
+    const [fam, size, rgb, stroke] = PA_FLY[KS - 6], x = FX(q.x), y = FX(q.y) - (f.t < 0 ? chg * 6 : 6 * (1 - q.u));
+    if (f.t > 0) { ctx.globalCompositeOperation = "lighter";   // a streak of light behind it
+      for (let j = 1; j <= 9; j++) { const a = flyAt(f, f.t - (j - 1) * 1.4), b = flyAt(f, f.t - j * 1.4); if (f.t - j * 1.4 < 0) break;
+        ctx.strokeStyle = `rgba(${rgb},${.42 * (1 - j / 10)})`; ctx.lineWidth = (10 - j) * (1 - q.u * .6); ctx.beginPath(); ctx.moveTo(FX(a.x), FX(a.y) - 6 * (1 - a.u)); ctx.lineTo(FX(b.x), FX(b.y) - 6 * (1 - b.u)); ctx.stroke(); }
+      ctx.globalCompositeOperation = "source-over"; }
+    const s = (f.ch === "Qu" ? .7 : 1) * (f.t < 0 ? 1 + .22 * chg : 1.22 - .75 * q.u);
+    ctx.font = fam.replace(/^(700 )?/, `$1${Math.round(size * s * 10) / 10}px `);
+    ctx.shadowColor = `rgb(${rgb})`; ctx.shadowBlur = 8 + 14 * chg; ctx.fillStyle = ctx.strokeStyle = mixc(rgb.split(",").map(Number), [255, 250, 236], .35 + .65 * chg);
+    if (stroke) { ctx.lineWidth = 3 * s; ctx.strokeText(f.ch, x, y); } else ctx.fillText(f.ch, x, y);
+    ctx.shadowBlur = 0;
+  }
+  ctx.restore(); ctx.imageSmoothingEnabled = false; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.globalAlpha = 1;
+  for (const p of pops) ftext(p.text, FX(p.x), FX(p.y - p.t * .5) - 14, "key", (p.t >> 2) & 1 ? C.hot : C.gold, "c", { outline: C.dark });
+}
 // soft light: every light source blooms (added light, drawn over the scene)
 function bloom(x, y, r, rgb, a) { const g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(${rgb},${a})`); g.addColorStop(.4, `rgba(${rgb},${a * .35})`); g.addColorStop(1, `rgba(${rgb},0)`); ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2); }
 function drawGlows() {
@@ -693,7 +952,7 @@ function drawGlows() {
   const d = L.dial, okNow = S.phase === "play" && S.path.length >= 3 && isValid();
   bloom(FX(d.x + d.w / 2), FX(d.y + d.h / 2), FX(d.w * .6), "255,170,70", okNow ? .3 : .12);
   bloom(FX(L.meter.x), FX(L.meter.y), FX(L.meter.r * 1.6), "255,220,160", .12);
-  const sel = new Set(S.path); S.grid.forEach((t, i) => { if (!t) return; const c = tileC(i);
+  const sel = new Set(S.path); if (PA()) paGlows(okNow); else S.grid.forEach((t, i) => { if (!t) return; const c = tileC(i);
     if (sel.has(i)) bloom(FX(c.x), FX(c.y + t.yOff), 56, okNow ? "255,225,150" : "255,170,70", .35);
     else if (KS === 2 || KS === 3) bloom(FX(c.x), FX(c.y + t.yOff), 34, "255,130,40", .08); });
   for (const f of flyers) if (f.t > 0) { const q = flyPos(f); if (q.u < .95) bloom(FX(q.x), FX(q.y), 40, "255,200,110", .45); }
@@ -704,6 +963,7 @@ function drawGlows() {
 function flyPos(f) { const u = Math.max(0, Math.min(1, f.t / f.dur)), e = u * u * (3 - 2 * u);
   return { x: (1 - e) ** 2 * f.ax + 2 * (1 - e) * e * f.cx + e * e * L.beacon.x, y: (1 - e) ** 2 * f.ay + 2 * (1 - e) * e * f.cy + e * e * L.beacon.y, u }; }
 function drawFlyers() {
+  if (PA()) return paFlyers();
   for (const f of flyers) { if (f.t < 0) continue; const q = flyPos(f); if (q.u > .9) continue; const chs = f.ch === "Qu" ? "Q" : f.ch;
     ctx.drawImage(glyphCv("key", chs, C.keyShadow), FX(q.x) - 9, FX(q.y) - 12); ctx.drawImage(glyphCv("key", chs, C.hot), FX(q.x) - 11, FX(q.y) - 14); }
   for (const p of pops) ftext(p.text, FX(p.x), FX(p.y - p.t * .5) - 14, "key", (p.t >> 2) & 1 ? C.hot : C.gold, "c", { outline: C.dark });
@@ -888,7 +1148,8 @@ async function boot() {
   S = fresh("title"); layout(); fillGrid(false);
   "LEXICONSIGNAL".split("").forEach((ch, k) => { S.grid[[0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13][k]].ch = ch; });
   [7, 14, 15].forEach(i => S.grid[i].ch = " ");
-  requestAnimationFrame(loop);
+  // test hook: a hash ending in -step does not run by itself; window.LEXSTEP(n) advances n frames (for recording clips frame by frame)
+  if (/-step$/.test(location.hash)) window.LEXSTEP = (n = 1) => { while (n-- > 0) { update(); draw(); } }; else requestAnimationFrame(loop);
   // test hook: #test-shop opens the part picker after night 1 (for screenshots)
   if (location.hash === "#test-shop") { newRun(); S.parts.push("amp", "coil"); nightClear(); }
   if (location.hash.startsWith("#test-word")) { newRun(); setTimeout(() => { "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[i].ch = ch); S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); S.path = [0, 1, 2]; usingButtons = true; S.cursor = 3; }, 300); }
