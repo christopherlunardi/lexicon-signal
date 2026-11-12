@@ -7,6 +7,8 @@ sys.path.insert(0, "art/pixel")
 import pix
 W, H = 480, 270
 meta = json.load(open("art/pixel/sprites.json")); pal = np.array(meta["palette"], float)
+# the lit room never uses the glow accents (they are for things that give light), so dithering can't speckle them in
+pal = np.array([c for c in pal if tuple(int(v) for v in c) not in set(pix.ACCENTS)], float)
 PLACE = {"window": (22, 18), "radio": (172, 14)}          # native top-left of each sprite in the 16:9 layout
 t = np.asarray(Image.open("art/pixel/wall_tile.png").convert("RGB")).astype(float)
 img = np.tile(t, (H // t.shape[0] + 1, W // t.shape[1] + 1, 1))[:H, :W].copy()

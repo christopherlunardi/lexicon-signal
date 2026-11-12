@@ -22,6 +22,16 @@ SPRITES = {
     "sb_left": {"src": "sideboard.png", "scale": .2, "crop": (12, 360, 72, 589)},
     "sb_mid": {"src": "sideboard.png", "scale": .2, "crop": (72, 360, 327, 589)},
     "sb_right": {"src": "sideboard.png", "scale": .2, "crop": (1585, 360, 1647, 589)},
+    # interface kit (one scale for every piece): the bar stretches (left end, plain middle, right end) with the clasp centred on top
+    "bar_left": {"src": "uikit.png", "scale": .217, "crop": (14, 112, 138, 416)},
+    "bar_mid": {"src": "uikit.png", "scale": .217, "crop": (300, 112, 558, 416)},
+    "bar_right": {"src": "uikit.png", "scale": .217, "crop": (1524, 112, 1648, 416)},
+    "bar_clasp": {"src": "uikit.png", "scale": .217, "crop": (762, 112, 900, 170)},
+    "logbox": {"src": "uikit.png", "scale": .217, "crop": (24, 538, 642, 800)},
+    "plate": {"src": "uikit.png", "scale": .217, "crop": (674, 554, 1004, 646)},
+    "battery": {"src": "uikit.png", "scale": .217, "crop": (1040, 602, 1290, 720), "points": {"seg0": (1066, 632), "seg1": (1266, 690)}},
+    "slot": {"src": "uikit.png", "scale": .217, "crop": (1320, 554, 1508, 760)},
+    "button": {"src": "uikit.png", "scale": .217, "crop": (1540, 610, 1634, 704)},
 }
 TILES = {"wall_tile": {"src": "wallpaper.png", "period": (156, 138), "native": (24, 21), "area": (150, 160)}}
 

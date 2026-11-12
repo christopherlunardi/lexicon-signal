@@ -16,14 +16,19 @@ def kmeans(px, k, iters=25, seed=1):
             if len(m): c[i] = m.mean(0)
     return c
 
+# glow colours kept in the palette no matter what the art contains: key amber, hot white-gold, lamp yellow, beacon reds, cool glass
+ACCENTS = [(255, 176, 64), (255, 214, 120), (255, 244, 214), (255, 206, 84), (232, 48, 36), (255, 104, 72), (150, 196, 255), (40, 64, 140)]
+
 def build_palette(sources, k=64):
-    """sources: list of (image path, native size). Samples every native pixel of each, clusters to k colours."""
+    """sources: list of (image path, native size). Samples every native pixel of each, clusters to k colours
+    (k minus the fixed accent colours), then appends the accents."""
     samples = []
     for path, size in sources:
         im = Image.open(path).convert("RGB").resize(size, Image.BOX)
         samples.append(np.asarray(im).reshape(-1, 3))
     px = np.concatenate(samples).astype(float)
-    pal = kmeans(px, k)
+    pal = kmeans(px, k - len(ACCENTS))
+    pal = np.concatenate([pal, np.array(ACCENTS, float)])
     pal = pal[np.argsort(pal.mean(1))]  # dark to light
     pal = np.clip(np.round(pal), 0, 255).astype(int)
     json.dump(pal.tolist(), open(ROOT + "palette.json", "w"))
