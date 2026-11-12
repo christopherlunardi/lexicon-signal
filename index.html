@@ -307,6 +307,7 @@ function computeLayout() {
   L.dial = { x: L.radioX + rp.dial0[0] + 1, y: L.radioY + rp.dial0[1] + 1, w: rp.dial1[0] - rp.dial0[0] - 2, h: rp.dial1[1] - rp.dial0[1] - 2 };
   L.meter = { x: L.radioX + rp.meter[0], y: L.radioY + rp.meter[1], r: rp.meterR[0] - rp.meter[0] };
   // the true middle of each lamp socket (measured on the art: half a pixel right of the marked point, and the fifth socket one more)
+  L.extraLamps = [];
   L.lamps = [0, 1, 2, 3, 4, 5].map(k => ({ x: L.radioX + rp["lamp" + k][0] + .5 + (k === 4 ? 1 : 0), y: L.radioY + rp["lamp" + k][1] }));
   L.knobL = { x: L.radioX + rp.knobL[0], y: L.radioY + rp.knobL[1] }; L.knobR = { x: L.radioX + rp.knobR[0], y: L.radioY + rp.knobR[1] };
   L.sbX = L.radioX - 29; L.sbY = L.radioY + R("radio")[3] - 10;
@@ -398,6 +399,7 @@ const freqFor = (n) => +(88.1 + ((n - 1) * 1.9) % 19.8).toFixed(1);
 let S = null, uid = 0;
 const has = (id) => S.parts.filter(p => p === id).length;
 const maxWords = () => BASE_WORDS + has("battery");
+const maxRetunes = () => 1 + has("knob");
 function fresh(phase) { return { phase, night: 1, score: 0, shown: 0, total: 0, parts: [], words: BASE_WORDS, retunes: 1, firstWord: true, grid: [], path: [], cursor: 5, best: { word: "", pts: 0 }, target: 30, log: [] }; }
 function pickLetter() {
   const filter = S && has("filter"), vowel = S && has("vowel"); let total = 0; const pool = [];
@@ -455,7 +457,7 @@ function partHits(p) {
 function log(s) { S.log.push({ s: s.toUpperCase(), n: 0 }); if (S.log.length > 14) S.log.shift(); }
 function newRun() { S = fresh("play"); log("Tuned in."); startNight(); }
 function startNight() {
-  S.score = 0; S.shown = 0; S.firstWord = true; S.target = targetFor(S.night); S.words = maxWords(); S.retunes = 1 + has("knob"); S.path = [];
+  S.score = 0; S.shown = 0; S.firstWord = true; S.target = targetFor(S.night); S.words = maxWords(); S.retunes = maxRetunes(); S.path = [];
   fillGrid(true); S.phase = "play"; dialFlash = null; nightCard = 170; log(`Night ${S.night}: beam ${S.target} signal to the tower in ${S.words} words.`);
 }
 
@@ -574,11 +576,15 @@ function drawBeacon() {
   wctx.fillStyle = C.hot; wctx.fillRect(b.x, b.y, 1, 1);
 }
 function drawRadioLive() {
+  { const n = S.phase === "title" ? 0 : Math.min(2, maxWords() - 6), a = L.lamps; L.extraLamps = [{ x: a[5].x + 26, y: a[5].y }, { x: a[0].x - 26, y: a[0].y }].slice(0, Math.max(0, n)); }
   // the dial becomes a lit display window
   const d = L.dial; wctx.fillStyle = C.glass; wctx.fillRect(d.x, d.y, d.w, d.h);
   // lamps = words left
   const lit = S.phase === "title" ? titleFX.lamps : Math.min(6, S.words);
   // (the lit lamps are drawn on the fine layer, drawLamps, so each sits exactly in the middle of its socket)
+  // a Spare Battery adds a lamp to the row: a socket copied from the radio's own appears right of the six, a second one left of them
+  const rp = P("radio"), rr0 = R("radio"); L.extraLamps.forEach((p) => { const sx = rp.lamp5[0] - 11, sy = rp.lamp5[1] - 11;
+    wctx.drawImage(atlasImg, rr0[0] + sx, rr0[1] + sy, 23, 23, Math.round(p.x - .5) - 11, p.y - 11, 23, 23); });
   for (const [k, p] of [["L", L.knobL], ["R", L.knobR]]) { const a = knobA[k] - .6; line(wctx, p.x + Math.cos(a) * 5, p.y + Math.sin(a) * 5, p.x + Math.cos(a) * 13, p.y + Math.sin(a) * 13, C.gold); }
   if (knobA.R > 0) knobA.R = Math.max(0, knobA.R - .04);
 }
@@ -676,6 +682,14 @@ function drawLamp(x, y, r, low) {   // a lit dome lamp centred at (x, y) fine pi
 function drawLamps() {
   const lit = S.phase === "title" ? titleFX.lamps : Math.min(6, S.words), low = S.words === 1 && S.phase === "play" && (frame >> 4) & 1;
   L.lamps.forEach((p, k) => { if (k < lit) drawLamp(FX(p.x), FX(p.y), FX(7), low); });
+  // the spare battery lamps: spent first (before the radio's own six), so they go dark as soon as a word is sent
+  L.extraLamps.forEach((p, j) => { if (S.phase !== "title" && S.words > 6 + j) drawLamp(FX(p.x), FX(p.y), FX(7), false); });
+  if (S.phase !== "title" && L.extraLamps.length > 1 && S.words > 8) ftext("+" + (S.words - 8), FX(L.extraLamps[1].x) - 30, FX(L.extraLamps[1].y) - 8, "ink", C.gold, "r", { outline: C.dark });
+  // retunes left: small lamps in an arc over the right (tuning) knob, one per retune you get each night, lit while unused
+  if (S.phase === "play" || S.phase === "shop" || S.phase === "swap") { const n = maxRetunes(), k = L.knobR;
+    for (let i = 0; i < n; i++) { const a = -Math.PI / 2 + (i - (n - 1) / 2) * .42, x = FX(k.x + .5 + Math.cos(a) * 22), y = FX(k.y + Math.sin(a) * 22);
+      ctx.fillStyle = "#1a0e08"; ctx.beginPath(); ctx.arc(x, y, 6, 0, 6.283); ctx.fill(); ctx.strokeStyle = "#b07a2a"; ctx.lineWidth = 1.5; ctx.stroke();
+      if (i < S.retunes) drawLamp(x, y, 4.5, false); } }
 }
 function drawMeter() {
   const m = L.meter, cx = FX(m.x), cy = FX(m.y) + 18, ratio = S.phase === "title" ? 0 : Math.min(1.1, S.shown / S.target), r = FX(m.r) - 8;
@@ -1033,6 +1047,7 @@ function drawGlows() {
     bloom(FX(L.winX + x), FX(L.winY + y), big ? FX(22) : 10 + Math.sqrt(n) * 3, "255,190,90", big ? .18 : Math.min(.35, .08 + n * .02)); }
   bloom(FX(W - 20), FX(SCENE_H - 30), FX(220), "255,150,60", .16 + .03 * Math.sin(frame / 50));     // the unseen lamp, breathing
   const lit = S.phase === "title" ? titleFX.lamps : Math.min(6, S.words);
+  L.extraLamps.forEach((p, j) => { if (S.phase !== "title" && S.words > 6 + j) bloom(FX(p.x), FX(p.y), 34, "255,190,90", .5); });
   L.lamps.forEach((p, k) => { if (k < lit) bloom(FX(p.x), FX(p.y), 34, S.words === 1 && S.phase === "play" ? "255,70,50" : "255,190,90", .5); });
   const d = L.dial, okNow = S.phase === "play" && S.path.length >= 3 && isValid();
   bloom(FX(d.x + d.w / 2), FX(d.y + d.h / 2), FX(d.w * .6), "255,170,70", okNow ? .3 : .12);
@@ -1207,6 +1222,7 @@ const TIPS = [
   "ONE LAMP GOES OUT FOR EVERY WORD YOU SEND",
   "FILL THE SIGNAL TUBE BEFORE THE LAMPS GO DARK",
   "STUCK? RETUNE FOR A FRESH SET OF LETTERS",
+  "THE LIGHTS OVER THE TUNING KNOB ARE YOUR RETUNES",
   "THE FINE TUNING KNOB GIVES AN EXTRA RETUNE EVERY NIGHT",
   "B TAKES BACK THE LAST LETTER",
   "SELECT OR M TURNS THE SOUND ON AND OFF",
@@ -1218,7 +1234,7 @@ const TIPS = [
   "YOU HAVE 5 PART SLOTS. COPIES OF A PART STACK IN ONE",
   "SLOTS FULL? TAKE A PART OUT TO FIT A NEW ONE",
   "A PART'S SLOT LIGHTS UP WHEN IT WILL BOOST YOUR WORD",
-  "A SPARE BATTERY GIVES AN EXTRA WORD EVERY NIGHT",
+  "A SPARE BATTERY ADDS A LAMP TO THE ROW: AN EXTRA WORD EVERY NIGHT",
   "THE NIGHT OWL CLOCK TRIPLES YOUR LAST WORD OF THE NIGHT",
   "THE ECHO TUBE DOUBLES YOUR FIRST WORD OF THE NIGHT",
   "THE CARRIER LAMP'S RED KEY DOUBLES ANY WORD THAT USES IT",
@@ -1676,7 +1692,7 @@ async function boot() {
   // test hook: #test-shop opens the part picker after night 1 (for screenshots)
   if (location.hash === "#test-shop") { newRun(); S.parts.push("amp", "coil"); nightClear(); }
   if (location.hash === "#test-swap") { newRun(); S.parts.push("amp", "amp", "coil", "echo", "owl", "short"); nightClear(); const k = shopChoices.findIndex(c => !S.parts.includes(c.id)); if (k >= 0) choosePart(k); }
-  if (location.hash.startsWith("#test-word")) { newRun(); setTimeout(() => { "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[i].ch = ch); S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); S.path = [0, 1, 2]; usingButtons = true; S.cursor = 3; if (location.hash.includes("fill")) S.score = S.shown = 17; if (location.hash.includes("parts")) { S.parts = ["battery", "battery", "knob", "echo", "amp"]; S.words = maxWords(); S.retunes = 1 + has("knob"); } nightCard = 0; }, 300); }
+  if (location.hash.startsWith("#test-word")) { newRun(); setTimeout(() => { "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[i].ch = ch); S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); S.path = [0, 1, 2]; usingButtons = true; S.cursor = 3; if (location.hash.includes("fill")) S.score = S.shown = 17; if (location.hash.includes("parts")) { S.parts = ["battery", "battery", "knob", "echo", "amp"]; S.words = maxWords(); S.retunes = maxRetunes(); } nightCard = 0; }, 300); }
 }
 boot();
 })();
