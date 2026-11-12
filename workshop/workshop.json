@@ -1,21 +1,115 @@
-{"topics": [
- {"id": "keys", "title": "Letter keys", "rounds": [
-  {"id": "r1", "status": "open",
-   "question": "Which look should the letter keys in the radio glass have?",
-   "found": "Six looks for the play area, all in the same room with the same value dots and the same lit state for traced keys. Play any of them in the game (press Select/Tab in the game to flip between all six too). Pick one, or tell me what to mix.",
-   "options": [
-    {"id": "1", "title": "Pixel keys", "note": "Chunky pixel letters on dark keys; traced keys light up amber with dark letters. Matches the room's pixels exactly.",
-     "images": [{"src": "img/keys-r1/1-close.png", "label": "Close-up"}, {"src": "img/keys-r1/1-full.png", "label": "Whole screen"}], "play": "play.html#keys-0"},
-    {"id": "2", "title": "Typewriter", "note": "Round cream caps in brass rings with typed ink letters; traced keys glow warm.",
-     "images": [{"src": "img/keys-r1/2-close.png", "label": "Close-up"}, {"src": "img/keys-r1/2-full.png", "label": "Whole screen"}], "play": "play.html#keys-1"},
-    {"id": "3", "title": "Glow tubes", "note": "Dark glass with a fine mesh and thin orange letters burning inside, like old display tubes.",
-     "images": [{"src": "img/keys-r1/3-close.png", "label": "Close-up"}, {"src": "img/keys-r1/3-full.png", "label": "Whole screen"}], "play": "play.html#keys-2"},
-    {"id": "4", "title": "Neon glass", "note": "No keys at all: glowing letters floating in the smoked glass, traced ones burn white.",
-     "images": [{"src": "img/keys-r1/4-close.png", "label": "Close-up"}, {"src": "img/keys-r1/4-full.png", "label": "Whole screen"}], "play": "play.html#keys-3"},
-    {"id": "5", "title": "Ivory tiles", "note": "Chunky ivory game tiles with engraved letters; traced tiles turn gold.",
-     "images": [{"src": "img/keys-r1/5-close.png", "label": "Close-up"}, {"src": "img/keys-r1/5-full.png", "label": "Whole screen"}], "play": "play.html#keys-4"},
-    {"id": "6", "title": "Brass keys", "note": "Polished brass plates with stamped letters; traced plates flare bright.",
-     "images": [{"src": "img/keys-r1/6-close.png", "label": "Close-up"}, {"src": "img/keys-r1/6-full.png", "label": "Whole screen"}], "play": "play.html#keys-5"}
-   ]}
- ]}
-]}
+{
+ "topics": [
+  {
+   "id": "keys",
+   "title": "Letter keys",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "decided",
+     "question": "Which look should the letter keys in the radio glass have?",
+     "found": "Six looks for the play area, all in the same room with the same value dots and the same lit state for traced keys. Play any of them in the game (press Select/Tab in the game to flip between all six too). Pick one, or tell me what to mix.",
+     "options": [
+      {
+       "id": "1",
+       "title": "Pixel keys",
+       "note": "Chunky pixel letters on dark keys; traced keys light up amber with dark letters. Matches the room's pixels exactly.",
+       "images": [
+        {
+         "src": "img/keys-r1/1-close.png",
+         "label": "Close-up"
+        },
+        {
+         "src": "img/keys-r1/1-full.png",
+         "label": "Whole screen"
+        }
+       ],
+       "play": "play.html#keys-0"
+      },
+      {
+       "id": "2",
+       "title": "Typewriter",
+       "note": "Round cream caps in brass rings with typed ink letters; traced keys glow warm.",
+       "images": [
+        {
+         "src": "img/keys-r1/2-close.png",
+         "label": "Close-up"
+        },
+        {
+         "src": "img/keys-r1/2-full.png",
+         "label": "Whole screen"
+        }
+       ],
+       "play": "play.html#keys-1"
+      },
+      {
+       "id": "3",
+       "title": "Glow tubes",
+       "note": "Dark glass with a fine mesh and thin orange letters burning inside, like old display tubes.",
+       "images": [
+        {
+         "src": "img/keys-r1/3-close.png",
+         "label": "Close-up"
+        },
+        {
+         "src": "img/keys-r1/3-full.png",
+         "label": "Whole screen"
+        }
+       ],
+       "play": "play.html#keys-2"
+      },
+      {
+       "id": "4",
+       "title": "Neon glass",
+       "note": "No keys at all: glowing letters floating in the smoked glass, traced ones burn white.",
+       "images": [
+        {
+         "src": "img/keys-r1/4-close.png",
+         "label": "Close-up"
+        },
+        {
+         "src": "img/keys-r1/4-full.png",
+         "label": "Whole screen"
+        }
+       ],
+       "play": "play.html#keys-3"
+      },
+      {
+       "id": "5",
+       "title": "Ivory tiles",
+       "note": "Chunky ivory game tiles with engraved letters; traced tiles turn gold.",
+       "images": [
+        {
+         "src": "img/keys-r1/5-close.png",
+         "label": "Close-up"
+        },
+        {
+         "src": "img/keys-r1/5-full.png",
+         "label": "Whole screen"
+        }
+       ],
+       "play": "play.html#keys-4"
+      },
+      {
+       "id": "6",
+       "title": "Brass keys",
+       "note": "Polished brass plates with stamped letters; traced plates flare bright.",
+       "images": [
+        {
+         "src": "img/keys-r1/6-close.png",
+         "label": "Close-up"
+        },
+        {
+         "src": "img/keys-r1/6-full.png",
+         "label": "Whole screen"
+        }
+       ],
+       "play": "play.html#keys-5"
+      }
+     ],
+     "chosen": "3"
+    }
+   ]
+  }
+ ]
+}

@@ -612,7 +612,7 @@ function drawMeter() {
 }
 /* ---------- key styles (workshop: Select cycles them, the choice is remembered) ---------- */
 const KEY_STYLES = ["Pixel keys", "Typewriter", "Glow tubes", "Neon glass", "Ivory tiles", "Brass keys"];
-let KS = 0; try { KS = Math.max(0, Math.min(KEY_STYLES.length - 1, +(localStorage.getItem("lexsig-keys") || 0))); } catch (e) {}
+let KS = 2; try { const v = localStorage.getItem("lexsig-keys"); if (v != null) KS = Math.max(0, Math.min(KEY_STYLES.length - 1, +v)); } catch (e) {}   // default: glow tubes (Chris picked it, keys-r1)
 { const m = location.hash.match(/keys-(\d)/); if (m) KS = Math.min(KEY_STYLES.length - 1, +m[1]); }
 function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
 function pips(x, y, v, col) { ctx.fillStyle = col; for (let k = 0; k < Math.min(4, Math.ceil(v / 2)); k++) ctx.fillRect(x - k * 6, y, 4, 4); }
