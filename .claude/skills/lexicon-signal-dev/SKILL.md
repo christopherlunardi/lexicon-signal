@@ -78,6 +78,9 @@ the same batch.
 - The radio's round meter (top right) was painted out in build.py (a mirror of the cabinet's plain left side, plus plain wood
   beside it); the spot is free for something better later. drawMeter is unused.
 - Never put a // comment in the middle of a line of code: it silently cuts off the calls after it (it hid the whole play area once).
+- The radio is radio5 (482 x 274 true size, glass 229 x 152): ChatGPT redraw of the old radio with a bigger glass, fixed with
+  fix_pixel_art (standard) and its rows evened out (SQUARE 3.236). The old 4x4 radio source stays in src/ for reference. The title's
+  painted glass is still the 4x4 picture, kept in proportion inside the bigger glass for now.
 - Bar contents always sit inside the bar's inner gold border, centred on one line with one equal gap.
 - Part icons (2026-11-12, Chris found the old ones not good enough): build.py cuts each icon as the biggest blob in its sheet cell
   (no neighbour bits or specks). Slots draw the full icon on the fine layer at one art pixel per fine pixel (full detail, no shrink),
@@ -130,7 +133,8 @@ the same batch.
   then while the word stays good (Chris, 2026-11-12: subtle, and the wipe only for a real word).
 
 ## Rules of play
-- 4x4 keys in the radio glass; trace touching letters (8 directions), 3+ letters. Score = signal (letter values) x boost (length-2)
+- 5x5 keys in the radio glass (N, NN in the script; 4x4 until 2026-11-12, when the radio was redrawn as radio5 with a glass about
+  25% bigger so the keys stay the same size; H5() maps an old 4x4 position onto the 5x5 grid); trace touching letters (8 directions), 3+ letters. Score = signal (letter values) x boost (length-2)
   x part multipliers; every word carries +2 signal so short words count. 6 words a night (one per lamp), 1 retune; targets
   30 x 1.4^(n-1) rounded to 5 (30, 40, 60, 80...); pick 1 of 3 parts. Night 1 was too hard at 40 in 5 words (Chris kept losing).
 - The goal is said plainly: a brass plaque that drops in at the top of the room with a clunk ("NIGHT 1 / BEAM 30 SIGNAL IN 6 WORDS"),

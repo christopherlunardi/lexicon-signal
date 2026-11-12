@@ -17,15 +17,16 @@ import pix
 
 SRC = "art/pixel/src/"
 OUT = "art/pixel/"
-SQUARE = {"uikit": 3.197}     # sources whose fixed rows need evening out: real pixel size in source px (both axes)
+SQUARE = {"uikit": 3.197, "radio5": 3.236}     # sources whose fixed rows need evening out: real pixel size in source px (both axes)
 SPRITES = {
     # the window (2026-11-12, Chris picked design 7 of 9: tall, stained glass across the top). Its source had no recoverable grid, so
     # window7_fixed.png is a k-centroid downscale (art/pixel/kdown.py) to 141x233: same width as before, taller.
     "window": {"src": "window7", "points": {"beacon": (174.5, 210.5)}},
-    "radio": {"src": "radio", "points": {
-        "glass0": (552, 214), "glass1": (1102, 688), "dial0": (462, 84), "dial1": (1148, 150), "meter": (1312, 146), "meterR": (1392, 146),
-        "lamp0": (583, 783), "lamp1": (678, 783), "lamp2": (773, 783), "lamp3": (868, 783), "lamp4": (963, 783), "lamp5": (1062, 783),
-        "knobL": (358, 745), "knobR": (1300, 745)}},
+    # the radio (2026-11-12): redrawn with a bigger glass for a 5x5 grid (radio5); the 4x4 one ("radio" source) is kept for reference
+    "radio": {"src": "radio5", "points": {
+        "glass0": (429, 222), "glass1": (1171, 714), "dial0": (412, 106), "dial1": (1163, 174), "meter": (1440, 140), "meterR": (1460, 140),
+        "lamp0": (559, 797), "lamp1": (655, 797), "lamp2": (751, 797), "lamp3": (847, 797), "lamp4": (943, 797), "lamp5": (1041, 797),
+        "knobL": (276, 791), "knobR": (1328, 790)}},
     # the sideboard is a left end, one repeating drawer bay and a right end, so it stretches to any width
     "sb_left": {"src": "sideboard", "crop": (12, 360, 72, 589)},
     "sb_mid": {"src": "sideboard", "crop": (72, 360, 327, 589)},
@@ -78,7 +79,7 @@ def main():
             WIN_BOX[:] = [box[0], box[1]]
         piece = im.crop(box)
         if "crop" not in s: x0, y0 = box[0] / fx, box[1] / fy
-        if name == "radio":
+        if name == "radio" and s["src"] == "radio":
             # the round meter top right did nothing (Chris 2026-11-12): wood over it, a mirror of the same spot on the left of the
             # cabinet (the cabinet is symmetrical), so the space is clean and free for something better later
             ra = np.asarray(piece).copy(); x0, y0, x1, y1 = 308, 5, 364, 60; rw_ = ra.shape[1]

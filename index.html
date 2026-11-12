@@ -170,7 +170,8 @@ const $ = (id) => document.getElementById(id);
 const DICT = new Set((window.LEX_WORDS || "").split(" "));
 const cv = $("screen"), ctx = cv.getContext("2d");          // the screen: 2 fine pixels per world pixel
 let H = 425, BAR_H = 120, SCENE_H = 305; const FINE = 2;   // narrower screens (phones) get a taller world with a two-row bar (H 495, bar 190)
-const PART_SLOTS = 5;   // a game rule, the same on every screen: copies of one part stack in one slot
+const PART_SLOTS = 5;
+const N = 5, NN = N * N;   // the grid of keys in the glass: 5 x 5 (2026-11-12, the radio was redrawn with a bigger glass for it)   // a game rule, the same on every screen: copies of one part stack in one slot
 const BIN = { t: 12, b: 12, l: 14, r: 14 };                  // the bar's inner gold border: everything sits inside it
 let W = 712, TK = 1;   // TK: text scale, 1.5 when the screen is small (phones) so typed text stays readable
 const world = document.createElement("canvas"), wctx = world.getContext("2d");   // the room, keys and bar, in world pixels
@@ -299,12 +300,12 @@ function layout() {
 function computeLayout() {
   const rw = R("radio")[2], wide = W >= 650;
   L.radioX = wide ? W - rw - 21 : W - rw - 5; L.radioY = 18;
-  L.winX = wide ? Math.max(18, Math.round((L.radioX - R("window")[2]) / 2)) : L.radioX - R("window")[2] + 10; L.winY = 22;   // the tall window (225 high) sits higher
+  L.winX = wide ? Math.max(18, Math.round((L.radioX - R("window")[2]) / 2)) : Math.max(L.radioX - R("window")[2] + 10, 20 - P("window").beacon[0]); L.winY = 22;   // the tall window (225 high) sits higher
   const bp = P("window").beacon; L.beacon = { x: L.winX + bp[0], y: L.winY + bp[1] };
   const rp = P("radio");
   L.glass = { x: L.radioX + rp.glass0[0], y: L.radioY + rp.glass0[1], w: rp.glass1[0] - rp.glass0[0], h: rp.glass1[1] - rp.glass0[1] };
-  L.gap = 4; L.tw = Math.floor((L.glass.w - 10 - 3 * L.gap) / 4); L.th = Math.floor((L.glass.h - 10 - 3 * L.gap) / 4);
-  L.gx = L.glass.x + Math.floor((L.glass.w - (4 * L.tw + 3 * L.gap)) / 2); L.gy = L.glass.y + Math.floor((L.glass.h - (4 * L.th + 3 * L.gap)) / 2);
+  L.gap = 4; L.tw = Math.floor((L.glass.w - 10 - (N - 1) * L.gap) / N); L.th = Math.floor((L.glass.h - 10 - (N - 1) * L.gap) / N);
+  L.gx = L.glass.x + Math.floor((L.glass.w - (N * L.tw + (N - 1) * L.gap)) / 2); L.gy = L.glass.y + Math.floor((L.glass.h - (N * L.th + (N - 1) * L.gap)) / 2);
   L.dial = { x: L.radioX + rp.dial0[0] + 1, y: L.radioY + rp.dial0[1] + 1, w: rp.dial1[0] - rp.dial0[0] - 2, h: rp.dial1[1] - rp.dial0[1] - 2 };
   L.meter = { x: L.radioX + rp.meter[0], y: L.radioY + rp.meter[1], r: rp.meterR[0] - rp.meter[0] };
   // the true middle of each lamp socket (measured on the art: half a pixel right of the marked point, and the fifth socket one more)
@@ -331,7 +332,8 @@ function computeLayout() {
     L.plateY0 = Math.round(mid - ph - 4); L.plateY1 = Math.round(mid + 4); L.slotY = Math.round(mid - sh / 2);
   }
 }
-const tileXY = (i) => ({ x: L.gx + (i % 4) * (L.tw + L.gap), y: L.gy + ((i / 4) | 0) * (L.th + L.gap) });
+const tileXY = (i) => ({ x: L.gx + (i % N) * (L.tw + L.gap), y: L.gy + ((i / N) | 0) * (L.th + L.gap) });
+const H5 = (i) => (i % 4) + ((i / 4) | 0) * N;   // a 4x4 position (old layouts, the demo words) on the 5x5 grid
 const tileC = (i) => { const p = tileXY(i); return { x: p.x + L.tw / 2, y: p.y + L.th / 2 }; };
 
 /* ---- the room: drawn once per layout, lit with a baked light map, dithered into the palette ---- */
@@ -401,7 +403,7 @@ let S = null, uid = 0;
 const has = (id) => S.parts.filter(p => p === id).length;
 const maxWords = () => BASE_WORDS + has("battery");
 const maxRetunes = () => 1 + has("knob");
-function fresh(phase) { return { phase, night: 1, score: 0, shown: 0, total: 0, parts: [], words: BASE_WORDS, retunes: 1, firstWord: true, grid: [], path: [], cursor: 5, best: { word: "", pts: 0 }, target: 30, log: [] }; }
+function fresh(phase) { return { phase, night: 1, score: 0, shown: 0, total: 0, parts: [], words: BASE_WORDS, retunes: 1, firstWord: true, grid: [], path: [], cursor: 6, best: { word: "", pts: 0 }, target: 30, log: [] }; }
 function pickLetter() {
   const filter = S && has("filter"), vowel = S && has("vowel"); let total = 0; const pool = [];
   for (const [k, w0] of Object.entries(WEIGHTS)) { if (filter && HARD.has(k)) continue; const w = w0 * (vowel && VOWELS.has(k) ? 1.7 : 1); pool.push([k, w]); total += w; }
@@ -409,29 +411,29 @@ function pickLetter() {
 }
 const newTile = () => ({ id: ++uid, ch: pickLetter(), hot: false, yOff: 0, vy: 0, wait: 0, lit: 0, land: 0, seed: Math.random() });
 const vowelCount = () => S.grid.filter(t => VOWELS.has(t.ch)).length;
-function ensureHot() { if (!has("carrier")) { S.grid.forEach(t => t.hot = false); return; } if (!S.grid.some(t => t.hot)) S.grid[(Math.random() * 16) | 0].hot = true; }
+function ensureHot() { if (!has("carrier")) { S.grid.forEach(t => t.hot = false); return; } if (!S.grid.some(t => t.hot)) S.grid[(Math.random() * NN) | 0].hot = true; }
 function fillGrid(dropIn) {
-  S.grid = Array.from({ length: 16 }, newTile);
-  let g = 0; while (vowelCount() < 4 && g++ < 50) S.grid[(Math.random() * 16) | 0].ch = "AEIOU"[(Math.random() * 5) | 0];
+  S.grid = Array.from({ length: NN }, newTile);
+  let g = 0; while (vowelCount() < 6 && g++ < 50) S.grid[(Math.random() * NN) | 0].ch = "AEIOU"[(Math.random() * 5) | 0];
   ensureHot();
-  if (dropIn) S.grid.forEach((t, i) => { const row = (i / 4) | 0; t.yOff = -(4 - row) * (L.th + L.gap) - 40 - (3 - row) * 8; t.vy = 0; t.wait = (i % 4) * 3; });
+  if (dropIn) S.grid.forEach((t, i) => { const row = (i / N) | 0; t.yOff = -(N - row) * (L.th + L.gap) - 40 - (N - 1 - row) * 8; t.vy = 0; t.wait = (i % N) * 3; });
 }
 // used letters vanish; letters above fall down their column; new letters fall in from the top
 function collapse(used) {
   const step = L.th + L.gap, usedSet = new Set(used), hold = PA() ? 12 : 0;   // the round-2 looks let the letters lift off first
-  for (let col = 0; col < 4; col++) {
-    const keep = []; for (let row = 3; row >= 0; row--) { const i = row * 4 + col; if (!usedSet.has(i)) keep.push({ t: S.grid[i], from: row }); }
-    const k = 4 - keep.length;
-    for (let j = 0; j < 4; j++) { const row = 3 - j, i = row * 4 + col;
+  for (let col = 0; col < N; col++) {
+    const keep = []; for (let row = N - 1; row >= 0; row--) { const i = row * N + col; if (!usedSet.has(i)) keep.push({ t: S.grid[i], from: row }); }
+    const k = N - keep.length;
+    for (let j = 0; j < N; j++) { const row = N - 1 - j, i = row * N + col;
       if (j < keep.length) { const { t, from } = keep[j]; t.yOff += (from - row) * step; t.vy = 0; t.wait = 4 + col * 2 + hold; S.grid[i] = t; }
       else { const t = newTile(), n = j - keep.length; t.yOff = -(k - n) * step - 14 - (k - n) * 5; t.wait = 10 + col * 2 + hold; S.grid[i] = t; } }
   }
-  let g = 0; while (vowelCount() < 3 && g++ < 50) { const fr = S.grid.filter(t => t.yOff < -1 && !VOWELS.has(t.ch)); if (!fr.length) break; fr[(Math.random() * fr.length) | 0].ch = "AEIOU"[(Math.random() * 5) | 0]; }
+  let g = 0; while (vowelCount() < 5 && g++ < 50) { const fr = S.grid.filter(t => t.yOff < -1 && !VOWELS.has(t.ch)); if (!fr.length) break; fr[(Math.random() * fr.length) | 0].ch = "AEIOU"[(Math.random() * 5) | 0]; }
   ensureHot();
 }
 const moving = () => S.grid.some(t => t.yOff !== 0 || t.vy !== 0);
 const pathWord = (p = S.path) => p.map(i => S.grid[i].ch).join("").toLowerCase();
-const adjacent = (a, b) => a !== b && Math.abs((a % 4) - (b % 4)) <= 1 && Math.abs(((a / 4) | 0) - ((b / 4) | 0)) <= 1;
+const adjacent = (a, b) => a !== b && Math.abs((a % N) - (b % N)) <= 1 && Math.abs(((a / N) | 0) - ((b / N) | 0)) <= 1;
 const isValid = (p = S.path) => { const w = pathWord(p); return w.length >= 3 && DICT.has(w); };
 function scoreOf(p) {
   const tiles = p.map(i => S.grid[i]), word = pathWord(p), len = word.length;
@@ -535,9 +537,9 @@ let flyers = [], sparks = [], pops = [], beams = [], beaconFlash = 0, shake = 0,
 function burst(x, y, n, col) { for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, s = .8 + Math.random() * 2.6; sparks.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 1, life: 1, d: .025 + Math.random() * .03, col }); } }
 function update() {
   const thudCols = new Set();
-  for (let i = 0; i < 16; i++) { const t = S.grid[i]; if (!t) continue; if (t.wait > 0) { t.wait--; continue; }
+  for (let i = 0; i < NN; i++) { const t = S.grid[i]; if (!t) continue; if (t.wait > 0) { t.wait--; continue; }
     if (t.yOff < 0 || t.vy !== 0) { t.vy += .72; t.yOff += t.vy;
-      if (t.yOff >= 0) { if (t.vy > 2.8) { t.yOff = 0; t.vy = -t.vy * .22; thudCols.add(i % 4); t.land = 1; if (KS === 8) { const c = tileC(i); burst(c.x, c.y + L.th / 2, 4, C.amber); } } else { t.yOff = 0; t.vy = 0; } } } }
+      if (t.yOff >= 0) { if (t.vy > 2.8) { t.yOff = 0; t.vy = -t.vy * .22; thudCols.add(i % N); t.land = 1; if (KS === 8) { const c = tileC(i); burst(c.x, c.y + L.th / 2, 4, C.amber); } } else { t.yOff = 0; t.vy = 0; } } } }
   if (thudCols.size) { Sound.thud(thudCols.size); shake = Math.max(shake, 2); }
   for (let k = flyers.length - 1; k >= 0; k--) { const f = flyers[k]; f.t++; if (f.t >= f.dur) { flyers.splice(k, 1); if (f.last && pending) arrive(); } }
   for (const p of sparks) { p.x += p.vx; p.y += p.vy; p.vy += .08; p.vx *= .97; p.life -= p.d; } sparks = sparks.filter(p => p.life > 0);
@@ -598,7 +600,7 @@ function drawGrid() {
   const g = L.glass; wctx.save(); wctx.beginPath(); wctx.rect(g.x, g.y, g.w, g.h); wctx.clip();
   const n = Math.floor(staticLvl * 340); for (let k = 0; k < n; k++) dot(wctx, g.x + Math.random() * g.w, g.y + Math.random() * g.h, Math.random() < .5 ? C.snow : C.snowDim);
   const ok = S.phase === "play" && isValid(), sel = new Set(S.path);
-  for (let i = 0; i < 16; i++) { const t = S.grid[i]; if (!t || KS !== 0) continue; const p = tileXY(i), x = p.x, y = Math.round(p.y + t.yOff), on = sel.has(i);
+  for (let i = 0; i < NN; i++) { const t = S.grid[i]; if (!t || KS !== 0) continue; const p = tileXY(i), x = p.x, y = Math.round(p.y + t.yOff), on = sel.has(i);
     wctx.fillStyle = C.keyShadow; wctx.fillRect(x + 1, y + 2, L.tw, L.th);
     wctx.fillStyle = on ? (ok ? C.gold : C.amber) : C.keyFill; wctx.fillRect(x, y, L.tw, L.th);
     wctx.fillStyle = on ? (ok ? C.hot : C.selEdge) : C.keyEdge; wctx.fillRect(x, y, L.tw, 1); wctx.fillRect(x, y + L.th - 1, L.tw, 1); wctx.fillRect(x, y, 1, L.th); wctx.fillRect(x + L.tw - 1, y, 1, L.th);
@@ -728,7 +730,7 @@ function drawKeyLetters() {
   // the traced path, drawn first so keys sit on it (smooth styles)
   if (KS !== 0 && S.path.length > 1) { ctx.lineCap = ctx.lineJoin = "round"; ctx.beginPath(); S.path.forEach((i, k) => { const c = tileC(i); const y = FX(c.y + S.grid[i].yOff); k ? ctx.lineTo(FX(c.x), y) : ctx.moveTo(FX(c.x), y); });
     ctx.strokeStyle = ok ? "#fff2c8" : "#ffb347"; ctx.lineWidth = 7; ctx.shadowColor = ok ? "#ffd27a" : "#ff9a30"; ctx.shadowBlur = 16; ctx.stroke(); ctx.shadowBlur = 0; }
-  for (let i = 0; i < 16; i++) { const t = S.grid[i]; if (!t || t.ch === " ") continue; const p = tileXY(i), on = sel.has(i), hv = i === cand && !usingButtons;
+  for (let i = 0; i < NN; i++) { const t = S.grid[i]; if (!t || t.ch === " ") continue; const p = tileXY(i), on = sel.has(i), hv = i === cand && !usingButtons;
     const x = FX(p.x), y = FX(p.y + t.yOff), w = FX(L.tw), hh = FX(L.th), cx = x + w / 2, cy = y + hh / 2, v = VALUES[t.ch];
     const ch = t.ch === "Qu" ? "Qu" : t.ch;
     if (KS === 0) {
@@ -966,7 +968,7 @@ function paDotGlass({ G, tiles, ok, low }) {
   const frameOf = (x, y, a) => { ctx.globalAlpha = a; ctx.fillStyle = "#0e0806"; rr(ctx, x + 1, y - 1, w0 - 2, h0 + 2, 5); ctx.fill(); ctx.strokeStyle = "rgba(130,86,52,.4)"; ctx.lineWidth = 1.5; ctx.stroke(); };
   for (const g of ghosts) if (g.t < 16) { const a = 1 - g.t / 16, x = FX(g.x) - w0 / 2, y = FX(g.y) - h0 / 2; frameOf(x, y, a);
     for (let r = 0; r < 7; r++) for (let c = 0; c < 9; c++) ctx.drawImage(OFF, x + 4 + c * 6, y + 4 + r * 6, 6, 6); ctx.globalAlpha = 1; }
-  for (const o of tiles) { const { t, x, y, w, hh } = o, lit = t.lit, mx = x + 4, my = y + 4, b = bits(o.ch === "Qu" ? "Q" : o.ch), qu = o.ch === "Qu", lc = qu ? 1 : 2;
+  for (const o of tiles) { const { t, x, y, w, hh } = o, lit = t.lit, mx = x + Math.round((w - 54) / 2), my = y + Math.round((hh - 42) / 2), b = bits(o.ch === "Qu" ? "Q" : o.ch), qu = o.ch === "Qu", lc = qu ? 1 : 2;
     const scr = t.land > .4, dim = 1 - low * .35 * (1 - lit), wave = o.on && ok;
     // (picked letters stay steady until the traced word is a real word; then they flicker too)
     // flicker: now and then a module's letter stutters for a few frames (each module on its own random clock), and its dots shimmer faintly
@@ -1008,7 +1010,7 @@ const PA_CUR = [["#ffe9c4", "#ff8a20"], null, ["#ffe9c4", "#ff8a20"], ["#fff3d6"
 function drawPlayArea() {
   const g = L.glass, G = { x: FX(g.x), y: FX(g.y), w: FX(g.w), h: FX(g.h) }, play = S.phase === "play", ok = play && isValid(), cand = candidate(), low = play ? clamp01(1 - S.words / maxWords()) : 0, last = play && S.words === 1;
   ctx.save(); ctx.beginPath(); ctx.rect(G.x, G.y, G.w, G.h); ctx.clip(); ctx.imageSmoothingEnabled = true; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineCap = ctx.lineJoin = "round";
-  const tiles = []; for (let i = 0; i < 16; i++) { const t = S.grid[i]; if (!t || t.ch === " ") continue; const p = tileXY(i), x = FX(p.x), y = FX(p.y + t.yOff), w = FX(L.tw), hh = FX(L.th), k = S.path.indexOf(i);
+  const tiles = []; for (let i = 0; i < NN; i++) { const t = S.grid[i]; if (!t || t.ch === " ") continue; const p = tileXY(i), x = FX(p.x), y = FX(p.y + t.yOff), w = FX(L.tw), hh = FX(L.th), k = S.path.indexOf(i);
     tiles.push({ t, i, x, y, w, hh, cx: x + w / 2, cy: y + hh / 2, on: k >= 0, k, hv: i === cand, v: VALUES[t.ch], dots: Math.min(4, Math.ceil(VALUES[t.ch] / 2)), ch: t.ch }); }
   PA_DRAW[KS - 6]({ G, tiles, ok, low, last, play });
   for (const o of tiles) if (o.t.hot) { ctx.strokeStyle = (frame >> 3) & 1 ? "#ff3a2e" : "#ff8060"; ctx.lineWidth = 3; ctx.shadowColor = "#ff3a2e"; ctx.shadowBlur = 14; rr(ctx, o.x - 1, o.y - 2, o.w + 1, o.hh + 2, 9); ctx.stroke(); ctx.shadowBlur = 0; }
@@ -1377,7 +1379,7 @@ function drawTitle() {
 // radio close-up: the room seen closer (every art pixel 3 fine pixels, a clean 1.5x), the radio centred and filling the screen. The
 // title lights up in its glass as keys (LEXI / CON / SIGN / AL), one key at a time, then the lamps, then a brass PRESS START plate.
 function drawTitleRadio(T) {
-  const ease = (u) => { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); }, Z = 3, rw = R("radio")[2], rh = R("radio")[3];
+  const ease = (u) => { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); }, rw = R("radio")[2], rh = R("radio")[3], Z = rw * 3 <= cv.width - 20 && rh * 3 <= cv.height - 60 ? 3 : 2;
   const ox = Math.round(cv.width / 2 - rw * Z / 2), oy = Math.max(10, Math.round((cv.height - rh * Z) / 2) - 70);
   const zx = (wx) => ox + (wx - L.radioX) * Z, zy = (wy) => oy + (wy - L.radioY) * Z;
   // wallpaper first (the room canvas doesn't reach every edge this close), dimmed to the room's light, then the room itself
@@ -1390,7 +1392,7 @@ function drawTitleRadio(T) {
   // the title glass is Chris's painted picture, in two versions: everything unlit, and lit. Each letter's box of the lit one fades in
   // over the unlit one, so letters switch on one at a time with a stutter, breathe, and now and then one drops out for a moment.
   if (titleGlass.ready) {
-    const tg = titleGlass, sx = gw / tg.w, sy = gh / tg.h; ctx.save(); ctx.imageSmoothingEnabled = true; ctx.drawImage(tg.dim, gx, gy, gw, gh);
+    const tg = titleGlass, sx = Math.min(gw / tg.w, gh / tg.h), sy = sx, ox2 = gx + (gw - tg.w * sx) / 2, oy2 = gy + (gh - tg.h * sy) / 2; ctx.save(); ctx.imageSmoothingEnabled = true; ctx.drawImage(tg.dim, ox2, oy2, tg.w * sx, tg.h * sy);   // (the painted 4x4 glass, kept in proportion in the bigger glass for now)
     if (!glassFl || T < 2) { let t = 36; glassFl = tg.boxes.map(() => { t += 3 + Math.random() * 8; const st = []; for (let i = 0, n = 4 + Math.random() * 10; i < n; i++) st.push(Math.random() < .5 ? .1 + Math.random() * .3 : .7 + Math.random() * .3);
       return { on: Math.round(t), start: st, next: 0, seq: null, i: 0 }; }); }
     tg.boxes.forEach((b, k) => { const f = glassFl[k], on = T - f.on; if (on === 0) Sound.blip(1 + k % 12);
@@ -1402,7 +1404,7 @@ function drawTitleRadio(T) {
           else for (let i = 0, n = 2 + Math.random() * 7; i < n; i++) s.push(Math.random() < .6 ? Math.random() * .35 : .6 + Math.random() * .4);
           f.seq = s; f.i = 0; if (!long && Math.random() < .3) Sound.tick(); }
         if (f.seq) { v = f.seq[f.i >> (f.seq.length > 12 ? 0 : 1)] ?? 1; if (++f.i >= f.seq.length * (f.seq.length > 12 ? 1 : 2)) { f.seq = null; f.next = frame + 15 + Math.random() * (Math.random() < .3 ? 40 : 200); } } }
-      if (v <= 0) return; const bx = gx + b[0] * sx, by = gy + b[1] * sy, bw = (b[2] - b[0]) * sx, bh = (b[3] - b[1]) * sy;
+      if (v <= 0) return; const bx = ox2 + b[0] * sx, by = oy2 + b[1] * sy, bw = (b[2] - b[0]) * sx, bh = (b[3] - b[1]) * sy;
       ctx.globalAlpha = v; ctx.drawImage(tg.lit, b[0], b[1], b[2] - b[0], b[3] - b[1], bx, by, bw, bh);
       ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 1;
       bloom(bx + bw / 2, by + bh / 2, Math.max(bw, bh) * 1.1, "255,150,50", .3 * v); ctx.globalCompositeOperation = "source-over"; });
@@ -1436,17 +1438,17 @@ function drawTitleRadio(T) {
    three short lines, dots for where you are. A or right: next. B or left: back (B on the first card: back to the title). Tap the
    right half of the screen for next, the left half for back. KEEP THESE CARDS TRUE TO THE GAME when its rules or controls change. */
 const HOW = { on: false, card: 0, t: 0, shop: false };
-const HOW_GRID = "DATEROGSLINKMUSE";   // D A T E / R O G S / L I N K / M U S E: words to show are DOTE, RATE (not touching first), LINK, MUSE
-const howPick = (i) => [[0, () => { S.cursor = i; usingButtons = true; }], [12, () => tapTile(i)]];
+const HOW_GRID = "DATEPROGSHLINKAMUSETBRCOY";   // 5x5: the old 4x4 demo board in the top left (D A T E / R O G S / L I N K / M U S E) plus a column and row   // (demo words are DOTE, RATE (not touching first), LINK, MUSE
+const howPick = (i4) => { const i = H5(i4); return [[0, () => { S.cursor = i; usingButtons = true; }], [12, () => tapTile(i)]]; };
 const HOW_CARDS = [
   { title: "SPELL A WORD", keys: ["DPAD", "A"], len: 250, text: "Pick letters that touch: side to side or corner to corner. Three or more letters that make a real word light up and sweep with light.",
     setup() {}, steps: [[30, 0], [62, 5], [94, 2], [126, 3]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])) },
   { title: "LETTERS MUST TOUCH", keys: [], len: 290, text: "Each new letter has to touch the last one. A letter that doesn't touch won't join the word: pick one that does.",
     setup() {}, steps: [[30, 4], [62, 1], [94, 2], [140, 15], [200, 3]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])) },
   { title: "SEND IT", keys: ["A"], len: 330, text: "Press A on the last letter again, or tap it again, to send the word. Its letters fly to the tower and the signal comes back down into the tube.",
-    setup() {}, steps: [...[[30, 8], [58, 9], [86, 10], [114, 11]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(11)]] },
+    setup() {}, steps: [...[[30, 8], [58, 9], [86, 10], [114, 11]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(11))]] },
   { title: "FILL THE TUBE", keys: [], len: 340, text: "Fill the signal tube before the lamps go dark. Every word you send uses one lamp. Longer words and letters with more dots fill it faster.",
-    setup() { S.score = S.shown = 18; S.words = 3; }, steps: [...[[30, 12], [58, 13], [86, 14], [114, 15]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(15)]] },
+    setup() { S.score = S.shown = 18; S.words = 3; }, steps: [...[[30, 12], [58, 13], [86, 14], [114, 15]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(15))]] },
   { title: "STUCK? RETUNE", keys: ["START"], len: 220, text: "Retune swaps every letter for new ones, once a night. The small light over the right knob shows you still have it.",
     setup() {}, steps: [[80, () => retune()]] },
   { title: "RADIO PARTS", keys: [], len: 260, text: "Clear a night to fit one of three radio parts. They sit in the slots below and light up when they help. That's the basics!",
@@ -1460,7 +1462,7 @@ function howReset() {
 }
 function howStart() { HOW.on = true; HOW.card = 0; HOW.t = 0; Sound.ensure(); Sound.music(); howReset(); HOW_CARDS[0].setup(); Sound.click(); }
 function howGo(k) { HOW.card = k; HOW.t = 0; howReset(); HOW_CARDS[k].setup(); Sound.click(); }
-function howExit() { HOW.on = false; S = fresh("title"); fillGrid(false); "LEXICONSIGNAL".split("").forEach((ch, k) => { S.grid[[0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13][k]].ch = ch; }); [7, 14, 15].forEach(i => S.grid[i].ch = " ");
+function howExit() { HOW.on = false; S = fresh("title"); fillGrid(false); S.grid.forEach(t => t.ch = " "); "LEXICONSIGNAL".split("").forEach((ch, k) => { S.grid[H5([0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13][k])].ch = ch; });
   titleT = 0; titleSkip = true; titleSel = 1; flyers = []; beams = []; busy = 0; pending = null; Sound.click(); }
 function howKey(k) { if (!HOW.on) return false;
   if (k === "a" || k === "right") { if (HOW.card < HOW_CARDS.length - 1) howGo(HOW.card + 1); else howExit(); }
@@ -1613,7 +1615,7 @@ function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ?
   if (S.phase === "shop") { shopFocus = (shopFocus + (dx || dy) + shopChoices.length) % shopChoices.length; Sound.click(); return; }
   if (S.phase === "swap") { const n = partSlots().length; swapFocus = (swapFocus + (dx || dy) + n) % n; Sound.click(); return; }
   if (S.phase !== "play") return;
-  const x = S.cursor % 4 + dx, y = ((S.cursor / 4) | 0) + dy; S.cursor = ((y + 4) % 4) * 4 + ((x + 4) % 4); knobA.L += .35 * (dx + dy); Sound.tickMove();
+  const x = S.cursor % N + dx, y = ((S.cursor / N) | 0) + dy; S.cursor = ((y + N) % N) * N + ((x + N) % N); knobA.L += .35 * (dx + dy); Sound.tickMove();
 }
 function titleBusy() { if (S.phase === "title" && !titleSkip && titleT < TITLE_LEN[TS]) { titleSkip = true; return true; } return false; }
 function start() { Sound.ensure(); Sound.music(); newRun(); }
@@ -1634,7 +1636,7 @@ window.addEventListener("keydown", (e) => {
   if (k === "m") { e.preventDefault(); Sound.ensure(); Sound.toggle(); }
 });
 function toWorld(e) { const r = cv.getBoundingClientRect(), s = Math.min(r.width / W, r.height / H), ox = (r.width - W * s) / 2, oy = (r.height - H * s) / 2; return { x: (e.clientX - r.left - ox) / s, y: (e.clientY - r.top - oy) / s }; }
-function keyAt(p, strict) { for (let i = 0; i < 16; i++) { const c = tileC(i), mx = strict ? L.tw * .38 : L.tw * .6, my = strict ? L.th * .38 : L.th * .6; if (Math.abs(p.x - c.x) < mx && Math.abs(p.y - c.y) < my) return i; } return -1; }
+function keyAt(p, strict) { for (let i = 0; i < NN; i++) { const c = tileC(i), mx = strict ? L.tw * .38 : L.tw * .6, my = strict ? L.th * .38 : L.th * .6; if (Math.abs(p.x - c.x) < mx && Math.abs(p.y - c.y) < my) return i; } return -1; }
 let down = null, dragging = false;
 cv.addEventListener("pointerdown", (e) => {
   Sound.ensure(); usingButtons = false; e.preventDefault(); if (introPress()) return; const p = toWorld(e);
@@ -1933,15 +1935,14 @@ async function boot() {
   loadTitleGlass();
   // only our own test and Workshop links skip straight to the title (the page can be opened with other hashes, which must not skip the intro)
   S = fresh(/^#(test-|keys-|title-)/.test(location.hash) ? "title" : "splash"); barShow = 0; layout(); fillGrid(false);
-  "LEXICONSIGNAL".split("").forEach((ch, k) => { S.grid[[0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13][k]].ch = ch; });
-  [7, 14, 15].forEach(i => S.grid[i].ch = " ");
+  S.grid.forEach(t => t.ch = " "); "LEXICONSIGNAL".split("").forEach((ch, k) => { S.grid[H5([0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13][k])].ch = ch; });
   // test hook: a hash ending in -step does not run by itself; window.LEXSTEP(n) advances n frames (for recording clips frame by frame)
   devHooks();
   if (/-step$/.test(location.hash)) window.LEXSTEP = (n = 1) => { while (n-- > 0) { update(); draw(); } }; else requestAnimationFrame(loop);
   // test hook: #test-shop opens the part picker after night 1 (for screenshots)
   if (location.hash === "#test-shop") { newRun(); S.parts.push("amp", "coil"); nightClear(); }
   if (location.hash === "#test-swap") { newRun(); S.parts.push("amp", "amp", "coil", "echo", "owl", "short"); nightClear(); const k = shopChoices.findIndex(c => !S.parts.includes(c.id)); if (k >= 0) choosePart(k); }
-  if (location.hash.startsWith("#test-word")) { newRun(); setTimeout(() => { "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[i].ch = ch); S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); S.path = [0, 1, 2]; usingButtons = true; S.cursor = 3; if (location.hash.includes("fill")) S.score = S.shown = 17; if (location.hash.includes("parts")) { S.parts = ["battery", "battery", "knob", "echo", "amp"]; S.words = maxWords(); S.retunes = maxRetunes(); } nightCard = 0; }, 300); }
+  if (location.hash.startsWith("#test-word")) { newRun(); setTimeout(() => { "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); S.path = [0, 1, 2]; usingButtons = true; S.cursor = 3; if (location.hash.includes("fill")) S.score = S.shown = 17; if (location.hash.includes("parts")) { S.parts = ["battery", "battery", "knob", "echo", "amp"]; S.words = maxWords(); S.retunes = maxRetunes(); } nightCard = 0; }, 300); }
 }
 boot();
 })();
