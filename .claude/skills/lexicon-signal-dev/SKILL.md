@@ -39,12 +39,13 @@ the same batch.
   behind the radio's left edge (beacon still visible) and show fewer part slots.
 - Bar contents always sit inside the bar's inner gold border, centred on one line with one equal gap.
 - Part icons: full size (iconL_) in the part picker, exactly half (icon_, 2x2 majority) in the bar's slots.
-- Display rules: the screen canvas is twice the world size (FINE = 2). The room, keys, bar and menus panels draw in world pixels and
+- Display rules: the screen canvas is twice the world size (FINE = 2). The room, keys, bar and menu panels draw in world pixels and
   are scaled up; every display draws on the fine grid on top: the dial is a lit amber dot-matrix (all dot positions faintly visible,
   marquee when idle), the meter needle and ticks are fine lines, the log types itself out in ink with a blinking cursor (older lines
   fade), plates are stamped (dark letters, light edge under), counts on slots are outlined. All lettering is our own 5x7 font (F5 in
   the script): ink = 5x7 at 2 fine px, dot = 5x7 dots, key = the same letters smoothed 2x and made bold. Selected keys light up
   amber with dark letters. On small screens (phones) text scales 1.5x (TK) and the log shows 2 lines.
+
 ## Where things live
 - `index.html`: the whole game, written as a page body (the artifact host adds doctype/head). Shell CSS first (the studio's
   handheld: d-pad, A/B, Select/Start; `padmode` with a controller, `inapp` for the future launcher), then one canvas and one script.
@@ -68,12 +69,11 @@ the same batch.
   When it can be sent the whole dial lights warm, the word and number go bright and the number gets a "+". A hovered key (mouse,
   or the button cursor) previews dimly: its letter after the word and "+gain" before the number. Every key shows its value as dots.
 - Input: buttons first (A add letter, A on the last letter sends, B back, Start/Y retune, Select/X/Tab key style, M sound),
-  touch/mouse drag or tap.
+  touch/mouse drag or tap. Gamepad standard mapping, bottom face = A.
 - Key area workshop (open, 2026-11-12): six key styles live in the game (KEY_STYLES: pixel keys, typewriter, glow tubes, neon glass,
   ivory tiles, brass keys), Select cycles them, remembered per browser; `#test-word-keys-N` opens style N. Smooth styles draw on the
   fine layer with web fonts (Special Elite, Bungee Hairline, Bungee, Limelight). Value dots stay in every style (Chris likes them), bright enough to read on unselected keys.
   When he picks one, keep it, drop the rest, and give Select back to sound.
-  Gamepad standard mapping, bottom face = A.
 
 ## Every change
 1. Art: save the upload to `art/pixel/src/`, run it through fix_pixel_art (save as NAME_fixed.png), add its entry in `build.py`
