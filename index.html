@@ -1693,6 +1693,46 @@ function studioEnd() {
   studio.node = null; studio.skip = false; S.phase = "title"; titleT = 0; titleSkip = false; Sound.music();
   if (c2) { studio.fading = true; c2.style.opacity = "0"; setTimeout(() => { c2.remove(); studio.fading = false; }, 400); }
 }
+/* ================= dev mode =================
+   For testing (Chris 2026-11-12). Open with the ` key, a #dev link, or five quick taps on the "Lexicon Signal" name above the
+   screen. Fit or take out parts (they work at once, this night), add words, retunes and signal, win or lose the night, jump nights,
+   new letters, endless words and retunes, open the part picker, the title or the studio intro. Nothing here is saved. */
+let devInf = false;
+function devFit(id) {
+  if (!S.parts.includes(id) && partSlots().length >= PART_SLOTS) { log("Dev: slots full, take one out first."); return; }
+  S.parts.push(id); if (id === "battery") S.words++; if (id === "knob") S.retunes++; if (id === "carrier") ensureHot(); log("Dev: fitted " + PART[id].name + ".");
+}
+function devTakeOut(id) { S.parts = S.parts.filter(x => x !== id); S.words = Math.min(S.words, maxWords()); S.retunes = Math.min(S.retunes, maxRetunes()); if (id === "carrier") ensureHot(); log("Dev: took out " + PART[id].name + "."); }
+function devPlay() { if (S.phase !== "play") { if (S.phase === "splash" || S.phase === "studio" || S.phase === "title" || S.phase === "over") { newRun(); barShow = 1; } } }
+const DEV_ACTIONS = [
+  ["+1 word", () => { devPlay(); S.words++; }], ["+1 retune", () => { devPlay(); S.retunes++; }],
+  ["+10 signal", () => { devPlay(); S.score += 10; S.total += 10; if (S.score >= S.target) nightClear(); }],
+  ["Win night", () => { devPlay(); S.score = S.shown = S.target; nightClear(); }], ["Lose night", () => { devPlay(); gameOver(); }],
+  ["Next night", () => { devPlay(); S.night++; startNight(); }], ["Night back", () => { devPlay(); S.night = Math.max(1, S.night - 1); startNight(); }],
+  ["New letters", () => { devPlay(); fillGrid(true); }], ["Part picker", () => { devPlay(); nightClear(); }],
+  ["Endless words", () => { devInf = !devInf; log("Dev: endless words and retunes " + (devInf ? "on." : "off.")); }],
+  ["New run", () => { newRun(); barShow = 1; }], ["Title", () => { S.phase = "title"; titleT = 0; titleSkip = false; }],
+  ["Studio intro", () => { studioStart(); }], ["Sound on/off", () => { Sound.ensure(); Sound.toggle(); }],
+];
+function devBuild() {
+  let d = $("dev"); if (!d) { d = document.createElement("div"); d.id = "dev"; document.body.appendChild(d);
+    const st = document.createElement("style"); st.textContent = `#dev{position:fixed;top:8px;right:8px;z-index:60;width:250px;max-width:calc(100vw - 16px);max-height:calc(100vh - 16px);overflow:auto;background:rgba(18,10,6,.96);border:2px solid #c8912e;border-radius:8px;padding:8px;font:12px/1.3 ui-monospace,Menlo,monospace;color:#ffd9a0;box-shadow:0 6px 24px rgba(0,0,0,.6)}
+#dev h4{margin:6px 0 4px;font-size:11px;letter-spacing:.08em;color:#c8912e;text-transform:uppercase}#dev .row{display:flex;flex-wrap:wrap;gap:4px}
+#dev button{font:inherit;font-size:11px;color:#1a0e06;background:#e8b45a;border:0;border-radius:4px;padding:4px 6px;cursor:pointer}#dev button.out{background:#5a3418;color:#ffd9a0}#dev button.on{background:#fff0c8}
+#dev .x{float:right;background:#5a3418;color:#ffd9a0}#dev .st{color:#ffb24c;margin:2px 0 4px}@media (max-width:600px){#dev{top:auto;bottom:8px;left:8px;right:8px;width:auto;max-height:46vh}}`; document.head.appendChild(st); }
+  d.innerHTML = ""; const add = (tag, txt, cls) => { const e = document.createElement(tag); if (txt != null) e.textContent = txt; if (cls) e.className = cls; return e; };
+  const x = add("button", "close", "x"); x.onclick = () => devToggle(false); d.append(x, add("h4", "Dev mode"));
+  d.append(add("div", S.phase === "play" ? `Night ${S.night} · ${S.shown}/${S.target} signal · ${S.words} words · ${S.retunes} retunes` : `(${S.phase})`, "st"));
+  d.append(add("h4", "Fit a part (works now)")); let r = add("div", null, "row"); PARTS.forEach(p => { const b = add("button", p.name); b.onclick = () => { devPlay(); devFit(p.id); devBuild(); }; r.append(b); }); d.append(r);
+  d.append(add("h4", "Take out")); r = add("div", null, "row"); partSlots().forEach(s => { const b = add("button", PART[s.id].name + (s.n > 1 ? " x" + s.n : ""), "out"); b.onclick = () => { devTakeOut(s.id); devBuild(); }; r.append(b); });
+  if (!S.parts.length) r.append(add("span", "nothing fitted")); d.append(r);
+  d.append(add("h4", "Night")); r = add("div", null, "row"); DEV_ACTIONS.forEach(([t, f]) => { const b = add("button", t, t === "Endless words" && devInf ? "on" : ""); b.onclick = () => { f(); devBuild(); }; r.append(b); }); d.append(r);
+}
+function devToggle(on) { const d = $("dev"); if (on === undefined) on = !d || d.hidden; if (on) { devBuild(); $("dev").hidden = false; } else if (d) d.hidden = true; }
+window.addEventListener("keydown", (e) => { if (e.key === "`" || e.key === "~") { e.preventDefault(); devToggle(); } }, true);
+{ let taps = [], t0 = 0; document.querySelector("#console .top b").addEventListener("pointerdown", () => { const now = performance.now(); taps = taps.filter(t => now - t < 1500); taps.push(now); if (taps.length >= 5) { taps = []; devToggle(); } }); }
+setInterval(() => { if (devInf && S && S.phase === "play") { S.words = Math.max(S.words, maxWords()); S.retunes = Math.max(S.retunes, maxRetunes()); } const d = $("dev"); if (d && !d.hidden) { const st = d.querySelector(".st"); if (st) st.textContent = S.phase === "play" ? `Night ${S.night} · ${S.shown}/${S.target} signal · ${S.words} words · ${S.retunes} retunes` : `(${S.phase})`; } }, 250);
+
 /* ================= boot ================= */
 function loop(now) { update(); draw(); pollPad(now); requestAnimationFrame(loop); }
 async function boot() {
@@ -1706,6 +1746,7 @@ async function boot() {
   "LEXICONSIGNAL".split("").forEach((ch, k) => { S.grid[[0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13][k]].ch = ch; });
   [7, 14, 15].forEach(i => S.grid[i].ch = " ");
   // test hook: a hash ending in -step does not run by itself; window.LEXSTEP(n) advances n frames (for recording clips frame by frame)
+  if (/dev/.test(location.hash)) setTimeout(() => devToggle(true), 500);
   if (/-step$/.test(location.hash)) window.LEXSTEP = (n = 1) => { while (n-- > 0) { update(); draw(); } }; else requestAnimationFrame(loop);
   // test hook: #test-shop opens the part picker after night 1 (for screenshots)
   if (location.hash === "#test-shop") { newRun(); S.parts.push("amp", "coil"); nightClear(); }

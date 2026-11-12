@@ -161,6 +161,13 @@ the same batch.
   Special Elite, Bungee Hairline, Bungee, Limelight, Share Tech Mono, Stardos Stencil, Alfa Slab One. Value dots stay in every style
   (Chris likes them), bright enough to read on unselected keys. He likes it dark with smooth glow. Select is the sound switch again.
 
+## Dev mode (testing)
+- Open with the ` key, a #dev link, or five quick taps on the "Lexicon Signal" name above the screen (phone). A panel lists every
+  part to fit at once (it works this night: batteries add a word, knobs a retune), the fitted parts to take out, and +1 word,
+  +1 retune, +10 signal, win/lose night, next/previous night, new letters, endless words and retunes, part picker, new run, title,
+  studio intro, sound. Nothing is saved. Keep it in step with the game: new parts appear by themselves (it reads PARTS); add a
+  button for any new thing worth testing.
+
 ## Every change
 1. Art: save the upload to `art/pixel/src/`, run it through fix_pixel_art (save as NAME_fixed.png), add its entry in `build.py`
    (crop and marked points in source pixels), run `python3 -I art/pixel/build.py`, check a still with `mock.py`.
