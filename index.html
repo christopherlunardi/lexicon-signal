@@ -681,7 +681,7 @@ function drawRain() {
 function drawLamp(x, y, r, low) {   // a lit dome lamp centred at (x, y) fine pixels: hot middle, amber body, darker rim, a glint up-left
   const g = ctx.createRadialGradient(x - r * .25, y - r * .25, r * .1, x, y, r); g.addColorStop(0, low ? "#ffd0b8" : "#fffbe0"); g.addColorStop(.45, low ? "#ff5a3c" : "#ffd65a"); g.addColorStop(1, low ? "#a0201a" : "#c88a1e");
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill(); ctx.fillStyle = "rgba(255,255,245,.9)"; ctx.beginPath(); ctx.arc(x - r * .38, y - r * .38, r * .2, 0, 6.283); ctx.fill(); }
-let lampWas = null, lampOut = null;
+let lampWas = null, lampOut = null, retWas = null, retOut = 0;
 function drawLamps() {
   const lit = S.phase === "title" ? titleFX.lamps : Math.min(6, S.words), low = S.words === 1 && S.phase === "play" && (frame >> 4) & 1;
   L.lamps.forEach((p, k) => { if (k < lit) drawLamp(FX(p.x), FX(p.y), FX(7), low); });
@@ -697,7 +697,9 @@ function drawLamps() {
   if (S.phase === "play" || S.phase === "shop" || S.phase === "swap") { const n = maxRetunes(), k = L.knobR;
     for (let i = 0; i < n; i++) { const a = -Math.PI / 2 + (i - (n - 1) / 2) * .42, x = FX(k.x + .5 + Math.cos(a) * 22), y = FX(k.y + Math.sin(a) * 22);
       ctx.fillStyle = "#1a0e08"; ctx.beginPath(); ctx.arc(x, y, 6, 0, 6.283); ctx.fill(); ctx.strokeStyle = "#b07a2a"; ctx.lineWidth = 1.5; ctx.stroke();
-      if (i < S.retunes) drawLamp(x, y, 4.5, false); } }
+      if (i < S.retunes) drawLamp(x, y, 4.5, false);
+      if (i === S.retunes && retOut > 0) { const u = 1 - retOut / 26; ctx.save(); ctx.globalAlpha = 1 - u; drawLamp(x, y, 4.5, false); ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 1; bloom(x, y, 30 + 20 * (1 - u), "255,240,200", .7 * (1 - u)); ctx.restore(); } }
+    if (retWas != null && S.retunes < retWas) { retOut = 26; Sound.lampOut(); } retWas = S.retunes; if (retOut > 0) retOut--; } else retWas = null;
 }
 // (unused: the round meter was painted out of the radio art, Chris 2026-11-12; kept in case the spot gets a gauge again)
 function drawMeter() {
