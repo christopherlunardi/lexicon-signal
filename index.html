@@ -176,7 +176,7 @@ const world = document.createElement("canvas"), wctx = world.getContext("2d");  
 const over = document.createElement("canvas"), octx = over.getContext("2d");     // menus over the room, in world pixels
 
 /* ================= assets ================= */
-let A = null, atlasImg = null, PAL = [], ROOMPAL = [], LUT = null;
+let artReady = false, A = null, atlasImg = null, PAL = [], ROOMPAL = [], LUT = null;
 function nearest(pal, r, g, b) { let bi = 0, bd = 1e9; for (let i = 0; i < pal.length; i++) { const p = pal[i], d = (p[0] - r) ** 2 + (p[1] - g) ** 2 + (p[2] - b) ** 2; if (d < bd) { bd = d; bi = i; } } return pal[bi]; }
 const hex = (c) => `rgb(${c[0]},${c[1]},${c[2]})`;
 const C = {};
@@ -287,7 +287,7 @@ function wrap(s, kind, maxW) { const out = []; let ln = ""; for (const w of Stri
 /* ================= layout ================= */
 const L = {};
 function layout() {
-  if (!A) return;
+  if (!artReady) return;   // never build the room before the art has fully loaded (a fresh load used to build it from a blank image)
   const wrapEl = $("screenWrap"); const ww = wrapEl.clientWidth || 640, wh = wrapEl.clientHeight || 360;
   const nW = Math.max(532, Math.min(950, Math.round(H * ww / wh / 2) * 2));
   const nTK = ww / nW < 1.15 ? 1.5 : 1; if (nTK !== TK) { TK = nTK; glyphCache.clear(); ADV.ink = 12 * TK; }
@@ -1219,7 +1219,7 @@ async function boot() {
   A = await (await fetch("art/pixel/atlas.json")).json();
   atlasImg = new Image(); atlasImg.src = "art/pixel/atlas.png"; await atlasImg.decode();
   PAL = A.palette; const acc = new Set(A.accents.map(c => c.join(","))); ROOMPAL = PAL.filter(c => !acc.has(c.join(",")));
-  makeColours(); buildLUT();
+  makeColours(); buildLUT(); artReady = true;
   S = fresh(location.hash ? "title" : "splash"); layout(); fillGrid(false);
   "LEXICONSIGNAL".split("").forEach((ch, k) => { S.grid[[0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13][k]].ch = ch; });
   [7, 14, 15].forEach(i => S.grid[i].ch = " ");
