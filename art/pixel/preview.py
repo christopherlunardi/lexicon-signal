@@ -7,7 +7,7 @@ sys.path.insert(0, "art/pixel")
 import pix
 W, H = 480, 270
 meta = json.load(open("art/pixel/sprites.json")); pal = np.array(meta["palette"], float)
-PLACE = {"window": (30, 18)}          # native top-left of each sprite in the 16:9 layout
+PLACE = {"window": (22, 18), "radio": (172, 14)}          # native top-left of each sprite in the 16:9 layout
 t = np.asarray(Image.open("art/pixel/wall_tile.png").convert("RGB")).astype(float)
 img = np.tile(t, (H // t.shape[0] + 1, W // t.shape[1] + 1, 1))[:H, :W].copy()
 emis = np.zeros((H, W))               # 1 = gives its own light (window glass), skips room lighting

@@ -14,6 +14,10 @@ OUT = "art/pixel/"
 # name: source file, native width (height follows), points of interest in source pixels (found by eye / measured)
 SPRITES = {
     "window": {"src": "window.png", "w": 128, "points": {"beacon": (648, 574)}},
+    "radio": {"src": "radio.png", "w": 292, "points": {
+        "glass0": (552, 214), "glass1": (1102, 688), "dial0": (462, 84), "dial1": (1148, 150), "meter": (1312, 146), "meterR": (1392, 146),
+        "lamp0": (583, 783), "lamp1": (678, 783), "lamp2": (773, 783), "lamp3": (868, 783), "lamp4": (963, 783), "lamp5": (1062, 783),
+        "knobL": (358, 745), "knobR": (1300, 745)}},
 }
 TILES = {"wall_tile": {"src": "wallpaper.png", "period": (156, 138), "native": (24, 21), "area": (150, 160)}}
 
