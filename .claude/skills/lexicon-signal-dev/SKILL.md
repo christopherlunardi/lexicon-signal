@@ -115,7 +115,7 @@ the same batch.
 - The dial always shows the traced word's value on its right, counting up as letters go in (plain amber while it can't be sent).
   When it can be sent the whole dial lights warm, the word and number go bright and the number gets a "+". A hovered key (mouse,
   or the button cursor) previews dimly: its letter after the word and "+gain" before the number. Every key shows its value as dots.
-- Input: buttons first (A add letter, A on the last letter sends, B back, Start/Y retune, Select/X/Tab key style, M sound),
+- Input: buttons first (A add letter, A on the last letter sends, B back, Start/Y retune, Select/X/Tab/M sound on or off),
   touch/mouse drag or tap. Gamepad standard mapping, bottom face = A.
 - Play area workshop (2026-11-12). Round 1 (six key styles: pixel keys, typewriter, glow tubes, neon glass, ivory tiles, brass keys;
   KEY_STYLES 0..5): Chris picked glow tubes (index 2) but wanted the play area to have more vibe. Round 2 adds
@@ -123,10 +123,10 @@ the same batch.
   whole glass on the fine layer (`drawPlayArea`, one `pa...` function each, plus `paGlows` and `paFlyers`) and share a few clocks:
   `t.lit` (traced, eased), `t.land` (just landed), `lockK` (word can be sent), `addT`/`sendT`/`arriveT`, and `ghosts` (the places a
   sent word left). In these looks letters lift off before they fly and the keys above wait a little longer before falling.
-  Select cycles all styles, remembered per browser; `#keys-N` opens style N (`#test-word-keys-N` with a word traced). Web fonts:
+  The game always uses signal scope (KS 7) in every browser (2026-11-12: a style remembered in one browser made Chris's phone
+  and Claude window look different); `#keys-N` opens style N for comparing (`#test-word-keys-N` with a word traced). Web fonts:
   Special Elite, Bungee Hairline, Bungee, Limelight, Share Tech Mono, Stardos Stencil, Alfa Slab One. Value dots stay in every style
-  (Chris likes them), bright enough to read on unselected keys. He likes it dark with smooth glow. When he picks one, keep it, drop
-  the rest, and give Select back to sound.
+  (Chris likes them), bright enough to read on unselected keys. He likes it dark with smooth glow. Select is the sound switch again.
 
 ## Every change
 1. Art: save the upload to `art/pixel/src/`, run it through fix_pixel_art (save as NAME_fixed.png), add its entry in `build.py`
@@ -159,8 +159,8 @@ the same batch.
   breathing, the odd dropout). Publish art/title/glass-lit.png, glass-dim.png, glass.json with the game.; 0 = the old parchment box). The game opens on 6 now (Chris: put it in while we tweak it), `#title-N` opens one (`#title-N-step` for clips).
   The logo is a placeholder built in code (`buildLogo`/`drawLogo`: LEXICON in bevelled brass cells, SIGNAL in lit dot-matrix,
   waves); a real logo from ChatGPT replaces it later. A press during an entrance skips to its settled screen (`titleBusy`).
-- Rounds: keys-r1 decided (glow tubes), keys-r2 decided (signal scope: now the default key style, KS 7; the choice is stored per
-  browser as lexsig-keys2). Next: build signal scope out as THE play area, then drop the other styles and give Select back to sound.
+- Rounds: keys-r1 decided (glow tubes), keys-r2 decided (signal scope, KS 7, always on). Next: build signal scope out as THE play area and drop the
+  other styles' code.
 
 ## Art prompts (ChatGPT)
 - One layer at a time, the look target attached for style. Pixel-art wording: low-resolution late-1990s computer game look, crisp

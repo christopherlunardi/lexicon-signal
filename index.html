@@ -156,9 +156,9 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
   <div class="pad" id="pad">
     <div class="dpad" id="dpad" aria-label="Direction pad"><span class="h"></span><span class="v"></span><i class="up"></i><i class="dn"></i><i class="lf"></i><i class="rt"></i></div>
     <div class="btns"><button class="btn b" id="btnB" aria-label="B button, back">B<small>BACK</small></button><button class="btn a" id="btnA" aria-label="A button, add letter or send">A<small>TUNE</small></button></div>
-    <div class="pills"><button class="pill" id="btnSel" aria-label="Select, change the key style"><span class="cap">KEYS</span></button><button class="pill" id="btnStart" aria-label="Start, retune"><span class="cap">RETUNE</span></button></div>
+    <div class="pills"><button class="pill" id="btnSel" aria-label="Select, sound on or off"><span class="cap">SOUND</span></button><button class="pill" id="btnStart" aria-label="Start, retune"><span class="cap">RETUNE</span></button></div>
   </div>
-  <p class="foot">Move <kbd>Arrows</kbd>/<kbd>WASD</kbd> · Add letter / send <kbd>Z</kbd> <kbd>Space</kbd> · Back <kbd>X</kbd> <kbd>Backspace</kbd> · Retune <kbd>Enter</kbd> <kbd>R</kbd> · Key style <kbd>Tab</kbd> · Sound <kbd>M</kbd> · Mouse and touch work too</p>
+  <p class="foot">Move <kbd>Arrows</kbd>/<kbd>WASD</kbd> · Add letter / send <kbd>Z</kbd> <kbd>Space</kbd> · Back <kbd>X</kbd> <kbd>Backspace</kbd> · Retune <kbd>Enter</kbd> <kbd>R</kbd> · Sound <kbd>M</kbd> <kbd>Tab</kbd> · Mouse and touch work too</p>
 </div>
 
 <script src="words.js"></script>
@@ -662,9 +662,9 @@ function drawMeter() {
   const a = (-60 + ratio * 110) * Math.PI / 180; line(ctx, cx + 1, cy + 1, cx + 1 + Math.sin(a) * (r - 2), cy + 1 - Math.cos(a) * (r - 2), C.inkSoft, 2); line(ctx, cx, cy, cx + Math.sin(a) * (r - 2), cy - Math.cos(a) * (r - 2), C.needle, 2);
   disc(ctx, cx, cy, 3, C.ink);
 }
-/* ---------- key styles (workshop: Select cycles them, the choice is remembered) ---------- */
+/* ---------- key styles (the Workshop rounds' looks; the game always uses signal scope, #keys-N opens another for comparing) ---------- */
 const KEY_STYLES = ["Pixel keys", "Typewriter", "Glow tubes", "Neon glass", "Ivory tiles", "Brass keys", "Valve bank", "Signal scope", "Stencil plates", "Switchboard", "Dot glass"];
-let KS = 7; try { const v = localStorage.getItem("lexsig-keys2"); if (v != null) KS = Math.max(0, Math.min(KEY_STYLES.length - 1, +v)); } catch (e) {}   // default: signal scope (Chris picked it, keys-r2)
+let KS = 7;   // signal scope, the play area (Chris picked it, keys-r2). Always this one now, in every browser; only #keys-N links show the others
 { const m = location.hash.match(/keys-(\d+)/); if (m) KS = Math.min(KEY_STYLES.length - 1, +m[1]); }
 function rr(c, x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); }
 function pips(x, y, v, col) { ctx.fillStyle = col; for (let k = 0; k < Math.min(4, Math.ceil(v / 2)); k++) ctx.fillRect(x - k * 6, y, 4, 4); }
@@ -1171,6 +1171,7 @@ const TIPS = [
   "STUCK? RETUNE FOR A FRESH SET OF LETTERS",
   "THE FINE TUNING KNOB GIVES AN EXTRA RETUNE EVERY NIGHT",
   "B TAKES BACK THE LAST LETTER",
+  "SELECT OR M TURNS THE SOUND ON AND OFF",
   "PRESS A ON THE LAST LETTER TO SEND THE WORD",
   "THE DIAL LIGHTS UP WHEN YOUR WORD CAN BE SENT",
   "SENT LETTERS DROP AWAY AND THE KEYS ABOVE FALL INTO PLACE",
@@ -1433,7 +1434,7 @@ function start() { Sound.ensure(); Sound.music(); newRun(); staticKick = .6; Sou
 function pressA() { Sound.ensure(); usingButtons = true; dismissCard(); if (titleBusy()) return; if (S.phase === "title" || S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
 function pressB() { if (S.phase === "swap") return swapCancel(); if (S.phase === "play") back(); }
 function pressStart() { Sound.ensure(); if (titleBusy()) return; if (S.phase === "title" || S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); retune(); }
-function pressSel() { Sound.ensure(); KS = (KS + 1) % KEY_STYLES.length; try { localStorage.setItem("lexsig-keys2", KS); } catch (e) {} if (S.log) log(`Keys: ${KEY_STYLES[KS]} (${KS + 1}/${KEY_STYLES.length})`); Sound.click(); }
+function pressSel() { Sound.ensure(); Sound.toggle(); }   // Select is the sound switch (it used to flip key styles for the Workshop)
 window.addEventListener("keydown", (e) => {
   if (introPress()) { e.preventDefault(); return; }
   const k = e.key, dir = { ArrowLeft: [-1, 0], a: [-1, 0], ArrowRight: [1, 0], d: [1, 0], ArrowUp: [0, -1], w: [0, -1], ArrowDown: [0, 1], s: [0, 1] }[k];
