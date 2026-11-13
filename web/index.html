@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 77;</script><script>
+<script>window.LEX_BUILD = 78;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -1004,7 +1004,7 @@ const FX = (x) => Math.round(x * FINE);
 const dialDots = new Map();
 function drawDial() {
   // lit dot-matrix display: every dot position faintly visible, lit dots bright with a dim halo
-  const d = L.dial, x0 = FX(d.x) + 4, y0 = FX(d.y) + Math.round((FX(d.h) - 21) / 2), cols = Math.floor((FX(d.w) - 8 + 3) / 18);
+  const d = L.dial, cols = Math.floor((FX(d.w) - 8 + 3) / 18), x0 = FX(d.x) + Math.floor((FX(d.w) - (cols * 18 - 3)) / 2), y0 = FX(d.y) + Math.round((FX(d.h) - 21) / 2);
   ctx.save(); ctx.beginPath(); ctx.rect(FX(d.x), FX(d.y), FX(d.w), FX(d.h)); ctx.clip();
   const cand = S.phase === "play" && !dialFlash ? candidate() : -1, live = S.phase === "play" && !dialFlash && (S.path.length || cand >= 0);
   const ok = live && S.path.length >= 3 && isValid();

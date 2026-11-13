@@ -25,7 +25,7 @@ SPRITES = {
     "window": {"src": "window7", "points": {"beacon": (174.5, 210.5)}},
     # the radio (2026-11-12): redrawn with a bigger glass for a 5x5 grid (radio5); the 4x4 one ("radio" source) is kept for reference
     "radio": {"src": "radio5", "points": {
-        "glass0": (429, 222), "glass1": (1171, 714), "dial0": (404, 106), "dial1": (1194, 174), "meter": (1440, 140), "meterR": (1460, 140),
+        "glass0": (429, 222), "glass1": (1171, 714), "dial0": (397, 96), "dial1": (1198, 171), "meter": (1440, 140), "meterR": (1460, 140),
         "lamp0": (559, 797), "lamp1": (655, 797), "lamp2": (751, 797), "lamp3": (847, 797), "lamp4": (943, 797), "lamp5": (1041, 797),
         "knobL": (276, 791), "knobR": (1328, 790)}},
     # the sideboard is a left end, one repeating drawer bay and a right end, so it stretches to any width
