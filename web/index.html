@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 57;</script><script>
+<script>window.LEX_BUILD = 58;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -1859,13 +1859,14 @@ function drawSlotStates() {
   partSlots().forEach((c, k) => { const st = slotState(c.id, c.n), b = slotBox(k), f = slotFlash[c.id] || 0;
     const x = FX(b.x) + 10, y = FX(b.y) + 10, w = FX(b.w) - 20, hh = FX(b.h) - 20, r = R(iconOf(c.id));
     // every fitted copy is a lamp along the bottom (batteries and knobs put theirs out as they're spent); the icon sits above them
-    const iy = y + Math.round((hh - 16 - r[3]) / 2) + (st.pips > 0 ? 0 : 6), ix = x + Math.round((w - r[2]) / 2);
+    // the copy lamps sit inside the slot's dark window, clear of its brass frame (the window runs 7..56 world px down the slot)
+    const pipY = FX(b.y + b.h - 13), t0 = FX(b.y) + 16, b0 = st.pips ? pipY - 10 : FX(b.y + b.h) - 16, iy = t0 + Math.round((b0 - t0 - r[3]) / 2), ix = x + Math.round((w - r[2]) / 2);
     ctx.drawImage(atlasImg, r[0], r[1], r[2], r[3], ix, iy, r[2], r[3]);
     if (st.spent && !f) { ctx.fillStyle = "rgba(10,6,4,.55)"; ctx.fillRect(x, y, w, hh); }
     const glow = Math.max(f, st.active ? .8 : 0, st.armed ? .35 + .25 * Math.sin(frame / 8) : 0);
     if (glow > .02) { ctx.save(); ctx.strokeStyle = (c.id === "carrier" || c.id === "heat") && !st.active ? `rgba(255,90,60,${glow})` : `rgba(255,214,120,${glow})`; ctx.lineWidth = 2; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 10;
       ctx.strokeRect(x - 1, y - 1, w + 2, hh + 2); ctx.restore(); if (f) { ctx.fillStyle = `rgba(255,240,200,${f * .35})`; ctx.fillRect(x, y, w, hh); } }
-    if (st.pips) { const r = 4, step = 13, px0 = FX(b.x + b.w / 2) - ((st.pips - 1) * step) / 2, py = y + hh - 8;
+    if (st.pips) { const r = 4, step = 13, px0 = FX(b.x + b.w / 2) - ((st.pips - 1) * step) / 2, py = pipY;
       const prev = slotPip[c.id]; if (prev != null && st.lit < prev) slotFlash[c.id] = Math.max(f, .8); slotPip[c.id] = st.lit;
       for (let j = 0; j < st.pips; j++) { const on = j < st.lit; ctx.fillStyle = C.dark; ctx.beginPath(); ctx.arc(px0 + j * step, py, r + 2, 0, 6.283); ctx.fill();
         ctx.fillStyle = on ? C.lamp : C.dotOff; ctx.beginPath(); ctx.arc(px0 + j * step, py, r, 0, 6.283); ctx.fill();
@@ -1882,7 +1883,7 @@ function slotGlows() {
   partSlots().forEach((c, k) => { const st = slotState(c.id, c.n), b = slotBox(k), f = slotFlash[c.id] || 0, cx = FX(b.x + b.w / 2), cy = FX(b.y + b.h / 2);
     bloom(cx, cy - 8, FX(b.w) * .55, "255,170,90", .07);
     const a = Math.max(f * .5, st.active ? .22 : 0, st.armed ? .1 + .06 * Math.sin(frame / 8) : 0); if (a > .01) bloom(cx, cy, FX(b.w) * .8, (c.id === "carrier" || c.id === "heat") && !st.active ? "255,80,50" : "255,190,90", a);
-    if (st.pips) { const step = 13, px0 = cx - ((st.pips - 1) * step) / 2, py = FX(b.y) + FX(b.h) - 18; for (let j = 0; j < st.lit; j++) bloom(px0 + j * step, py, 16, "255,200,100", .45); } });
+    if (st.pips) { const step = 13, px0 = cx - ((st.pips - 1) * step) / 2, py = FX(b.y + b.h - 13); for (let j = 0; j < st.lit; j++) bloom(px0 + j * step, py, 16, "255,200,100", .45); } });
 }
 // ---------- the night's signal tube ----------
 // a row of light cells along the top of the bar. Each cell pops on with a click that climbs in pitch as the night fills; a sheen runs
@@ -2581,9 +2582,13 @@ function shopGeom() { const n = shopChoices.length, cw = Math.min(170, Math.floo
     return 82 + PH + (16 + wrap(p.desc, "ink", FX(cw) - 48).length * lh * FINE + 8 + TAG_ZONE) / FINE; })),
   ch = Math.round(Math.max(TK > 1 ? 200 : 174, need)), total = n * cw + (n - 1) * 10; return { n, cw, ch, x0: Math.round(W / 2 - total / 2), y0: 36 }; }
 // the brass name plate, stretched to any width: its two ends and a repeated plain middle
+// a brass plate any size. A plate shorter than the art (Chris 2026-11-13) has room for one rivet each end, not four: it's built from
+// the bare plate and gets a rivet at each end, halfway down
 function plate3(c, x, y, w, hh) { const [, , pw, ph] = R("plate"), E = 16, M = 20, T = 12, mx = Math.round(pw / 2 - M / 2), my = T; hh = hh || ph;
-  const row = (sy, dy, sh) => { spr(c, "plate", x, dy, 0, sy, E, sh); for (let xx = x + E; xx < x + w - E; xx += M) spr(c, "plate", xx, dy, mx, sy, Math.min(M, x + w - E - xx), sh); spr(c, "plate", x + w - E, dy, pw - E, sy, E, sh); };
-  row(0, y, T); for (let yy = y + T; yy < y + hh - (ph - T - 4); yy += 4) row(my, yy, Math.min(4, y + hh - (ph - T - 4) - yy)); row(T + 4, y + hh - (ph - T - 4), ph - T - 4); }
+  const nm = hh < ph - 2 ? "plate_bare" : "plate";
+  const row = (sy, dy, sh) => { spr(c, nm, x, dy, 0, sy, E, sh); for (let xx = x + E; xx < x + w - E; xx += M) spr(c, nm, xx, dy, mx, sy, Math.min(M, x + w - E - xx), sh); spr(c, nm, x + w - E, dy, pw - E, sy, E, sh); };
+  row(0, y, T); for (let yy = y + T; yy < y + hh - (ph - T - 4); yy += 4) row(my, yy, Math.min(4, y + hh - (ph - T - 4) - yy)); row(T + 4, y + hh - (ph - T - 4), ph - T - 4);
+  if (nm === "plate_bare") { const ry = y + Math.round(hh / 2) - 3; spr(c, "rivet", x + 4, ry); spr(c, "rivet", x + w - 11, ry); } }
 // the part picker: each part sits in a case built from the same brass frame as the bar's slots (it's what goes into one), lit from
 // behind, with its name stamped on a brass plate and what it does in lit amber. The chosen case rises and glows; the others dim.
 /* the label on each part case (what fitting it does: NEW / STACKS X2 / SWAP A PART / RARE: ONCE ONLY). Workshop topic "tags"
