@@ -196,6 +196,8 @@ the same batch.
   it over every painted rivet (RIVETS: plate, logbox, slot, bar_left/right, tplate/_lit; centers measured per piece, kept symmetric).
   It is also the sprite "rivet" for rivets drawn in code (the score counter). Short plates (plate3, hh < 26) are built from
   "plate_bare" with one rivet each end, halfway down (small plates want two, not four). New framed art gets its rivets stamped too.
+- nine() fills a framed panel's edges and middle with the art's whole middle span (a short repeated strip showed as ridges, Chris
+  2026-11-13). Short plates' two rivets sit a pixel above halfway, on the face's middle.
 - The copy lamps in a part slot sit inside its dark window (13 world px up from its bottom), clear of the brass frame.
 - Sheets and margins (2026-11-13, Chris: "things are always too close to the gold borders"): text never sits nearer a frame than
   INSET (logbox 22 world px x, 18 y: the gold frame is 8 deep and the corner rivets reach 12; plate 16 x, 6 y). Parchment screens use

@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 58;</script><script>
+<script>window.LEX_BUILD = 59;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -214,11 +214,12 @@ function panelCv(kind, w, h) { w = Math.max(1, Math.round(w)); h = Math.max(1, M
   if (panelCache.size > 80) panelCache.clear(); c = document.createElement("canvas"); c.width = w; c.height = h; const x = c.getContext("2d"); x.imageSmoothingEnabled = false;
   if (kind === "plate") plate3(x, 0, 0, w, h); else nine(x, kind, 0, 0, w, h); panelCache.set(k, c); return c; }
 function nine(c, n, x, y, w, h, m = 18) {
-  const [, , sw, sh] = R(n), S2 = 12, cx = Math.floor(sw / 2 - S2 / 2), cy = Math.floor(sh / 2 - S2 / 2);
+  // edges and middle repeat the art's whole middle span (Chris 2026-11-13: a short repeated strip showed as ridges along the frame)
+  const [, , sw, sh] = R(n), SX = sw - 2 * m, SY = sh - 2 * m, cx = m, cy = m;
   spr(c, n, x, y, 0, 0, m, m); spr(c, n, x + w - m, y, sw - m, 0, m, m); spr(c, n, x, y + h - m, 0, sh - m, m, m); spr(c, n, x + w - m, y + h - m, sw - m, sh - m, m, m);
-  for (let xx = x + m; xx < x + w - m; xx += S2) { const ww = Math.min(S2, x + w - m - xx); spr(c, n, xx, y, cx, 0, ww, m); spr(c, n, xx, y + h - m, cx, sh - m, ww, m); }
-  for (let yy = y + m; yy < y + h - m; yy += S2) { const hh = Math.min(S2, y + h - m - yy); spr(c, n, x, yy, 0, cy, m, hh); spr(c, n, x + w - m, yy, sw - m, cy, m, hh);
-    for (let xx = x + m; xx < x + w - m; xx += S2) spr(c, n, xx, yy, cx, cy, Math.min(S2, x + w - m - xx), hh); }
+  for (let xx = x + m; xx < x + w - m; xx += SX) { const ww = Math.min(SX, x + w - m - xx); spr(c, n, xx, y, cx, 0, ww, m); spr(c, n, xx, y + h - m, cx, sh - m, ww, m); }
+  for (let yy = y + m; yy < y + h - m; yy += SY) { const hh = Math.min(SY, y + h - m - yy); spr(c, n, x, yy, 0, cy, m, hh); spr(c, n, x + w - m, yy, sw - m, cy, m, hh);
+    for (let xx = x + m; xx < x + w - m; xx += SX) spr(c, n, xx, yy, cx, cy, Math.min(SX, x + w - m - xx), hh); }
 }
 function dot(c, x, y, col) { c.fillStyle = col; c.fillRect(Math.round(x), Math.round(y), 1, 1); }
 function line(c, x0, y0, x1, y1, col, w = 1) { x0 = Math.round(x0); y0 = Math.round(y0); x1 = Math.round(x1); y1 = Math.round(y1); c.fillStyle = col;
@@ -2583,12 +2584,12 @@ function shopGeom() { const n = shopChoices.length, cw = Math.min(170, Math.floo
   ch = Math.round(Math.max(TK > 1 ? 200 : 174, need)), total = n * cw + (n - 1) * 10; return { n, cw, ch, x0: Math.round(W / 2 - total / 2), y0: 36 }; }
 // the brass name plate, stretched to any width: its two ends and a repeated plain middle
 // a brass plate any size. A plate shorter than the art (Chris 2026-11-13) has room for one rivet each end, not four: it's built from
-// the bare plate and gets a rivet at each end, halfway down
+// the bare plate and gets a rivet at each end, in the middle of the face (a pixel above halfway: the bottom rim is deeper)
 function plate3(c, x, y, w, hh) { const [, , pw, ph] = R("plate"), E = 16, M = 20, T = 12, mx = Math.round(pw / 2 - M / 2), my = T; hh = hh || ph;
   const nm = hh < ph - 2 ? "plate_bare" : "plate";
   const row = (sy, dy, sh) => { spr(c, nm, x, dy, 0, sy, E, sh); for (let xx = x + E; xx < x + w - E; xx += M) spr(c, nm, xx, dy, mx, sy, Math.min(M, x + w - E - xx), sh); spr(c, nm, x + w - E, dy, pw - E, sy, E, sh); };
   row(0, y, T); for (let yy = y + T; yy < y + hh - (ph - T - 4); yy += 4) row(my, yy, Math.min(4, y + hh - (ph - T - 4) - yy)); row(T + 4, y + hh - (ph - T - 4), ph - T - 4);
-  if (nm === "plate_bare") { const ry = y + Math.round(hh / 2) - 3; spr(c, "rivet", x + 4, ry); spr(c, "rivet", x + w - 11, ry); } }
+  if (nm === "plate_bare") { const ry = y + Math.round(hh / 2) - 4; spr(c, "rivet", x + 4, ry); spr(c, "rivet", x + w - 11, ry); } }
 // the part picker: each part sits in a case built from the same brass frame as the bar's slots (it's what goes into one), lit from
 // behind, with its name stamped on a brass plate and what it does in lit amber. The chosen case rises and glows; the others dim.
 /* the label on each part case (what fitting it does: NEW / STACKS X2 / SWAP A PART / RARE: ONCE ONLY). Workshop topic "tags"
