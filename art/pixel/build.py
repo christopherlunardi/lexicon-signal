@@ -8,7 +8,7 @@ with tall pixels, so its rows are evened out to square pixels first.)
 Crops and points below are written in the ORIGINAL source's pixels (easy to measure on the big image) and converted to the fixed
 image's pixels. Outputs: atlas.png + atlas.json (palette for interface colours, sprite rectangles, marked points).
 Run from the repo root: python3 -I art/pixel/build.py"""
-import json, sys
+import json, os, sys
 import numpy as np
 from scipy import ndimage
 from PIL import Image, ImageDraw
@@ -55,8 +55,12 @@ def magenta(rgb):
 
 def fixed(name):
     """The fixed image as RGBA (magenta keyed out) and the scale from source pixels to fixed pixels."""
-    src = Image.open(SRC + name + ".png"); im = Image.open(SRC + name + "_fixed.png").convert("RGBA")
-    if name in SQUARE:
+    src = Image.open(SRC + name + ".png")
+    # NAME_k.png (2026-11-13, Chris: "bad pixelization"): the original art shrunk once with our k-centroid downscale (kdown.py) straight
+    # to its true size. Cleaner than the grid-recovered _fixed.png, whose evened-out rows doubled every few lines. Used where it exists.
+    if os.path.exists(SRC + name + "_k.png"): im = Image.open(SRC + name + "_k.png").convert("RGBA")
+    else: im = Image.open(SRC + name + "_fixed.png").convert("RGBA")
+    if name in SQUARE and not os.path.exists(SRC + name + "_k.png"):
         im = im.resize((im.width, round(src.height / SQUARE[name])), Image.NEAREST)
     a = np.asarray(im).copy(); a[..., 3] = np.where(magenta(a[..., :3]) | (a[..., 3] < 128), 0, 255)
     return Image.fromarray(a, "RGBA"), im.width / src.width, im.height / src.height

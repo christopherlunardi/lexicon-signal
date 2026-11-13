@@ -181,6 +181,10 @@ the same batch.
   points fly up ("+52") into the RUN SCORE: a dark display with a big lit dot-matrix number (glyph kind "big", every dot place faintly
   there) that counts up with climbing ticks and jumps when done, with HIGH n / NEW HIGH SCORE! beside its label. A plate on the bottom
   edge says TALLYING... then PRESS A: PICK A PART. A or a tap skips to the end, then goes on. #test-report, #test-report-long (8 words).
+- Clean pixels from the original art (Chris 2026-11-13, "bad pixelization"): the radio (radio5) and the interface kit (uikit) are
+  now shrunk once from the original pictures with our k-centroid downscale (src/NAME_k.png, kdown.py) to their true size; build.py
+  uses NAME_k.png where it exists. The grid-recovered _fixed.png + SQUARE row evening doubled every few rows (wobbly lines, squashed
+  knobs). Same sizes as before, so the layout didn't move. Make new art the same way.
 - One rivet everywhere (Chris 2026-11-13): build.py draws a clean 7x7 brass rivet (dark rim, bright top-left, screw slot) and stamps it
   over every painted rivet (RIVETS: plate, logbox, slot, bar_left/right, tplate/_lit; centres measured per piece, kept symmetric); it is
   also the sprite "rivet", drawn at world size for rivets made in code (the score counter). New framed art gets its rivets stamped too.
@@ -250,7 +254,8 @@ the same batch.
   Also
   touch/mouse drag or tap. Gamepad standard mapping, bottom face = A.
 - Keyboard (Chris 2026-11-12, after a typing experiment he rejected: the keyboard does NOT type words): WASD/arrows move, Space or
-  Enter picks the letter under the cursor (again on the last letter sends), Backspace back, R retune, M sound. Keep keys few and
+  Enter picks the letter under the cursor (again on the last letter sends), Backspace back, R retune, M sound. The bottom row is the four
+  face buttons too (Chris 2026-11-13): Z pick (A), X back (B), C retune (Y), V send (X). Keep keys few and
   clear, and list them in the line under the game.
 - Mouse/touch: click or tap letters, or drag across them. A click on a key that doesn't touch the last letter keeps the word and
   flashes MUST TOUCH (it used to restart the word from that key, which looked like the word vanishing). With one letter picked, a

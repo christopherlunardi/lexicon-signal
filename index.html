@@ -160,7 +160,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
     <div class="btns"><button class="btn x" id="btnX" aria-label="X button, send the word">X<small>SEND</small></button><button class="btn y" id="btnY" aria-label="Y button, retune">Y<small>RETUNE</small></button><button class="btn a" id="btnA" aria-label="A button, add letter or send">A<small>TUNE</small></button><button class="btn b" id="btnB" aria-label="B button, back">B<small>BACK</small></button></div>
     <div class="pills"><button class="pill" id="btnSel" aria-label="Select"><span class="cap">SELECT</span></button><button class="pill" id="btnStart" aria-label="Start, pause"><span class="cap">PAUSE</span></button></div>
   </div>
-  <p class="foot">Move <kbd>WASD</kbd> <kbd>Arrows</kbd> · Pick letter, again to send <kbd>Space</kbd> <kbd>Enter</kbd> · Back <kbd>Backspace</kbd> · Retune <kbd>R</kbd> · Pause <kbd>Esc</kbd> <kbd>P</kbd> · Or click / tap letters, or drag across them</p>
+  <p class="foot">Move <kbd>WASD</kbd> <kbd>Arrows</kbd> · Pick letter, again to send <kbd>Z</kbd> <kbd>Space</kbd> <kbd>Enter</kbd> · Back <kbd>X</kbd> <kbd>Backspace</kbd> · Retune <kbd>C</kbd> <kbd>R</kbd> · Send <kbd>V</kbd> · Pause <kbd>Esc</kbd> <kbd>P</kbd> · Or click / tap letters, or drag across them</p>
 </div>
 
 <script src="words.js"></script>
@@ -794,8 +794,35 @@ function draw() {
   if (HOW.on) { howStep(); drawHowCard(); }
   if (PAUSE.on) drawPause();
   if (BOARD.on) drawBoard();
+  drawFinish();
 }
-// the run score, always on show: a little dark counter with a brass rim in the room's bottom-left corner (Chris 2026-11-13)
+/* ================= screen finish (Workshop "finish", 2026-11-13) =================
+   Chris: an overlay that ties all the art together, cheap to run. FINISH_STYLE 0 none (as before); 1 lamp-lit room (vignette + warm
+   grade); 2 film (1 + moving grain); 3 haze (a soft glow of the whole picture laid back over it); 4 soft tube screen (fine scanlines,
+   a little haze and vignette); 5 all of it, light. Everything is cached pictures drawn once a frame; the haze draws the frame into a
+   small canvas and back. #finish-N picks one. */
+let FINISH_STYLE = 0; { const m = location.hash.match(/finish-(\d)/); if (m) FINISH_STYLE = Math.min(5, +m[1]); }
+const FIN = { k: "", vig: null, scan: null, grain: [], haze: document.createElement("canvas") };
+function finBuild() { const k = CVW + "x" + CVH; if (FIN.k === k) return; FIN.k = k;
+  const v = FIN.vig = document.createElement("canvas"); v.width = CVW; v.height = CVH; const c = v.getContext("2d");
+  const g = c.createRadialGradient(CVW / 2, CVH * .45, Math.min(CVW, CVH) * .25, CVW / 2, CVH * .5, Math.hypot(CVW, CVH) * .6);
+  g.addColorStop(0, "rgba(20,8,2,0)"); g.addColorStop(.6, "rgba(20,8,2,.18)"); g.addColorStop(1, "rgba(10,4,1,.62)"); c.fillStyle = g; c.fillRect(0, 0, CVW, CVH);
+  const sc = FIN.scan = document.createElement("canvas"); sc.width = 8; sc.height = 4; const s2 = sc.getContext("2d"); s2.fillStyle = "rgba(0,0,0,.22)"; s2.fillRect(0, 2, 8, 2);
+  FIN.grain = [0, 1, 2, 3].map(() => { const n = document.createElement("canvas"); n.width = n.height = 128; const x = n.getContext("2d"), d = x.createImageData(128, 128);
+    for (let i = 0; i < d.data.length; i += 4) { const r = Math.random() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = r; d.data[i + 3] = 255; } x.putImageData(d, 0, 0); return n; }); }
+function finHaze(a) { const hz = FIN.haze, hw = Math.max(1, Math.round(CVW / 10)), hh = Math.max(1, Math.round(CVH / 10)); if (hz.width !== hw) { hz.width = hw; hz.height = hh; }
+  const h = hz.getContext("2d"); h.imageSmoothingEnabled = true; h.globalCompositeOperation = "copy"; h.drawImage(cv, 0, 0, hw, hh);
+  ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = "screen"; ctx.globalAlpha = a; ctx.imageSmoothingEnabled = true; ctx.drawImage(hz, 0, 0, cv.width, cv.height); ctx.restore(); }
+function drawFinish() {
+  const f = FINISH_STYLE; if (!f) return; finBuild(); const tune = { vig: [0, 1, 1, .5, .7, .8][f], warm: [0, .07, .07, 0, .03, .05][f], grain: [0, 0, .07, 0, 0, .04][f], haze: [0, 0, 0, .28, .16, .16][f], scan: [0, 0, 0, 0, 1, .5][f] };
+  if (tune.haze) finHaze(tune.haze);
+  ctx.save(); ctx.imageSmoothingEnabled = true;
+  if (tune.warm) { ctx.globalCompositeOperation = "soft-light"; ctx.fillStyle = `rgba(255,150,60,${tune.warm * 4})`; ctx.fillRect(0, 0, CVW, CVH); }
+  if (tune.scan) { ctx.globalCompositeOperation = "multiply"; ctx.globalAlpha = tune.scan; ctx.fillStyle = ctx.createPattern(FIN.scan, "repeat"); ctx.fillRect(0, 0, CVW, CVH); ctx.globalAlpha = 1; }
+  if (tune.grain) { ctx.globalCompositeOperation = "overlay"; ctx.globalAlpha = tune.grain; const gi = FIN.grain[(frame >> 1) & 3], ox = (frame * 37) % 128, oy = (frame * 53) % 128;
+    ctx.translate(-ox, -oy); ctx.fillStyle = ctx.createPattern(gi, "repeat"); ctx.fillRect(0, 0, CVW + 128, CVH + 128); ctx.setTransform(RS, 0, 0, RS, 0, 0); ctx.globalAlpha = 1; }
+  if (tune.vig) { ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = tune.vig; ctx.drawImage(FIN.vig, 0, 0); }
+  ctx.restore(); }
 /* ================= the run score on screen (Workshop score-r1, Chris 2026-11-13: rolling drums) =================
    A brass-framed counter in the room's bottom-left corner, above the bar: each drum rolls up to the next figure. It counts in step
    with the signal tube filling (night's start score + the tube's count), so the bar and the counter run up together, then the frame
@@ -2555,7 +2582,7 @@ function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ?
 function titleBusy() { if (S.phase === "title" && !titleSkip && titleT < TITLE_LEN[TS]) { titleSkip = true; return true; } return false; }
 function start() { if (buildReady) return maybeReload(); Sound.ensure(); Sound.music(); newRun(); }   // (a new build waiting in the app loads first)
 // buttons (Chris 2026-11-12: a four-button game, Start pauses, Select doesn't mute): A pick / send, B back, X send the word, Y retune,
-// Start pause (and pick on menus), Select nothing (held: dev mode). Keyboard: Space/Enter A, Backspace B, R retune, Esc/P pause.
+// Start pause (and pick on menus), Select nothing (held: dev mode). Keyboard: Z/Space/Enter A, X/Backspace B, C/R retune (Y), V send (X), Esc/P pause.
 function pressA() { if (devKey("a")) return; if (pauseKey("a")) return; if (boardKey("a")) return; if (howKey("a")) return; if (inspectKey("a")) return; Sound.ensure(); usingButtons = true; dismissCard(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
 function pressB() { if (devKey("b")) return; if (pauseKey("b")) return; if (boardKey("b")) return; if (howKey("b")) return; if (inspectKey("a")) return; if (S.phase === "melt") return meltDone(); if (S.phase === "swap") return swapCancel(); if (S.phase === "play") back(); }
 function pressX() { if (devKey("x")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); dismissCard(); if (S.phase === "play" && S.path.length) send(); else pressA(); }
@@ -2572,7 +2599,11 @@ window.addEventListener("keydown", (e) => {
   if (k === " " || k === "Enter") { e.preventDefault(); pressA(); return; }
   if (k === "Backspace") { e.preventDefault(); pressB(); return; }
   if (k === "Escape") { e.preventDefault(); if (PAUSE.on || HOW.on || S.phase !== "play" || S.path.length) pressB(); else pressStart(); return; }
-  if (k === "r") { e.preventDefault(); pressY(); return; }
+  if (k === "r" || k === "c") { e.preventDefault(); pressY(); return; }
+  // the four face buttons on the bottom row too (Chris 2026-11-13): Z pick (A), X back (B), C retune (Y), V send (X)
+  if (k === "z") { e.preventDefault(); pressA(); return; }
+  if (k === "x") { e.preventDefault(); pressB(); return; }
+  if (k === "v") { e.preventDefault(); pressX(); return; }
   if (k === "p") { e.preventDefault(); pressStart(); return; }
   if (k === "m") { e.preventDefault(); Sound.ensure(); Sound.toggle(); }
 });
