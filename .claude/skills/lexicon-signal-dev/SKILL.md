@@ -187,8 +187,9 @@ the same batch.
   #test-report, #test-report-long (16 words).
 - Leftover bonus (Chris 2026-11-13): when a night clears, each word (lit lamp, spare battery words too) left pays a quarter of the
   night's target and each unused retune a sixth, rounded to 5 (nightBonus; night 1: 10 and 5, night 5: 40 and 25), added to the run
-  [Night Owl Clock: the last leftover lamp is the night's last word, so it gets its own row LAST WORD: OWL X3 paying the word bonus
-  times the clock (x3, x4 with two...); the card says "even if left over" and a tip says so (Chris 2026-11-13).]
+  [Night Owl Clock: when words are left, the unused last word pays the word bonus times the clock (x3, x4 with two...). It is not a
+  lamp: the report shows it as a word line under the words header, above the folding list and always in view
+  ("NIGHT OWL: LAST WORD UNUSED   10 X3 +30"), and the night score starts with it. Card: "even if left over" (Chris 2026-11-13).]
   score. The report shows them under NIGHT TOTAL (which carries OVERDRIVE! in red now) row by row with a pop each (WORDS LEFT 2 x 10
   +20, RETUNE LEFT 1 x 5 +5), the lamps pay into the night score (see Night report). How to Play (FILL THE TUBE, STUCK? RETUNE) and
   the tips say so.
