@@ -174,25 +174,22 @@ the same batch.
 - Title menu (MENU_STYLE 6, Chris's art src/title_console.png cut to tpanel / tplate / tplate_lit): the wooden console under the
   radio with a brass plate per option (START, HOW TO PLAY, HIGH SCORES), the chosen one pressed in and lit; slice3Cv stretches a
   sprite from its ends and repeated middle.
-- Night report (2026-11-13, redone after Chris: text crowded the gold frames and the score wasn't the star; phase "report",
-  drawReport, reportTimes): a parchment sheet with NIGHT N CLEARED on a brass nameplate riding its top edge, OVERDRIVE! in red (or
-  SIGNAL LOCKED IN) under it, a ruled ledger (WORD | PARTS chips like RED x2, AMP +1 | SIGNAL column; each row drops in with a
-  climbing tick and its points pop; more words than fit split it into two columns), NIGHT TOTAL against the target, then the night's
-  points fly up ("+52") into the RUN SCORE: a dark display with a big lit dot-matrix number (glyph kind "big", every dot place faintly
-  there) that counts up with climbing ticks and jumps when done, with HIGH n / NEW HIGH SCORE! beside its label. A plate on the bottom
-  edge says TALLYING... then PRESS A: PICK A PART. A or a tap skips to the end, then goes on. #test-report, #test-report-long (8 words).
-- Clean pixels from the original art (Chris 2026-11-13, "bad pixelization"): the radio (radio5) and the interface kit (uikit) are
-  now shrunk once from the original pictures with our k-centroid downscale (src/NAME_k.png, kdown.py) to their true size; build.py
-  uses NAME_k.png where it exists. The grid-recovered _fixed.png + SQUARE row evening doubled every few rows (wobbly lines, squashed
-  knobs). Same sizes as before, so the layout didn't move. Make new art the same way.
-- One rivet everywhere (Chris 2026-11-13): build.py draws a clean 7x7 brass rivet (dark rim, bright top-left, screw slot) and stamps it
-  over every painted rivet (RIVETS: plate, logbox, slot, bar_left/right, tplate/_lit; centres measured per piece, kept symmetric); it is
-  also the sprite "rivet", drawn at world size for rivets made in code (the score counter). New framed art gets its rivets stamped too.
+- Night report (2026-11-13, redone several times with Chris; phase "report", drawReport, reportTimes): a parchment sheet, NIGHT N
+  CLEARED on a brass nameplate on its top edge. The words fold into one line (N WORDS, BEST word +pts, a SHOW (Y) chip) that opens into
+  its own scrolling list (Y, C/R, or tap the line; up/down, wheel or drag scroll; a thumb shows when it runs past what fits). Then
+  SIGNAL score / target (OVERDRIVE! in red), then the leftovers as lit lamps (WORDS LEFT, RETUNE LEFT, "N EACH"): one by one each goes
+  dark, a "+N" rises and the NIGHT SCORE (the sheet's lit counter) counts up. Then the night score flies down into the run score's
+  rolling drums in the room's corner (drawn over the sheet during the report), which roll up. Bottom plate: TALLYING... then PRESS A.
+  The sheet keeps clear of the drums on narrow screens. REPORT_TYPE (#rtype-N) sets the type: 0 small pixel ink (default), 1 bold key
+  lettering, 2 the How to Play cards' fonts; Chris found the bold key "big thick" and wants one locked type system (open question).
+  #test-report, #test-report-long (16 words).
 - Leftover bonus (Chris 2026-11-13): when a night clears, each word (lit lamp, spare battery words too) left pays a quarter of the
   night's target and each unused retune a sixth, rounded to 5 (nightBonus; night 1: 10 and 5, night 5: 40 and 25), added to the run
   score. The report shows them under NIGHT TOTAL (which carries OVERDRIVE! in red now) row by row with a pop each (WORDS LEFT 2 x 10
-  +20, RETUNE LEFT 1 x 5 +5), then TONIGHT +N, which is what flies into the RUN SCORE. How to Play (FILL THE TUBE, STUCK? RETUNE) and
+  +20, RETUNE LEFT 1 x 5 +5), the lamps pay into the night score (see Night report). How to Play (FILL THE TUBE, STUCK? RETUNE) and
   the tips say so.
+- The signal tube (Chris 2026-11-13): a thin window cut into the wood (12 tall), centered in the band between the bar's top border
+  and the log, shadowed top/left, warm light bottom/right, no bright outline; the end lamp sits inside its right end.
 - Sheets and margins (2026-11-13, Chris: "things are always too close to the gold borders"): text never sits nearer a frame than
   INSET (logbox 22 world px x, 18 y: the gold frame is 8 deep and the corner rivets reach 12; plate 16 x, 6 y). Parchment screens use
   sheet() (logbox + top nameplate + optional bottom prompt plate, body kept inside INSET) and edgePlate(); the run score shows in

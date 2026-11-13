@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 52;</script><script>
+<script>window.LEX_BUILD = 53;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -339,7 +339,8 @@ function computeLayout() {
   const [, , pw, ph] = R("plate"), [, , sw, sh] = R("slot");
   const GAP = 9, ix0 = BIN.l + 4, ix1 = W - BIN.r - 4, slotsW = PART_SLOTS * sw + (PART_SLOTS - 1) * GAP; L.slotStep = sw + GAP;
   // the night's signal tube runs the whole width along the top of the bar; everything else sits under it
-  L.tube = { x: ix0, y: BIN.t + 3, w: ix1 - ix0, h: 17 }; const top = L.tube.y + L.tube.h;
+  // (Chris 2026-11-13: thinner, a window cut into the wood, centered in the band above the log with even room round it)
+  const top = BIN.t + 20; L.tube = { x: ix0, y: BIN.t + Math.round((top + 5 - BIN.t - 12) / 2), w: ix1 - ix0, h: 12 };
   if (BAR_H > 140) {
     const mid1 = top + 5 + 33, mid2 = BAR_H - BIN.b - 4 - sh / 2;
     L.logW = ix1 - ix0 - pw - GAP; L.log = { x: ix0, y: Math.round(mid1 - 33), w: L.logW, h: 66 };
@@ -399,10 +400,12 @@ function buildBar() {
   piece("bar_left", 0, R("bar_left")[2]); let x = R("bar_left")[2]; const rw = R("bar_right")[2];
   while (x < W - rw) { const mw = Math.min(R("bar_mid")[2], W - rw - x); piece("bar_mid", x, mw); x += mw; }
   piece("bar_right", W - rw, rw); spr(c, "bar_clasp", Math.round(W / 2 - R("bar_clasp")[2] / 2), 0);
-  // the signal tube's housing: dark glass in a brass frame, a brass cap with a rivet at each end
-  const t = L.tube; c.fillStyle = C.dark; c.fillRect(t.x, t.y, t.w, t.h); c.fillStyle = C.brassHi; c.fillRect(t.x + 1, t.y + t.h - 1, t.w - 2, 1);
-  c.fillStyle = C.glass; c.fillRect(t.x + 4, t.y + 2, t.w - 8, t.h - 4); c.fillStyle = C.keyShadow; c.fillRect(t.x + 4, t.y + 2, t.w - 8, 1);
-  [t.x, t.x + t.w - 4].forEach(x => { c.fillStyle = C.gold; c.fillRect(x, t.y + 1, 4, t.h - 2); c.fillStyle = C.brassHi; c.fillRect(x, t.y + 1, 4, 1); c.fillStyle = C.ink; c.fillRect(x + 1, t.y + 7, 2, 2); });
+  // the signal tube's window: cut into the wood, its edges in shadow at the top and left and catching a little warm light at the
+  // bottom and right, dark glass inside (Chris 2026-11-13: no bright outline)
+  const t = L.tube; c.fillStyle = "rgba(20,8,2,.85)"; c.fillRect(t.x, t.y, t.w, t.h);
+  c.fillStyle = "rgba(0,0,0,.55)"; c.fillRect(t.x, t.y, t.w, 1); c.fillRect(t.x, t.y, 1, t.h);
+  c.fillStyle = "rgba(190,96,40,.45)"; c.fillRect(t.x, t.y + t.h, t.w + 1, 1); c.fillRect(t.x + t.w, t.y, 1, t.h + 1);
+  c.fillStyle = C.glass; c.fillRect(t.x + 2, t.y + 2, t.w - 4, t.h - 4); c.fillStyle = "rgba(0,0,0,.45)"; c.fillRect(t.x + 2, t.y + 2, t.w - 4, 1);
   nine(c, "logbox", L.log.x, L.log.y, L.log.w, L.log.h);
   spr(c, "plate", L.plateX, L.plateY0); spr(c, "plate", L.plateX, L.plateY1);
   for (let k = 0; k < L.nSlots; k++) spr(c, "slot", L.slotX + k * L.slotStep, L.slotY);
@@ -629,9 +632,6 @@ const round5 = (v) => Math.max(5, Math.round(v / 5) * 5);
 function nightBonus() { const wl = HOW.on ? 0 : Math.max(0, S.words), rl = HOW.on ? 0 : Math.max(0, S.retunes), wv = round5(S.target / 4), rv = round5(S.target / 6);
   const rows = []; if (wl) rows.push({ k: "WORDS LEFT", n: wl, v: wv }); if (rl) rows.push({ k: rl === 1 ? "RETUNE LEFT" : "RETUNES LEFT", n: rl, v: rv });
   return { rows, sum: wl * wv + rl * rv }; }
-function reportTimes() { const n = S.nw ? S.nw.length : 0, rd = 22 + n * 12, tot = rd + 4, nb = S.bonus ? S.bonus.rows.length : 0, bon = Array.from({ length: nb ? nb + 1 : 0 }, (_, i) => tot + 16 * (i + 1)), f0 = (nb ? bon[nb] : tot) + 16, f1 = f0 + 18, c1 = f1 + Math.max(24, Math.min(54, (S.total - S.startTotal) / 3 | 0));
-  return { rd, tot, bon, f0, f1, c0: f1, c1, ready: c1 + 14 }; }
-function reportNext() { if (S.phase !== "report") return; const T = reportTimes(); if (REPORT.t < T.ready) { REPORT.t = T.ready; return; } S.phase = "shop"; Sound.click(); }
 const fmtNum = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 // the safe area inside a framed panel, in world px from its edge: text never goes nearer the frame than this.
 // logbox: the gold frame is 8 px deep and its corner rivets reach 12, so 22 leaves clear parchment; plate: rivets reach 11 at the sides.
@@ -660,87 +660,129 @@ function scoreDisplay(hx, hy, hw, label, val, col, right, rightCol) { const ih =
 function bigNum(s, cx, y, col, cells, z = 1) { const n = Math.max(cells, s.length), gw = 40 * z, gh = 56 * z, adv = 48 * z, x0 = Math.round(cx - (n * adv - 8 * z) / 2), pad = n - s.length;
   for (let i = 0; i < n; i++) { const x = Math.round(x0 + i * adv), yy = Math.round(y - (gh - 56) / 2); ctx.drawImage(glyphCv("big", "#", C.dotOff), x, yy, gw, gh);
     const ch = s[i - pad]; if (ch && ch !== " ") { ctx.drawImage(glyphCv("big", ch, C.dotDim), x - 2, yy, gw, gh); ctx.drawImage(glyphCv("big", ch, C.dotDim), x + 2, yy, gw, gh); ctx.drawImage(glyphCv("big", ch, col), x, yy, gw, gh); } } }
-// after each night: a parchment log sheet. A brass nameplate rides its top edge; the night's words drop into a ruled ledger (the word,
-// the parts that worked on it as small chips, the points in their own column); the night's total lands, flies up into the RUN SCORE,
-// the sheet's big lit counter, which counts up and jumps. A second plate on the bottom edge says how to go on.
+// after each night: a parchment log sheet (Chris 2026-11-13). A brass nameplate rides its top edge. The night's words fold into one
+// line (how many, the best) that opens into its own scrolling list (Y, or tap the line; up / down, the wheel or a drag scroll it).
+// Under it the signal against the target, then the leftovers as lit lamps: one by one each goes dark and pays its points into the
+// NIGHT SCORE, the sheet's lit counter, so you see how well the night went. Last the night score flies down into the run score's
+// rolling drums in the room's corner (drawn over the sheet while it shows), which roll up. A plate on the bottom edge says how to go on.
 // Everything keeps INSET clear of the gold frame.
+function reportLamps() { const out = []; if (S.bonus) for (const r of S.bonus.rows) for (let i = 0; i < r.n; i++) out.push({ v: r.v, k: r.k }); return out; }
+function reportTimes() { const n = S.nw ? S.nw.length : 0, rd = 22 + Math.max(1, n) * 4, tot = rd + 8, lamps = reportLamps(), l0 = tot + 18, ld = lamps.map((_, i) => l0 + i * 14),
+    ns = (lamps.length ? ld[ld.length - 1] + 12 : tot + 10), f0 = ns + 14, f1 = f0 + 22, c1 = f1 + 40;
+  return { rd, tot, ld, ns, f0, f1, c0: f1, c1, ready: c1 + 6 }; }
+function reportNext() { if (S.phase !== "report") return; const T = reportTimes(); if (REPORT.t < T.ready) { REPORT.t = T.ready; return; } S.phase = "shop"; Sound.click(); }
+function reportToggle() { if (S.phase !== "report" || !(S.nw && S.nw.length)) return; REPORT.open = !REPORT.open; Sound.click(); }
+function reportScroll(d) { if (S.phase !== "report" || !REPORT.open) return false; REPORT.sT = Math.max(0, Math.min(REPORT.sMax || 0, (REPORT.sT || 0) + d)); return true; }
+// the run score's drums count from the night's start until the night score lands in them
+function reportRun() { return S.phase === "report" && REPORT.t < reportTimes().f1 ? S.startTotal + S.score : S.total; }
+// how the report's words are set (Workshop "report type", 2026-11-13; Chris: the tables look weak next to the other game's cards).
+// REPORT_TYPE 0 the small pixel ink as before, 1 the game's bold key lettering, 2 the How to Play cards' type (slab figures, typewriter
+// labels). #rtype-N picks one. Every helper takes the row's middle (y) so rows line up whatever the type.
+let REPORT_TYPE = 0; { const m = location.hash.match(/rtype-(\d)/); if (m) REPORT_TYPE = Math.min(2, +m[1]); }
+function rtSet() { const ih = Math.round(14 * TK), kh = glyphCv("key", "N", C.ink).height, st = REPORT_TYPE;
+  const px = (kind, s, x, y, col, al, opt) => ftext(s, x, Math.round(y - glyphCv(kind, "N", C.ink).height / 2), kind, col, al, opt);
+  const fnt = (f, s, x, y, col, al, sh) => { ctx.save(); ctx.font = f; ctx.textAlign = al === "r" ? "right" : al === "c" ? "center" : "left"; ctx.textBaseline = "middle";
+    if (sh) { ctx.fillStyle = "rgba(255,240,200,.55)"; ctx.fillText(s, x, y + 2); } ctx.fillStyle = col; ctx.fillText(s, x, y); ctx.restore(); };
+  const fw = (f, s) => { ctx.save(); ctx.font = f; const w = ctx.measureText(s).width; ctx.restore(); return w; };
+  if (st === 2) { const LF = `${Math.round(21 * TK)}px ${HOWF.body}`, VF = `${Math.round(27 * TK)}px ${HOWF.title}`;
+    return { lh: Math.round(38 * TK), lead: true, lab: (s, x, y, al, col) => fnt(LF, s, x, y, col || C.ink, al), labW: (s) => fw(LF, s),
+      val: (s, x, y, al, col) => fnt(VF, s, x, y, col || C.inkRed, al, true), valW: (s) => fw(VF, s) }; }
+  if (st === 1) return { lh: Math.max(kh, ih) + 16, lead: true, lab: (s, x, y, al, col) => px("ink", s, x, y, col || C.ink, al), labW: (s) => textW(s, "ink"),
+    val: (s, x, y, al, col) => px("key", s, x, y, col || C.inkRed, al, { under: "rgba(255,240,200,.6)", uy: 2 }), valW: (s) => textW(s, "key") };
+  return { lh: Math.round(23 * TK), lead: false, lab: (s, x, y, al, col) => px("ink", s, x, y, col || C.inkSoft, al), labW: (s) => textW(s, "ink"),
+    val: (s, x, y, al, col) => px("ink", s, x, y, col || C.inkRed, al), valW: (s) => textW(s, "ink") }; }
+// a leader between a label and its value: small dots in a row
+function rtLead(x0, x1, y) { if (x1 - x0 < 16) return; ctx.fillStyle = "rgba(90,50,20,.4)"; for (let x = x0 + 4; x < x1 - 4; x += 8) ctx.fillRect(Math.round(x), Math.round(y), 2, 2); }
 function drawReport() {
-  if (++REPORT.t === 1) { const a = loadScores(); REPORT.best = a.length ? a[0].s : 0; }
-  const t = REPORT.t, T = reportTimes(), rows = S.nw || [], F = FINE, kh = glyphCv("key", "N", C.ink).height, ih = Math.round(14 * TK), bh = 56;
-  if (rows.forEach((r, i) => { if (t === 22 + i * 12) Sound.cell(i / Math.max(1, rows.length)); }), t === T.tot) Sound.lock();
-  T.bon.forEach((b, i) => { if (t === b) { if (i < T.bon.length - 1) Sound.cell(.6 + .2 * i); else Sound.lock(); } });
-  if (t === T.f1) Sound.land(true);
-  if (t > T.c0 && t < T.c1) Sound.cell((t - T.c0) / (T.c1 - T.c0));
-  if (t === T.c1) { Sound.full(); }
+  if (++REPORT.t === 1) { const a = loadScores(); REPORT.best = a.length ? a[0].s : 0; REPORT.open = false; REPORT.ok = 0; REPORT.s = REPORT.sT = 0; REPORT.ns = S.score; }
+  const t = REPORT.t, T = reportTimes(), rows = S.nw || [], lamps = reportLamps(), F = FINE, kh = glyphCv("key", "N", C.ink).height, ih = Math.round(14 * TK), nW = rows.length, RT = rtSet(), lh = RT.lh;
+  const slab = REPORT_TYPE === 2, bh = slab ? Math.round(72 * TK) : 42;
+  const cnt = Math.min(nW, Math.max(0, Math.floor((t - 22) / 4) + 1));
+  if (t >= 22 && t < T.rd && (t - 22) % 4 === 0) Sound.cell(cnt / Math.max(1, nW)); if (t === T.tot) Sound.lock();
+  T.ld.forEach((d, i) => { if (t === d) { Sound.cell(.4 + .6 * i / Math.max(1, lamps.length)); } });
+  if (t === T.ns) Sound.full(); if (t === T.f1) Sound.land(true);
+  // the night score as the lamps pay in, counting up between payments
+  const paid = lamps.reduce((a, l, i) => a + (t >= T.ld[i] ? l.v : 0), 0), nsT = S.score + paid;
+  if (REPORT.ns < nsT) REPORT.ns = Math.min(nsT, REPORT.ns + Math.max(1, Math.ceil((nsT - REPORT.ns) / 5)));
   const title = `NIGHT ${S.night} CLEARED`, topH = Math.round((kh + 2 * F * INSET.plate.y + 8) / F), botH = Math.round((ih + 2 * F * INSET.plate.y + 8) / F);
-  const w = Math.min(W - 20, 470), padX = FX(INSET.logbox.x);
-  // heights in fine px: sub line, ledger (head, rows, total), the run score; rows squeeze if the screen is short
-  const subH = 0, heroH = 12 + ih + 12 + bh + 14 + 14, fixed = FX(Math.round(topH / 2) + 10) + subH + 20 + 18 + heroH + FX(INSET.logbox.y) + FX(Math.round(botH / 2));
-  const room = FX(SCENE_H) - FX(Math.round(topH / 2) + Math.round(botH / 2) + 8) - fixed, nbr = T.bon.length, fit = (c) => Math.floor(room / (Math.ceil(Math.max(1, rows.length) / c) + 2 + nbr)), cols = fit(1) >= ih + 12 || rows.length < 4 ? 1 : 2,
-    per = Math.ceil(Math.max(1, rows.length) / cols), n = per + 2 + nbr, lh = Math.max(ih + 8, Math.min(Math.round(25 * TK), fit(cols)));   // a long night splits the ledger into two columns rather than crowd the rows
-  const ledH = 20 + n * lh + 6, hh = Math.round((fixed + ledH) / F);
-  const x = Math.round(W / 2 - w / 2), y = Math.max(Math.round(topH / 2) + 2, Math.min(Math.round((SCENE_H - hh) / 2), SCENE_H - hh - Math.round(botH / 2) - 4));
+  const w = Math.min(W - 20, 470), padX = FX(INSET.logbox.x), nbr = S.bonus ? S.bonus.rows.length : 0;
+  // keep clear of the run score's drums in the corner when the sheet is wide enough to reach them
+  const x = Math.round(W / 2 - w / 2), lim = x < 130 ? SCENE_H - 38 : SCENE_H;
+  const heroH = slab ? 12 + ih + 4 + bh + 8 : 10 + ih + 8 + bh + 12 + 10, fixed = FX(Math.round(topH / 2) + 10) + 18 + heroH + FX(INSET.logbox.y) + FX(Math.round(botH / 2));
+  const room = FX(lim) - FX(Math.round(topH / 2) + Math.round(botH / 2) + 8) - fixed, baseLed = 16 + (2 + nbr) * lh;
+  const llh = Math.round(23 * TK), vis = Math.max(2, Math.min(nW, Math.floor((room - baseLed - 12) / llh)));   // rows the open list can show before it scrolls
+  REPORT.ok += ((REPORT.open ? 1 : 0) - REPORT.ok) * .25; if (Math.abs(REPORT.ok - (REPORT.open ? 1 : 0)) < .01) REPORT.ok = REPORT.open ? 1 : 0;
+  const listH = Math.round(REPORT.ok * (vis * llh + 8)), ledH = baseLed + listH, hh = Math.round((fixed + ledH) / F);
+  const y = Math.max(Math.round(topH / 2) + 2, Math.min(Math.round((lim - hh) / 2), lim - hh - Math.round(botH / 2) - 4));
   dim(); octx.fillStyle = "rgba(8,4,2,.4)"; octx.fillRect(x + 3, y + 4, w, hh); octx.drawImage(panelCv("logbox", w, hh), x, y); blitOver();
   const L0 = FX(x) + padX, R0 = FX(x + w) - padX, cx = FX(x + w / 2), cw = R0 - L0;
-  let ty = FX(y + Math.round(topH / 2) + 10);
   // the ledger: a ruled, slightly sunk sheet
-  const lx = L0, lw = cw, ly = ty; ctx.fillStyle = "rgba(110,60,20,.10)"; ctx.fillRect(lx, ly, lw, ledH);
+  const lx = L0, lw = cw, ly = FX(y + Math.round(topH / 2) + 10); ctx.fillStyle = "rgba(110,60,20,.10)"; ctx.fillRect(lx, ly, lw, ledH);
   ctx.fillStyle = "rgba(70,36,12,.45)"; ctx.fillRect(lx, ly, lw, 2); ctx.fillStyle = "rgba(255,236,190,.45)"; ctx.fillRect(lx, ly + ledH - 2, lw, 2);
-  const in0 = lx + 14, in1 = lx + lw - 14, rowY = (k) => ly + 10 + k * lh, tY = (k) => rowY(k) + Math.round((lh - ih) / 2), colW = Math.floor((in1 - in0 - (cols - 1) * 36) / cols);
-  const ptsW = Math.max(textW("SIGNAL", "ink"), ...rows.map(r => textW("+" + r.p, "ink"))), wordW = Math.min(Math.round(colW * .5), Math.max(textW("WORD", "ink"), ...rows.map(r => textW(r.w, "ink"))));
-  for (let c = 0; c < cols; c++) { const c0 = in0 + c * (colW + 36), c1 = c0 + colW, chip0 = c0 + wordW + 22, chip1 = c1 - ptsW - 18;
-    ftext("WORD", c0, tY(0), "ink", C.inkSoft, "l"); if (chip1 - chip0 > textW("AMP +1", "ink") + 14) ftext("PARTS", chip0, tY(0), "ink", C.inkSoft, "l"); ftext("SIGNAL", c1, tY(0), "ink", C.inkSoft, "r");
-    if (c) { ctx.fillStyle = "rgba(70,36,12,.25)"; ctx.fillRect(c0 - 19, rowY(0) + 2, 2, per * lh + lh - 4); } }
-  ctx.fillStyle = "rgba(70,36,12,.30)"; ctx.fillRect(in0, rowY(1) - 1, in1 - in0, 2);
-  rows.forEach((r, i) => { const t0 = 22 + i * 12; if (t < t0) return; const c = Math.floor(i / per), k = i % per + 1, age = t - t0, a = Math.min(1, age / 6), sl = Math.round((1 - a) * 12);
-    const c0 = in0 + c * (colW + 36), c1 = c0 + colW, chip0 = c0 + wordW + 22, chip1 = c1 - ptsW - 18;
-    ctx.save(); ctx.globalAlpha = a;
-    if (k % 2 === 0) { ctx.fillStyle = "rgba(110,60,20,.10)"; ctx.fillRect(c0 - 8, rowY(k) + 1, colW + 16, lh - 2); }
-    ftext(r.w.toUpperCase().slice(0, Math.floor(wordW / ADV.ink) + 1), c0 - sl, tY(k), "ink", C.ink, "l");
-    let cx0 = chip0; for (const tag of r.tags) { const tw = textW(tag, "ink"), chW = tw + 14; if (cx0 + chW > chip1) break; const red = /^RED/.test(tag);
-      ctx.fillStyle = red ? "rgba(150,40,26,.16)" : "rgba(110,60,20,.16)"; ctx.beginPath(); ctx.roundRect(cx0, tY(k) - 4, chW, ih + 8, 5); ctx.fill();
-      ftext(tag, cx0 + 7, tY(k), "ink", red ? C.inkRed : C.ink, "l"); cx0 += chW + 8; }
-    // the points pop as they land
-    if (age < 8) { const z = 1 + .3 * Math.sin(age / 8 * Math.PI); ctx.translate(c1, tY(k) + ih / 2); ctx.scale(z, z); ftext("+" + r.p, 0, -ih / 2, "ink", C.inkRed, "r"); }
-    else ftext("+" + r.p, c1, tY(k), "ink", C.inkRed, "r");
-    ctx.restore(); });
-  if (!rows.length) ftext("NO WORDS", cx, tY(1), "ink", C.inkSoft, "c");
-  // the night's total: a rule, then the total against the target
-  const totY = tY(per + 1) + 4, night = `${S.score}`, of = ` / ${S.target}`;
-  if (t >= T.tot) { ctx.fillStyle = "rgba(70,36,12,.45)"; ctx.fillRect(in0, totY - Math.round((lh - ih) / 2) - 1, in1 - in0, 2);
-    ftext("NIGHT TOTAL", in0, totY, "ink", C.ink, "l");
-    if (S.over) ftext("OVERDRIVE!", in0 + Math.round((in1 - in0) * .55), totY, "ink", (frame >> 3) & 1 ? C.redHot : C.inkRed, "c");   // a night filled past 1.5x its target
-    ftext(of, in1, totY, "ink", C.inkSoft, "r");
-    ftext(night, in1 - textW(of, "ink") - ADV.ink + 12, totY, "ink", !nbr && t >= T.f0 && t < T.f1 ? C.inkSoft : C.inkRed, "r"); }
-  // the leftover bonus, one row at a time (each pops in), then TONIGHT: everything this night adds to the run
-  let flyY = totY, flyX = in1 - textW(of, "ink") - textW(night, "ink") / 2;
-  T.bon.forEach((b0, i) => { if (t < b0) return; const yy = totY + (i + 1) * lh, age = t - b0, z = age < 8 ? 1 + .3 * Math.sin(age / 8 * Math.PI) : 1, last = i === T.bon.length - 1;
-    if (last) { ctx.fillStyle = "rgba(70,36,12,.45)"; ctx.fillRect(in0, yy - Math.round((lh - ih) / 2) - 1, in1 - in0, 2); }
-    const r = last ? null : S.bonus.rows[i], lab = last ? "TONIGHT" : r.k, mid = last ? "" : `${r.n} x ${r.v}`, val = "+" + fmtNum(last ? S.total - S.startTotal : r.n * r.v);
-    ftext(lab, in0, yy, "ink", last ? C.ink : C.inkSoft, "l"); if (mid) ftext(mid, in0 + Math.round((in1 - in0) * .55), yy, "ink", C.inkSoft, "c");
-    const flying = last && t >= T.f0 && t < T.f1; ctx.save(); ctx.translate(in1, yy + ih / 2); ctx.scale(z, z); ftext(val, 0, -ih / 2, "ink", flying ? C.inkSoft : C.inkRed, "r"); ctx.restore();
-    if (last) { flyY = yy; flyX = in1 - textW(val, "ink") / 2; } });
-  ty = ly + ledH + 18;
-  // the run score: the sheet's big lit counter
-  const hx = L0, hw = cw, hy = ty, best = REPORT.best, newBest = S.total > best && t >= T.c1;
-  ctx.fillStyle = "rgba(8,4,2,.88)"; ctx.beginPath(); ctx.roundRect(hx, hy, hw, heroH, 8); ctx.fill(); ctx.strokeStyle = "#a8742c"; ctx.lineWidth = 2; ctx.stroke();
-  ftext("RUN SCORE", hx + 18, hy + 12, "ink", C.gold, "l");
-  if (newBest) ftext("NEW HIGH SCORE!", hx + hw - 18, hy + 12, "ink", (frame >> 3) & 1 ? C.hot : C.gold, "r");
-  else if (best) ftext(`HIGH ${fmtNum(best)}`, hx + hw - 18, hy + 12, "ink", C.dotDim, "r");
-  const sy = hy + 12 + ih + 10; ctx.fillStyle = "#0b0604"; ctx.fillRect(hx + 12, sy, hw - 24, bh + 14);
-  const kc = t <= T.c0 ? 0 : t >= T.c1 ? 1 : 1 - Math.pow(1 - (t - T.c0) / (T.c1 - T.c0), 2), run = Math.round(S.startTotal + (S.total - S.startTotal) * kc);
-  const zz = t >= T.c1 && t < T.c1 + 12 ? 1 + .18 * Math.sin((t - T.c1) / 12 * Math.PI) : 1, cells = fmtNum(S.total).length;
-  if (t > T.c0 && t < T.c1 + 20) { ctx.save(); ctx.globalAlpha = .08 * (t < T.c1 ? 1 : 1 - (t - T.c1) / 20); ctx.fillStyle = C.amber; ctx.fillRect(hx + 12, sy, hw - 24, bh + 14); ctx.restore(); }
-  { const g = ctx.createRadialGradient(hx + hw / 2, sy + 7 + bh / 2, 4, hx + hw / 2, sy + 7 + bh / 2, hw * .4); g.addColorStop(0, `rgba(255,176,64,${t >= T.c0 ? .16 : .06})`); g.addColorStop(1, "rgba(255,176,64,0)"); ctx.fillStyle = g; ctx.fillRect(hx + 12, sy, hw - 24, bh + 14); }
-  bigNum(fmtNum(run), hx + hw / 2, sy + 7, kc > 0 && kc < 1 ? C.hot : C.amber, cells, zz);
-  // the night's total flies up into the counter
-  if (t >= T.f0 && t < T.f1) { const f = (t - T.f0) / (T.f1 - T.f0), e = f * f, sx = flyX, ex = hx + hw / 2, ey = sy + 7 + bh / 2;
-    const px = sx + (ex - sx) * e, py = flyY + (ey - flyY) * e - Math.sin(f * Math.PI) * 30, s2 = "+" + fmtNum(S.total - S.startTotal);
-    ftext(s2, px, py - 8, "key", C.hot, "c", { outline: C.dark }); }
+  const in0 = lx + 14, in1 = lx + lw - 14, mid = in0 + Math.round((in1 - in0) * .52), my = (y0) => y0 + Math.round(lh / 2);
+  // the words line: how many, the best, and a chip that opens the list
+  const wy = ly + 8, best = rows.reduce((b, r) => (!b || r.p > b.p ? r : b), null);
+  if (t >= 22) { const ws = `${cnt} WORD${cnt === 1 ? "" : "S"}`; RT.val(ws, in0, my(wy), "l", C.ink);
+    if (best && t >= T.rd) RT.lab(`BEST ${best.w.toUpperCase()} +${best.p}`, in0 + RT.valW(ws) + 20, my(wy), "l", C.inkSoft);
+    if (nW) { const lab = (REPORT.open ? "HIDE" : "SHOW") + (usingTouch ? "" : " (Y)"), chW = textW(lab, "ink") + 16, chX = in1 - chW, cy = my(wy) - Math.round(ih / 2);
+      ctx.fillStyle = REPORT.open ? "rgba(150,40,26,.18)" : "rgba(110,60,20,.18)"; ctx.beginPath(); ctx.roundRect(chX, cy - 5, chW, ih + 10, 6); ctx.fill();
+      ctx.strokeStyle = "rgba(110,60,20,.45)"; ctx.lineWidth = 2; ctx.stroke(); ftext(lab, chX + 8, cy, "ink", REPORT.open ? C.inkRed : C.ink, "l"); }
+    REPORT.hit = { x0: lx, x1: lx + lw, y0: wy, y1: wy + lh }; }
+  // the open list: its own scrolling window, a thumb on the right when it runs past what fits
+  const sy0 = wy + lh + 4;
+  if (listH > 4) { REPORT.sMax = Math.max(0, nW - vis); REPORT.sT = Math.min(REPORT.sT, REPORT.sMax); REPORT.s += (REPORT.sT - REPORT.s) * .3;
+    ctx.save(); ctx.beginPath(); ctx.rect(lx + 2, sy0, lw - 4, listH); ctx.clip(); ctx.fillStyle = "rgba(70,36,12,.08)"; ctx.fillRect(lx + 2, sy0, lw - 4, listH);
+    const scrollW = REPORT.sMax ? 20 : 0, c1 = in1 - scrollW, ptsW = Math.max(...rows.map(r => textW("+" + r.p, "ink"))), wordW = Math.min(Math.round((c1 - in0) * .42), Math.max(...rows.map(r => textW(r.w, "ink"))));
+    const chip0 = in0 + wordW + 18, chip1 = c1 - ptsW - 14, tx = (y0) => y0 + Math.round((llh - ih) / 2);
+    rows.forEach((r, i) => { const yy = sy0 + 4 + Math.round((i - REPORT.s) * llh); if (yy < sy0 - llh || yy > sy0 + listH) return;
+      if (i & 1) { ctx.fillStyle = "rgba(110,60,20,.10)"; ctx.fillRect(in0 - 8, yy, c1 - in0 + 16, llh); }
+      ftext(r.w.toUpperCase().slice(0, Math.floor(wordW / ADV.ink) + 1), in0, tx(yy), "ink", C.ink, "l");
+      let cx0 = chip0; for (const tag of r.tags) { const tw = textW(tag, "ink"), chW = tw + 14; if (cx0 + chW > chip1) break; const red = /^RED/.test(tag);
+        ctx.fillStyle = red ? "rgba(150,40,26,.16)" : "rgba(110,60,20,.16)"; ctx.beginPath(); ctx.roundRect(cx0, tx(yy) - 4, chW, ih + 8, 5); ctx.fill();
+        ftext(tag, cx0 + 7, tx(yy), "ink", red ? C.inkRed : C.ink, "l"); cx0 += chW + 8; }
+      ftext("+" + r.p, c1, tx(yy), "ink", C.inkRed, "r"); });
+    if (REPORT.sMax) { const th2 = Math.max(16, listH * vis / nW), ty2 = sy0 + (listH - th2) * (REPORT.s / REPORT.sMax);
+      ctx.fillStyle = "rgba(70,36,12,.18)"; ctx.fillRect(in1 - 6, sy0 + 2, 6, listH - 4); ctx.fillStyle = "rgba(150,40,26,.55)"; ctx.fillRect(in1 - 6, ty2 + 2, 6, th2 - 4); }
+    ctx.restore(); REPORT.list = { x0: lx, x1: lx + lw, y0: sy0, y1: sy0 + listH }; } else REPORT.list = null;
+  // the signal against the target
+  const sgY0 = sy0 + listH, sgY = my(sgY0);
+  if (t >= T.tot) { ctx.fillStyle = "rgba(70,36,12,.45)"; ctx.fillRect(in0, sgY0 - 1, in1 - in0, 2);
+    const sv = `${S.score} / ${S.target}`, lab = "SIGNAL"; RT.lab(lab, in0, sgY, "l", C.ink);
+    if (S.over) RT.lab("OVERDRIVE!", mid, sgY, "c", (frame >> 3) & 1 ? C.redHot : C.inkRed);
+    else if (RT.lead) rtLead(in0 + RT.labW(lab) + 6, in1 - RT.valW(sv) - 6, sgY);
+    RT.val(sv, in1, sgY, "r"); }
+  // the leftovers as lamps: lit, then each goes dark in turn and pays into the night score
+  let li = 0; const lr = Math.round((slab || REPORT_TYPE === 1 ? 9 : 7) * TK), lamp = (lxp, lyp, on, flare) => {
+    ctx.fillStyle = "#2a1406"; ctx.beginPath(); ctx.arc(lxp, lyp, lr + 2, 0, 7); ctx.fill(); ctx.strokeStyle = "#a8742c"; ctx.lineWidth = 2; ctx.stroke();
+    if (on || flare > 0) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(lxp, lyp, lr * 3.2, "255,170,60", on ? .55 : flare * .9); ctx.restore();
+      ctx.fillStyle = on ? "#ffb040" : `rgba(255,240,200,${flare})`; ctx.beginPath(); ctx.arc(lxp, lyp, lr, 0, 7); ctx.fill(); ctx.fillStyle = "rgba(255,248,220,.85)"; ctx.beginPath(); ctx.arc(lxp - lr * .3, lyp - lr * .35, lr * .35, 0, 7); ctx.fill(); }
+    else { ctx.fillStyle = "#3a2410"; ctx.beginPath(); ctx.arc(lxp, lyp, lr, 0, 7); ctx.fill(); } };
+  (S.bonus ? S.bonus.rows : []).forEach((r, ri) => { const y0 = sgY0 + (ri + 1) * lh, yy = my(y0); if (t < T.tot) return;
+    RT.lab(r.k, in0, yy, "l", C.ink); RT.lab(`${r.v} EACH`, in1, yy, "r", C.inkSoft);
+    const step = lr * 2 + 12, lx0 = mid - Math.round((r.n - 1) * step / 2);
+    for (let k = 0; k < r.n; k++, li++) { const d = T.ld[li], on = t < d, age = t - d, px2 = lx0 + k * step;
+      lamp(px2, yy, on, on ? 0 : Math.max(0, 1 - age / 14));
+      if (!on && age < 26) { const u = age / 26; ctx.save(); ctx.globalAlpha = 1 - u; RT.val("+" + r.v, px2, yy - lr - 10 - Math.round(u * 22), "c"); ctx.restore(); } } });
+  // the night score: the sheet's lit counter (or, in the cards' type, a big slab figure on the parchment)
+  const hx = L0, hw = cw, hy = ly + ledH + 18, counting = REPORT.ns < nsT || (T.ld.length && t >= T.ld[0] && t < T.ns), zz = t >= T.ns && t < T.ns + 12 ? 1 + .18 * Math.sin((t - T.ns) / 12 * Math.PI) : 1;
+  const leaving = t >= T.f0 && t < T.f1, nsStr = fmtNum(REPORT.ns); let ncx = hx + hw / 2, ncy;
+  if (slab) { ncy = hy + 12 + ih + 4 + bh / 2; ctx.save(); ctx.font = `${Math.round(20 * TK)}px ${HOWF.title}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = C.inkSoft; ctx.fillText("NIGHT SCORE", ncx, hy + 12 + ih / 2);
+    ctx.translate(ncx, ncy); ctx.scale(zz, zz); ctx.font = `${bh}px ${HOWF.title}`; ctx.lineJoin = "round"; ctx.lineWidth = Math.round(6 * TK); ctx.strokeStyle = "#3a1406"; ctx.strokeText(nsStr, 0, 2);
+    ctx.fillStyle = leaving ? "#b88a5a" : counting ? "#e84a1c" : "#c8361a"; ctx.fillText(nsStr, 0, 0); ctx.fillStyle = "rgba(255,230,180,.35)"; ctx.fillText(nsStr, 0, -2); ctx.fillStyle = leaving ? "#b88a5a" : counting ? "#e84a1c" : "#c8361a"; ctx.fillText(nsStr, 0, -1); ctx.restore(); }
+  else { ctx.fillStyle = "rgba(8,4,2,.88)"; ctx.beginPath(); ctx.roundRect(hx, hy, hw, heroH, 8); ctx.fill(); ctx.strokeStyle = "#a8742c"; ctx.lineWidth = 2; ctx.stroke();
+    ftext("NIGHT SCORE", hx + 16, hy + 10, "ink", C.gold, "l");
+    const sy = hy + 10 + ih + 8; ctx.fillStyle = "#0b0604"; ctx.fillRect(hx + 10, sy, hw - 20, bh + 12); ncy = sy + 6 + bh / 2;
+    { const g = ctx.createRadialGradient(ncx, ncy, 4, ncx, ncy, hw * .4); g.addColorStop(0, `rgba(255,176,64,${counting || t >= T.ns ? .16 : .08})`); g.addColorStop(1, "rgba(255,176,64,0)"); ctx.fillStyle = g; ctx.fillRect(hx + 10, sy, hw - 20, bh + 12); }
+    bigNum(nsStr, ncx, sy + 6 - 7, leaving ? C.dotDim : counting ? C.hot : C.amber, fmtNum(nsT).length, .75 * zz); }
+  // the night score flies down into the run score's drums
+  if (leaving) { const a = scoreDrumAnchor(), f = (t - T.f0) / (T.f1 - T.f0), e = f * f;
+    const px2 = ncx + (a.x - ncx) * e, py = ncy + (a.y - ncy) * e - Math.sin(f * Math.PI) * 40, z = 1 + .3 * Math.sin(f * Math.PI);
+    ctx.save(); ctx.translate(px2, py); ctx.scale(z, z); ftext("+" + fmtNum(S.total - S.startTotal), 0, -14, "key", C.hot, "c", { outline: C.dark }); ctx.restore(); }
   // nameplates on the top and bottom edges
   edgePlate(title, "key", cx, FX(y), C.ink);
   const ready = t >= T.ready, pr = ready ? (usingTouch ? "TAP TO PICK A PART" : "PRESS A: PICK A PART") : "TALLYING...";
   edgePlate(pr, "ink", cx, FX(y + hh), ready && (frame >> 5) & 1 ? C.inkRed : C.ink);
+  drawScoreDrums(true);   // the run score, on top of the dimmed room
 }
 function fitPart(p) { plPick(p.id); S.parts.push(p.id); Sound.pick(); log(`Fitted: ${p.name}.`); S.night += 1; knobA.L += 3; staticKick = .5; Sound.retune(); startNight(); }
 function swapConfirm(k) { const sl = partSlots()[k]; if (!sl || !swapNew) return; S.parts = S.parts.filter(id => id !== sl.id); log(`Took out: ${PART[sl.id].name}.`); const p = swapNew; swapNew = null; fitPart(p); }
@@ -845,11 +887,14 @@ function drawFinish() {
    shrinks to fit its corner if a score gets huge. */
 const SC = { shown: 0, step: 0, kick: 0 };
 function scoreUpdate() { if (SC.kick > 0) SC.kick = Math.max(0, SC.kick - .035);
-  const v = S.phase === "play" && !HOW.on ? Math.min(S.total, (S.startTotal || 0) + S.shown) : S.total;
-  if (v > SC.shown) { SC.step = v - SC.shown; SC.shown = v; if (v === S.total) SC.kick = 1; } else { SC.step = 0; if (v < SC.shown) SC.shown = v; } }
+  const v = S.phase === "play" && !HOW.on ? Math.min(S.total, (S.startTotal || 0) + S.shown) : S.phase === "report" ? reportRun() : S.total;
+  // in play it follows the tube's count; on the night report it rolls up on its own once the night score lands in it
+  if (v > SC.shown) { const nv = S.phase === "report" ? Math.min(v, SC.shown + Math.max(1, Math.ceil((v - SC.shown) / 14))) : v; SC.step = nv - SC.shown; SC.shown = nv; if (nv === S.total) SC.kick = 1; } else { SC.step = 0; if (v < SC.shown) SC.shown = v; } }
 function scoreShow() { return !HOW.on && barShow > .9 && ["play", "shop", "swap", "melt", "upgrade"].includes(S.phase); }
-function drawScoreDrums() {
-  if (!scoreShow()) return; const digs = Math.max(5, String(S.total).length), lab = textW("RUN", "ink") + 16, w = 18 + digs * 28 + 10 + lab + 16, h = 62, x = 12, y = FX(L.barY) - 10 - h;
+function scoreDrumBox() { const digs = Math.max(5, String(S.total).length), lab = textW("RUN", "ink") + 16, w = 18 + digs * 28 + 10 + lab + 16, h = 62, x = 12, y = FX(L.barY) - 10 - h; return { digs, lab, w, h, x, y }; }
+function scoreDrumAnchor() { const b = scoreDrumBox(); return { x: b.x + b.lab + 16 + b.digs * 14, y: b.y + b.h / 2 }; }
+function drawScoreDrums(top) {
+  if (!(top ? S.phase === "report" && !HOW.on : scoreShow())) return; const { digs, lab, w, h, x, y } = scoreDrumBox();
   const maxW = Math.max(250, Math.min(440, FX(L.radioX + 70) - 16)), s = Math.min(1, maxW / w), k = SC.kick, counting = SC.step > 0;
   ctx.save(); if (s < 1) { ctx.translate(x, y + h); ctx.scale(s, s); ctx.translate(-x, -(y + h)); }
   ctx.fillStyle = "rgba(6,3,2,.55)"; ctx.fillRect(x + 4, y + 6, w, h);
@@ -1802,7 +1847,7 @@ function slotGlows() {
 // a row of light cells along the top of the bar. Each cell pops on with a click that climbs in pitch as the night fills; a sheen runs
 // along the lit part; a word that can be sent shows what it would add as blinking cells; a full tube flashes and burns white.
 let tubeV = 0, tubeLit = 0, tubeFlash = [], tubeKick = 0, tubeFull = false;
-function tubeGeom() { const t = L.tube, ix = FX(t.x + 4) + 3, iw = FX(t.w - 8) - 6, cw = 16, gap = 4, n = Math.floor((iw + gap) / (cw + gap));
+function tubeGeom() { const t = L.tube, ix = FX(t.x + 2) + 4, iw = FX(t.w - 4) - 8 - 30, cw = 16, gap = 4, n = Math.floor((iw + gap) / (cw + gap));   // (room at the right end for the end lamp)
   return { ix: ix + Math.floor((iw - (n * (cw + gap) - gap)) / 2), iy: FX(L.barY + t.y + 2) + 3, ih: FX(t.h - 4) - 6, cw, gap, n }; }
 function tubeHead() { const t = L.tube; return { x: t.x + 4 + (t.w - 8) * Math.min(1, tubeV), y: L.barY + t.y + t.h / 2 }; }
 function tubeRGB(f) { const a = [255, 120, 40], b = [255, 200, 90], c = [255, 246, 220], m = f < .6 ? f / .6 : (f - .6) / .4, p = f < .6 ? a : b, q = f < .6 ? b : c;
@@ -1836,11 +1881,11 @@ function drawTube() {
   tubeKick *= .9;
   // the end lamp (Chris 2026-11-12): lights and pulses at the far end of the tube only while the traced word would fill it,
   // so a word that won't quite get there is easy to spot by the lamp staying dark
-  { const t = L.tube, ex = FX(t.x + t.w) - 10, ey = FX(L.barY + t.y + t.h / 2), p = .65 + .35 * Math.sin(frame / 5);
-    ctx.fillStyle = "#1a0d06"; ctx.beginPath(); ctx.arc(ex, ey, 15, 0, 6.283); ctx.fill();
-    ctx.fillStyle = "#b8873a"; ctx.beginPath(); ctx.arc(ex, ey, 12.5, 0, 6.283); ctx.fill();
-    ctx.fillStyle = odv ? `rgba(255,${Math.round(60 + 60 * p)},${Math.round(40 + 30 * p)},1)` : fills ? `rgba(255,${Math.round(220 + 30 * p)},${Math.round(150 + 90 * p)},1)` : "#3a1f10"; ctx.beginPath(); ctx.arc(ex, ey, 9, 0, 6.283); ctx.fill();
-    if (fills) { ctx.fillStyle = "rgba(255,255,245,.9)"; ctx.beginPath(); ctx.arc(ex - 3, ey - 3, 3, 0, 6.283); ctx.fill();
+  { const t = L.tube, ex = FX(t.x + t.w) - 14, ey = FX(L.barY + t.y + t.h / 2), p = .65 + .35 * Math.sin(frame / 5);
+    ctx.fillStyle = "#1a0d06"; ctx.beginPath(); ctx.arc(ex, ey, 11, 0, 6.283); ctx.fill();
+    ctx.fillStyle = "#8a6230"; ctx.beginPath(); ctx.arc(ex, ey, 9.5, 0, 6.283); ctx.fill();
+    ctx.fillStyle = odv ? `rgba(255,${Math.round(60 + 60 * p)},${Math.round(40 + 30 * p)},1)` : fills ? `rgba(255,${Math.round(220 + 30 * p)},${Math.round(150 + 90 * p)},1)` : "#3a1f10"; ctx.beginPath(); ctx.arc(ex, ey, 7, 0, 6.283); ctx.fill();
+    if (fills) { ctx.fillStyle = "rgba(255,255,245,.9)"; ctx.beginPath(); ctx.arc(ex - 2, ey - 2, 2.5, 0, 6.283); ctx.fill();
       ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(ex, ey, odv ? 80 : 64, odv ? "255,70,40" : "255,200,110", .55 * p); ctx.restore(); } }
   // the signal traveling down from the tower: a bright head with a fading tail
   for (const bm of beams) { const q = tubeHead(), b = L.beacon, cx = (b.x + q.x) / 2, cy = Math.min(b.y, q.y) - 30;
@@ -2583,6 +2628,7 @@ function drawOver() {   // DEAD AIR: the run score big and lit, then how the run
 let usingButtons = false, usingTouch = matchMedia("(pointer:coarse)").matches;
 function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ? "up" : "down"; if (devKey(dk)) return; if (pauseKey(dk)) return; if (boardKey(dk)) return; if (howKey(dk)) return; dismissCard();
   usingButtons = true; Sound.ensure();
+  if (S.phase === "report") { if (dy) reportScroll(dy); return; }
   if (S.phase === "title" && TS === 6 && (dy || dx)) { dy = dy || dx; if (titleBusy()) return; titleSel = (titleSel + dy + TITLE_MENU.length) % TITLE_MENU.length; Sound.click(); return; }
   if (S.phase === "shop") { const n = shopChoices.length;
     if (meltOpen() && dy) { shopFocus = dy > 0 ? n : Math.min(shopFocus, n - 1); Sound.click(); return; }   // down to the melter plate, up back to the parts
@@ -2602,7 +2648,7 @@ function start() { if (buildReady) return maybeReload(); Sound.ensure(); Sound.m
 function pressA() { if (devKey("a")) return; if (pauseKey("a")) return; if (boardKey("a")) return; if (howKey("a")) return; if (inspectKey("a")) return; Sound.ensure(); usingButtons = true; dismissCard(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
 function pressB() { if (devKey("b")) return; if (pauseKey("b")) return; if (boardKey("b")) return; if (howKey("b")) return; if (inspectKey("a")) return; if (S.phase === "melt") return meltDone(); if (S.phase === "swap") return swapCancel(); if (S.phase === "play") back(); }
 function pressX() { if (devKey("x")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); dismissCard(); if (S.phase === "play" && S.path.length) send(); else pressA(); }
-function pressY() { if (devKey("y")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); dismissCard(); if (S.phase === "play") retune(); }
+function pressY() { if (devKey("y")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); dismissCard(); if (S.phase === "play") retune(); else if (S.phase === "report") reportToggle(); }
 function pressStart() { if (devKey("start")) return; if (pauseKey("start")) return; if (boardKey("start")) return; if (howKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); if (S.phase === "play") pauseOpen(); }
 function pressSel() { if (devKey("select")) return; }   // Select does nothing by itself (held a moment: dev mode, once it's unlocked)
 window.addEventListener("keydown", (e) => {
@@ -2636,7 +2682,8 @@ cv.addEventListener("pointerdown", (e) => {
   if (S.phase === "swap") { const [, , sw, sh] = R("slot"), y0 = L.barY + L.slotY, k = Math.floor((p.x - L.slotX) / L.slotStep);
     if (p.y >= y0 && p.y <= y0 + sh && k >= 0 && k < partSlots().length && p.x - L.slotX - k * L.slotStep <= sw) { if (swapFocus === k || usingTouch) swapConfirm(k); else swapFocus = k; }
     else if (p.y < SCENE_H) swapCancel(); return; }
-  if (S.phase === "report") { reportNext(); return; }
+  if (S.phase === "report") { const fx = p.x * FINE, fy = p.y * FINE, inR = (r) => r && fx >= r.x0 && fx <= r.x1 && fy >= r.y0 && fy <= r.y1;
+    if (inR(REPORT.hit)) { reportToggle(); return; } if (inR(REPORT.list)) { REPORT.drag = { y: fy, s: REPORT.sT }; return; } reportNext(); return; }
   if (S.phase === "melt") { meltDone(); return; }
   if (S.phase === "upgrade") { const k = slotAt(p); if (k >= 0 && !PART[partSlots()[k].id].rare) { if (swapFocus === k || usingTouch) upgradeConfirm(k); else swapFocus = k; } return; }
   if (S.phase === "shop" && meltOpen()) { const m = meltPlate(); if (p.x >= m.x && p.x <= m.x + m.w && p.y >= m.y && p.y <= m.y + m.h) { if (shopFocus === shopChoices.length || usingTouch) meltStart(); else shopFocus = shopChoices.length; return; } }
@@ -2648,6 +2695,7 @@ cv.addEventListener("pointerdown", (e) => {
   down = i; dragging = false; try { cv.setPointerCapture(e.pointerId); } catch (er) {}
 });
 cv.addEventListener("pointermove", (e) => {
+  if (REPORT.drag && S.phase === "report") { if (!e.buttons && e.pointerType === "mouse") REPORT.drag = null; else { const lh = Math.round(23 * TK); REPORT.sT = Math.max(0, Math.min(REPORT.sMax || 0, REPORT.drag.s - (toWorld(e).y * FINE - REPORT.drag.y) / lh)); return; } }
   if (e.pointerType === "mouse") { hoverTile = keyAt(toWorld(e), false); if (hoverTile >= 0) usingButtons = false; }
   if (down === null) return; const i = keyAt(toWorld(e), true); if (i < 0) return;
   if (!dragging) { if (i === down) return; dragging = true; if (S.path[S.path.length - 1] !== down) { pathSound = 0; setPath([down]); } }
@@ -2655,7 +2703,8 @@ cv.addEventListener("pointermove", (e) => {
   if (p.length >= 2 && i === p[p.length - 2]) { setPath(p.slice(0, -1)); return; }
   if (!p.includes(i) && adjacent(last, i)) setPath([...p, i]); S.cursor = i;
 });
-cv.addEventListener("pointerup", () => { if (down === null) return; const d = down; down = null; if (dragging) { dragging = false; if (S.path.length >= 3) send(); else if (S.path.length) setPath([]); } else tapTile(d); });
+cv.addEventListener("wheel", (e) => { if (reportScroll(Math.sign(e.deltaY))) e.preventDefault(); }, { passive: false });   // the night report's word list
+cv.addEventListener("pointerup", () => { REPORT.drag = null; if (down === null) return; const d = down; down = null; if (dragging) { dragging = false; if (S.path.length >= 3) send(); else if (S.path.length) setPath([]); } else tapTile(d); });
 cv.addEventListener("pointercancel", () => { down = null; dragging = false; });
 cv.addEventListener("pointerleave", () => { hoverTile = -1; });
 let padCur = null, padTimer = null;
@@ -2972,7 +3021,7 @@ async function boot() {
   { const m = location.hash.match(/^#test-shop-all-(\d)/); if (m) { newRun(); S.parts.push("amp", "coil"); S.over = true; nightClear(); S.phase = "shop"; shopChoices = PARTS.slice(+m[1] * 4, +m[1] * 4 + 4); } }
   if (/^#test-report/.test(location.hash)) { newRun(); S.parts.push("amp", "owl"); S.target = 30; S.score = 52; S.total = 214; S.startTotal = 162; S.over = true; S.night = 3;
     S.nw = [{ w: "rat", p: 5, tags: [] }, { w: "quartz", p: 24, tags: ["RED x2", "AMP +1"] }, { w: "dogs", p: 9, tags: ["AMP +1"] }, { w: "link", p: 14, tags: ["OWL x3"] }];
-    if (/long/.test(location.hash)) { S.nw.push({ w: "zebras", p: 31, tags: ["COIL x2", "AMP +1", "VOWEL +2"] }, { w: "quixotic", p: 88, tags: ["RED x2", "COIL x2"] }, { w: "jab", p: 7, tags: ["SHORT +6"] }, { w: "ton", p: 4, tags: [] }); S.total = 13914; S.startTotal = 13780; S.score = 134; } S.words = 2; S.retunes = 1; nightClear(); }
+    if (/long/.test(location.hash)) { S.nw.push({ w: "zebras", p: 31, tags: ["COIL x2", "AMP +1", "VOWEL +2"] }, { w: "quixotic", p: 88, tags: ["RED x2", "COIL x2"] }, { w: "jab", p: 7, tags: ["SHORT +6"] }, { w: "ton", p: 4, tags: [] }, ...["radio", "signal", "tower", "night", "lamp", "glass", "tune", "static"].map((w, i) => ({ w, p: 6 + i * 3, tags: i % 3 ? ["AMP +1"] : [] }))); S.total = 13914; S.startTotal = 13780; S.score = 134; } S.words = 2; S.retunes = 1; nightClear(); }
   if (location.hash === "#test-upgrade") { newRun(); S.parts.push("amp", "coil", "battery", "knob", "echo"); nightClear(); S.phase = "upgrade"; MELT.ut = 0; swapFocus = 1; }
   if (/^#test-melt/.test(location.hash)) { newRun(); S.parts.push("amp", "coil", "battery", "knob", "echo"); S.melt = /full/.test(location.hash) ? 4 : 1; nightClear(); S.phase = "shop"; }
   if (/^#test-shop-tags/.test(location.hash)) { newRun(); S.parts.push("amp", "coil", "battery", "knob"); if (/full/.test(location.hash)) S.parts.push("echo"); S.over = true; nightClear(); S.phase = "shop"; shopChoices = [PART.coil, PART.gold, PART.owl, PART.amp]; }
