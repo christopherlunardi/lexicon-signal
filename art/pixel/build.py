@@ -218,6 +218,18 @@ def main():
     for nm, fn in (("iconL_melter", "melter_icon_fixed.png"), ("iconL_molten", "molten_icon_fixed.png"), ("cab_top", "cab_top_fixed.png"), ("cab_row", "cab_row_fixed.png"), ("big_melter", "melter_big_fixed.png"), ("big_molten", "molten_big_fixed.png")):
         ti = np.asarray(Image.open(SRC + fn).convert("RGBA")).copy(); r_, g_, b_ = ti[..., 0].astype(int), ti[..., 1].astype(int), ti[..., 2].astype(int)
         mg = (b_ > 120) & (r_ > 120) & (g_ < r_ - 60) & (g_ < b_ - 60); ti[..., 3] = np.where(mg, 0, 255); imgs[nm] = Image.fromarray(ti, "RGBA")
+    # the painted rivets are painted out first (filled in from the frame round them), so the new ones never sit over old ones
+    # (Chris 2026-11-13: "layered rivets"): where the art had them, measured on the art
+    OLD_RIVETS = {"logbox": [(8, 7), (184, 7), (8, 71), (184, 71)], "slot": [(5, 5), (52, 5), (5, 56), (52, 56)],
+                  "bar_left": [(10, 12), (11, 13), (11, 81)], "bar_right": [(25, 12), (26, 12), (26, 81)],
+                  "tplate": [(7, 7), (90, 7), (7, 25), (90, 25)], "tplate_lit": [(7, 7), (90, 7), (7, 25), (90, 25)]}
+    import cv2
+    for nm, cs in OLD_RIVETS.items():
+        arr = np.asarray(imgs[nm]).copy(); arr[arr[..., 3] == 0, :3] = (30, 10, 4)   # (see-through pixels hold the keyed-out magenta: never fill from it)
+        rgb = np.ascontiguousarray(arr[..., :3]); mask = np.zeros(rgb.shape[:2], np.uint8)
+        for cx, cy in cs: cv2.circle(mask, (cx, cy), 5, 255, -1)
+        mask[arr[..., 3] == 0] = 0
+        arr[..., :3] = cv2.inpaint(rgb, mask, 3, cv2.INPAINT_TELEA); imgs[nm] = Image.fromarray(arr, "RGBA")
     for nm, cs in RIVETS.items():
         im_ = imgs[nm].copy()
         for cx, cy in cs: im_.alpha_composite(rivet, (cx - 3, cy - 3))

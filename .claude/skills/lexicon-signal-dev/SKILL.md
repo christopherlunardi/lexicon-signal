@@ -194,6 +194,8 @@ the same batch.
   and the log, shadowed top/left, warm light bottom/right, no bright outline; the end lamp sits inside its right end.
 - One rivet everywhere (Chris 2026-11-13): build.py draws a clean 7x7 brass rivet (dark rim, bright top-left, screw slot) and stamps
   it over every painted rivet (RIVETS: plate, logbox, slot, bar_left/right, tplate/_lit; centers measured per piece, kept symmetric).
+  The painted rivets are painted out first (OLD_RIVETS, filled in from the frame round them with cv2.inpaint), so no old rivet
+  shows under a new one.
   It is also the sprite "rivet" for rivets drawn in code (the score counter). Short plates (plate3, hh < 26) are built from
   "plate_bare" with one rivet each end, halfway down (small plates want two, not four). New framed art gets its rivets stamped too.
 - nine() fills a framed panel's edges and middle with the art's whole middle span (a short repeated strip showed as ridges, Chris
