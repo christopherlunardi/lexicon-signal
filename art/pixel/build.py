@@ -25,7 +25,7 @@ SPRITES = {
     "window": {"src": "window7", "points": {"beacon": (174.5, 210.5)}},
     # the radio (2026-11-12): redrawn with a bigger glass for a 5x5 grid (radio5); the 4x4 one ("radio" source) is kept for reference
     "radio": {"src": "radio5", "points": {
-        "glass0": (429, 222), "glass1": (1171, 714), "dial0": (397, 96), "dial1": (1198, 171), "meter": (1440, 140), "meterR": (1460, 140),
+        "glass0": (429, 222), "glass1": (1171, 714), "dial0": (397, 96), "dial1": (1208, 171), "meter": (1440, 140), "meterR": (1460, 140),
         "lamp0": (559, 797), "lamp1": (655, 797), "lamp2": (751, 797), "lamp3": (847, 797), "lamp4": (943, 797), "lamp5": (1041, 797),
         "knobL": (276, 791), "knobR": (1328, 790)}},
     # the sideboard is a left end, one repeating drawer bay and a right end, so it stretches to any width
@@ -251,7 +251,17 @@ def main():
     sheet = Image.new("RGBA", (AW, y + sh + 1), (0, 0, 0, 0))
     for n, (x, y, w, h) in rects.items(): sheet.alpha_composite(imgs[n].convert("RGBA"), (x, y))
     sheet.save(OUT + "atlas.png", optimize=True)
-    json.dump({"palette": pal.tolist(), "accents": [list(c) for c in pix.ACCENTS], "rects": rects, "points": pts, "fonts": {}}, open(OUT + "atlas.json", "w"))
+    # the dial window's painted shape, row by row (rounded ends): the game fills exactly these pixels so the lit display never
+    # pokes past the frame. Each row is the light run through the window's middle, inside the dark outline.
+    rad = imgs["radio"].convert("RGB"); bri = lambda X, Y: sum(rad.getpixel((X, Y)))
+    (dx0, dy0), (dx1, dy1) = pts["radio"]["dial0"], pts["radio"]["dial1"]; mx = (dx0 + dx1) // 2; dial_rows = []
+    for Y in range(dy0, dy1):
+        if bri(mx, Y) < 200: continue
+        l = r = mx
+        while bri(l - 1, Y) > 200: l -= 1
+        while bri(r + 1, Y) > 200: r += 1
+        dial_rows.append([Y, l, r])
+    json.dump({"palette": pal.tolist(), "accents": [list(c) for c in pix.ACCENTS], "rects": rects, "points": pts, "dialRows": dial_rows, "fonts": {}}, open(OUT + "atlas.json", "w"))
     for n in ["radio", "window", "wall_tile", "sb_mid", "bar_left", "bar_mid", "logbox", "plate", "battery", "slot", "iconL_amp", "icon_amp"]: print(n, rects[n][2:])
     print("radio points", pts["radio"]); print("window", pts["window"], "battery", pts["battery"])
 

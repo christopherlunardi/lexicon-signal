@@ -214,6 +214,8 @@ the same batch.
   All eight pieces were painted by Chris on 2026-11-13 (he gave each an inner border line); rivets were moved inside those
   borders (plate 8,8/93,8/8,17/93,17; slot 6,6/52,6/6,56/52,56; title plates 9,9/88,9/9,24/88,24, lit and unlit always the same).
   If he sends one twice, use the one he names (usually the later); check resends pixel by pixel (RGB, not getbbox on RGBA).
+- The dial window (2026-11-13): dial0/dial1 mark the painted window's inner edges; build.py also writes atlas.json dialRows, the
+  window's rounded shape row by row, and the game fills (dialFill) and clips (dialClip) to exactly that shape, never a box.
 - Sheets and margins (2026-11-13, Chris: "things are always too close to the gold borders"): text never sits nearer a frame than
   INSET (logbox 22 world px x, 18 y: the gold frame is 8 deep and the corner rivets reach 12; plate 16 x, 6 y). Parchment screens use
   sheet() (logbox + top nameplate + optional bottom prompt plate, body kept inside INSET) and edgePlate(); the run score shows in

@@ -207,6 +207,10 @@ function buildLUT() {
     const p = nearest(ROOMPAL, r * 8 + 4, g * 8 + 4, b * 8 + 4), i = ((r * 32 + g) * 32 + b) * 3; LUT[i] = p[0]; LUT[i + 1] = p[1]; LUT[i + 2] = p[2]; }
 }
 const R = (n) => A.rects[n], P = (n) => A.points[n] || {};
+// the dial window's painted shape (rounded ends), row by row from build.py: fill exactly it, never a plain box that pokes past the frame
+function dialFill(g, ox, oy, z) { const rows = A.dialRows; if (!rows) { const d = L.dial; g.fillRect(ox + (d.x - L.radioX) * z, oy + (d.y - L.radioY) * z, d.w * z, d.h * z); return; }
+  for (const [y, l, r] of rows) g.fillRect(ox + l * z, oy + y * z, (r - l + 1) * z, z); }
+function dialClip(g, ox, oy, z) { const rows = A.dialRows || []; g.beginPath(); for (const [y, l, r] of rows) g.rect(ox + l * z, oy + y * z, (r - l + 1) * z, z); g.clip(); }
 function spr(c, n, x, y, sx, sy, sw, sh) { const r = R(n); if (sw == null) c.drawImage(atlasImg, r[0], r[1], r[2], r[3], Math.round(x), Math.round(y), r[2], r[3]);
   else c.drawImage(atlasImg, r[0] + sx, r[1] + sy, sw, sh, Math.round(x), Math.round(y), sw, sh); }
 // 9-slice: real corners, edges and middle repeat a narrow plain strip from the center (no rivets or seams repeat)
@@ -966,7 +970,7 @@ function drawRadioLive() {
   { const n = S.phase === "title" ? 0 : Math.max(0, maxWords() - 6), a = L.lamps, cx = (a[0].x + a[5].x) / 2, y = a[0].y + 31;   // the middle of the radio's base lip
     L.extraLamps = []; for (let j = 0; j < n; j++) L.extraLamps.push({ x: cx + (j - (n - 1) / 2) * 13, y }); }
   // the dial becomes a lit display window
-  const d = L.dial; wctx.fillStyle = C.glass; wctx.fillRect(d.x, d.y, d.w, d.h);
+  wctx.fillStyle = C.glass; dialFill(wctx, L.radioX, L.radioY, 1);
   // lamps = words left
   const lit = S.phase === "title" ? titleFX.lamps : Math.min(6, S.words);
   // (the lit lamps are drawn on the fine layer, drawLamps, so each sits exactly in the middle of its socket)
@@ -2219,8 +2223,8 @@ function drawTitleRadio(T) {
   // lamps come on after the title, left to right; the dial shows the station
   for (let k = 0; k < 6; k++) { const on = T - (125 + k * 5); if (on === 0) Sound.tickMove(); const lx = zx(L.lamps[k].x), ly = zy(L.lamps[k].y);
     if (on >= 0) { drawLamp(lx, ly, 7 * Z, false); ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(lx, ly, 70, "255,190,90", .45); ctx.restore(); } }
-  const dl = L.dial, dx = zx(dl.x), dy = zy(dl.y), dw = dl.w * Z, dh = dl.h * Z; ctx.fillStyle = "#0b0604"; ctx.fillRect(dx, dy, dw, dh);
-  if (T > 20) { ctx.save(); ctx.beginPath(); ctx.rect(dx, dy, dw, dh); ctx.clip(); const s = tipNow(); titleTipX = titleTipX == null ? 0 : titleTipX + 2;
+  const dl = L.dial, dx = zx(dl.x), dy = zy(dl.y), dw = dl.w * Z, dh = dl.h * Z; ctx.fillStyle = "#0b0604"; dialFill(ctx, zx(L.radioX), zy(L.radioY), Z);
+  if (T > 20) { ctx.save(); dialClip(ctx, zx(L.radioX), zy(L.radioY), Z); const s = tipNow(); titleTipX = titleTipX == null ? 0 : titleTipX + 2;
     const px = dx + dw - titleTipX; if (px + s.length * 18 < dx) { nextTip(); titleTipX = 0; } ftextDot(s, px, dy + Math.round((dh - 21) / 2), C.amber); ctx.restore(); }
   // the room around falls into shadow so the radio carries the screen
   const v = ctx.createRadialGradient(CVW / 2, CVH * .42, CVH * .45, CVW / 2, CVH * .45, CVW * .62); v.addColorStop(0, "rgba(6,3,2,0)"); v.addColorStop(1, "rgba(6,3,2,.85)"); ctx.fillStyle = v; ctx.fillRect(0, 0, CVW, CVH);
