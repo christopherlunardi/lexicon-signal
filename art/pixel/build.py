@@ -152,10 +152,14 @@ def main():
     # interface colours are picked from a palette of the art itself
     sample = np.concatenate([np.asarray(im)[..., :3][np.asarray(im)[..., 3] > 0].reshape(-1, 3) for im in imgs.values() if im.mode == "RGBA"])
     pal = pix.kmeans(sample[::9].astype(float), 56); pal = np.concatenate([pal, np.array(pix.ACCENTS, float)]); pal = np.clip(np.round(pal[np.argsort(pal.mean(1))]), 0, 255).astype(int)
-    # the brass plate's top rivets came out smeared (Chris 2026-11-13): each side's top rivet becomes a copy of the clean bottom one
-    # (after the palette is taken, so the interface colours stay as they were)
-    pa = np.asarray(imgs["plate"]).copy(); pw_ = pa.shape[1]
-    for c0, c1 in [(3, 10), (pw_ - 10, pw_ - 4)]: pa[5:12, c0:c1] = pa[16:23, c0:c1]   # rows 5-11: row 12 and below repeat when a plate is stretched taller
+    # the brass plate's rivets came out uneven (Chris 2026-11-13: the top ones smeared and set low, the left ones unlike the right):
+    # all four become the clean bottom-right rivet, the top pair moved up to sit as far from the top rim as the bottom pair from the
+    # bottom one (after the palette is taken, so the interface colours stay as they were)
+    pa = np.asarray(imgs["plate"]).copy(); pw_ = pa.shape[1]; riv = pa[16:23, pw_ - 10:pw_ - 4].copy()
+    for c0, c1 in [(3, 10), (pw_ - 11, pw_ - 4)]:
+        for r in list(range(4, 13)) + list(range(16, 23)): pa[r, c0:c1] = pa[13, c0:c1]   # plain face first
+    for r0 in (4, 16):
+        pa[r0:r0 + 7, 4:10] = riv; pa[r0:r0 + 7, pw_ - 10:pw_ - 4] = riv
     imgs["plate"] = Image.fromarray(pa, "RGBA")
     # the Vowel Antenna was redrawn on its own (2026-11-13, Chris: the old one was crooked and too skinny): vowel_icon.png is the
     # ChatGPT picture, vowel_icon_fixed.png its k-centroid downscale (kdown.py) to 35x62; magenta is keyed out here (after the palette is taken, so the interface colours stay as they were)
