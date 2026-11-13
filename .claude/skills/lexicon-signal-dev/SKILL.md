@@ -166,6 +166,10 @@ the same batch.
 - Part labels (Workshop tags-r1, Chris picked 3, the lit line): cardTag() draws a thin brass rule near the case's foot with the label
   lit under it (gold for rare). Layout rule: every case keeps a TAG_ZONE (64 fine px) at its foot that nothing else may enter, and
   all cases grow to the tallest one's needs (shopGeom); `#test-shop-all-N` shows parts 4N..4N+3 to check.
+- Title cabinet (Chris's art src/title_cabinet.png cut to cab_top and cab_row, 2026-11-13): the radio stands on a tall walnut cabinet;
+  titleCabinet() draws its top (never over the radio) and drawer rows down off the bottom of the screen, darker each row, into the
+  title's still background at true size (it runs off the sides on narrow screens). The menu plates sit in the top's empty panel
+  (TCAB), shrinking their padding to fit, never the art. The high score scrolls on the title dial every other message.
 - Title menu (MENU_STYLE 6, Chris's art src/title_console.png cut to tpanel / tplate / tplate_lit): the wooden console under the
   radio with a brass plate per option (START, HOW TO PLAY, HIGH SCORES), the chosen one pressed in and lit; slice3Cv stretches a
   sprite from its ends and repeated middle.

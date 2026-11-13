@@ -1715,8 +1715,10 @@ const TIPS = [
   "THE LONG WAVE COIL DOUBLES WORDS OF 5 LETTERS OR MORE",
 ];
 let tipI = (Math.random() * TIPS.length) | 0;
-const tipNow = () => TIPS[tipI];
-function nextTip() { let k; do k = (Math.random() * TIPS.length) | 0; while (k === tipI && TIPS.length > 1); tipI = k; }
+// every other message on the title dial is your high score (once you have one), the rest are tips
+let tipBest = false;
+const tipNow = () => tipBest && bestLine() ? bestLine() + "  *  BEAT IT" : TIPS[tipI];
+function nextTip() { tipBest = !tipBest; let k; do k = (Math.random() * TIPS.length) | 0; while (k === tipI && TIPS.length > 1); tipI = k; }
 // random flicker for the title glass letters: each letter keeps its own clock for when it next stutters, and how
 let glassFl = null, titleTipX = null;
 async function loadTitleGlass() { try { const LA = window.LEX_ASSETS, j = LA ? LA.glassJson : await (await fetch("art/title/glass.json")).json(); const ld = (s) => { const i = new Image(); i.src = s; return i.decode().then(() => i); };
@@ -1827,6 +1829,18 @@ function drawTitle() {
 // radio close-up: the room seen closer (every art pixel 3 fine pixels, a clean 1.5x), the radio centred and filling the screen. The
 // title lights up in its glass as keys (LEXI / CON / SIGN / AL), one key at a time, then the lamps, then a brass PRESS START plate.
 const titleBg = { k: "", cv: document.createElement("canvas") };
+let TZ = null;
+/* the title's cabinet (Chris's art, 2026-11-13): the radio stands on its top, the menu plates sit in the top's empty panel, and rows
+   of drawers repeat down off the bottom of the screen, darker the lower they go. Drawn in world pixels into the title's still
+   background, never stretched; on narrow screens it runs off the sides. TCAB is the panel's place, for the menu. */
+let TCAB = null;
+function titleCabinet(c, rw, rh, bottom) {
+  const T = R("cab_top"), D = R("cab_row"), cx = L.radioX + rw / 2, tx = Math.round(cx - T[2] / 2), dx = Math.round(cx - D[2] / 2), ty = L.radioY + rh - 6;
+  c.save(); c.beginPath(); c.rect(-W * 2, -H * 2, W * 5, H * 5); c.rect(L.radioX, -H * 2, rw, ty + 6 + H * 2); c.clip("evenodd");   // never over the radio
+  c.drawImage(atlasImg, T[0], T[1], T[2], T[3], tx, ty, T[2], T[3]); c.restore();
+  let y = ty + T[3], k = 0; while (y < bottom) { c.drawImage(atlasImg, D[0], D[1], D[2], D[3], dx, y, D[2], D[3]); c.fillStyle = `rgba(6,3,2,${Math.min(.85, .1 + k * .22)})`; c.fillRect(dx, y, D[2], D[3]); y += D[3]; k++; }
+  c.fillStyle = "rgba(6,3,2,.28)"; c.fillRect(tx, ty + 6, T[2], T[3] - 6);   // the room's dim light on the wood
+  TCAB = { x: tx + 43, y: ty + 31, w: 470, h: 39 }; }
 /* Workshop topic "tgap" (Chris 2026-11-12): the painted 4x4 title glass is narrower than the radio's 5x5 glass, leaving a dark strip each
    side. TITLE_GAP 0 = as now; 1 blank keys (the painting's own blank corner keys carry on to the frame), 2 soft edges (the strips fade
    into the glass), 3 thicker frame (the radio's own wood just outside the glass, copied inside at true size, so the opening fits the
@@ -1868,12 +1882,14 @@ function drawTitleRadio(T) {
   const zx = (wx) => ox + (wx - L.radioX) * Z, zy = (wy) => oy + (wy - L.radioY) * Z;
   // wallpaper first (the room canvas doesn't reach every edge this close), dimmed to the room's light, then the room itself
   const g = L.glass, gx = zx(g.x), gy = zy(g.y), gw = g.w * Z, gh = g.h * Z;
-  const bk = [CVW, CVH, Z, ox, oy, L.radioX, L.radioY, titleGlass.ready, TITLE_GAP].join("|");
+  const bk = [CVW, CVH, Z, ox, oy, L.radioX, L.radioY, titleGlass.ready, TITLE_GAP, MENU_STYLE].join("|");
   if (titleBg.k !== bk) { titleBg.k = bk; titleBg.cv.width = CVW; titleBg.cv.height = CVH; const c = titleBg.cv.getContext("2d"); c.imageSmoothingEnabled = false;
     c.setTransform(Z, 0, 0, Z, ox - L.radioX * Z, oy - L.radioY * Z); const t = R("wall_tile");
     for (let y = -t[3] * 2; y < H + t[3]; y += t[3]) for (let x = -t[2] * 3; x < W + t[2] * 3; x += t[2]) c.drawImage(atlasImg, t[0], t[1], t[2], t[3], x, y, t[2], t[3]);
     { const fy = L.sbY + R("sb_mid")[3] - 2; c.fillStyle = "#120904"; c.fillRect(-W, fy, W * 3, H * 2); }   // the floor carries on past the room's edges too
-    c.fillStyle = "rgba(8,4,3,.6)"; c.fillRect(-W, -H, W * 3, H * 3); c.drawImage(roomCv, 0, 0); c.setTransform(1, 0, 0, 1, 0, 0);
+    c.fillStyle = "rgba(8,4,3,.6)"; c.fillRect(-W, -H, W * 3, H * 3); c.drawImage(roomCv, 0, 0);
+    if (MENU_STYLE === 6) titleCabinet(c, rw, rh, (CVH - (oy - L.radioY * Z)) / Z);
+    c.setTransform(1, 0, 0, 1, 0, 0);
     // the glass: dark, with the unlit painted picture in it (letters light over it below)
     c.fillStyle = "#0c0705"; c.fillRect(gx, gy, gw, gh);
     if (titleGlass.ready) { const tg = titleGlass, sx = titleFit(gw, gh, tg); c.imageSmoothingEnabled = true; c.save(); c.beginPath(); c.rect(gx, gy, gw, gh); c.clip(); c.drawImage(tg.dim, gx + (gw - tg.w * sx) / 2, gy + (gh - tg.h * sx) / 2, tg.w * sx, tg.h * sx); titleGapDraw(c, tg, gx, gy, gw, gh, sx, Z); c.restore(); } }
@@ -1912,7 +1928,7 @@ function drawTitleRadio(T) {
   // under the radio: the menu (START, HOW TO PLAY). Workshop topic "menu" (Chris: the bar-and-parchment didn't work; each option its own
   // container): MENU_STYLE 1..5, #menu-N opens one.
   const a = ease((T - 150) / 15), bandTop = Math.min(CVH - 150, zy(L.radioY + rh) + 2), bandH = CVH - bandTop;
-  titleHits = []; drawTitleMenu(a, bandTop, bandH);
+  titleHits = []; TZ = { zx, zy, Z }; drawTitleMenu(a, bandTop, bandH);
 }
 // the title menu's looks
 const MENU_NAMES = ["", "Bar and parchment", "Brass plates", "Station buttons", "Dial windows", "Parchment tags", "Console"];
@@ -1924,21 +1940,20 @@ function slice3Cv(name, w, end) { return panelCvKey("s3:" + name + ":" + w, () =
 function panelCvKey(k, make) { let c = panelCache.get(k); if (!c) { if (panelCache.size > 80) panelCache.clear(); c = make(); panelCache.set(k, c); } return c; }
 // 6. Console (Chris's art, 2026-11-13): the wooden console the radio stands on, with a brass push-button plate per option; the chosen
 // one is pressed in and lit from within
-function drawConsoleMenu(a, top, hh, best) {
-  floorBoards(top, hh);
-  const M = TITLE_MENU, n = M.length, kh = glyphCv("key", "S", C.ink).height, P = R("tplate"), ph = P[3];
-  const ws = M.map(m => Math.max(70, Math.round(textW(m, "key") / FINE) + 40)), inner = ws.reduce((s, w) => s + w, 0), gapW = 10, pw = Math.min(W - 12, inner + gapW * (n - 1) + 56);
-  const px = Math.round(W / 2 - pw / 2), py = Math.round(top / FINE) + 4, panH = R("tpanel")[3];
-  ctx.save(); ctx.globalAlpha = a; ctx.drawImage(slice3Cv("tpanel", pw, 24), FX(px), FX(py), FX(pw), FX(panH));
-  let x = Math.round(W / 2 - (inner + gapW * (n - 1)) / 2); const y = py + Math.round((panH - ph) / 2);
-  M.forEach((m, i) => { const w = ws[i], on = i === titleSel, mx = FX(x + w / 2);
-    if (on) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(mx, FX(y + ph / 2), FX(w) * .7, "255,190,80", .32 * (.8 + .2 * Math.sin(frame / 10))); ctx.restore(); }
-    ctx.drawImage(slice3Cv(on ? "tplate_lit" : "tplate", w, 18), FX(x), FX(y) + (on ? 2 : 0), FX(w), FX(ph));
-    ftext(m, mx, FX(y) + (on ? 2 : 0) + Math.round((FX(ph) - kh) / 2) + 1, "key", on ? "#3a1806" : C.ink, "c", { under: on ? "rgba(255,240,180,.55)" : C.brassHi, uy: 2 });
-    titleHits.push({ x0: FX(x), x1: FX(x + w), y0: FX(y) - 10, y1: FX(y + ph) + 10, i }); x += w + gapW; });
+function drawConsoleMenu(a, top, hh, best, zx, zy, Z) {
+  if (!TCAB) return; const M = TITLE_MENU, n = M.length, kh = glyphCv("key", "S", C.ink).height, ph = R("tplate")[3];
+  // the plates fill the cabinet's name panel: as wide as their words need, shrinking their padding (never the art) to fit
+  const px0 = zx(TCAB.x), py0 = zy(TCAB.y), pw = TCAB.w * Z, phh = TCAB.h * Z; let pad = 40, gapF = 20, ws;
+  for (; pad >= 16; pad -= 4) { ws = M.map(m => Math.round(textW(m, "key") / FINE) + pad); if (ws.reduce((s, w) => s + w * FINE, 0) + gapF * (n - 1) <= pw - 24) break; }
+  const tot = ws.reduce((s, w) => s + w * FINE, 0) + gapF * (n - 1); let x = Math.round(px0 + pw / 2 - tot / 2); const y = Math.round(py0 + phh / 2 - FX(ph) / 2);
+  ctx.save(); ctx.globalAlpha = a;
+  M.forEach((m, i) => { const w = ws[i], on = i === titleSel, mx = x + FX(w) / 2;
+    if (on) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(mx, y + FX(ph) / 2, FX(w) * .7, "255,190,80", .32 * (.8 + .2 * Math.sin(frame / 10))); ctx.restore(); }
+    ctx.drawImage(slice3Cv(on ? "tplate_lit" : "tplate", w, 18), x, y + (on ? 2 : 0), FX(w), FX(ph));
+    ftext(m, mx, y + (on ? 2 : 0) + Math.round((FX(ph) - kh) / 2) + 1, "key", on ? "#3a1806" : C.ink, "c", { under: on ? "rgba(255,240,180,.55)" : C.brassHi, uy: 2 });
+    titleHits.push({ x0: x, x1: x + FX(w), y0: y - 10, y1: y + FX(ph) + 10, i }); x += FX(w) + gapF; });
   ctx.restore();
-  if (best) ftext(best, CVW / 2, FX(py + panH) + 14, "ink", C.amber, "c", { outline: C.dark });
-}
+}   // (the high score scrolls on the radio's dial instead: over the drawers it looked out of place)
 const floorBg = { k: "", cv: document.createElement("canvas") };
 function floorBoards(top, hh) { hh = Math.max(1, Math.round(hh));
   const k = CVW + "x" + hh; if (floorBg.k !== k) { floorBg.k = k; floorBg.cv.width = CVW; floorBg.cv.height = hh; floorBoardsDraw(floorBg.cv.getContext("2d"), 0, hh); }
@@ -1959,7 +1974,7 @@ function drawTitleMenu(a, top, hh) {
     ctx.drawImage(panelCv("logbox", pw, phh), px * FINE, py * FINE, pw * FINE, phh * FINE);
     ctx.save(); M.forEach((m, i) => { const y = py * FINE + 22 + i * rowH, on = i === titleSel, tw = textW(m, "key"); ctx.globalAlpha = a * (on ? 1 : .55); ftext(m, cx, y, "key", on ? C.ink : C.inkSoft, "c", { under: C.brassHi, uy: 3 });
       if (on) arrowAt(cx - tw / 2 - 30 + ((frame >> 4) & 1) * 4, y + kh / 2); titleHits.push({ y0: y - 8, y1: y + kh + 8, i }); }); ctx.restore(); return; }
-  if (S_ === 6) return drawConsoleMenu(a, top, hh, best);
+  if (S_ === 6) return drawConsoleMenu(a, top, hh, best, TZ.zx, TZ.zy, TZ.Z);
   floorBoards(top, hh);
   // the containers sit side by side, centred in the floor
   const gap = 34, ws = M.map(m => Math.max(textW(m, S_ === 4 ? "dot" : "key") + 90, 250)), tw = ws.reduce((s, w) => s + w, 0) + gap * (n - 1), ch = S_ === 5 ? kh + 70 : kh + 56;
