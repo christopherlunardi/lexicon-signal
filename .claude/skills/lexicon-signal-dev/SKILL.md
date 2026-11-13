@@ -6,7 +6,7 @@ description: Work on Lexicon Signal (repo lexicon-signal), Chris's late-night ra
 # Lexicon Signal dev loop (repo: lexicon-signal)
 
 Chris's radio word game (Idle Looping Studios). One HTML page, played from the artifact link on his phone, in a browser with keys or
-a controller, and later on his Retroid Pocket 2S and Pocket 6. This is the workflow as it runs today: when how something gets done
+a controller, and as an installed offline web app (GitHub Pages) on his Retroid Pocket 2S and phones. This is the workflow as it runs today: when how something gets done
 changes, update this skill (propose it again as an improvement) and the repo copy (`.claude/skills/lexicon-signal-dev/SKILL.md`) in
 the same batch.
 
@@ -223,7 +223,8 @@ the same batch.
    Clips: a hash ending in `-step` (e.g. `#test-word-keys-6-step`) stops the game running by itself; `LEXSTEP(n)` advances n
    frames. Press keys with Playwright, step 2 frames, screenshot the canvas, repeat, then encode with ffmpeg (30 fps, H.264,
    yuv420p, no sound) into `workshop/img/<topic>-<round>/`. A Workshop option's images may be .mp4 files.
-4. Name check, commit with a plain message, push, republish the link. Tell Chris in a few lines what changed.
+4. `python3 -I tools/release.py` then `python3 -I tools/web.py` (the Android build and the web app). Name check, commit with a plain
+   message, push (that deploys the web app), republish the link. Tell Chris in a few lines what changed.
 
 ## The Retroid app (Android, built the same way as the studio's other game)
 - Since 2026-11-12 the installable web app (below) is the main way to play on the Retroid; this app stays until Chris says otherwise.
