@@ -156,9 +156,9 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
   <div class="pad" id="pad">
     <div class="dpad" id="dpad" aria-label="Direction pad"><span class="h"></span><span class="v"></span><i class="up"></i><i class="dn"></i><i class="lf"></i><i class="rt"></i></div>
     <div class="btns"><button class="btn b" id="btnB" aria-label="B button, back">B<small>BACK</small></button><button class="btn a" id="btnA" aria-label="A button, add letter or send">A<small>TUNE</small></button></div>
-    <div class="pills"><button class="pill" id="btnSel" aria-label="Select, sound on or off"><span class="cap">SOUND</span></button><button class="pill" id="btnStart" aria-label="Start, retune"><span class="cap">RETUNE</span></button></div>
+    <div class="pills"><button class="pill" id="btnSel" aria-label="Retune: new letters"><span class="cap">RETUNE</span></button><button class="pill" id="btnStart" aria-label="Start, pause"><span class="cap">PAUSE</span></button></div>
   </div>
-  <p class="foot">Move <kbd>WASD</kbd> <kbd>Arrows</kbd> · Pick letter, again to send <kbd>Space</kbd> <kbd>Enter</kbd> · Back <kbd>Backspace</kbd> · Retune <kbd>R</kbd> · Sound <kbd>M</kbd> · Or click / tap letters, or drag across them</p>
+  <p class="foot">Move <kbd>WASD</kbd> <kbd>Arrows</kbd> · Pick letter, again to send <kbd>Space</kbd> <kbd>Enter</kbd> · Back <kbd>Backspace</kbd> · Retune <kbd>R</kbd> · Pause <kbd>Esc</kbd> <kbd>P</kbd> · Or click / tap letters, or drag across them</p>
 </div>
 
 <script src="words.js"></script>
@@ -171,7 +171,7 @@ if (!CanvasRenderingContext2D.prototype.roundRect) CanvasRenderingContext2D.prot
   r = Math.max(0, Math.min(typeof r === "number" ? r : (r && r[0]) || 0, Math.abs(w) / 2, Math.abs(h) / 2));
   this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r); this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath(); return this; };
 const DICT = new Set((window.LEX_WORDS || "").split(" "));
-const cv = $("screen"), ctx = cv.getContext("2d");          // the screen: 2 fine pixels per world pixel
+const cv = $("screen"), ctx = cv.getContext("2d", { alpha: false });   // the screen: 2 fine pixels per world pixel (opaque: cheaper to put on screen)
 let H = 425, BAR_H = 120, SCENE_H = 305; const FINE = 2;   // narrower screens (phones) get a taller world with a two-row bar (H 495, bar 190)
 const PART_SLOTS = 5;
 const N = 5, NN = N * N;   // the grid of keys in the glass: 5 x 5 (2026-11-12, the radio was redrawn with a bigger glass for it)   // a game rule, the same on every screen: copies of one part stack in one slot
@@ -551,6 +551,7 @@ function bestLine() { try { const b = JSON.parse(localStorage.getItem("lexsig-be
 let flyers = [], sparks = [], pops = [], beams = [], beaconFlash = 0, shake = 0, staticLvl = .05, staticKick = 0, marquee = 0;
 function burst(x, y, n, col) { for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, s = .8 + Math.random() * 2.6; sparks.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 1, life: 1, d: .025 + Math.random() * .03, col }); } }
 function update() {
+  if (PAUSE.on) return;   // paused: everything holds still
   frame++;
   const thudCols = new Set();
   for (let i = 0; i < NN; i++) { const t = S.grid[i]; if (!t) continue; if (t.wait > 0) { t.wait--; continue; }
@@ -595,6 +596,7 @@ function draw() {
     if (S.phase === "title") drawTitle(); else if (S.phase === "shop") drawShop(); else if (S.phase === "swap") drawSwap(); else drawOver();
   }
   if (HOW.on) { howStep(); drawHowCard(); }
+  if (PAUSE.on) drawPause();
 }
 function drawBeacon() {
   const b = L.beacon, pulse = [0, 1, 2, 3, 3, 2, 1, 0][(frame >> 3) & 7];
@@ -981,7 +983,11 @@ function paBoard({ G, tiles, ok, low, last }) {
 const dotSprs = {};
 function dotSpr(col) { let c = dotSprs[col]; if (!c) { c = dotSprs[col] = document.createElement("canvas"); c.width = c.height = 6; const x = c.getContext("2d"); x.fillStyle = col; x.beginPath(); x.arc(3, 3, 2.35, 0, 7); x.fill(); } return c; }   // drawn at the size it's used (6px), so no scaling each draw
 const U3 = [[1, 0, 1], [1, 0, 1], [1, 1, 1]];
-const dotKeys = new Map();
+const dotKeys = new Map(), dotPicks = new Map();
+function dotPickCache(k, b, qu, lc, dots, FILL, LET, VAL) { let c = dotPicks.get(k); if (c) return c; c = document.createElement("canvas"); c.width = 54; c.height = 42; const x = c.getContext("2d");
+  for (let r = 0; r < 7; r++) for (let cc = 0; cc < 9; cc++) { let isL = cc >= lc && cc < lc + 5 && b[r][cc - lc]; if (qu && cc >= 6 && r < 3 && U3[r][cc - 6]) isL = 1; const isV = cc === 8 && r >= 7 - dots;
+    const s = isV ? VAL : isL ? LET : FILL; if (s) x.drawImage(s, cc * 6, r * 6, 6, 6); }
+  dotPicks.set(k, c); return c; }
 function dotKeyCache(k, b, qu, lc, dots, OFF, ON, VAL) { let c = dotKeys.get(k); if (c) return c;
   const base = document.createElement("canvas"), let_ = document.createElement("canvas"); base.width = let_.width = 54; base.height = let_.height = 42;
   const bx = base.getContext("2d"), lx = let_.getContext("2d");
@@ -1017,6 +1023,13 @@ function paDotGlass({ G, tiles, ok, low }) {
     // field with its value dots, and the letter's lit dots on top at the key's brightness (63 dots a key every frame was slow on handhelds)
     if (lit <= .03 && !scr && !hot && wipe <= -9 && !(t.land > .01)) { const k = o.ch + "|" + o.dots + "|" + w0 + "x" + h0, ca = dotKeyCache(k, b, qu, lc, o.dots, OFF, ON, VAL);
       ctx.globalAlpha = 1; ctx.drawImage(ca[0], mx, my); ctx.globalAlpha = Math.min(1, dim * fl); ctx.drawImage(ca[1], mx, my); ctx.globalAlpha = 1; if (o.hv) { ctx.strokeStyle = "rgba(255,200,130,.6)"; ctx.stroke(); } continue; }
+    // a picked key that has finished lighting up (and no word-wave running) is also one cached picture: full fill, white-hot letter
+    const wipeOn = wipe > -9 && wipe < 16;   // the light wipe is crossing this key right now
+    if (lit >= .97 && !scr && !wipeOn && !(t.land > .01) && !(hot && HOT_STYLE === 5)) { const ca = dotPickCache(o.ch + "|" + o.dots + "|" + (hot ? 1 : 0), b, qu, lc, o.dots, hot ? RBG : BG, hot ? REDHOT : HOT, VAL);
+      ctx.strokeStyle = `rgba(255,${ok ? 226 : 180},${ok ? 160 : 96},.85)`; ctx.shadowColor = "#ff8a20"; ctx.shadowBlur = 10; ctx.lineWidth = 2; ctx.stroke(); ctx.shadowBlur = 0;
+      ctx.globalAlpha = wave ? fl : 1; ctx.drawImage(ca, mx, my);
+      if (wave) { ctx.globalAlpha = .25 + .25 * Math.sin(frame * .3 - o.k * 2); ctx.drawImage(dotPickCache("w|" + o.ch + "|" + o.dots + "|" + (hot ? 1 : 0), b, qu, lc, o.dots, hot ? RBGH : BGH, null, null), mx, my); }   // the word's warm pulse
+      ctx.globalAlpha = 1; continue; }
     if (lit > .03) { ctx.strokeStyle = `rgba(255,${ok ? 226 : 180},${ok ? 160 : 96},${lit * .85})`; ctx.shadowColor = "#ff8a20"; ctx.shadowBlur = 10; ctx.lineWidth = 2; ctx.stroke(); ctx.shadowBlur = 0; }
     else if (o.hv) { ctx.strokeStyle = "rgba(255,200,130,.6)"; ctx.stroke(); }
     for (let r = 0; r < 7; r++) for (let c = 0; c < 9; c++) { const dx = mx + c * 6, dy = my + r * 6;
@@ -1296,7 +1309,9 @@ const TIPS = [
   "THE LIGHTS UNDER THE TUNING KNOB ARE YOUR RETUNES",
   "THE FINE TUNING KNOB GIVES AN EXTRA RETUNE EVERY NIGHT",
   "B TAKES BACK THE LAST LETTER",
-  "SELECT OR M TURNS THE SOUND ON AND OFF",
+  "PRESS Y OR TAP THE RIGHT KNOB TO RETUNE",
+  "X SENDS THE WORD YOU HAVE SPELLED",
+  "START PAUSES THE NIGHT",
   "EACH NEW LETTER MUST TOUCH THE LAST ONE, EVEN CORNER TO CORNER",
   "CLICK THE LAST LETTER AGAIN TO SEND THE WORD",
   "PRESS A ON THE LAST LETTER TO SEND THE WORD",
@@ -1537,11 +1552,11 @@ const HOW_CARDS = [
     setup() {}, steps: [[30, 0], [62, 5], [94, 2], [126, 3]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])) },
   { title: "LETTERS MUST TOUCH", keys: [], len: 290, text: "Each new letter has to touch the last one. A letter that doesn't touch won't join the word: pick one that does.",
     setup() {}, steps: [[30, 4], [62, 1], [94, 2], [140, 15], [200, 3]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])) },
-  { title: "SEND IT", keys: ["A"], len: 330, text: "Press A on the last letter again, or tap it again, to send the word. Its letters fly to the tower and the signal comes back down into the tube.",
+  { title: "SEND IT", keys: ["A", "X"], len: 330, text: "Press A on the last letter again (or X from anywhere), or tap it again, to send the word. Its letters fly to the tower and the signal comes back down into the tube.",
     setup() {}, steps: [...[[30, 8], [58, 9], [86, 10], [114, 11]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(11))]] },
   { title: "FILL THE TUBE", keys: [], len: 340, text: "Fill the signal tube before the lamps go dark. Every word you send uses one lamp. Longer words and letters with more dots fill it faster.",
     setup() { S.score = S.shown = 18; S.words = 3; }, steps: [...[[30, 12], [58, 13], [86, 14], [114, 15]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(15))]] },
-  { title: "STUCK? RETUNE", keys: ["START"], len: 220, text: "Retune swaps every letter for new ones, once a night. The small light under the right knob shows you still have it.",
+  { title: "STUCK? RETUNE", keys: ["Y"], len: 220, text: "Press Y, or tap the right knob, to swap every letter for new ones, once a night. The small light under that knob shows you still have it.",
     setup() {}, steps: [[80, () => retune()]] },
   { title: "RADIO PARTS", keys: [], len: 260, text: "Clear a night to fit one of three radio parts. They sit in the slots below and light up when they help. That's the basics!",
     setup() { S.parts = ["battery", "echo"]; S.words = maxWords(); HOW.shop = true; nightClear(); HOW.shop = false; }, steps: [[70, () => { shopFocus = 1; Sound.click(); }], [140, () => { shopFocus = 2; Sound.click(); }], [210, () => { shopFocus = 0; Sound.click(); }]] },
@@ -1552,6 +1567,53 @@ function howReset() {
   HOW_GRID.split("").forEach((ch, i) => { S.grid[i].ch = ch; S.grid[i].hot = false; S.grid[i].yOff = 0; S.grid[i].vy = 0; S.grid[i].wait = 0; });
   S.path = []; S.cursor = 0;
 }
+/* ---- the pause menu (Start, Esc or P; the PAUSE button on the phone). Button-driven so it's the same on the handheld, a phone and a
+   keyboard. Anything that throws the run away asks twice (the line turns into SURE? PRESS A AGAIN). In the app it also checks for a new
+   build, updates the app and quits. ---- */
+const PAUSE = { on: false, sel: 0, sure: null, t: 0, hits: [], note: "", noteT: 0 };
+function NATIVE() { return typeof LexNative !== "undefined" ? LexNative : null; }
+function pauseItems() {
+  const sure = (key, label, fn) => [PAUSE.sure === key ? "SURE? PRESS A AGAIN" : label, () => { if (PAUSE.sure !== key) { PAUSE.sure = key; return; } PAUSE.sure = null; fn(); }, key];
+  const it = [["RESUME", () => pauseClose()],
+    ["SOUND: " + (Sound.muted() ? "OFF" : "ON"), () => Sound.toggle()],
+    sure("new", "NEW RUN", () => { pauseClose(); start(); }),
+    sure("title", "QUIT TO TITLE", () => { pauseClose(); howExit(); titleSel = 0; })];
+  const n = NATIVE();
+  if (n) {
+    if (buildReady) it.push(sure("reload", "LOAD NEW BUILD " + buildReady, () => { try { n.reload(); } catch (e) {} }));
+    else it.push(["CHECK FOR UPDATE", () => { try { n.checkUpdate(); } catch (e) {} PAUSE.note = "CHECKING FOR A NEW BUILD..."; PAUSE.noteT = 180; }]);
+    let au = appUpdate; try { au = au || (n.appUpdate ? n.appUpdate() : 0); } catch (e) {}
+    if (au) it.push(sure("app", "UPDATE APP (NEW VERSION)", () => { try { n.installApp(); } catch (e) {} }));
+    it.push(sure("exit", "EXIT GAME", () => { try { n.quit(); } catch (e) {} }));
+  }
+  return it; }
+function pauseOpen() { if (S.phase !== "play" || HOW.on) return; PAUSE.on = true; PAUSE.sel = 0; PAUSE.sure = null; PAUSE.t = 0; Sound.click(); }
+function pauseClose() { PAUSE.on = false; PAUSE.sure = null; }
+function pauseKey(k) { if (!PAUSE.on) return false; const items = pauseItems();
+  if (k === "up" || k === "down") { PAUSE.sel = (PAUSE.sel + (k === "up" ? items.length - 1 : 1)) % items.length; Sound.tickMove(); }
+  else if (k === "b" || k === "start") { pauseClose(); Sound.click(); }
+  else if (k === "a") { Sound.click(); items[Math.min(PAUSE.sel, items.length - 1)][1](); }
+  PAUSE.sel = Math.min(PAUSE.sel, pauseItems().length - 1);
+  if (PAUSE.sure && pauseItems()[PAUSE.sel][2] !== PAUSE.sure) PAUSE.sure = null;   // moved off the line: not armed any more
+  return true; }
+function drawPause() {
+  PAUSE.t++; if (PAUSE.noteT > 0) PAUSE.noteT--;
+  const items = pauseItems(), u = cv.width / (cv.getBoundingClientRect().width || cv.width), cw = cv.width, chh = cv.height;
+  ctx.save(); ctx.fillStyle = "rgba(6,4,10,.62)"; ctx.fillRect(0, 0, cw, chh);
+  const size = Math.max(13, Math.min(22, Math.round(chh / u / 28))), tf = `${Math.round(size * 1.5 * u)}px ${HOWF.title}`, bf = `${Math.round(size * u)}px ${HOWF.title}`, lh = Math.round(size * 2 * u);
+  ctx.font = bf; let wMax = 0; for (const t of items) wMax = Math.max(wMax, ctx.measureText(t[0]).width); ctx.font = tf; wMax = Math.max(wMax, ctx.measureText("PAUSED").width);
+  const PAD = 18 * u, bw = Math.min(cw - 20 * u, wMax + 2 * PAD + 34 * u), th = size * 2.4 * u, bh = PAD + th + items.length * lh + (PAUSE.noteT ? lh : 0) + PAD * .8;
+  const bx = Math.round((cw - bw) / 2), by = Math.round(Math.max(8 * u, (Math.min(chh, FX(SCENE_H)) - bh) / 2));
+  octx.clearRect(0, 0, W, H); const ww = Math.round(bw / FINE), hh = Math.round(bh / FINE); nine(octx, "logbox", 0, 0, ww, hh); ctx.drawImage(over, 0, 0, ww, hh, bx, by, ww * FINE, hh * FINE);
+  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = tf; ctx.fillStyle = C.inkRed; ctx.fillText("PAUSED", cw / 2, by + PAD + th / 2);
+  PAUSE.hits = []; ctx.font = bf;
+  items.forEach((t, i) => { const y = by + PAD + th + i * lh + lh / 2, sel = i === PAUSE.sel;
+    if (sel) { ctx.fillStyle = "rgba(150,40,26,.16)"; ctx.beginPath(); ctx.roundRect(bx + PAD * .6, y - lh * .42, bw - PAD * 1.2, lh * .84, lh * .42); ctx.fill();
+      ctx.fillStyle = C.inkRed; const ax = bx + PAD * .6 + 12 * u + ((PAUSE.t >> 4) & 1) * 2 * u; ctx.beginPath(); ctx.moveTo(ax, y - 6 * u); ctx.lineTo(ax + 8 * u, y); ctx.lineTo(ax, y + 6 * u); ctx.fill(); }
+    ctx.fillStyle = sel ? C.inkRed : C.ink; ctx.fillText(t[0], cw / 2, y + 1 * u);
+    PAUSE.hits.push({ i, y0: y - lh / 2, y1: y + lh / 2, x0: bx, x1: bx + bw }); });
+  if (PAUSE.noteT) { ctx.font = `${Math.round(size * .8 * u)}px ${HOWF.body}`; ctx.fillStyle = C.inkSoft; ctx.fillText(PAUSE.note, cw / 2, by + PAD + th + items.length * lh + lh / 2); }
+  ctx.restore(); }
 function howStart() { HOW.on = true; HOW.card = 0; HOW.t = 0; Sound.ensure(); Sound.music(); howReset(); HOW_CARDS[0].setup(); Sound.click(); }
 function howGo(k) { HOW.card = k; HOW.t = 0; howReset(); HOW_CARDS[k].setup(); Sound.click(); }
 function maybeReload() { if (buildReady) { try { LexNative.reload(); } catch (e) {} } }
@@ -1636,7 +1698,7 @@ function drawTitleOld() {
   body.forEach(s => { ftext(s, cx, ty, "ink", C.ink, "c"); ty += lh; }); ty += 16;
   if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO TUNE IN" : "PRESS A TO TUNE IN", cx, ty, "ink", C.inkRed, "c"); ty += lh;
   ftext(bestLine(), cx, ty, "ink", C.inkSoft, "c");
-  if (TK === 1) ftext("A ADD / SEND   B BACK   START RETUNE", cx, FX(y + h) + 14, "ink", C.gold, "c", { outline: C.dark });
+  if (TK === 1) ftext("A ADD / SEND   B BACK   Y RETUNE   START PAUSE", cx, FX(y + h) + 14, "ink", C.gold, "c", { outline: C.dark });
 }
 function drawSwap() {
   const w = Math.min(W - 48, 400), h = 104, x = Math.round(W / 2 - w / 2), y = Math.max(12, Math.round((SCENE_H - h) / 2) - 10), r = R("iconL_" + swapNew.id);
@@ -1702,7 +1764,7 @@ function drawOver() {
 
 /* ================= input ================= */
 let usingButtons = false, usingTouch = matchMedia("(pointer:coarse)").matches;
-function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ? "up" : "down"; if (devKey(dk)) return; if (howKey(dk)) return; dismissCard();
+function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ? "up" : "down"; if (devKey(dk)) return; if (pauseKey(dk)) return; if (howKey(dk)) return; dismissCard();
   usingButtons = true; Sound.ensure();
   if (S.phase === "title" && TS === 6 && (dy || dx)) { dy = dy || dx; if (titleBusy()) return; titleSel = (titleSel + dy + TITLE_MENU.length) % TITLE_MENU.length; Sound.click(); return; }
   if (S.phase === "shop") { shopFocus = (shopFocus + (dx || dy) + shopChoices.length) % shopChoices.length; Sound.click(); return; }
@@ -1712,10 +1774,14 @@ function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ?
 }
 function titleBusy() { if (S.phase === "title" && !titleSkip && titleT < TITLE_LEN[TS]) { titleSkip = true; return true; } return false; }
 function start() { if (buildReady) return maybeReload(); Sound.ensure(); Sound.music(); newRun(); }   // (a new build waiting in the app loads first)
-function pressA() { if (devKey("a")) return; if (howKey("a")) return; Sound.ensure(); usingButtons = true; dismissCard(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
-function pressB() { if (devKey("b")) return; if (howKey("b")) return; if (S.phase === "swap") return swapCancel(); if (S.phase === "play") back(); }
-function pressStart() { if (devKey("start")) return; if (howKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); retune(); }
-function pressSel() { if (devKey("select")) return; if (howKey("select")) return; Sound.ensure(); Sound.toggle(); }   // Select is the sound switch (it used to flip key styles for the Workshop)
+// buttons (Chris 2026-11-12: a four-button game, Start pauses, Select doesn't mute): A pick / send, B back, X send the word, Y retune,
+// Start pause (and pick on menus), Select nothing (held: dev mode). Keyboard: Space/Enter A, Backspace B, R retune, Esc/P pause.
+function pressA() { if (devKey("a")) return; if (pauseKey("a")) return; if (howKey("a")) return; Sound.ensure(); usingButtons = true; dismissCard(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
+function pressB() { if (devKey("b")) return; if (pauseKey("b")) return; if (howKey("b")) return; if (S.phase === "swap") return swapCancel(); if (S.phase === "play") back(); }
+function pressX() { if (devKey("x")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); dismissCard(); if (S.phase === "play" && S.path.length) send(); else pressA(); }
+function pressY() { if (devKey("y")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); dismissCard(); if (S.phase === "play") retune(); }
+function pressStart() { if (devKey("start")) return; if (pauseKey("start")) return; if (howKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); if (S.phase === "play") pauseOpen(); }
+function pressSel() { if (devKey("select")) return; }   // Select does nothing by itself (held a moment: dev mode, once it's unlocked)
 window.addEventListener("keydown", (e) => {
   if (introPress()) { e.preventDefault(); return; }
   // keys (Chris: WASD and arrows, Space or Enter to pick; keep them few and clear): WASD/arrows move, Space or Enter picks the letter
@@ -1724,8 +1790,10 @@ window.addEventListener("keydown", (e) => {
   if (e.ctrlKey || e.metaKey || e.altKey) return;
   if (dir) { e.preventDefault(); move(...dir); return; }
   if (k === " " || k === "Enter") { e.preventDefault(); pressA(); return; }
-  if (k === "Backspace" || k === "Escape") { e.preventDefault(); pressB(); return; }
-  if (k === "r") { e.preventDefault(); pressStart(); return; }
+  if (k === "Backspace") { e.preventDefault(); pressB(); return; }
+  if (k === "Escape") { e.preventDefault(); if (PAUSE.on || HOW.on || S.phase !== "play" || S.path.length) pressB(); else pressStart(); return; }
+  if (k === "r") { e.preventDefault(); pressY(); return; }
+  if (k === "p") { e.preventDefault(); pressStart(); return; }
   if (k === "m") { e.preventDefault(); Sound.ensure(); Sound.toggle(); }
 });
 function toWorld(e) { const r = cv.getBoundingClientRect(), s = Math.min(r.width / W, r.height / H), ox = (r.width - W * s) / 2, oy = (r.height - H * s) / 2; return { x: (e.clientX - r.left - ox) / s, y: (e.clientY - r.top - oy) / s }; }
@@ -1733,12 +1801,15 @@ function keyAt(p, strict) { for (let i = 0; i < NN; i++) { const c = tileC(i), m
 let down = null, dragging = false;
 cv.addEventListener("pointerdown", (e) => {
   Sound.ensure(); usingButtons = false; e.preventDefault(); if (introPress()) return; const p = toWorld(e);
+  if (PAUSE.on) { const fy = p.y * FINE, fx = p.x * FINE, hit = PAUSE.hits.find(r => fy >= r.y0 && fy <= r.y1 && fx >= r.x0 && fx <= r.x1);
+    if (hit) { if (PAUSE.sel !== hit.i) PAUSE.sure = null; PAUSE.sel = hit.i; pauseKey("a"); } else pauseClose(); return; }
   if (HOW.on) { howKey(p.x < W / 2 ? "b" : "a"); return; }
   if (titleBusy()) return; if (S.phase === "title") { const fy = p.y * FINE, fx = p.x * FINE, hit = TS === 6 && titleHits.find(r => fy >= r.y0 && fy <= r.y1 && (r.x0 == null || (fx >= r.x0 && fx <= r.x1))); titleChoose(hit ? hit.i : 0); return; } if (S.phase === "over") { start(); return; }
   if (S.phase === "swap") { const [, , sw, sh] = R("slot"), y0 = L.barY + L.slotY, k = Math.floor((p.x - L.slotX) / L.slotStep);
     if (p.y >= y0 && p.y <= y0 + sh && k >= 0 && k < partSlots().length && p.x - L.slotX - k * L.slotStep <= sw) { if (swapFocus === k || usingTouch) swapConfirm(k); else swapFocus = k; }
     else if (p.y < SCENE_H) swapCancel(); return; }
   if (S.phase === "shop") { const G = shopGeom(), k = Math.floor((p.x - G.x0) / (G.cw + 10)); if (k >= 0 && k < G.n && p.y > G.y0 - 6 && p.y < G.y0 + G.ch) { if (shopFocus === k || usingTouch) choosePart(k); else shopFocus = k; } return; }
+  if (S.phase === "play" && Math.hypot(p.x - L.knobR.x, p.y - L.knobR.y) < 18) { retune(); return; }   // the right tuning knob retunes
   if (!canAct()) return; const i = keyAt(p, false); if (i < 0) return;
   down = i; dragging = false; try { cv.setPointerCapture(e.pointerId); } catch (er) {}
 });
@@ -1765,7 +1836,7 @@ $("dpad").addEventListener("pointermove", (e) => { if (padCur !== null) padSet(p
 function bindBtn(id, fn) { const b = $(id); b.addEventListener("pointerdown", (e) => { e.preventDefault(); b.classList.add("on"); if (!introPress()) fn(); }); ["pointerup", "pointercancel", "pointerleave"].forEach(ev => b.addEventListener(ev, () => b.classList.remove("on"))); }
 bindBtn("btnA", pressA); bindBtn("btnB", pressB); bindBtn("btnStart", pressStart);
 { const b = $("btnSel"); b.addEventListener("pointerdown", (e) => { e.preventDefault(); b.classList.add("on"); if (introPress()) return; selectDown(); });
-  b.addEventListener("pointerup", () => { b.classList.remove("on"); if (!selectUp()) pressSel(); });
+  b.addEventListener("pointerup", () => { b.classList.remove("on"); if (!selectUp()) pressY(); });   // the left pill retunes (held: dev mode)
   ["pointercancel", "pointerleave"].forEach(ev => b.addEventListener(ev, () => { b.classList.remove("on"); clearTimeout(selHold); })); }
 const padPrev = {}, rep = {};
 function pollPad(now) {
@@ -1776,7 +1847,7 @@ function pollPad(now) {
   if (Object.keys(st).some(edge) && !document.body.classList.contains("padmode")) { document.body.classList.add("padmode"); setTimeout(layout, 30); }
   const repeat = (k, fn) => { if (edge(k)) { fn(); rep[k] = now + 260; } else if (st[k] && now > (rep[k] || 0)) { fn(); rep[k] = now + 110; } };
   if (Object.keys(st).some(edge) && introPress()) { Object.assign(padPrev, st); return; }
-  if (edge("A")) pressA(); if (edge("B")) pressB(); if (edge("Y") || edge("ST")) pressStart(); if (edge("X")) pressSel(); if (edge("SEL")) selectDown(); if (!st.SEL && padPrev.SEL && !selectUp()) pressSel();
+  if (edge("A")) pressA(); if (edge("B")) pressB(); if (edge("X")) pressX(); if (edge("Y")) pressY(); if (edge("ST")) pressStart(); if (edge("SEL")) selectDown(); if (!st.SEL && padPrev.SEL && !selectUp()) pressSel();
   repeat("L", () => move(-1, 0)); repeat("R", () => move(1, 0)); repeat("U", () => move(0, -1)); repeat("D", () => move(0, 1));
   Object.assign(padPrev, st);
 }
@@ -2035,7 +2106,7 @@ window.ssKey = (k, down) => {
     ssRep[k] = setTimeout(() => { ssRep[k] = setInterval(() => move(...DIR[k]), 110); }, 260); return; }
   if (k === "select") { if (down) { if (introPress()) return; selectDown(); } else if (!selectUp()) pressSel(); return; }
   if (!down) return; if (introPress()) return;
-  if (k === "a") pressA(); else if (k === "b") pressB(); else if (k === "start") pressStart();
+  if (k === "a") pressA(); else if (k === "b") pressB(); else if (k === "x") pressX(); else if (k === "y") pressY(); else if (k === "start") pressStart();
 };
 /* ================= boot ================= */
 // the game runs at a steady 60 steps a second whatever the screen does (a slow handheld used to slow the whole game down, and a

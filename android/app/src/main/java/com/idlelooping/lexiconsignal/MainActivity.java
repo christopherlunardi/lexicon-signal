@@ -1,6 +1,7 @@
 package com.idlelooping.lexiconsignal;
 
 import android.app.Activity;
+import android.graphics.PixelFormat;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.Display;
@@ -72,7 +73,12 @@ public class MainActivity extends Activity {
       lp.preferredDisplayModeId = best.getModeId(); } catch (Exception e) { } }
     getWindow().setAttributes(lp);
     web = new WebView(this);
+    // colours exactly as drawn: a full 32-bit window (some devices default to 16-bit, which bands and shifts glows and gradients),
+    // and no automatic dark-mode recolouring of the page (the system dark theme can otherwise darken or invert parts of it)
+    getWindow().setFormat(PixelFormat.RGBA_8888);
     WebSettings s = web.getSettings();
+    if (Build.VERSION.SDK_INT >= 33) s.setAlgorithmicDarkeningAllowed(false);
+    else if (Build.VERSION.SDK_INT >= 29) s.setForceDark(WebSettings.FORCE_DARK_OFF);
     s.setJavaScriptEnabled(true); s.setDomStorageEnabled(true); s.setDatabaseEnabled(true); s.setMediaPlaybackRequiresUserGesture(false);
     s.setAllowFileAccess(true); s.setCacheMode(WebSettings.LOAD_NO_CACHE); s.setUseWideViewPort(true); s.setLoadWithOverviewMode(true); s.setTextZoom(100); // the page's own viewport, no font scaling
     web.addJavascriptInterface(new Bridge(), "LexNative");
@@ -184,8 +190,10 @@ public class MainActivity extends Activity {
   static String map(int code) {
     switch (code) {
       case KeyEvent.KEYCODE_DPAD_UP: return "up"; case KeyEvent.KEYCODE_DPAD_DOWN: return "down"; case KeyEvent.KEYCODE_DPAD_LEFT: return "left"; case KeyEvent.KEYCODE_DPAD_RIGHT: return "right";
-      case KeyEvent.KEYCODE_BUTTON_A: case KeyEvent.KEYCODE_BUTTON_Y: case KeyEvent.KEYCODE_DPAD_CENTER: case KeyEvent.KEYCODE_ENTER: case KeyEvent.KEYCODE_Z: return "a";
-      case KeyEvent.KEYCODE_BUTTON_B: case KeyEvent.KEYCODE_BUTTON_X: case KeyEvent.KEYCODE_BUTTON_L1: case KeyEvent.KEYCODE_BUTTON_R1: case KeyEvent.KEYCODE_BUTTON_L2: case KeyEvent.KEYCODE_BUTTON_R2: case KeyEvent.KEYCODE_X: return "b";
+      case KeyEvent.KEYCODE_BUTTON_Y: return "y";   // retune
+      case KeyEvent.KEYCODE_BUTTON_X: return "x";   // send the word
+      case KeyEvent.KEYCODE_BUTTON_A: case KeyEvent.KEYCODE_DPAD_CENTER: case KeyEvent.KEYCODE_ENTER: case KeyEvent.KEYCODE_Z: return "a";
+      case KeyEvent.KEYCODE_BUTTON_B: case KeyEvent.KEYCODE_BUTTON_L1: case KeyEvent.KEYCODE_BUTTON_R1: case KeyEvent.KEYCODE_BUTTON_L2: case KeyEvent.KEYCODE_BUTTON_R2: case KeyEvent.KEYCODE_X: return "b";
       case KeyEvent.KEYCODE_BUTTON_START: case KeyEvent.KEYCODE_BACK: case KeyEvent.KEYCODE_ESCAPE: case KeyEvent.KEYCODE_MENU: return "start";
       case KeyEvent.KEYCODE_BUTTON_SELECT: return "select";
       default: return null;

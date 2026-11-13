@@ -146,7 +146,14 @@ the same batch.
 - The dial always shows the traced word's value on its right, counting up as letters go in (plain amber while it can't be sent).
   When it can be sent the whole dial lights warm, the word and number go bright and the number gets a "+". A hovered key (mouse,
   or the button cursor) previews dimly: its letter after the word and "+gain" before the number. Every key shows its value as dots.
-- Input: buttons first (A add letter, A on the last letter sends, B back, Start/Y retune, Select/X sound on or off),
+- Input (Chris 2026-11-12: a four-button game, Start is a real pause, Select doesn't mute): A add letter, A on the last letter sends,
+  X sends from anywhere, B back, Y retune (also R, the phone's RETUNE pill, or tapping the right tuning knob), Start pause (Esc/P;
+  the phone's PAUSE pill). Select alone does nothing (held 1.5 s: dev panel). The pause menu (pauseItems) is RESUME, SOUND, NEW RUN,
+  QUIT TO TITLE, and in the app CHECK FOR UPDATE / LOAD NEW BUILD, UPDATE APP (when launcher.json is newer) and EXIT GAME; anything
+  that throws the run away asks twice. The Android launcher maps BUTTON_X to "x" and BUTTON_Y to "y".
+  Colours on Android: the launcher uses a 32-bit window and turns off WebView dark recolouring (forceDark / algorithmic darkening,
+  values-v29 forceDarkAllowed=false); the screen canvas is opaque ({alpha:false}).
+  Also
   touch/mouse drag or tap. Gamepad standard mapping, bottom face = A.
 - Keyboard (Chris 2026-11-12, after a typing experiment he rejected: the keyboard does NOT type words): WASD/arrows move, Space or
   Enter picks the letter under the cursor (again on the last letter sends), Backspace back, R retune, M sound. Keep keys few and
@@ -163,7 +170,7 @@ the same batch.
   The game is one game with one look: dot glass (KS 10, a const) on every link and in every browser (Chris: no versions) (2026-11-12: a style remembered in one browser made Chris's phone
   and Claude window look different); `#keys-N` no longer switches looks (`#test-word-keys-N` with a word traced). Web fonts:
   Special Elite, Bungee Hairline, Bungee, Limelight, Share Tech Mono, Stardos Stencil, Alfa Slab One. Value dots stay in every style
-  (Chris likes them), bright enough to read on unselected keys. He likes it dark with smooth glow. Select is the sound switch again.
+  (Chris likes them), bright enough to read on unselected keys. He likes it dark with smooth glow. (Select no longer switches sound: that's in the pause menu, or M.)
 
 ## Title menu and How to Play
 - The title's brass plate is a menu: START and HOW TO PLAY, an arrow by the one you're on (up/down, A or Start; tap a line).
@@ -182,7 +189,7 @@ the same batch.
   any pad, the handheld's buttons or keys: DOWN DOWN UP UP RIGHT LEFT RIGHT LEFT B A; or the dev code (same code and hash as the
   other games): press and hold the name above the screen about a second, or tap it five times.
 - Once on: a DEV button in the name bar and ` open the panel (Esc closes); on a pad or the handheld, hold SELECT ~1.5 s (a short
-  press is still sound, on release); the d-pad moves, A presses, B/SELECT/START close. The panel: fit any part (works this
+  press does nothing); the d-pad moves, A presses, B/SELECT/START close. The panel: fit any part (works this
   night), take parts out, endless words, +1 word/retune, +10 signal, win/lose night, next/previous night, new letters, part
   picker, new run, title, studio intro, sound. Nothing is saved. New parts appear by themselves (it reads PARTS).
 

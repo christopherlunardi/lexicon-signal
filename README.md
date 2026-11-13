@@ -13,8 +13,9 @@ A late-night radio word game. Trace words through a grid of glowing letters, kee
 ## Controls
 
 - **Touch:** drag through letters and let go to send, or tap letters one by one and tap the last one again to send.
-- **D-pad / gamepad:** move the cursor, A adds a letter (press it on the last letter to send), B steps back, Start or Y retunes, Select or X changes the look.
-- **Keyboard:** WASD or arrows move, Space or Enter picks the letter (again on the last letter sends), Backspace takes one back, R retunes, M sound.
+- **D-pad / gamepad:** move the cursor, A adds a letter (press it on the last letter to send), X sends the word, B steps back, Y retunes, Start pauses (sound, new run, quit to title; in the app also check for update, update the app and exit).
+- **Keyboard:** WASD or arrows move, Space or Enter picks the letter (again on the last letter sends), Backspace takes one back, R retunes, Esc or P pauses, M sound.
+- **Touch / mouse:** tap letters or drag across them; tap the right tuning knob to retune; on the phone the RETUNE and PAUSE buttons sit under the screen.
 
 ## Files
 
