@@ -289,6 +289,17 @@ the same batch.
   submitted}. Act on submitted ones, then mark the round decided (chosen) in workshop.json and republish.
 - menu-r1 (open, 2026-11-12): five title-menu looks under the radio, MENU_STYLE 1..5 (bar and parchment, brass plates, station
   buttons, dial windows, parchment tags), `#menu-N`; each option its own container on dark floorboards (Chris: no bare black).
+- glass-r1 (open, 2026-11-12; Chris compared dot glass with the old green scope look, kept dot glass and asked for variations of
+  it): six takes on dot glass, GLASS_STYLE 1..6 (deep glass: recessed wells, letter bloom, curved sheen; warm-up: letters strike on
+  as keys land; word lock: the word's keys flash and lock, the rest of the glass dips; clear path: edge-to-edge links with
+  arrowheads; lift-off: sent letters rise off the glass while the fill drains; side meter: deeper amber, the value as a lamp stack
+  beside the letter). 0 = the game's look, untouched and the default (`paDotGlass` hands over to `paGlassVar` only when
+  GLASS_STYLE > 0; its pictures are cached in `gvSpr`). `#glass-N` opens one, `#test-word-glass-N` with RAT traced, `-step` on the
+  end for clips. Media in workshop/img/glass-r1/ (glass-N.mp4, glass-N.jpg, glass-N-close.jpg; every clip is the same seeded
+  sequence: take T back, add it again so the word locks, X to send, pick four letters, B four times). Whole-frame time at 640x480
+  with the processor slowed 6x (Playwright, CDP Emulation.setCPUThrottlingRate, a 1-pixel read after each step so the drawing is
+  really done): every option within noise of option 0 or a little faster. When Chris picks, fold the chosen ideas into
+  paDotGlass and drop the rest.
 - Speed (2026-11-12, Chris: the app lagged): the game steps at a fixed 60 a second (loop), glows are cached sprites (bloomSpr),
   resting keys draw from two cached layers (dotKeyCache), the dial's dot field is cached; keep per-frame drawing lean.
 - carrier-r1 (decided: 5, red scan, now the game's look): five looks for the Carrier Lamp's red key in dot glass, HOT_STYLE 1..5 (red letter, red

@@ -1,6 +1,160 @@
 {
  "topics": [
   {
+   "id": "glass",
+   "title": "Dot glass letters",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "Which take on the dot glass letters do you like best?",
+     "found": "Six takes on the look the game has now, each with one idea, plus today's look for comparison. Every video is the same ten seconds: RAT is traced and becomes a word, it is sent and reaches the tower, new keys fall in, four letters are picked and taken back. The play links open the game with RAT traced in that look. All of them draw as fast as today's look or a little faster (measured at 640x480 on a slowed-down processor). Ideas can be combined: say which ones you want together.",
+     "options": [
+      {
+       "id": "0",
+       "title": "Dot glass (now)",
+       "note": "The game as it is today, for comparison: flat dark keys, the line through the letters, the light wipe over a real word, letters breaking into dots when sent, keys scrambling as they land.",
+       "images": [
+        {
+         "src": "img/glass-r1/glass-0.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/glass-r1/glass-0.jpg",
+         "label": "Lit word"
+        },
+        {
+         "src": "img/glass-r1/glass-0-close.jpg",
+         "label": "Close-up: lit word"
+        }
+       ],
+       "play": "play.html#test-word-glass-0"
+      },
+      {
+       "id": "1",
+       "title": "Deep glass",
+       "note": "Richer glass. Every key sits in a recessed well (dark under its top lip, the lower lip catching the light), each letter throws a soft glow on the dots round it, and the pane gets a faint curved reflection, darker corners and a glint that slides across now and then. Plays exactly the same.",
+       "images": [
+        {
+         "src": "img/glass-r1/glass-1.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/glass-r1/glass-1.jpg",
+         "label": "Lit word"
+        },
+        {
+         "src": "img/glass-r1/glass-1-close.jpg",
+         "label": "Close-up: lit word"
+        }
+       ],
+       "play": "play.html#test-word-glass-1"
+      },
+      {
+       "id": "2",
+       "title": "Warm-up",
+       "note": "Keys power on as they arrive. A falling key rides dark; when it seats, its whole letter strikes on with a short stutter (dark, a white flash, dim, then settling to amber) instead of the scramble of dots. The start of a night and every refill look like the set warming up.",
+       "images": [
+        {
+         "src": "img/glass-r1/glass-2.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/glass-r1/glass-2.jpg",
+         "label": "Lit word"
+        },
+        {
+         "src": "img/glass-r1/glass-2-close.jpg",
+         "label": "Close-up: keys striking on"
+        }
+       ],
+       "play": "play.html#test-word-glass-2"
+      },
+      {
+       "id": "3",
+       "title": "Word lock",
+       "note": "A stronger real-word moment. When the letters become a word every key of it flashes together, a ring of light opens out from each, the keys get a thick pale-gold frame and breathe as one, and the rest of the glass dips so the word stands alone. Replaces the light wipe.",
+       "images": [
+        {
+         "src": "img/glass-r1/glass-3.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/glass-r1/glass-3.jpg",
+         "label": "Lit word"
+        },
+        {
+         "src": "img/glass-r1/glass-3-close.jpg",
+         "label": "Close-up: the word locking"
+        }
+       ],
+       "play": "play.html#test-word-glass-3"
+      },
+      {
+       "id": "4",
+       "title": "Clear path",
+       "note": "The traced order without anything crossing a letter. Lit links run from the edge of one key to the edge of the next and end in an arrowhead, a bead runs along each link, and a lit stud marks the first key. Replaces the line through the middles and the ring.",
+       "images": [
+        {
+         "src": "img/glass-r1/glass-4.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/glass-r1/glass-4.jpg",
+         "label": "Lit word"
+        },
+        {
+         "src": "img/glass-r1/glass-4-close.jpg",
+         "label": "Close-up: lit word"
+        }
+       ],
+       "play": "play.html#test-word-glass-4"
+      },
+      {
+       "id": "5",
+       "title": "Lift-off",
+       "note": "A more satisfying send. The letters rise whole off the glass, bigger and brighter, while the fill drains away down the keys under them and an ember of each letter fades; then they come apart into dots from up there, with a few sparks, and stream to the tower. The send takes about a tenth of a second longer.",
+       "images": [
+        {
+         "src": "img/glass-r1/glass-5.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/glass-r1/glass-5.jpg",
+         "label": "Lit word"
+        },
+        {
+         "src": "img/glass-r1/glass-5-close.jpg",
+         "label": "Close-up: letters lifting"
+        }
+       ],
+       "play": "play.html#test-word-glass-5"
+      },
+      {
+       "id": "6",
+       "title": "Side meter",
+       "note": "Deeper, more orange amber, and the value moved out of the letter's dot field: a stack of four small lamp sockets in the right edge of each key, one lit per value step, so the letter stands alone and the value reads like a little level meter.",
+       "images": [
+        {
+         "src": "img/glass-r1/glass-6.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/glass-r1/glass-6.jpg",
+         "label": "Lit word"
+        },
+        {
+         "src": "img/glass-r1/glass-6-close.jpg",
+         "label": "Close-up: lit word"
+        }
+       ],
+       "play": "play.html#test-word-glass-6"
+      }
+     ]
+    }
+   ]
+  },
+  {
    "id": "menu",
    "title": "Title menu",
    "rounds": [
