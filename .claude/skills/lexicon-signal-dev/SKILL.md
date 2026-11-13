@@ -317,6 +317,8 @@ the same batch.
   breathing, the odd dropout). Publish art/title/glass-lit.png, glass-dim.png, glass.json with the game.; 0 = the old parchment box). The game opens on 6 now (Chris: put it in while we tweak it), `#title-N` opens one (`#title-N-step` for clips).
   The logo is a placeholder built in code (`buildLogo`/`drawLogo`: LEXICON in bevelled brass cells, SIGNAL in lit dot-matrix,
   waves); a real logo from ChatGPT replaces it later. A press during an entrance skips to its settled screen (`titleBusy`).
+- tgap-r1 (open, 2026-11-13): what fills the dark strips beside the painted 4x4 logo in the wider 5x5 title glass, TITLE_GAP 0..5
+  (as now, blank keys, soft edges, thicker frame, band scales, zoom to fill), `#title-6-tgap-N`; drawn once into titleBg (titleGapDraw).
 - Rounds: keys-r1 decided (glow tubes), keys-r2 decided: first signal scope, then Chris saw dot glass on his phone and switched to it (KS 10, always on).
   Next: build dot glass out as THE play area and drop the other styles' code.
 

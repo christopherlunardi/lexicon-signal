@@ -1,6 +1,140 @@
 {
  "topics": [
   {
+   "id": "tgap",
+   "title": "Title glass sides",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "What should fill the dark strips beside the logo in the title glass?",
+     "found": "Your painted logo is the old 4x4 shape and the radio's glass is now the wider 5x5 shape, so there's a strip each side. Five ways to deal with it, none of them stretch the painting. Pictures on a computer, a phone and the Retroid's screen; play opens the title with that option.",
+     "options": [
+      {
+       "id": "0",
+       "title": "As now",
+       "note": "For comparison: your painted glass at its true shape, with a dark strip down each side of the wider 5x5 glass.",
+       "images": [
+        {
+         "src": "img/tgap-r1/0-desk.png",
+         "label": "Computer"
+        },
+        {
+         "src": "img/tgap-r1/0-phone.png",
+         "label": "Phone"
+        },
+        {
+         "src": "img/tgap-r1/0-handheld.png",
+         "label": "Retroid size"
+        }
+       ],
+       "play": "play.html#title-6-tgap-0"
+      },
+      {
+       "id": "1",
+       "title": "Blank keys",
+       "note": "The painting's own blank corner keys carry on out to the frame on both sides, lined up with each row, so the grid just looks wider. Nothing is stretched; the logo stays exactly as painted.",
+       "images": [
+        {
+         "src": "img/tgap-r1/1-desk.png",
+         "label": "Computer"
+        },
+        {
+         "src": "img/tgap-r1/1-phone.png",
+         "label": "Phone"
+        },
+        {
+         "src": "img/tgap-r1/1-handheld.png",
+         "label": "Retroid size"
+        }
+       ],
+       "play": "play.html#title-6-tgap-1"
+      },
+      {
+       "id": "2",
+       "title": "Soft edges",
+       "note": "The strips stay, but they glow faintly and the painting's edges melt into them, so there's no hard black bar. The smallest change.",
+       "images": [
+        {
+         "src": "img/tgap-r1/2-desk.png",
+         "label": "Computer"
+        },
+        {
+         "src": "img/tgap-r1/2-phone.png",
+         "label": "Phone"
+        },
+        {
+         "src": "img/tgap-r1/2-handheld.png",
+         "label": "Retroid size"
+        }
+       ],
+       "play": "play.html#title-6-tgap-2"
+      },
+      {
+       "id": "3",
+       "title": "Thicker frame",
+       "note": "The radio's own wood from just outside the glass is copied inside at its true size, so the opening fits the picture: the frame looks a little heavier.",
+       "images": [
+        {
+         "src": "img/tgap-r1/3-desk.png",
+         "label": "Computer"
+        },
+        {
+         "src": "img/tgap-r1/3-phone.png",
+         "label": "Phone"
+        },
+        {
+         "src": "img/tgap-r1/3-handheld.png",
+         "label": "Retroid size"
+        }
+       ],
+       "play": "play.html#title-6-tgap-3"
+      },
+      {
+       "id": "4",
+       "title": "Band scales",
+       "note": "A lit tuning scale fills each strip, like the station markings on an old radio: kilocycles down the left, megacycles down the right.",
+       "images": [
+        {
+         "src": "img/tgap-r1/4-desk.png",
+         "label": "Computer"
+        },
+        {
+         "src": "img/tgap-r1/4-phone.png",
+         "label": "Phone"
+        },
+        {
+         "src": "img/tgap-r1/4-handheld.png",
+         "label": "Retroid size"
+        }
+       ],
+       "play": "play.html#title-6-tgap-4"
+      },
+      {
+       "id": "5",
+       "title": "Zoom to fill",
+       "note": "The picture is enlarged to fill the glass. No strips, but the tops of LEXI and the bottom of AL get cut. Shown so you can see why I'd avoid it.",
+       "images": [
+        {
+         "src": "img/tgap-r1/5-desk.png",
+         "label": "Computer"
+        },
+        {
+         "src": "img/tgap-r1/5-phone.png",
+         "label": "Phone"
+        },
+        {
+         "src": "img/tgap-r1/5-handheld.png",
+         "label": "Retroid size"
+        }
+       ],
+       "play": "play.html#title-6-tgap-5"
+      }
+     ]
+    }
+   ]
+  },
+  {
    "id": "glass",
    "title": "Dot glass letters",
    "rounds": [
