@@ -173,6 +173,10 @@ the same batch.
 - Title menu (MENU_STYLE 6, Chris's art src/title_console.png cut to tpanel / tplate / tplate_lit): the wooden console under the
   radio with a brass plate per option (START, HOW TO PLAY, HIGH SCORES), the chosen one pressed in and lit; slice3Cv stretches a
   sprite from its ends and repeated middle.
+- Night report (2026-11-13, phase "report", drawReport): after a night and before the part picker, a parchment card lists every word
+  sent (S.nw: word, points, what boosted it, e.g. RED x2, AMP +1, OWL x3), the night's score against its target (OVERDRIVE in red)
+  and the run score counting up from where the night started. A or a tap skips ahead, then goes on to the parts. #test-report.
+- The run score is always on show in a small lit counter at the room's bottom-left corner above the bar (drawScoreBox).
 - The melter (2026-11-13, art iconL_melter / iconL_molten): once all five slots are full the picker shows a MELT THEM plate under the
   cases (down to reach it, or tap; meltPlate, kept above the bar). Choosing it opens the melter screen (phase "melt", drawMelt): the
   parts on offer arc into its mouth one by one, a lamp lights (S.melt, kept all run), then the next night. At five lamps it pours a
