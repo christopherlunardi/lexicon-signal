@@ -226,6 +226,7 @@ the same batch.
 4. Name check, commit with a plain message, push, republish the link. Tell Chris in a few lines what changed.
 
 ## The Retroid app (Android, built the same way as the studio's other game)
+- Since 2026-11-12 the installable web app (below) is the main way to play on the Retroid; this app stays until Chris says otherwise.
 - `android/`: a small launcher app (MainActivity, ApkProvider; package com.idlelooping.lexiconsignal, fixed sideload key
   lexiconsignal-sideload.jks). On start and on coming back it reads dist/version.json from GitHub (main); if that build is newer it
   downloads dist/lexicon-signal.html, checks its sha256 and replaces the older copy, then plays the newest build it has (the
@@ -237,23 +238,43 @@ the same batch.
   dist/lexicon-signal.html with words, studio intro, art and fonts inside, and dist/version.json), then commit and push.
   The page reads window.LEX_ASSETS when present (that build) and fetches the art files otherwise (the phone link).
 
-## The installable web app (2026-11-12)
-- Why: the Android app runs in the device's built-in WebView, which on Chris's Pocket 2S is an old version (about 15 fps, crackle);
-  installed from Chrome, the same game runs in Chrome's current engine. Both stay: the app is unchanged.
-- `python3 -I tools/web.py` (always after `tools/release.py`, so every content change gets a new build number: the service worker's
-  cache is named lexsig-BUILD and an unchanged number keeps serving the old files) writes `web/`: index.html wrapped in a full head
-  (manifest, theme colour, icons, fonts from web/fonts instead of the internet, window.LEX_BUILD), words.js, studio.js, the art,
-  icons made from the radio sprite with LS in dial dots, manifest.webmanifest (fullscreen, landscape, start_url/scope ./),
-  version.json, pwa.js and sw.js (sources in tools/web/). Commit web/; `.github/workflows/pages.yml` deploys it on push.
-- Installed (display-mode fullscreen/standalone or navigator.standalone), pwa.js adds body.pwa: no controller, name bar or foot,
-  the screen fills the display (it needs align-self/justify-self stretch: the shell's grid rules otherwise shrink the fixed screen).
-  .pwa is not .inapp (that one changes the sound and expects the Android bridge).
-- Updates: the new service worker installs and waits; pwa.js sets window.LEX_RELOAD and calls ssUpdateReady(build); the game
-  switches on the title screen (reloadBuild uses LEX_RELOAD when present, else the Android bridge); the old cache is deleted.
+## The installable web app: the main way to play on the Retroid and phones (2026-11-12)
+- Live at https://christopherlunardi.github.io/lexicon-signal/ (GitHub Pages, source: GitHub Actions). Installed on Chris's Retroid
+  Pocket 2S as a Chrome web app.
+- Why: the Android app runs inside the 2S's built-in WebView, which is locked at v80 (firmware RP2S V1.0.0.37, Aug 2023, already
+  the newest; it can't be updated). Measured there: ~15 fps (65 ms frames, GPU only 4 ms: WebView's own graphics thread was the
+  bottleneck), audio crackle, and a slow intro (the intro runs on the sound clock, so a struggling sound thread drags it). Chrome 157
+  on the same device runs the game fast. The web app runs in Chrome's current engine, so it is now the main way to play there.
+- Keep the Android app (android/, dist/) building and working for now. Ask Chris before retiring it.
+- Build: `python3 -I tools/web.py`, always after `tools/release.py` (every content change needs a new build number: the service
+  worker's cache is named lexsig-BUILD and an unchanged number keeps serving the old files). It writes `web/`: index.html wrapped in
+  a full head (manifest link, theme colour, icons, the fonts from web/fonts instead of the internet, window.LEX_BUILD, pwa.js at the
+  end), words.js, studio.js, the art (atlas + title glass), icons (192, 512 and a maskable 512, made from the radio sprite with LS
+  in dial dots), manifest.webmanifest, version.json, pwa.js and sw.js (their sources are tools/web/pwa.js and tools/web/sw.js), and
+  .nojekyll. Never edit web/ by hand. Commit web/; `.github/workflows/pages.yml` deploys it on every push that changes web/.
+- Manifest: name "Lexicon Signal", display fullscreen (display_override fullscreen then standalone), orientation landscape, dark
+  background/theme (#0b0806), id/start_url/scope "./" (relative to the Pages path).
+- pwa.js: when the page runs installed (display-mode fullscreen or standalone, or navigator.standalone) it adds body.pwa, which hides
+  the controller, the name bar and the foot line and makes the screen fill the display (it needs align-self/justify-self stretch:
+  the shell's grid rules otherwise shrink the fixed screen). Opened as a normal web page nothing changes. .pwa is not .inapp (that
+  one changes the sound and expects the Android bridge). A controller works through the normal Gamepad API.
+- Updates: sw.js precaches every file of the build and serves from the cache (offline it runs entirely from it; version.json always
+  goes to the network). On launch with a network pwa.js asks for an update; a new build downloads in the background and waits.
+  pwa.js then sets window.LEX_RELOAD and calls the game's ssUpdateReady(build): the game switches on the title screen (right away
+  if it's there, otherwise on the next START; never mid-game; reloadBuild uses LEX_RELOAD when present, else the Android bridge),
+  and the old cache is deleted.
 - Touch has no Start button: tapping the radio's left knob pauses (the right one retunes). Everything else is reachable by touch.
-- Test: serve a folder holding a `lexicon-signal` link to web/ with http.server (the Pages path), check manifest + service worker,
-  go offline and reload, play a word; fake installed mode by patching matchMedia in an init script (the display-mode emulation in
-  the dev tools protocol doesn't take).
+- Installing on the Retroid: Daijisho (Chris's home launcher) hides Chrome's install option, so: Android settings > Home app >
+  Quickstep, force-stop Chrome, reopen the site in Chrome, ⋮ > "Install and create shortcut" > Install, then set the Home app back
+  to Daijisho. The device's settings are Chris's to change: tell him the steps, don't change them yourself.
+  On a phone: open the link in Chrome, ⋮ > Install app (or Add to Home screen).
+- Testing here: serve a folder holding a `lexicon-signal` link to web/ with http.server (the Pages path), check the manifest and
+  service worker, go offline and reload, play a word (count oscillators made through an AudioContext wrapper for sound); fake
+  installed mode by patching matchMedia in an init script (the display-mode emulation in the dev tools protocol doesn't take).
+- Testing on the device (when the session has a shell on Chris's PC): the Retroid is on adb, at
+  %LOCALAPPDATA%\Microsoft\WinGet\Packages\Google.PlatformTools_Microsoft.Winget.Source_8wekyb3d8bbwe\platform-tools\adb.exe.
+  `adb shell dumpsys gfxinfo com.idlelooping.lexiconsignal` gives the Android app's frame times; SurfaceFlinger shows nothing for
+  Chrome's surface, so read the web app's speed from the pause menu's FPS line instead. Esc or Back sent over adb closes the app.
 
 ## Workshop (options Chris looks at and plays, like the other games)
 - Lexicon Signal Workshop: https://claude.ai/artifact/LuTEWxDDeCazkUDjiXCrdj , built from `workshop/` (index.html + workshop.json +

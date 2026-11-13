@@ -5,7 +5,8 @@ the radio tower outside the window, and fill each night's signal target before t
 part; every run builds a different radio. One HTML page, played:
 - from the artifact link on his phone (on-screen d-pad, A/B, Select/Start in the studio's handheld shell),
 - in a browser with keys, mouse or any controller (controller and keyboard come first; touch and mouse also work),
-- later on his Retroid Pocket 2S (640x480) and Pocket 6 (1920x1080) through a launcher app.
+- on his Retroid Pocket 2S (640x480) and phones as an installed offline web app from GitHub Pages (https://christopherlunardi.github.io/lexicon-signal/),
+  the main way to play there now; the older Android launcher app (Pocket 2S / Pocket 6) is kept until Chris says to retire it.
 
 Read the workflow in `.claude/skills/lexicon-signal-dev/SKILL.md` before changing anything, and keep it up to date.
 
