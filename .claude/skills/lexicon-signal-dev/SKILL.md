@@ -409,7 +409,8 @@ the same batch.
 - type-r1 (decided: Silkscreen, 2026-11-13; Chris also: pixel lettering limits the HUD): everything printed on paper or brass
   ("ink", "ink3", "key" in ftext/textW) is set in Silkscreen (OFL, tools/fonts/Silkscreen.woff2 + Silkscreen-OFL.txt; the Google
   fonts link for the artifact) at whole multiples of its 8 px grid (ink 16*TK, ink3 24*TK, key 32), centered where the old glyphs
-  were. Lit displays keep the dots. The old lettering stands in until the font has loaded (TF_READY); #type-old shows it. Never draw a
+  were (each Silkscreen letter has one grid unit of space on its left: ftext starts a unit early, textW leaves both sides out, so
+  centered text is truly centered). Text on brass plates sits 1 world px above the plate's middle (their bottom rim is deeper). Lit displays keep the dots. The old lettering stands in until the font has loaded (TF_READY); #type-old shows it. Never draw a
   pixel number scaled: the dot kinds come at their own sizes ("dot" 3 px pitch, "mid" 6, "big" 8), bigNum(s, cx, y, col, cells, z, kind).
 - Button names follow the device (Chris 2026-11-13): INPUT is "pad" (controller, handheld app, the phone shell's buttons), "keys"
   (keyboard: Z pick, X back, V send, C retune, Esc pause, arrows move) or "touch"; BTN("A") and btn("PRESS {A} ...") name the right

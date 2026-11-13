@@ -1,7 +1,7 @@
 // Lexicon Signal's service worker (made by tools/web.py): keeps every file of one build in its own cache so the game plays offline.
 // A newer build installs in the background and waits; the game tells it to take over at the next title screen (message "skip"),
 // then the old build's cache is deleted.
-const BUILD = 56, CACHE = "lexsig-" + BUILD, FILES = ["./", "art/pixel/atlas.json", "art/pixel/atlas.png", "art/title/glass-dim.png", "art/title/glass-lit.png", "art/title/glass.json", "fonts/Alfa-Slab-One.woff2", "fonts/Silkscreen.woff2", "fonts/Special-Elite.woff2", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "index.html", "manifest.webmanifest", "pwa.js", "studio.js", "words.js"];
+const BUILD = 57, CACHE = "lexsig-" + BUILD, FILES = ["./", "art/pixel/atlas.json", "art/pixel/atlas.png", "art/title/glass-dim.png", "art/title/glass-lit.png", "art/title/glass.json", "fonts/Alfa-Slab-One.woff2", "fonts/Silkscreen.woff2", "fonts/Special-Elite.woff2", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-maskable-512.png", "index.html", "manifest.webmanifest", "pwa.js", "studio.js", "words.js"];
 self.addEventListener("install", (e) => {
   e.waitUntil(caches.open(CACHE).then((c) => c.addAll(FILES.map((f) => new Request(f, { cache: "reload" })))));
 });

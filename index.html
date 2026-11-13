@@ -306,7 +306,7 @@ function ftext(s, x, y, kind, col, align, opts = {}) {
   s = String(s).toUpperCase().replace(/X(\d)/g, "x$1"); if (align === "c") x -= Math.round(textW(s, kind) / 2); else if (align === "r") x -= textW(s, kind);
   x = Math.round(x); y = Math.round(y);
   if (tfOn(kind)) {   // the typeface, its capitals centered where the old lettering's were
-    const sz = TF_SIZE[kind](), u = sz / 8, base = Math.round(y + (glyphCv(kind, "N", col).height + 5 * u) / 2);
+    const sz = TF_SIZE[kind](), u = sz / 8, base = Math.round(y + (glyphCv(kind, "N", col).height + 5 * u) / 2); x -= u;   // (each letter has one grid unit of space on its left: start a unit early so the ink starts at x)
     ctx.save(); ctx.font = `${sz}px "${TYPEFACE}"`; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
     if (opts.under) { ctx.fillStyle = opts.under; ctx.fillText(s, x + (opts.ux ?? 0), base + (opts.uy ?? 2)); }
     if (opts.outline) { ctx.fillStyle = opts.outline; for (const [dx, dy] of [[-2, 0], [2, 0], [0, -2], [0, 2], [-2, -2], [2, 2], [-2, 2], [2, -2]]) ctx.fillText(s, x + dx, base + dy); }
@@ -659,7 +659,7 @@ function edgePlate(s, kind, cx, cy, col) { const rf = S.phase === "report" && RT
     ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "rgba(255,240,200,.6)"; ctx.fillText(s, FX(x + w / 2), FX(y + hh / 2) + 2); ctx.fillStyle = col || C.ink; ctx.fillText(s, FX(x + w / 2), FX(y + hh / 2)); ctx.restore(); return { w, hh }; }
   const th = glyphCv(kind, "N", C.ink).height, w = Math.round(textW(s, kind) / FINE) + 2 * INSET.plate.x + 8, hh = Math.round((th + 2 * FINE * INSET.plate.y + 8) / FINE), x = Math.round(cx / FINE - w / 2), y = Math.round(cy / FINE - hh / 2);
   ctx.fillStyle = "rgba(8,4,2,.45)"; ctx.fillRect(FX(x + 2), FX(y + 3), FX(w), FX(hh)); ctx.drawImage(panelCv("plate", w, hh), FX(x), FX(y), FX(w), FX(hh));
-  ftext(s, FX(x + w / 2), FX(y) + Math.round((FX(hh) - th) / 2) - 1, kind, col || C.ink, "c", { under: C.brassHi, uy: kind === "key" ? 3 : 2 }); return { w, hh }; }
+  ftext(s, FX(x + w / 2), FX(y) + Math.round((FX(hh) - th) / 2) - 2, kind, col || C.ink, "c", { under: C.brassHi, uy: kind === "key" ? 3 : 2 }); return { w, hh }; }
 // a parchment sheet for any screen: brass nameplate on its top edge, an optional plate on its bottom edge, the body (bodyH fine px)
 // between them with INSET kept clear of the gold frame. Returns where the body goes (fine px); call .plates() after drawing it.
 function sheet(w, bodyH, title, titleCol, prompt, maxH) { const kh = glyphCv("key", "N", C.ink).height, ih = Math.round(14 * TK);
@@ -1807,8 +1807,8 @@ function drawBarText() {
   // stamped plates: dark letters with a light edge under them
   const [, , pw, ph] = R("plate"), pc = FX(L.plateX + pw / 2), opt = { under: C.brassHi, ux: 0, uy: 2 };
   const left = S.target - S.shown, t1 = S.phase === "title" ? "SIGNAL" : left > 0 ? `${left} TO GO` : "LOCKED", t2 = S.phase === "title" ? "LEXICON" : `NIGHT ${S.night}`;
-  ftext(t1, pc, FX(by + L.plateY0) + Math.round((FX(ph) - 14 * TK) / 2) + 1, "ink", C.ink, "c", opt);
-  ftext(t2, pc, FX(by + L.plateY1) + Math.round((FX(ph) - 14 * TK) / 2) + 1, "ink", C.ink, "c", opt);
+  ftext(t1, pc, FX(by + L.plateY0) + Math.round((FX(ph) - 14 * TK) / 2) - 1, "ink", C.ink, "c", opt);
+  ftext(t2, pc, FX(by + L.plateY1) + Math.round((FX(ph) - 14 * TK) / 2) - 1, "ink", C.ink, "c", opt);
   // counters on the part slots
   const [, , sw, sh] = R("slot");
   drawSlotStates(); drawInspect();
@@ -2248,7 +2248,7 @@ function drawConsoleMenu(a, top, hh, best, zx, zy, Z) {
   M.forEach((m, i) => { const w = ws[i], on = i === titleSel, mx = x + FX(w) / 2;
     if (on) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(mx, y + FX(ph) / 2, FX(w) * .7, "255,190,80", .32 * (.8 + .2 * Math.sin(frame / 10))); ctx.restore(); }
     ctx.drawImage(slice3Cv(on ? "tplate_lit" : "tplate", w, 18), x, y + (on ? 2 : 0), FX(w), FX(ph));
-    ftext(m, mx, y + (on ? 2 : 0) + Math.round((FX(ph) - kh) / 2) + 1, "key", on ? "#3a1806" : C.ink, "c", { under: on ? "rgba(255,240,180,.55)" : C.brassHi, uy: 2 });
+    ftext(m, mx, y + (on ? 2 : 0) + Math.round((FX(ph) - kh) / 2) - 2, "key", on ? "#3a1806" : C.ink, "c", { under: on ? "rgba(255,240,180,.55)" : C.brassHi, uy: 2 });
     titleHits.push({ x0: x, x1: x + FX(w), y0: y - 10, y1: y + FX(ph) + 10, i }); x += FX(w) + gapF; });
   ctx.restore();
 }   // (the high score scrolls on the radio's dial instead: over the drawers it looked out of place)
@@ -2506,7 +2506,7 @@ function drawMeltPlate() { if (!meltOpen()) return; const m = meltPlate(), on = 
   if (on) { ctx.globalCompositeOperation = "lighter"; bloom(FX(m.x + m.w / 2), FX(m.y + m.h / 2), FX(m.w) * .6, "255,170,70", .3); ctx.globalCompositeOperation = "source-over"; }
   ctx.drawImage(slice3Cv(on ? "tplate_lit" : "tplate", m.w, 18), FX(m.x), FX(m.y), FX(m.w), FX(m.h));
   const lampsW = 4 * 15 + 12, tx = FX(m.x + 14), room = FX(m.x + m.w - 14) - lampsW - tx;
-  ftext("MELT THEM", tx + room / 2, FX(m.y) + Math.round((FX(m.h) - 14 * TK) / 2) + 1, "ink", on ? "#3a1806" : C.ink, "c", { under: C.brassHi, uy: 2 });
+  ftext("MELT THEM", tx + room / 2, FX(m.y) + Math.round((FX(m.h) - 14 * TK) / 2) - 2, "ink", on ? "#3a1806" : C.ink, "c", { under: C.brassHi, uy: 2 });
   meltLamps(FX(m.x + m.w - 14) - lampsW / 2 - 6, FX(m.y + m.h / 2), 5, 15, S.melt, false); ctx.restore(); }
 // the melter's own screen: the parts on offer arc into its mouth one after another, a lamp lights; at five it pours a Molten Upgrade
 function drawMelt() {
@@ -2546,7 +2546,7 @@ function drawUpgrade() {
   const cs = panelCvKey("upcase:" + cw + "x" + ch, () => { const c = document.createElement("canvas"); c.width = cw; c.height = ch; const g = c.getContext("2d"); g.imageSmoothingEnabled = false; nine(g, "slot", 0, 0, cw, ch, 18); plate3(g, 10, 82, cw - 20, ph); return c; });
   ctx.drawImage(cs, FX(x), FX(y + lift), FX(cw), FX(ch));
   const r = R("iconL_molten"); ctx.drawImage(atlasImg, r[0], r[1], r[2], r[3], FX(x + cw / 2 - r[2] / 2), FX(y + lift + 14 + (64 - r[3]) / 2), FX(r[2]), FX(r[3]));
-  ftext("MOLTEN UPGRADE", cx, FX(y + lift + 82) + Math.round((FX(ph) - 14 * TK) / 2) + 1, "ink", C.ink, "c", { under: C.brassHi, uy: 2 });
+  ftext("MOLTEN UPGRADE", cx, FX(y + lift + 82) + Math.round((FX(ph) - 14 * TK) / 2) - 1, "ink", C.ink, "c", { under: C.brassHi, uy: 2 });
   desc.forEach((s, j) => ftext(s, cx, FX(y + lift + 82 + ph) + 16 + j * lh, "ink", C.gold, "c"));
   // the foot: which part gains the copy
   const sl = partSlots()[swapFocus], note = sl ? `${PART[sl.id].name} X${sl.n} > X${sl.n + 1}`.toUpperCase() : "", by = FX(y + lift + ch) - 30 - 26, x0 = FX(x), x1 = FX(x + cw);
@@ -2644,7 +2644,7 @@ function drawShop() {
     ftext(S.over ? (TK > 1 ? "OVERDRIVE: PICK ONE OF FOUR" : `OVERDRIVE ON NIGHT ${S.night}! PICK ONE OF FOUR PARTS`) : TK > 1 ? "FIT A RADIO PART" : `NIGHT ${S.night} LOCKED IN. FIT A RADIO PART`, FX(W / 2), 22, "ink", S.over ? C.redHot : C.hot, "c", { outline: C.dark });
     shopChoices.forEach((p, k) => { const g = geo(k), cx = FX(g.x + G.cw / 2), lh = Math.round(20 * TK), maxW = FX(G.cw) - 48;
       // name: stamped on the plate (smaller lettering if a long name needs it)
-      const nl = nameLines(p), PH = plH(p), top = FX(g.py) + Math.round((FX(PH) - (nl.length - 1) * lh - 14 * TK) / 2) + 1;
+      const nl = nameLines(p), PH = plH(p), top = FX(g.py) + Math.round((FX(PH) - (nl.length - 1) * lh - 14 * TK) / 2) - 1;
       nl.forEach((s, j) => ftext(s, cx, top + j * lh, "ink", C.ink, "c", { under: C.brassHi, uy: 2 }));
       // what it does, in lit amber on the dark glass
       wrap(p.desc, "ink", maxW).forEach((s, j) => ftext(s, cx, FX(g.py + PH) + 16 + j * lh, "ink", g.f ? C.gold : C.amber, "c"));
