@@ -6,7 +6,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "Where should the run score show while you play, and how should it count up?",
      "found": "Four ways to keep the run score on screen while playing, in the part picker, the melter and the upgrade (it hides on the night report and DEAD AIR, which show it big). In all four, when a word's beam lands in the tube its points fly up as a '+N' into the counter, which counts up with a climbing tick and flares. Each counter grows a place when the score needs it (never fewer than 5) and shrinks to fit its corner if a score gets huge. Each clip sends RAT (+5), then shows a big +248 word's worth landing so you can see a long count. Play opens the game in that style with RAT traced.",
      "options": [
@@ -74,7 +74,8 @@
        ],
        "play": "play.html#test-word-score-4"
       }
-     ]
+     ],
+     "chosen": "1"
     }
    ]
   },
