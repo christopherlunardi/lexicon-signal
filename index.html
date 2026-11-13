@@ -440,7 +440,7 @@ let S = null, uid = 0;
 const has = (id) => S.parts.filter(p => p === id).length;
 const maxWords = () => BASE_WORDS + has("battery");
 const maxRetunes = () => 1 + has("knob");
-function fresh(phase) { return { phase, night: 1, score: 0, shown: 0, total: 0, parts: [], words: BASE_WORDS, retunes: 1, firstWord: true, grid: [], path: [], cursor: 6, best: { word: "", pts: 0 }, target: 30, log: [] }; }
+function fresh(phase) { return { phase, melt: 0, night: 1, score: 0, shown: 0, total: 0, parts: [], words: BASE_WORDS, retunes: 1, firstWord: true, grid: [], path: [], cursor: 6, best: { word: "", pts: 0 }, target: 30, log: [] }; }
 function pickLetter() {
   let total = 0; const pool = [];
   for (const [k, w] of Object.entries(WEIGHTS)) { pool.push([k, w]); total += w; }
@@ -592,11 +592,29 @@ function nightClear() {
 function partSlots() { const c = []; S.parts.forEach(id => { const e = c.find(e => e.id === id); if (e) e.n++; else c.push({ id, n: 1 }); }); return c; }
 let swapNew = null, swapFocus = 0;
 function choosePart(k) {
+  if (S.phase === "shop" && k === shopChoices.length && meltOpen()) return meltStart();
   if (S.phase !== "shop" || !shopChoices[k]) return; const p = shopChoices[k];
   // every slot taken and this is a new kind of part: pick one to take out first (B goes back to the parts)
   if (!S.parts.includes(p.id) && partSlots().length >= PART_SLOTS) { S.phase = "swap"; swapNew = p; swapFocus = 0; Sound.click(); return; }
   fitPart(p);
 }
+/* ---- the melter (Chris 2026-11-13). Once all five slots are full, the part picker shows a small MELT THEM plate under the cases
+   (down to reach it, or tap). Choosing it throws the parts on offer into the melter (its own screen): one of its five lamps lights
+   and the next night starts. The lamps carry over; when the fifth lights the melter pours a Molten Upgrade: pick any fitted part
+   and it gains a copy, as if it had been offered again. Rare parts (once only) can't take it. ---- */
+const MELT_N = 5;
+const meltOpen = () => S.phase === "shop" && partSlots().length >= PART_SLOTS;
+const MELT = { t: 0, items: [], full: false, k: 0 };
+function meltStart() { MELT.t = 0; MELT.items = shopChoices.map(p => p.id); MELT.full = S.melt + 1 >= MELT_N; S.phase = "melt"; plPick("melt"); log("Into the melter."); Sound.click(); }
+function meltUpdate() { if (S.phase !== "melt") return; MELT.t++;
+  const n = MELT.items.length, hit = (k) => 26 + k * 18 + 30;
+  for (let k = 0; k < n; k++) if (MELT.t === hit(k)) { Sound.thud(1); shake = Math.max(shake, 2); }
+  if (MELT.t === hit(n - 1) + 14) { S.melt++; Sound.lock(); staticKick = .4; }
+  if (MELT.t === hit(n - 1) + 30 && MELT.full) { Sound.full(); shake = 6; } }
+function meltDone() { if (S.phase !== "melt") return; const n = MELT.items.length; if (MELT.t < 26 + (n - 1) * 18 + 30 + 40) { MELT.t = 26 + (n - 1) * 18 + 30 + 40; return; }
+  if (S.melt >= MELT_N) { S.melt = 0; S.phase = "upgrade"; swapFocus = Math.max(0, partSlots().findIndex(s => !PART[s.id].rare)); Sound.click(); return; }
+  S.night += 1; knobA.L += 3; staticKick = .5; Sound.retune(); startNight(); }
+function upgradeConfirm(k) { const sl = partSlots()[k]; if (!sl || PART[sl.id].rare) return; plPick("up:" + sl.id); S.parts.push(sl.id); log(`Molten upgrade: ${PART[sl.id].name} x${sl.n + 1}.`); Sound.pick(); S.night += 1; knobA.L += 3; Sound.retune(); startNight(); }
 function fitPart(p) { plPick(p.id); S.parts.push(p.id); Sound.pick(); log(`Fitted: ${p.name}.`); S.night += 1; knobA.L += 3; staticKick = .5; Sound.retune(); startNight(); }
 function swapConfirm(k) { const sl = partSlots()[k]; if (!sl || !swapNew) return; S.parts = S.parts.filter(id => id !== sl.id); log(`Took out: ${PART[sl.id].name}.`); const p = swapNew; swapNew = null; fitPart(p); }
 function swapCancel() { S.phase = "shop"; swapNew = null; Sound.click(); }
@@ -618,7 +636,7 @@ let flyers = [], sparks = [], pops = [], beams = [], beaconFlash = 0, shake = 0,
 function burst(x, y, n, col) { for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, s = .8 + Math.random() * 2.6; sparks.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 1, life: 1, d: .025 + Math.random() * .03, col }); } }
 function update() {
   if (PAUSE.on) return;   // paused: everything holds still
-  frame++;
+  frame++; meltUpdate();
   const thudCols = new Set();
   for (let i = 0; i < NN; i++) { const t = S.grid[i]; if (!t) continue; if (t.wait > 0) { t.wait--; continue; }
     if (t.yOff < 0 || t.vy !== 0) { t.vy += .72; t.yOff += t.vy;
@@ -655,9 +673,9 @@ function draw() {
   ctx.save(); ctx.translate(sx * FINE, 0); drawRain(); drawDial(); drawLamps(); drawKeyLetters(); drawGlows(); drawFlyers(); ctx.restore();
   if (overT > 0) { ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(255,40,24,${.42 * overT * (.6 + .4 * Math.sin(frame / 2))})`; ctx.fillRect(0, 0, CVW, CVH); ctx.restore(); overT = Math.max(0, overT - .012); }
   drawBarText(); if (nightCard > 0 && S.phase === "play" && !HOW.on) { drawNightCard(); nightCard--; }
-  if (S.phase === "title" || S.phase === "shop" || S.phase === "swap" || S.phase === "over") {
+  if (S.phase === "title" || S.phase === "shop" || S.phase === "swap" || S.phase === "over" || S.phase === "melt" || S.phase === "upgrade") {
     octx.clearRect(0, 0, W, H); octx.imageSmoothingEnabled = false;
-    if (S.phase === "title") drawTitle(); else if (S.phase === "shop") drawShop(); else if (S.phase === "swap") drawSwap(); else drawOver();
+    if (S.phase === "title") drawTitle(); else if (S.phase === "shop") drawShop(); else if (S.phase === "swap") drawSwap(); else if (S.phase === "melt") drawMelt(); else if (S.phase === "upgrade") drawUpgrade(); else drawOver();
   }
   if (HOW.on) { howStep(); drawHowCard(); }
   if (PAUSE.on) drawPause();
@@ -788,7 +806,7 @@ function drawLamps() {
   if (lampOut) { const u = lampOut.t / 26; ctx.save(); ctx.globalAlpha = Math.max(0, 1 - u); drawLamp(FX(lampOut.x), FX(lampOut.y), lampOut.r, false);
     ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 1; bloom(FX(lampOut.x), FX(lampOut.y), 50 + 30 * (1 - u), "255,240,200", .7 * (1 - u)); ctx.restore(); if (++lampOut.t > 26) lampOut = null; }
   // retunes left: small lamps in a row on the base lip under the right (tuning) knob, one per retune each night, lit while unused
-  if (S.phase === "play" || S.phase === "shop" || S.phase === "swap") { const n = maxRetunes(), k = L.knobR;
+  if (S.phase === "play" || S.phase === "shop" || S.phase === "swap" || S.phase === "melt" || S.phase === "upgrade") { const n = maxRetunes(), k = L.knobR;
     for (let i = 0; i < n; i++) { const x = FX(k.x + .5 + (i - (n - 1) / 2) * 13), y = FX(L.lamps[0].y + 31);
       ctx.fillStyle = "#1a0e08"; ctx.beginPath(); ctx.arc(x, y, 6, 0, 6.283); ctx.fill(); ctx.strokeStyle = "#b07a2a"; ctx.lineWidth = 1.5; ctx.stroke();
       if (i < S.retunes) drawLamp(x, y, 4.5, false);
@@ -1698,7 +1716,8 @@ const TIPS = [
   "EACH NIGHT ASKS FOR MORE SIGNAL THAN THE LAST",
   "CLEAR A NIGHT TO FIT ONE OF THREE RADIO PARTS",
   "YOU HAVE 5 PART SLOTS. COPIES OF A PART STACK IN ONE",
-  "SLOTS FULL? TAKE A PART OUT TO FIT A NEW ONE",
+  "SLOTS FULL? TAKE A PART OUT TO FIT A NEW ONE, OR MELT THE OFFER",
+  "FIVE MELTS POUR A MOLTEN UPGRADE: ANY PART YOU HAVE GAINS A COPY",
   "A PART'S SLOT LIGHTS UP WHEN IT WILL BOOST YOUR WORD",
   "A SPARE BATTERY ADDS A LIGHT UNDER THE LAMPS: AN EXTRA WORD EVERY NIGHT",
   "THE NIGHT OWL CLOCK TRIPLES YOUR LAST WORD OF THE NIGHT, MORE WITH COPIES",
@@ -2191,6 +2210,50 @@ function drawTitleOld() {
   ftext(bestLine(), cx, ty, "ink", C.inkSoft, "c");
   if (TK === 1) ftext("A ADD / SEND   B BACK   Y RETUNE   START PAUSE", cx, FX(y + h) + 14, "ink", C.gold, "c", { outline: C.dark });
 }
+// the small MELT THEM plate under the part cases (world pixels)
+function meltPlate() { const G = shopGeom(), w = Math.min(W - 24, 250), hh = 36, y = Math.min(G.y0 + G.ch + 22, SCENE_H - hh - 4); return { x: Math.round(W / 2 - w / 2), y, w, h: hh, tight: y < G.y0 + G.ch + 22 }; }   // always above the bar
+function meltLamps(cx, cy, r, step, lit, flash) { for (let k = 0; k < MELT_N; k++) { const x = cx + (k - (MELT_N - 1) / 2) * step, on = k < lit;
+    ctx.fillStyle = "#140a05"; ctx.beginPath(); ctx.arc(x, cy, r + 3, 0, 6.283); ctx.fill(); ctx.fillStyle = on ? (k === lit - 1 && flash ? "#fff6d8" : "#ff8a24") : "#3a1f10"; ctx.beginPath(); ctx.arc(x, cy, r, 0, 6.283); ctx.fill();
+    if (on) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(x, cy, r * 4, "255,140,40", .4); ctx.restore(); } } }
+function drawMeltPlate() { if (!meltOpen()) return; const m = meltPlate(), on = shopFocus === shopChoices.length, r = R("iconL_melter"), s = 30 / r[3];
+  ctx.save(); ctx.drawImage(panelCv("logbox", m.w, m.h), FX(m.x), FX(m.y), FX(m.w), FX(m.h));
+  if (on) { ctx.strokeStyle = (frame >> 4) & 1 ? C.hot : C.gold; ctx.lineWidth = 3; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 12; ctx.beginPath(); ctx.roundRect(FX(m.x) - 4, FX(m.y) - 4, FX(m.w) + 8, FX(m.h) + 8, 8); ctx.stroke(); ctx.shadowBlur = 0; }
+  ctx.drawImage(atlasImg, r[0], r[1], r[2], r[3], FX(m.x) + 12, FX(m.y) + Math.round((FX(m.h) - r[3] * s * FINE) / 2), r[2] * s * FINE, r[3] * s * FINE);
+  ftext("MELT THEM", FX(m.x) + 82, FX(m.y) + Math.round((FX(m.h) - 14 * TK) / 2) + 1, "ink", on ? C.inkRed : C.ink, "l");
+  meltLamps(FX(m.x + m.w) - 74, FX(m.y + m.h / 2), 6, 17, S.melt, false); ctx.restore(); }
+// the melter's own screen: the parts on offer arc into its mouth one after another, a lamp lights; at five it pours a Molten Upgrade
+function drawMelt() {
+  ctx.save(); ctx.fillStyle = "rgba(6,3,2,.9)"; ctx.fillRect(0, 0, CVW, FX(L.barY));
+  const r = R("iconL_melter"), sc = Math.max(2, Math.min(5, Math.floor(FX(SCENE_H) * .52 / r[3]))), mw = r[2] * sc, mh = r[3] * sc, mx = Math.round(CVW / 2 - mw / 2), my = Math.round(FX(SCENE_H) * .2);
+  const mouthX = mx + mw * .5, mouthY = my + mh * .22, t = MELT.t, n = MELT.items.length, done = 26 + (n - 1) * 18 + 30;
+  ctx.globalCompositeOperation = "lighter"; bloom(mouthX, mouthY + mh * .1, mw * .9, "255,120,30", .35 + .15 * Math.sin(frame / 6) + (t > done ? .25 : 0)); ctx.globalCompositeOperation = "source-over";
+  ctx.drawImage(atlasImg, r[0], r[1], r[2], r[3], mx, my, mw, mh);
+  ftext(MELT.full && t > done + 30 ? "MOLTEN UPGRADE!" : "THE MELTER", CVW / 2, Math.max(8, my - 44), "key", MELT.full && t > done + 30 ? C.hot : C.gold, "c", { outline: C.dark });
+  MELT.items.forEach((id, k) => { const t0 = 26 + k * 18, u = (t - t0) / 30; if (u >= 1) return; const ir = R(iconOf(id)), sx = CVW / 2 + (k - (n - 1) / 2) * FX(80), sy = FX(SCENE_H) * .86;
+    const e = Math.max(0, u), x = sx + (mouthX - sx) * e, y = sy + (mouthY - sy) * e - Math.sin(e * Math.PI) * FX(70), s2 = u < 0 ? 1 : 1 - e * .7;
+    ctx.save(); ctx.translate(x, y); ctx.rotate(e * 3); ctx.drawImage(atlasImg, ir[0], ir[1], ir[2], ir[3], -ir[2] * s2, -ir[3] * s2, ir[2] * 2 * s2, ir[3] * 2 * s2); ctx.restore();
+    if (u > .9) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(mouthX, mouthY, FX(40), "255,200,90", .6); ctx.restore(); } });
+  const lit = Math.min(S.melt, MELT_N); meltLamps(CVW / 2, my + mh + 36, 9, 30, MELT.full && t > done + 14 ? MELT_N : lit, t > done && t < done + 30);
+  if (MELT.full && t > done + 30) { const ir = R("iconL_molten"), k = Math.min(1, (t - done - 30) / 20), s2 = 2 * k;
+    ctx.globalCompositeOperation = "lighter"; bloom(CVW / 2, my + mh + 110, FX(70), "255,190,80", .5 * k); ctx.globalCompositeOperation = "source-over";
+    ctx.drawImage(atlasImg, ir[0], ir[1], ir[2], ir[3], CVW / 2 - ir[2] * s2 / 2, my + mh + 110 - ir[3] * s2 / 2, ir[2] * s2, ir[3] * s2); }
+  if (t > done + 20) { const msg = MELT.full ? "FULL! PICK A PART TO UPGRADE" : `MELTER ${S.melt} OF ${MELT_N}`; if ((frame >> 5) & 1 || !MELT.full) ftext(msg, CVW / 2, FX(L.barY) - 40, "ink", C.gold, "c", { outline: C.dark });
+    if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO GO ON" : "PRESS A TO GO ON", CVW / 2, FX(L.barY) - 18, "ink", C.amber, "c", { outline: C.dark }); }
+  ctx.restore(); }
+// the Molten Upgrade: pick one of your parts to gain a copy (like the swap screen, but adding)
+function drawUpgrade() {
+  const w = Math.min(W - 48, 400), h = 104, x = Math.round(W / 2 - w / 2), y = Math.max(12, Math.round((SCENE_H - h) / 2) - 10), r = R("iconL_molten");
+  dim(); octx.drawImage(panelCv("logbox", w, h), x, y); spr(octx, "iconL_molten", x + 18, y + Math.round((h - r[3]) / 2)); blitOver();
+  const tx = FX(x + 18 + r[2] + (w - 18 - r[2]) / 2), lh = Math.round(22 * TK); let ty = FX(y) + 26;
+  ftext("MOLTEN UPGRADE", tx, ty, "key", C.ink, "c", { under: C.brassHi, uy: 3 }); ty += 50;
+  const sl = partSlots()[swapFocus];
+  wrap("Pick a part: it gains a copy.", "ink", FX(w - r[2] - 40) - 40).forEach(s => { ftext(s, tx, ty, "ink", C.ink, "c"); ty += lh; });
+  if (sl) ftext(`${PART[sl.id].name} X${sl.n} > X${sl.n + 1}`.toUpperCase(), tx, ty + 6, "ink", C.inkRed, "c");
+  ftext(usingTouch ? "TAP A PART BELOW" : "LEFT / RIGHT TO CHOOSE, A TO UPGRADE", FX(W / 2), FX(y + h) + 16, "ink", C.gold, "c", { outline: C.dark });
+  const [, , sw, shh] = R("slot"), sx = FX(L.slotX + swapFocus * L.slotStep), sy = FX(L.barY + L.slotY);
+  ctx.save(); ctx.strokeStyle = (frame >> 3) & 1 ? "#ffd24a" : "#fff2c0"; ctx.lineWidth = 4; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 14; ctx.strokeRect(sx - 4, sy - 4, FX(sw) + 8, FX(shh) + 8); ctx.restore();
+  ftext("+1", sx + FX(sw) / 2, sy - 22, "ink", C.hot, "c", { outline: C.dark });
+}
 function drawSwap() {
   const w = Math.min(W - 48, 400), h = 104, x = Math.round(W / 2 - w / 2), y = Math.max(12, Math.round((SCENE_H - h) / 2) - 10), r = R(iconOf(swapNew.id));
   dim(); octx.drawImage(panelCv("logbox", w, h), x, y); spr(octx, iconOf(swapNew.id), x + 24, y + Math.round((h - r[3]) / 2)); blitOver();
@@ -2266,7 +2329,7 @@ function drawShop() {
   ctx.restore();
   // the icons, the writing and the lamp labels only change with the choice too: a second cached layer at fine size (shopTop),
   // drawn over the live glow; only the chosen case's blinking frame is drawn every frame
-  const tk = [bk, usingTouch, S.night, S.over, partSlots().map(s => s.id + s.n).join()].join("|");
+  const tk = [bk, usingTouch, S.night, S.over, partSlots().length >= PART_SLOTS, partSlots().map(s => s.id + s.n).join()].join("|");
   if (shopTop.k !== tk) { shopTop.k = tk; shopTop.cv.width = CVW; shopTop.cv.height = CVH; const c = shopTop.cv.getContext("2d"); c.imageSmoothingEnabled = false; TXT = c;
     shopChoices.forEach((p, k) => { const g = geo(k), r = R(iconOf(p.id));
       c.drawImage(atlasImg, r[0], r[1], r[2], r[3], FX(g.x + G.cw / 2 - r[2] / 2), FX(g.y + 14 + (64 - r[3]) / 2), FX(r[2]), FX(r[3])); });
@@ -2280,9 +2343,9 @@ function drawShop() {
       // what fitting it will do to the slots, as a small lamp label at the foot
       cardTag(c, p, g, G, cx);
       if (!g.f) { c.fillStyle = "rgba(8,5,3,.38)"; c.fillRect(FX(g.x), FX(g.y), FX(G.cw), FX(G.ch)); } });
-    ftext(usingTouch ? "TAP A PART" : "LEFT / RIGHT TO LOOK, A TO FIT", FX(W / 2), FX(G.y0 + G.ch) + 22, "ink", C.gold, "c", { outline: C.dark });
+    if (!(partSlots().length >= PART_SLOTS && meltPlate().tight)) ftext(usingTouch ? "TAP A PART" : partSlots().length >= PART_SLOTS ? "LEFT / RIGHT TO LOOK, DOWN TO MELT, A TO PICK" : "LEFT / RIGHT TO LOOK, A TO FIT", FX(W / 2), FX(G.y0 + G.ch) + 8, "ink", C.gold, "c", { outline: C.dark });
     TXT = null; }
-  ctx.drawImage(shopTop.cv, 0, 0, CVW, CVH);
+  ctx.drawImage(shopTop.cv, 0, 0, CVW, CVH); drawMeltPlate();
   shopChoices.forEach((p, k) => { const g = geo(k); if (!p.rare) return;   // rare parts: a gold frame round the case
     ctx.save(); ctx.strokeStyle = "#ffd24a"; ctx.lineWidth = 4; ctx.beginPath(); ctx.roundRect(FX(g.x) - 2, FX(g.y) - 2, FX(G.cw) + 4, FX(G.ch) + 4, 6); ctx.stroke(); ctx.restore(); });
   shopChoices.forEach((p, k) => { const g = geo(k); if (!g.f) return;
@@ -2304,7 +2367,11 @@ let usingButtons = false, usingTouch = matchMedia("(pointer:coarse)").matches;
 function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ? "up" : "down"; if (devKey(dk)) return; if (pauseKey(dk)) return; if (boardKey(dk)) return; if (howKey(dk)) return; dismissCard();
   usingButtons = true; Sound.ensure();
   if (S.phase === "title" && TS === 6 && (dy || dx)) { dy = dy || dx; if (titleBusy()) return; titleSel = (titleSel + dy + TITLE_MENU.length) % TITLE_MENU.length; Sound.click(); return; }
-  if (S.phase === "shop") { shopFocus = (shopFocus + (dx || dy) + shopChoices.length) % shopChoices.length; Sound.click(); return; }
+  if (S.phase === "shop") { const n = shopChoices.length;
+    if (meltOpen() && dy) { shopFocus = dy > 0 ? n : Math.min(shopFocus, n - 1); Sound.click(); return; }   // down to the melter plate, up back to the parts
+    if (shopFocus >= n) { if (dx) { shopFocus = dx > 0 ? 0 : n - 1; Sound.click(); } return; }
+    shopFocus = (shopFocus + (dx || dy) + n) % n; Sound.click(); return; }
+  if (S.phase === "upgrade") { const sl = partSlots(), n = sl.length; let k = swapFocus; for (let j = 0; j < n; j++) { k = (k + (dx || dy) + n) % n; if (!PART[sl[k].id].rare) break; } swapFocus = k; Sound.click(); return; }
   if (S.phase === "swap") { const n = partSlots().length; swapFocus = (swapFocus + (dx || dy) + n) % n; Sound.click(); return; }
   if (S.phase !== "play") return;
   if (inspectKey(dk)) return;
@@ -2315,11 +2382,11 @@ function titleBusy() { if (S.phase === "title" && !titleSkip && titleT < TITLE_L
 function start() { if (buildReady) return maybeReload(); Sound.ensure(); Sound.music(); newRun(); }   // (a new build waiting in the app loads first)
 // buttons (Chris 2026-11-12: a four-button game, Start pauses, Select doesn't mute): A pick / send, B back, X send the word, Y retune,
 // Start pause (and pick on menus), Select nothing (held: dev mode). Keyboard: Space/Enter A, Backspace B, R retune, Esc/P pause.
-function pressA() { if (devKey("a")) return; if (pauseKey("a")) return; if (boardKey("a")) return; if (howKey("a")) return; if (inspectKey("a")) return; Sound.ensure(); usingButtons = true; dismissCard(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
-function pressB() { if (devKey("b")) return; if (pauseKey("b")) return; if (boardKey("b")) return; if (howKey("b")) return; if (inspectKey("a")) return; if (S.phase === "swap") return swapCancel(); if (S.phase === "play") back(); }
+function pressA() { if (devKey("a")) return; if (pauseKey("a")) return; if (boardKey("a")) return; if (howKey("a")) return; if (inspectKey("a")) return; Sound.ensure(); usingButtons = true; dismissCard(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
+function pressB() { if (devKey("b")) return; if (pauseKey("b")) return; if (boardKey("b")) return; if (howKey("b")) return; if (inspectKey("a")) return; if (S.phase === "melt") return meltDone(); if (S.phase === "swap") return swapCancel(); if (S.phase === "play") back(); }
 function pressX() { if (devKey("x")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); dismissCard(); if (S.phase === "play" && S.path.length) send(); else pressA(); }
 function pressY() { if (devKey("y")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); dismissCard(); if (S.phase === "play") retune(); }
-function pressStart() { if (devKey("start")) return; if (pauseKey("start")) return; if (boardKey("start")) return; if (howKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); if (S.phase === "play") pauseOpen(); }
+function pressStart() { if (devKey("start")) return; if (pauseKey("start")) return; if (boardKey("start")) return; if (howKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); if (S.phase === "play") pauseOpen(); }
 function pressSel() { if (devKey("select")) return; }   // Select does nothing by itself (held a moment: dev mode, once it's unlocked)
 window.addEventListener("keydown", (e) => {
   if (introPress()) { e.preventDefault(); return; }
@@ -2348,6 +2415,9 @@ cv.addEventListener("pointerdown", (e) => {
   if (S.phase === "swap") { const [, , sw, sh] = R("slot"), y0 = L.barY + L.slotY, k = Math.floor((p.x - L.slotX) / L.slotStep);
     if (p.y >= y0 && p.y <= y0 + sh && k >= 0 && k < partSlots().length && p.x - L.slotX - k * L.slotStep <= sw) { if (swapFocus === k || usingTouch) swapConfirm(k); else swapFocus = k; }
     else if (p.y < SCENE_H) swapCancel(); return; }
+  if (S.phase === "melt") { meltDone(); return; }
+  if (S.phase === "upgrade") { const k = slotAt(p); if (k >= 0 && !PART[partSlots()[k].id].rare) { if (swapFocus === k || usingTouch) upgradeConfirm(k); else swapFocus = k; } return; }
+  if (S.phase === "shop" && meltOpen()) { const m = meltPlate(); if (p.x >= m.x && p.x <= m.x + m.w && p.y >= m.y && p.y <= m.y + m.h) { if (shopFocus === shopChoices.length || usingTouch) meltStart(); else shopFocus = shopChoices.length; return; } }
   if (S.phase === "shop") { const G = shopGeom(), k = Math.floor((p.x - G.x0) / (G.cw + 10)); if (k >= 0 && k < G.n && p.y > G.y0 - 6 && p.y < G.y0 + G.ch) { if (shopFocus === k || usingTouch) choosePart(k); else shopFocus = k; } return; }
   if (S.phase === "play") { const k = slotAt(p); if (k >= 0) { if (INSPECT.on && INSPECT.k === k) INSPECT.on = false; else { INSPECT.on = true; INSPECT.k = k; } Sound.click(); return; } INSPECT.on = false; }
   if (S.phase === "play" && Math.hypot(p.x - L.knobR.x, p.y - L.knobR.y) < 18) { retune(); return; }   // the right tuning knob retunes
@@ -2677,6 +2747,7 @@ async function boot() {
   // test hook: #test-shop opens the part picker after night 1 (for screenshots)
   if (location.hash === "#test-shop") { newRun(); S.parts.push("amp", "coil"); nightClear(); }
   { const m = location.hash.match(/^#test-shop-all-(\d)/); if (m) { newRun(); S.parts.push("amp", "coil"); S.over = true; nightClear(); shopChoices = PARTS.slice(+m[1] * 4, +m[1] * 4 + 4); } }
+  if (/^#test-melt/.test(location.hash)) { newRun(); S.parts.push("amp", "coil", "battery", "knob", "echo"); S.melt = /full/.test(location.hash) ? 4 : 1; nightClear(); }
   if (/^#test-shop-tags/.test(location.hash)) { newRun(); S.parts.push("amp", "coil", "battery", "knob"); if (/full/.test(location.hash)) S.parts.push("echo"); S.over = true; nightClear(); shopChoices = [PART.coil, PART.gold, PART.owl, PART.amp]; }
   if (location.hash === "#test-shop-gold") { newRun(); S.parts.push("amp", "coil"); nightClear(); shopChoices[1] = PART.gold; }
   if (location.hash === "#test-swap") { newRun(); S.parts.push("amp", "amp", "coil", "echo", "owl", "short"); nightClear(); const k = shopChoices.findIndex(c => !S.parts.includes(c.id)); if (k >= 0) choosePart(k); }

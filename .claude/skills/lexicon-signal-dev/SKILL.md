@@ -173,8 +173,11 @@ the same batch.
 - Title menu (MENU_STYLE 6, Chris's art src/title_console.png cut to tpanel / tplate / tplate_lit): the wooden console under the
   radio with a brass plate per option (START, HOW TO PLAY, HIGH SCORES), the chosen one pressed in and lit; slice3Cv stretches a
   sprite from its ends and repeated middle.
-- Melter art is in the atlas (iconL_melter, iconL_molten) for the planned melter: once all slots are full the picker offers MELT;
-  five melts fill its lamps and give a wildcard upgrade (+1 copy of a fitted part). Not built yet.
+- The melter (2026-11-13, art iconL_melter / iconL_molten): once all five slots are full the picker shows a MELT THEM plate under the
+  cases (down to reach it, or tap; meltPlate, kept above the bar). Choosing it opens the melter screen (phase "melt", drawMelt): the
+  parts on offer arc into its mouth one by one, a lamp lights (S.melt, kept all run), then the next night. At five lamps it pours a
+  Molten Upgrade (phase "upgrade", drawUpgrade): pick a fitted part, it gains a copy; rare parts can't. A or a tap skips ahead.
+  Tests: #test-melt (one lamp lit), #test-melt-full (four lit, so the next melt pays out).
 - Arcade scoring (Chris 2026-11-13: the goal is a high score, the run goes on until you lose): the run score is all signal beamed
   (S.total), shown in the dial's marquee and at game over; the best ten runs on this device are kept in localStorage lexsig.scores
   (HIGH SCORES on the title menu, HIGH SCORE n under it, NEW HIGH SCORE / NUMBER n ON YOUR BOARD at game over).
