@@ -142,6 +142,19 @@ the same batch.
   then while the word stays good (Chris, 2026-11-12: subtle, and the wipe only for a real word).
 
 ## Rules of play
+- Parts and the red key (Chris 2026-11-13): EVERY part stacks (each copy adds the same again) and the picker can offer any part.
+  A red key is always on the glass (a word through it x2; two red keys in a word x3). The parts: Tube Amp +1 boost; Spare Battery
+  +1 word; Fine Tuning Knob +1 retune and +1 boost per retune still kept; Long Wave Coil 5+ letter words x(1+copies); Shortwave
+  Crystal 3-4 letter words +6 signal; Echo Tube the first (copies) words x2; Night Owl Clock last word x(2+copies); Treble Slider +3
+  signal per letter worth 3+; Vowel Antenna vowels +1 signal each (it no longer adds vowels: that made scores worse); Red Lamp (id
+  carrier) +1 red key; Red Heat (id heat, the fuse icon via `icon`) red keys multiply one more. Static Filter was dropped.
+  Every slot shows a lamp per copy. Score = signal (letter values + 2 + adds) x boost (length - 2, at least 1, + adds) x multipliers.
+- Targets 30 x 1.5^(n-1) rounded to 5 (30, 45, 70, 100, 150...). Balance is checked with a bot simulator (three skill levels on the
+  real word list, letter draw and parts; kept in the session scratchpad as bal/sim.js and partval.js): with this curve a casual bot
+  runs ~7 nights, a good one ~11, a strong one ~16. Rerun it after any change to scoring, parts or targets.
+- The letters carry over from night to night (only a new run fills a fresh glass), so a big word can be saved for later.
+- Reading a part (INSPECT): tap its slot, or press down past the bottom row and left/right along the slots; a card above the bar
+  gives its name, what a copy does, how many are fitted and what it adds to the traced word. Up/A/B or a tap elsewhere closes it.
 - 5x5 keys in the radio glass (N, NN in the script; 4x4 until 2026-11-12, when the radio was redrawn as radio5 with a glass about
   25% bigger so the keys stay the same size; H5() maps an old 4x4 position onto the 5x5 grid); trace touching letters (8 directions), 3+ letters. Score = signal (letter values) x boost (length-2)
   x part multipliers; every word carries +2 signal so short words count. 6 words a night (one per lamp), 1 retune; targets
