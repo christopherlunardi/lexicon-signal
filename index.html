@@ -277,7 +277,7 @@ function scale2(b) {
     o[y * 2 + 1][x * 2] = D === Hh && D !== B && Hh !== F ? D : E; o[y * 2 + 1][x * 2 + 1] = Hh === F && D !== Hh && B !== F ? F : E; }
   return o.map(r => r.map((v, x) => v || (x > 0 && r[x - 1]) ? 1 : 0).concat([r[r.length - 1]]));   // bold: thicken one pixel right
 }
-const keyBits = {}; const KEYB = (ch) => keyBits[ch] || (keyBits[ch] = scale2(bits(ch)));
+const keyBits = {}; const KEYB = (ch) => keyBits[ch] || (keyBits[ch] = bits(ch).flatMap(r => { const d = r.flatMap(v => [v, v]); return [d, d.slice()]; }));   // the old lettering doubled square (only stands in until Silkscreen loads; the smoothed doubling made lumpy diagonals)
 const glyphCache = new Map();
 // a glyph bitmap as a canvas in one color; px = size of one font pixel in fine pixels
 function glyphCv(kind, ch, col) {
