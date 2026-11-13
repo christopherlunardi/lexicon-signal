@@ -1,0 +1,71 @@
+# Lexicon Signal's own extra words, on top of ENABLE and SCOWL (tools/words.py adds them to words.js).
+# Newer slang, internet words and crude words the big lists don't have. Each word is a real, commonly used one; add its forms too.
+# No brand or company names, and no slurs against groups of people. Words separated by spaces or lines; 3-12 letters, a-z only.
+
+# slang and everyday talk
+rizz rizzed rizzes rizzing rizzler rizzlers
+yeet yeeted yeeting yeets
+bae baes
+sus
+cuz
+bruh bro bros fam fams
+lowkey highkey
+simp simps simped simping
+stan stans stanned stanning
+bussin finna gonna wanna gotta sorta dunno gimme lemme yall
+sheesh oof meh
+legit totes deets fave faves rando randos
+bestie besties hottie hotties
+zoomer zoomers normie normies
+vibey vibing vibed
+cringey cringy
+noob noobs newb newbs
+pwn pwns pwned pwning
+nerf nerfs nerfed nerfing
+ratio ratioed ratioing
+lol lols lmao
+glowup glowups
+hangry adulting
+frenemy frenemies
+staycation staycations
+bromance bromances
+mansplain mansplains mansplained
+photobomb photobombs photobombed
+unfriend unfriends unfriended
+doomscroll doomscrolls doomscrolled
+sext sexts sexted sexting
+nudes
+influencer influencers
+wifi
+gif gifs
+vaping vaper vapers
+thot thots
+
+# crude
+jizz jizzed jizzes jizzing
+clit clits
+wanker wankers wanking wanked
+fucker fuckers fuckup fuckups fuckery
+motherfucker
+shithead shitheads shitty shittier shittiest shitshow shitshows
+bullshit bullshitter dipshit dipshits apeshit batshit horseshit
+asshole assholes arsehole arseholes
+dickhead dickheads dicks
+knobhead knobheads tosser tossers bellend bellends
+bollocks
+minge muff muffs
+queef queefs queefed
+boob boobs boobies titty titties
+booty butthole buttholes
+cum cums cumming cumshot cumshots
+blowjob blowjobs handjob handjobs rimjob rimjobs
+hornier horniest
+milf milfs
+wang wangs schlong schlongs
+cocks twats cunts pussies
+bitchy bitchier bitching
+goddamn goddamned dammit damnit
+pisser pissers
+douche douches douchebag douchebags douchey
+skank skanks skanky slutty sluttier
+hoes

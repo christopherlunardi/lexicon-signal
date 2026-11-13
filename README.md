@@ -20,7 +20,7 @@ A late-night radio word game. Trace words through a grid of glowing letters, kee
 ## Files
 
 - `index.html` — the whole game (markup, styles, script).
-- `words.js` — the word list (ENABLE, public domain), 3–12 letters.
+- `words.js` — the word list, made by `tools/words.py` from `tools/wordlists/`: ENABLE (public domain), SCOWL/ESDB size 70 for modern words (its notice: `tools/wordlists/SCOWL-Copyright.txt`) and our own `extra.txt` (slang, internet and crude words), 3–12 letters.
 - `art/` — the painted layers and `compose.py`, which builds `scene.jpg`.
 - `CLAUDE.md` and `.claude/skills/lexicon-signal-dev/` — project rules and the dev workflow.
 

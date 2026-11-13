@@ -98,7 +98,11 @@ the same batch.
 ## Where things live
 - `index.html`: the whole game, written as a page body (the artifact host adds doctype/head). Shell CSS first (the studio's
   handheld: d-pad, A/B, Select/Start; `padmode` with a controller, `inapp` for the future launcher), then one canvas and one script.
-- `words.js`: `window.LEX_WORDS`, the ENABLE list (public domain), 3-12 letters.
+- `words.js`: `window.LEX_WORDS`, made by `python3 -I tools/words.py` from `tools/wordlists/` (2026-11-13): ENABLE (public domain),
+  SCOWL/ESDB size 70 (American, British, Canadian spellings, no abbreviations; free, keep `SCOWL-Copyright.txt` with it; built from
+  github.com/en-wl/wordlist with `./scowl word-list 70 A,B,Z,C 1 --deaccent --wo-poses=abbr`) and our own `extra.txt` (newer slang,
+  internet and crude words with their forms; crude words are allowed (Chris), slurs against groups and brand names are not). 3-12 letters.
+  Add words to extra.txt and rerun; never edit words.js by hand. Chris wants to talk about a bigger list of our own later.
 - `art/pixel/src/`: ChatGPT sources (wallpaper, window, radio, sideboard, uikit, icons) and their `_fixed` versions.
   `art/pixel/build.py` cuts every sprite from the fixed images at true size (crops and points written in source pixels), builds the
   wallpaper tile, the window glass mask, the 12 part icons at two sizes and the interface palette, and packs it all into
