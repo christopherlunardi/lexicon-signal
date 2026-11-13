@@ -194,15 +194,15 @@ the same batch.
   and the log, shadowed top/left, warm light bottom/right, no bright outline; the end lamp sits inside its right end.
 - One rivet everywhere (Chris 2026-11-13): build.py draws a clean 7x7 brass rivet (dark rim, bright top-left, screw slot) and stamps
   it over every painted rivet (RIVETS: plate, logbox, slot, bar_left/right, tplate/_lit; centers measured per piece, kept symmetric).
-  The painted rivets are painted out first (OLD_RIVETS, filled in from the frame round them with cv2.inpaint), so no old rivet
-  shows under a new one.
+  On painted frames the new rivet sits right over the painted one (moving it inward showed the old one; painting old ones out
+  with inpaint smeared the frames: both reverted, Chris 2026-11-13). Only the plate's (painted out by row copy) sit a pixel inside.
   It is also the sprite "rivet" for rivets drawn in code (the score counter). Short plates (plate3, hh < 26) are built from
   "plate_bare" with one rivet each end, halfway down (small plates want two, not four). New framed art gets its rivets stamped too.
 - nine() fills a framed panel's edges and middle with the art's whole middle span (a short repeated strip showed as ridges, Chris
   2026-11-13). Short plates' two rivets sit a pixel above halfway, on the face's middle. plate3 repeats the plate's whole middle span too,
   and build.py draws a dark line along the bottom of the plate's face (like the top) so the bottom rim reads apart. The sides
   stay as drawn (lines down them made the rounded ends ragged).
-  Rivets sit a pixel in from each frame's inner corner (a little room inside the brass). The log box's outer top and bottom
+  The log box's outer top and bottom
   rows are even bands (they were speckled: 'hairy').
 - The copy lamps in a part slot sit inside its dark window (13 world px up from its bottom), clear of the brass frame.
 - Sheets and margins (2026-11-13, Chris: "things are always too close to the gold borders"): text never sits nearer a frame than
