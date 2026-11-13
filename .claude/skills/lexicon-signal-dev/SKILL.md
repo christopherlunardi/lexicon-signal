@@ -192,6 +192,11 @@ the same batch.
   the tips say so.
 - The signal tube (Chris 2026-11-13): a thin window cut into the wood (12 tall), centered in the band between the bar's top border
   and the log, shadowed top/left, warm light bottom/right, no bright outline; the end lamp sits inside its right end.
+- One rivet everywhere (Chris 2026-11-13): build.py draws a clean 7x7 brass rivet (dark rim, bright top-left, screw slot) and stamps
+  it over every painted rivet (RIVETS: plate, logbox, slot, bar_left/right, tplate/_lit; centers measured per piece, kept symmetric).
+  It is also the sprite "rivet" for rivets drawn in code (the score counter). Short plates (plate3, hh < 26) are built from
+  "plate_bare" with one rivet each end, halfway down (small plates want two, not four). New framed art gets its rivets stamped too.
+- The copy lamps in a part slot sit inside its dark window (13 world px up from its bottom), clear of the brass frame.
 - Sheets and margins (2026-11-13, Chris: "things are always too close to the gold borders"): text never sits nearer a frame than
   INSET (logbox 22 world px x, 18 y: the gold frame is 8 deep and the corner rivets reach 12; plate 16 x, 6 y). Parchment screens use
   sheet() (logbox + top nameplate + optional bottom prompt plate, body kept inside INSET) and edgePlate(); the run score shows in
