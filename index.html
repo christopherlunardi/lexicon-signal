@@ -2354,13 +2354,13 @@ function drawMelt() {
   ctx.save(); ctx.fillStyle = "rgba(6,3,2,.9)"; ctx.fillRect(0, 0, CVW, FX(L.barY));
   const t = MELT.t, n = MELT.items.length, done = 26 + (n - 1) * 18 + 30, payout = MELT.full && t > done + 30;
   const kh = glyphCv("key", "M", C.ink).height, lh = Math.round(22 * TK), avail = FX(SCENE_H) - 16;   // stop well clear of the bar
-  // top to bottom: title, melter, lamps, message, prompt
+  // top to bottom: title, melter, lamps, message, prompt, the whole block centered in the room above the bar
   const titleY = 14, below = 26 + 18 + 16 + lh + 10 + lh, r = R("big_melter"), fit = (avail - (titleY + kh + 14) - below) / r[3], sc = fit >= 1 ? Math.min(3, Math.floor(fit)) : fit;   // the sharp picture, whole pixels when it fits
-  const mw = r[2] * sc, mh = r[3] * sc, mx = Math.round(CVW / 2 - mw / 2), my = titleY + kh + 14, lampY = my + mh + 22, msgY = lampY + 26, promptY = msgY + lh + 10;
+  const mw = r[2] * sc, mh = r[3] * sc, mx = Math.round(CVW / 2 - mw / 2), total = kh + 14 + mh + below, top = Math.max(titleY, Math.round((FX(SCENE_H) - total) / 2)), my = top + kh + 14, lampY = my + mh + 22, msgY = lampY + 26, promptY = msgY + lh + 10;
   const mouthX = mx + mw * .5, mouthY = my + mh * .22;
   ctx.globalCompositeOperation = "lighter"; bloom(mouthX, mouthY + mh * .1, mw * .9, "255,120,30", .35 + .15 * Math.sin(frame / 6) + (t > done ? .25 : 0)); ctx.globalCompositeOperation = "source-over";
   ctx.drawImage(atlasImg, r[0], r[1], r[2], r[3], mx, my, mw, mh);
-  ftext(payout ? "MOLTEN UPGRADE!" : "THE MELTER", CVW / 2, titleY, "key", payout ? C.hot : C.gold, "c", { outline: C.dark });
+  ftext(payout ? "MOLTEN UPGRADE!" : "THE MELTER", CVW / 2, top, "key", payout ? C.hot : C.gold, "c", { outline: C.dark });
   MELT.items.forEach((id, k) => { const t0 = 26 + k * 18, u = (t - t0) / 30; if (u >= 1) return; const ir = R(iconOf(id)), sx = CVW / 2 + (k - (n - 1) / 2) * FX(80), sy = msgY;
     const e = Math.max(0, u), x = sx + (mouthX - sx) * e, y = sy + (mouthY - sy) * e - Math.sin(e * Math.PI) * FX(50), s2 = u < 0 ? 1 : 1 - e * .7;
     ctx.save(); ctx.translate(x, y); ctx.rotate(e * 3); ctx.drawImage(atlasImg, ir[0], ir[1], ir[2], ir[3], -ir[2] * s2, -ir[3] * s2, ir[2] * 2 * s2, ir[3] * 2 * s2); ctx.restore();
