@@ -6,7 +6,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "What should fill the dark strips beside the logo in the title glass?",
      "found": "Your painted logo is the old 4x4 shape and the radio's glass is now the wider 5x5 shape, so there's a strip each side. Five ways to deal with it, none of them stretch the painting. Pictures on a computer, a phone and the Retroid's screen; play opens the title with that option.",
      "options": [
@@ -130,7 +130,8 @@
        ],
        "play": "play.html#title-6-tgap-5"
       }
-     ]
+     ],
+     "chosen": "1"
     }
    ]
   },
