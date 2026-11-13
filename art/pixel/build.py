@@ -172,8 +172,7 @@ def main():
     # the face's bottom edge: a dark line like the one under the top rim, so the bottom rim doesn't run into the face (Chris 2026-11-13)
     pa[22, 3:pw_ - 3] = pa[3, 3:pw_ - 3]
     # and down each side, so the side rims read apart from the face too
-    # and the sides like the top: a bright brass line, then the dark line, then the face (Chris 2026-11-13)
-    dk = pa[3, pw_ // 2].copy(); br = pa[1, pw_ // 2].copy(); pa[2:24, 1] = br; pa[2:24, pw_ - 2] = br; pa[3:23, 2] = dk; pa[3:23, pw_ - 3] = dk
+    # (the sides stay as drawn: lines painted down them made the rounded ends ragged, Chris 2026-11-13)
     # the log box's outer edge, top and bottom: clean even bands instead of speckled pixels (Chris: it looked hairy)
     lb = np.asarray(imgs["logbox"]).copy(); lw_, lh_ = lb.shape[1], lb.shape[0]
     for r in (0, 1, 2, lh_ - 3, lh_ - 2, lh_ - 1):

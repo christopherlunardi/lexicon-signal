@@ -198,7 +198,8 @@ the same batch.
   "plate_bare" with one rivet each end, halfway down (small plates want two, not four). New framed art gets its rivets stamped too.
 - nine() fills a framed panel's edges and middle with the art's whole middle span (a short repeated strip showed as ridges, Chris
   2026-11-13). Short plates' two rivets sit a pixel above halfway, on the face's middle. plate3 repeats the plate's whole middle span too,
-  and build.py draws a dark line round the plate's face (bottom and sides, like the top) so its rims read apart from the face.
+  and build.py draws a dark line along the bottom of the plate's face (like the top) so the bottom rim reads apart. The sides
+  stay as drawn (lines down them made the rounded ends ragged).
   Rivets sit a pixel in from each frame's inner corner (a little room inside the brass). The log box's outer top and bottom
   rows are even bands (they were speckled: 'hairy').
 - The copy lamps in a part slot sit inside its dark window (13 world px up from its bottom), clear of the brass frame.
