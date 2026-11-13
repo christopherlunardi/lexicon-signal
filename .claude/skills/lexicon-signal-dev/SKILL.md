@@ -154,6 +154,14 @@ the same batch.
   that throws the run away asks twice. The Android launcher maps BUTTON_X to "x" and BUTTON_Y to "y".
   Colours on Android: the launcher uses a 32-bit window and turns off WebView dark recolouring (forceDark / algorithmic darkening,
   values-v29 forceDarkAllowed=false); the screen canvas is opaque ({alpha:false}).
+- Render scale (2026-11-12, after Chris's side-by-side video of the Pocket 2S lagging behind his phone): everything draws in fine
+  units (CVW x CVH = W*FINE x H*FINE; never use cv.width/cv.height for layout). When the screen shows the canvas at under .62 of its
+  size in device pixels, RS = .5: the canvas holds half the pixels each way and draw() starts with ctx.setTransform(RS,...) (the title
+  close-up's own setTransform multiplies by RS). ctx.imageSmoothingEnabled is forced on while RS < 1 so halved text never drops rows.
+  The pause menu's foot shows FPS, draw ms, FULL/HALF size and the canvas size: ask Chris to read it off the device.
+- Screen colour (pause menu, saved in lexsig.colour): NORMAL / SOFT / SOFTER, a CSS filter on the canvas (less saturation, a touch
+  darker, hue nudged from red toward orange). The 2S screen shows the warm browns far redder and stronger than a phone; the page
+  itself sends the same colours, so this is a per-screen setting, not a fix in the art.
   Also
   touch/mouse drag or tap. Gamepad standard mapping, bottom face = A.
 - Keyboard (Chris 2026-11-12, after a typing experiment he rejected: the keyboard does NOT type words): WASD/arrows move, Space or

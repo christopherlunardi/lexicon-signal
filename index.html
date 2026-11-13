@@ -170,7 +170,12 @@ if (!CanvasRenderingContext2D.prototype.roundRect) CanvasRenderingContext2D.prot
   this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r); this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath(); return this; };
 const DICT = new Set((window.LEX_WORDS || "").split(" "));
 const cv = $("screen"), ctx = cv.getContext("2d", { alpha: false });   // the screen: 2 fine pixels per world pixel (opaque: cheaper to put on screen)
-let H = 425, BAR_H = 120, SCENE_H = 305; const FINE = 2;   // narrower screens (phones) get a taller world with a two-row bar (H 495, bar 190)
+{ const d = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, "imageSmoothingEnabled");
+  if (d && d.set) Object.defineProperty(ctx, "imageSmoothingEnabled", { get() { return d.get.call(ctx); }, set(v) { d.set.call(ctx, !!v || RS < 1); } }); }
+let H = 425, BAR_H = 120, SCENE_H = 305; const FINE = 2;
+// render scale: on small screens (the 640x480 handheld) the screen canvas holds half the pixels and everything is drawn through a 0.5
+// scale; the world art still lands 1:1 and there's 4x less to fill each frame. CVW/CVH are the drawing size in fine units.
+let RS = 1, CVW = 1280, CVH = 720;   // narrower screens (phones) get a taller world with a two-row bar (H 495, bar 190)
 const PART_SLOTS = 5;
 const N = 5, NN = N * N;   // the grid of keys in the glass: 5 x 5 (2026-11-12, the radio was redrawn with a bigger glass for it)   // a game rule, the same on every screen: copies of one part stack in one slot
 const BIN = { t: 12, b: 12, l: 14, r: 14 };                  // the bar's inner gold border: everything sits inside it
@@ -295,10 +300,12 @@ function layout() {
   const wrapEl = $("screenWrap"); const ww = wrapEl.clientWidth || 640, wh = wrapEl.clientHeight || 360;
   const tall = ww / wh < 1.7, nH = tall ? 495 : 425, nW = Math.max(532, Math.min(950, Math.round(nH * ww / wh / 2) * 2));
   const nTK = ww / nW < 1.15 ? 1.5 : 1; if (nTK !== TK) { TK = nTK; glyphCache.clear(); ADV.ink = 12 * TK; ADV.read = 6 * READPX(); }
-  if (nW !== W || nH !== H || !L.ready) { W = nW; H = nH; BAR_H = tall ? 190 : 120; SCENE_H = H - BAR_H; world.width = W; world.height = H; over.width = W; over.height = H; cv.width = W * FINE; cv.height = H * FINE;
+  if (nW !== W || nH !== H || !L.ready) { W = nW; H = nH; BAR_H = tall ? 190 : 120; SCENE_H = H - BAR_H; world.width = W; world.height = H; over.width = W; over.height = H; CVW = W * FINE; CVH = H * FINE;
     computeLayout(); buildRoom(); buildBar(); L.ready = true; }
+  { const dpr = window.devicePixelRatio || 1, nRS = Math.min(ww * dpr / CVW, wh * dpr / CVH) < .62 ? .5 : 1;
+    if (nRS !== RS || cv.width !== Math.round(CVW * nRS)) { RS = nRS; cv.width = Math.round(CVW * RS); cv.height = Math.round(CVH * RS); } }
   // shown smaller than it's drawn (small handheld screens): scale smoothly; hard pixel scaling down drops whole rows (lines through letters)
-  cv.style.imageRendering = Math.min(ww / (W * FINE), wh / (H * FINE)) < .99 ? "auto" : "";
+  cv.style.imageRendering = Math.min(ww / cv.width, wh / cv.height) < .99 ? "auto" : "";
 }
 function computeLayout() {
   const rw = R("radio")[2], wide = W >= 650;
@@ -576,11 +583,11 @@ function draw() {
   { const want = (S.phase === "title" && !titleFX.bar) || S.phase === "splash" || S.phase === "studio" ? 0 : 1, was = barShow;
     barShow = want > barShow ? Math.min(1, barShow + .045) : want < barShow ? Math.max(0, barShow - .08) : barShow;
     if (was < 1 && barShow === 1 && want === 1) { Sound.thud(3); shake = Math.max(shake, 4); }
-    const u = 1 - barShow, e = u * u; L.barY = SCENE_H + Math.round(e * (BAR_H + 4)); } wctx.imageSmoothingEnabled = false; ctx.imageSmoothingEnabled = false;
-  if (S.phase === "splash") { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, cv.width, cv.height);
+    const u = 1 - barShow, e = u * u; L.barY = SCENE_H + Math.round(e * (BAR_H + 4)); } ctx.setTransform(RS, 0, 0, RS, 0, 0); wctx.imageSmoothingEnabled = false; ctx.imageSmoothingEnabled = false;
+  if (S.phase === "splash") { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, CVW, CVH);
     // big smooth type so it reads on any screen size (Chris: on the handheld it was pixelated with a line through it)
-    { const u = cv.width / (cv.getBoundingClientRect().width || cv.width), a = .55 + .45 * Math.sin(frame / 14); ctx.save(); ctx.globalAlpha = a; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.font = `${Math.round(26 * u)}px ${HOWF.title}`; ctx.fillStyle = "#ffb84a"; ctx.shadowColor = "rgba(255,150,60,.6)"; ctx.shadowBlur = 18 * u; ctx.fillText(usingTouch ? "TAP TO START" : "PRESS ANY BUTTON", cv.width / 2, cv.height / 2); ctx.restore(); }
+    { const u = CVW / (cv.getBoundingClientRect().width || CVW), a = .55 + .45 * Math.sin(frame / 14); ctx.save(); ctx.globalAlpha = a; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = `${Math.round(26 * u)}px ${HOWF.title}`; ctx.fillStyle = "#ffb84a"; ctx.shadowColor = "rgba(255,150,60,.6)"; ctx.shadowBlur = 18 * u; ctx.fillText(usingTouch ? "TAP TO START" : "PRESS ANY BUTTON", CVW / 2, CVH / 2); ctx.restore(); }
     return; }
   const sx = shake > 0 ? Math.round((Math.random() - .5) * Math.min(2, shake)) : 0;
   wctx.fillStyle = "#000"; wctx.fillRect(0, 0, W, H); wctx.drawImage(roomCv, sx, 0);
@@ -1382,7 +1389,7 @@ function pressLines(cx, y, a) {
   if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO TUNE IN" : "PRESS A TO TUNE IN", cx, y, "ink", C.gold, "c", { outline: C.dark });
   const b = bestLine(); if (b) ftext(b, cx, y + Math.round(26 * TK), "ink", C.amber, "c", { outline: C.dark }); ctx.restore();
 }
-function shade(a) { ctx.fillStyle = `rgba(6,3,2,${a})`; ctx.fillRect(0, 0, cv.width, FX(L.barY)); }
+function shade(a) { ctx.fillStyle = `rgba(6,3,2,${a})`; ctx.fillRect(0, 0, CVW, FX(L.barY)); }
 function drawTitle() {
   titleT++; const T = titleSkip ? 999 : titleT, cx = FX(W / 2), ease = (u) => { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); };
   titleFX.lamps = 6; titleFX.tube = null; titleFX.bar = TS === 4;
@@ -1419,7 +1426,7 @@ function drawTitle() {
     const f = ease((T - 10) / 80); titleFX.tube = f; shade(.5 - .2 * (T > 95 ? 1 : 0));
     if (T === 95) { shake = 3; } const drop = T < 95 ? -1 : Math.min(1, (T - 95) / 16), by = drop < 0 ? -400 : -300 * (1 - drop * drop);
     let bounce = 0; if (T >= 111 && T < 125) bounce = -Math.sin((T - 111) / 14 * Math.PI) * 14; if (T === 111) { Sound.thud(4); shake = 6; }
-    if (T > 95 && T < 110) { ctx.fillStyle = `rgba(255,240,210,${.35 * (1 - (T - 95) / 15)})`; ctx.fillRect(0, 0, cv.width, cv.height); }
+    if (T > 95 && T < 110) { ctx.fillStyle = `rgba(255,240,210,${.35 * (1 - (T - 95) / 15)})`; ctx.fillRect(0, 0, CVW, CVH); }
     if (drop >= 0) { if (!logoCv) buildLogo(); const pw = logoCv.width + 80, ph = logoCv.height + 150, px = cx - pw / 2, py = top - 20 + by + bounce;
       octx.clearRect(0, 0, W, H); plate3(octx, Math.round(px / FINE), Math.round(py / FINE), Math.round(pw / FINE), Math.round(ph / FINE)); blitOver();
       ctx.fillStyle = "rgba(20,10,5,.88)"; ctx.fillRect(px + 22, py + 18, pw - 44, ph - 36);
@@ -1439,11 +1446,11 @@ function drawTitle() {
 // radio close-up: the room seen closer (every art pixel 3 fine pixels, a clean 1.5x), the radio centred and filling the screen. The
 // title lights up in its glass as keys (LEXI / CON / SIGN / AL), one key at a time, then the lamps, then a brass PRESS START plate.
 function drawTitleRadio(T) {
-  const ease = (u) => { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); }, rw = R("radio")[2], rh = R("radio")[3], Z = rw * 3 <= cv.width - 20 && rh * 3 <= cv.height - 60 ? 3 : 2;
-  const ox = Math.round(cv.width / 2 - rw * Z / 2), oy = Math.max(10, Math.round((cv.height - rh * Z) / 2) - 70);
+  const ease = (u) => { u = Math.max(0, Math.min(1, u)); return u * u * (3 - 2 * u); }, rw = R("radio")[2], rh = R("radio")[3], Z = rw * 3 <= CVW - 20 && rh * 3 <= CVH - 60 ? 3 : 2;
+  const ox = Math.round(CVW / 2 - rw * Z / 2), oy = Math.max(10, Math.round((CVH - rh * Z) / 2) - 70);
   const zx = (wx) => ox + (wx - L.radioX) * Z, zy = (wy) => oy + (wy - L.radioY) * Z;
   // wallpaper first (the room canvas doesn't reach every edge this close), dimmed to the room's light, then the room itself
-  ctx.save(); ctx.setTransform(Z, 0, 0, Z, ox - L.radioX * Z, oy - L.radioY * Z); const t = R("wall_tile");
+  ctx.save(); ctx.setTransform(Z * RS, 0, 0, Z * RS, (ox - L.radioX * Z) * RS, (oy - L.radioY * Z) * RS); const t = R("wall_tile");
   for (let y = -t[3] * 2; y < H + t[3]; y += t[3]) for (let x = -t[2] * 3; x < W + t[2] * 3; x += t[2]) ctx.drawImage(atlasImg, t[0], t[1], t[2], t[3], x, y, t[2], t[3]);
   { const fy = L.sbY + R("sb_mid")[3] - 2; ctx.fillStyle = "#120904"; ctx.fillRect(-W, fy, W * 3, H * 2); }   // the floor carries on past the room's edges too
   ctx.fillStyle = "rgba(8,4,3,.6)"; ctx.fillRect(-W, -H, W * 3, H * 3); ctx.drawImage(roomCv, 0, 0); ctx.restore();
@@ -1479,29 +1486,29 @@ function drawTitleRadio(T) {
   if (T > 20) { ctx.save(); ctx.beginPath(); ctx.rect(dx, dy, dw, dh); ctx.clip(); const s = tipNow(); titleTipX = titleTipX == null ? 0 : titleTipX + 2;
     const px = dx + dw - titleTipX; if (px + s.length * 18 < dx) { nextTip(); titleTipX = 0; } ftextDot(s, px, dy + Math.round((dh - 21) / 2), C.amber); ctx.restore(); }
   // the room around falls into shadow so the radio carries the screen
-  const v = ctx.createRadialGradient(cv.width / 2, cv.height * .42, cv.height * .45, cv.width / 2, cv.height * .45, cv.width * .62); v.addColorStop(0, "rgba(6,3,2,0)"); v.addColorStop(1, "rgba(6,3,2,.85)"); ctx.fillStyle = v; ctx.fillRect(0, 0, cv.width, cv.height);
+  const v = ctx.createRadialGradient(CVW / 2, CVH * .42, CVH * .45, CVW / 2, CVH * .45, CVW * .62); v.addColorStop(0, "rgba(6,3,2,0)"); v.addColorStop(1, "rgba(6,3,2,.85)"); ctx.fillStyle = v; ctx.fillRect(0, 0, CVW, CVH);
   // PRESS START on a brass plate on the radio's base
   // under the radio: the menu (START, HOW TO PLAY). Workshop topic "menu" (Chris: the bar-and-parchment didn't work; each option its own
   // container): MENU_STYLE 1..5, #menu-N opens one.
-  const a = ease((T - 150) / 15), bandTop = Math.min(cv.height - 150, zy(L.radioY + rh) + 2), bandH = cv.height - bandTop;
+  const a = ease((T - 150) / 15), bandTop = Math.min(CVH - 150, zy(L.radioY + rh) + 2), bandH = CVH - bandTop;
   titleHits = []; drawTitleMenu(a, bandTop, bandH);
 }
 // the title menu's looks
 const MENU_NAMES = ["", "Bar and parchment", "Brass plates", "Station buttons", "Dial windows", "Parchment tags"];
 let MENU_STYLE = 2; { const m = location.hash.match(/menu-(\d)/); if (m) MENU_STYLE = Math.max(1, Math.min(5, +m[1])); }
 function floorBoards(top, hh) {   // dark wooden floorboards in the lamp's last light
-  const g = ctx.createLinearGradient(0, top, 0, top + hh); g.addColorStop(0, "#2a160b"); g.addColorStop(1, "#0d0604"); ctx.fillStyle = g; ctx.fillRect(0, top, cv.width, hh);
-  const rows = 6; for (let i = 0; i < rows; i++) { const y0 = top + hh * (i / rows) ** 1.4, y1 = top + hh * ((i + 1) / rows) ** 1.4; ctx.fillStyle = "rgba(0,0,0,.45)"; ctx.fillRect(0, Math.round(y0), cv.width, 2);
-    ctx.fillStyle = "rgba(255,170,90,.05)"; ctx.fillRect(0, Math.round(y0) + 2, cv.width, 1);
-    const n = 5 + i * 2; for (let k = 0; k <= n; k++) { const x = ((k + (i % 2) * .5) / n) * cv.width; ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.fillRect(Math.round(x), Math.round(y0), 2, Math.round(y1 - y0)); } }
-  const v = ctx.createRadialGradient(cv.width * .72, top, 10, cv.width * .6, top, cv.width * .7); v.addColorStop(0, "rgba(255,150,60,.16)"); v.addColorStop(1, "rgba(255,150,60,0)"); ctx.fillStyle = v; ctx.fillRect(0, top, cv.width, hh);
+  const g = ctx.createLinearGradient(0, top, 0, top + hh); g.addColorStop(0, "#2a160b"); g.addColorStop(1, "#0d0604"); ctx.fillStyle = g; ctx.fillRect(0, top, CVW, hh);
+  const rows = 6; for (let i = 0; i < rows; i++) { const y0 = top + hh * (i / rows) ** 1.4, y1 = top + hh * ((i + 1) / rows) ** 1.4; ctx.fillStyle = "rgba(0,0,0,.45)"; ctx.fillRect(0, Math.round(y0), CVW, 2);
+    ctx.fillStyle = "rgba(255,170,90,.05)"; ctx.fillRect(0, Math.round(y0) + 2, CVW, 1);
+    const n = 5 + i * 2; for (let k = 0; k <= n; k++) { const x = ((k + (i % 2) * .5) / n) * CVW; ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.fillRect(Math.round(x), Math.round(y0), 2, Math.round(y1 - y0)); } }
+  const v = ctx.createRadialGradient(CVW * .72, top, 10, CVW * .6, top, CVW * .7); v.addColorStop(0, "rgba(255,150,60,.16)"); v.addColorStop(1, "rgba(255,150,60,0)"); ctx.fillStyle = v; ctx.fillRect(0, top, CVW, hh);
 }
 function drawTitleMenu(a, top, hh) {
-  const S_ = MENU_STYLE, M = TITLE_MENU, n = M.length, best = bestLine(), cx = cv.width / 2, pulse = .8 + .2 * Math.sin(frame / 10), arrowAt = (x, y) => { ctx.fillStyle = C.inkRed; ctx.beginPath(); ctx.moveTo(x, y - 9); ctx.lineTo(x + 13, y); ctx.lineTo(x, y + 9); ctx.fill(); };
+  const S_ = MENU_STYLE, M = TITLE_MENU, n = M.length, best = bestLine(), cx = CVW / 2, pulse = .8 + .2 * Math.sin(frame / 10), arrowAt = (x, y) => { ctx.fillStyle = C.inkRed; ctx.beginPath(); ctx.moveTo(x, y - 9); ctx.lineTo(x + 13, y); ctx.lineTo(x, y + 9); ctx.fill(); };
   const kh = glyphCv("key", "S", C.ink).height;
   if (S_ === 1) {   // the game's bar with one parchment holding the list
-    { const bw = Math.ceil(cv.width / FINE), bh = Math.ceil(hh / FINE); octx.clearRect(0, 0, W, H); barStrip(octx, bw, bh); ctx.drawImage(over, 0, 0, bw, bh, 0, top, bw * FINE, bh * FINE); }
-    const rowH = kh + 18, pw = Math.ceil((Math.max(...M.map(m => textW(m, "key"))) + 120) / FINE), phh = Math.ceil((26 + n * rowH + 18) / FINE), px = Math.round(cv.width / FINE / 2 - pw / 2), py = Math.round((top + hh / 2) / FINE - phh / 2);
+    { const bw = Math.ceil(CVW / FINE), bh = Math.ceil(hh / FINE); octx.clearRect(0, 0, W, H); barStrip(octx, bw, bh); ctx.drawImage(over, 0, 0, bw, bh, 0, top, bw * FINE, bh * FINE); }
+    const rowH = kh + 18, pw = Math.ceil((Math.max(...M.map(m => textW(m, "key"))) + 120) / FINE), phh = Math.ceil((26 + n * rowH + 18) / FINE), px = Math.round(CVW / FINE / 2 - pw / 2), py = Math.round((top + hh / 2) / FINE - phh / 2);
     octx.clearRect(0, 0, W, H); nine(octx, "logbox", 0, 0, pw, phh); ctx.drawImage(over, 0, 0, pw, phh, px * FINE, py * FINE, pw * FINE, phh * FINE);
     ctx.save(); M.forEach((m, i) => { const y = py * FINE + 22 + i * rowH, on = i === titleSel, tw = textW(m, "key"); ctx.globalAlpha = a * (on ? 1 : .55); ftext(m, cx, y, "key", on ? C.ink : C.inkSoft, "c", { under: C.brassHi, uy: 3 });
       if (on) arrowAt(cx - tw / 2 - 30 + ((frame >> 4) & 1) * 4, y + kh / 2); titleHits.push({ y0: y - 8, y1: y + kh + 8, i }); }); ctx.restore(); return; }
@@ -1568,12 +1575,17 @@ function howReset() {
 /* ---- the pause menu (Start, Esc or P; the PAUSE button on the phone). Button-driven so it's the same on the handheld, a phone and a
    keyboard. Anything that throws the run away asks twice (the line turns into SURE? PRESS A AGAIN). In the app it also checks for a new
    build, updates the app and quits. ---- */
+const COLOURS = [["NORMAL", ""], ["SOFT", "saturate(.82) brightness(.96) hue-rotate(5deg)"], ["SOFTER", "saturate(.68) brightness(.92) hue-rotate(9deg)"]];
+let colourMode = 0; try { colourMode = Math.min(2, +localStorage.getItem("lexsig.colour") || 0); } catch (e) {}
+function applyColour() { cv.style.filter = COLOURS[colourMode][1]; }
+applyColour();
 const PAUSE = { on: false, sel: 0, sure: null, t: 0, hits: [], note: "", noteT: 0 };
 function NATIVE() { return typeof LexNative !== "undefined" ? LexNative : null; }
 function pauseItems() {
   const sure = (key, label, fn) => [PAUSE.sure === key ? "SURE? PRESS A AGAIN" : label, () => { if (PAUSE.sure !== key) { PAUSE.sure = key; return; } PAUSE.sure = null; fn(); }, key];
   const it = [["RESUME", () => pauseClose()],
     ["SOUND: " + (Sound.muted() ? "OFF" : "ON"), () => Sound.toggle()],
+    ["SCREEN COLOUR: " + COLOURS[colourMode][0], () => { colourMode = (colourMode + 1) % COLOURS.length; applyColour(); try { localStorage.setItem("lexsig.colour", colourMode); } catch (e) {} }],
     sure("new", "NEW RUN", () => { pauseClose(); start(); }),
     sure("title", "QUIT TO TITLE", () => { pauseClose(); howExit(); titleSel = 0; })];
   const n = NATIVE();
@@ -1596,11 +1608,11 @@ function pauseKey(k) { if (!PAUSE.on) return false; const items = pauseItems();
   return true; }
 function drawPause() {
   PAUSE.t++; if (PAUSE.noteT > 0) PAUSE.noteT--;
-  const items = pauseItems(), u = cv.width / (cv.getBoundingClientRect().width || cv.width), cw = cv.width, chh = cv.height;
+  const items = pauseItems(), u = CVW / (cv.getBoundingClientRect().width || CVW), cw = CVW, chh = CVH;
   ctx.save(); ctx.fillStyle = "rgba(6,4,10,.62)"; ctx.fillRect(0, 0, cw, chh);
   const size = Math.max(13, Math.min(22, Math.round(chh / u / 28))), tf = `${Math.round(size * 1.5 * u)}px ${HOWF.title}`, bf = `${Math.round(size * u)}px ${HOWF.title}`, lh = Math.round(size * 2 * u);
   ctx.font = bf; let wMax = 0; for (const t of items) wMax = Math.max(wMax, ctx.measureText(t[0]).width); ctx.font = tf; wMax = Math.max(wMax, ctx.measureText("PAUSED").width);
-  const PAD = 18 * u, bw = Math.min(cw - 20 * u, wMax + 2 * PAD + 34 * u), th = size * 2.4 * u, bh = PAD + th + items.length * lh + (PAUSE.noteT ? lh : 0) + PAD * .8;
+  const PAD = Math.max(30, 18 * u), bw = Math.min(cw - 20 * u, wMax + 2 * PAD + 34 * u), th = size * 2.4 * u, bh = PAD + th + items.length * lh + (PAUSE.noteT ? lh : 0) + lh * .8 + PAD * .8;
   const bx = Math.round((cw - bw) / 2), by = Math.round(Math.max(8 * u, (Math.min(chh, FX(SCENE_H)) - bh) / 2));
   octx.clearRect(0, 0, W, H); const ww = Math.round(bw / FINE), hh = Math.round(bh / FINE); nine(octx, "logbox", 0, 0, ww, hh); ctx.drawImage(over, 0, 0, ww, hh, bx, by, ww * FINE, hh * FINE);
   ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = tf; ctx.fillStyle = C.inkRed; ctx.fillText("PAUSED", cw / 2, by + PAD + th / 2);
@@ -1610,7 +1622,9 @@ function drawPause() {
       ctx.fillStyle = C.inkRed; const ax = bx + PAD * .6 + 12 * u + ((PAUSE.t >> 4) & 1) * 2 * u; ctx.beginPath(); ctx.moveTo(ax, y - 6 * u); ctx.lineTo(ax + 8 * u, y); ctx.lineTo(ax, y + 6 * u); ctx.fill(); }
     ctx.fillStyle = sel ? C.inkRed : C.ink; ctx.fillText(t[0], cw / 2, y + 1 * u);
     PAUSE.hits.push({ i, y0: y - lh / 2, y1: y + lh / 2, x0: bx, x1: bx + bw }); });
-  if (PAUSE.noteT) { ctx.font = `${Math.round(size * .8 * u)}px ${HOWF.body}`; ctx.fillStyle = C.inkSoft; ctx.fillText(PAUSE.note, cw / 2, by + PAD + th + items.length * lh + lh / 2); }
+  let ny = by + PAD + th + items.length * lh; ctx.font = `${Math.round(size * .8 * u)}px ${HOWF.body}`; ctx.fillStyle = C.inkSoft;
+  if (PAUSE.noteT) { ctx.fillText(PAUSE.note, cw / 2, ny + lh / 2); ny += lh; }
+  ctx.globalAlpha = .7; ctx.font = `${Math.round(size * .62 * u)}px ${HOWF.body}`; ctx.fillText(`${Math.round(1000 / PERF.dt)} FPS · DRAW ${PERF.draw.toFixed(1)} MS · ${RS < 1 ? "HALF" : "FULL"} SIZE · ${cv.width}x${cv.height}`, cw / 2, ny + lh * .4);
   ctx.restore(); }
 function howStart() { HOW.on = true; HOW.card = 0; HOW.t = 0; Sound.ensure(); Sound.music(); howReset(); HOW_CARDS[0].setup(); Sound.click(); }
 function howGo(k) { HOW.card = k; HOW.t = 0; howReset(); HOW_CARDS[k].setup(); Sound.click(); }
@@ -1660,7 +1674,7 @@ function drawHowCard() {
   // aren't what the early cards are about), or across the top for the parts card, whose subject is the bar's slots
   const c = HOW_CARDS[HOW.card], cfg = HOW_AT[c.title] || ["wall", "wall", []], at = BAR_H > 140 ? (c.title === "RADIO PARTS" ? "top" : "bar") : cfg[0];
   if (howAnim.card !== HOW.card) howAnim = { card: HOW.card, t: 0 }; howAnim.t++;
-  const cssW = cv.getBoundingClientRect().width || cv.width, u = cv.width / cssW;   // canvas pixels per page pixel
+  const cssW = cv.getBoundingClientRect().width || CVW, u = CVW / cssW;   // canvas pixels per page pixel
   // light round what the card is about, pulsing gently
   ctx.save(); const pulse = .55 + .45 * Math.sin(frame / 10);
   for (const k of cfg[2]) { const [x, y, w, hh] = howTarget(k), o = 5; ctx.strokeStyle = `rgba(255,226,150,${.55 + .45 * pulse})`; ctx.lineWidth = 4 * u; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 22 * u;
@@ -2109,11 +2123,12 @@ window.ssKey = (k, down) => {
 /* ================= boot ================= */
 // the game runs at a steady 60 steps a second whatever the screen does (a slow handheld used to slow the whole game down, and a
 // 120Hz screen would speed it up): as many steps as the time that passed, then one picture
-let lastNow = 0, stepAcc = 0;
+let lastNow = 0, stepAcc = 0; const PERF = { draw: 0, dt: 16.7, last: 0 };   // shown at the foot of the pause menu
 function loop(now) {
   if (!lastNow) lastNow = now; stepAcc += Math.min(250, now - lastNow); lastNow = now;
   let n = 0; while (stepAcc >= 1000 / 60 && n < 6) { update(); stepAcc -= 1000 / 60; n++; } if (n === 6) stepAcc = 0;
-  if (n) draw(); pollPad(now); requestAnimationFrame(loop); }
+  if (n) { const t0 = performance.now(); draw(); PERF.draw = PERF.draw * .95 + (performance.now() - t0) * .05; }
+  PERF.dt = PERF.dt * .95 + Math.min(250, now - (PERF.last || now)) * .05; PERF.last = now; pollPad(now); requestAnimationFrame(loop); }
 async function boot() {
   const LA = window.LEX_ASSETS;   // the Android app's one-file build carries its art inside the page (it plays offline, from a file)
   A = LA ? LA.atlasJson : await (await fetch("art/pixel/atlas.json")).json();
