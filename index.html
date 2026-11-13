@@ -984,7 +984,8 @@ function drawRadioLive() {
   const lit = S.phase === "title" ? titleFX.lamps : Math.min(6, S.words);
   // (the lit lamps are drawn on the fine layer, drawLamps, so each sits exactly in the middle of its socket)
 
-  for (const [k, p] of [["L", L.knobL], ["R", L.knobR]]) { const a = knobA[k] - .6; line(wctx, p.x + Math.cos(a) * 5, p.y + Math.sin(a) * 5, p.x + Math.cos(a) * 13, p.y + Math.sin(a) * 13, C.gold); }
+  // the pointer turns about the middle of the knob's inner face, which sits 5 px above the marked point (Chris 2026-11-13)
+  for (const [k, p] of [["L", L.knobL], ["R", L.knobR]]) { const a = knobA[k] - .6, ox = p.x, oy = p.y - 5; line(wctx, ox + Math.cos(a) * 5, oy + Math.sin(a) * 5, ox + Math.cos(a) * 13, oy + Math.sin(a) * 13, C.gold); }
   if (knobA.R > 0) knobA.R = Math.max(0, knobA.R - .04);
 }
 function drawGrid() {
