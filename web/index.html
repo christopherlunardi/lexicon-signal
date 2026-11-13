@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 64;</script><script>
+<script>window.LEX_BUILD = 65;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -2589,7 +2589,7 @@ function plate3(c, x, y, w, hh) { const [, , pw, ph] = R("plate"), E = 16, M = p
   const nm = hh < ph - 2 ? "plate_bare" : "plate";
   const row = (sy, dy, sh) => { spr(c, nm, x, dy, 0, sy, E, sh); for (let xx = x + E; xx < x + w - E; xx += M) spr(c, nm, xx, dy, mx, sy, Math.min(M, x + w - E - xx), sh); spr(c, nm, x + w - E, dy, pw - E, sy, E, sh); };
   row(0, y, T); for (let yy = y + T; yy < y + hh - (ph - T - 4); yy += 4) row(my, yy, Math.min(4, y + hh - (ph - T - 4) - yy)); row(T + 4, y + hh - (ph - T - 4), ph - T - 4);
-  if (nm === "plate_bare") { const ry = y + Math.round(hh / 2) - 4; spr(c, "rivet", x + 5, ry); spr(c, "rivet", x + w - 12, ry); } }
+  if (nm === "plate_bare") { const ry = y + Math.round((hh - 3) / 2) - 3; spr(c, "rivet", x + 5, ry); spr(c, "rivet", x + w - 12, ry); } }
 // the part picker: each part sits in a case built from the same brass frame as the bar's slots (it's what goes into one), lit from
 // behind, with its name stamped on a brass plate and what it does in lit amber. The chosen case rises and glows; the others dim.
 /* the label on each part case (what fitting it does: NEW / STACKS X2 / SWAP A PART / RARE: ONCE ONLY). Workshop topic "tags"
