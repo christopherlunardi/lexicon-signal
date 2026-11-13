@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 41;</script><script>
+<script>window.LEX_BUILD = 42;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -2259,8 +2259,7 @@ function drawMeltPlate() { if (!meltOpen()) return; const m = meltPlate(), on = 
   ctx.save();
   if (on) { ctx.globalCompositeOperation = "lighter"; bloom(FX(m.x + m.w / 2), FX(m.y + m.h / 2), FX(m.w) * .6, "255,170,70", .3); ctx.globalCompositeOperation = "source-over"; }
   ctx.drawImage(slice3Cv(on ? "tplate_lit" : "tplate", m.w, 18), FX(m.x), FX(m.y), FX(m.w), FX(m.h));
-  ctx.drawImage(atlasImg, r[0], r[1], r[2], r[3], FX(m.x + 12), FX(m.y + 4), Math.round(r[2] * s) * FINE, ih * FINE);
-  const lampsW = 4 * 15 + 12, tx = FX(m.x + 12) + Math.round(r[2] * s) * FINE + 14, room = FX(m.x + m.w - 14) - lampsW - tx;
+  const lampsW = 4 * 15 + 12, tx = FX(m.x + 14), room = FX(m.x + m.w - 14) - lampsW - tx;
   ftext("MELT THEM", tx + room / 2, FX(m.y) + Math.round((FX(m.h) - 14 * TK) / 2) + 1, "ink", on ? "#3a1806" : C.ink, "c", { under: C.brassHi, uy: 2 });
   meltLamps(FX(m.x + m.w - 14) - lampsW / 2 - 6, FX(m.y + m.h / 2), 5, 15, S.melt, false); ctx.restore(); }
 // the melter's own screen: the parts on offer arc into its mouth one after another, a lamp lights; at five it pours a Molten Upgrade
@@ -2269,7 +2268,7 @@ function drawMelt() {
   const t = MELT.t, n = MELT.items.length, done = 26 + (n - 1) * 18 + 30, payout = MELT.full && t > done + 30;
   const kh = glyphCv("key", "M", C.ink).height, lh = Math.round(22 * TK), avail = FX(SCENE_H) - 16;   // stop well clear of the bar
   // top to bottom: title, melter, lamps, message, prompt
-  const titleY = 14, below = 26 + 18 + 16 + lh + 10 + lh, r = R("iconL_melter"), sc = Math.max(2, Math.min(5, Math.floor((avail - (titleY + kh + 14) - below) / r[3])));
+  const titleY = 14, below = 26 + 18 + 16 + lh + 10 + lh, r = R("big_melter"), fit = (avail - (titleY + kh + 14) - below) / r[3], sc = fit >= 1 ? Math.min(3, Math.floor(fit)) : fit;   // the sharp picture, whole pixels when it fits
   const mw = r[2] * sc, mh = r[3] * sc, mx = Math.round(CVW / 2 - mw / 2), my = titleY + kh + 14, lampY = my + mh + 22, msgY = lampY + 26, promptY = msgY + lh + 10;
   const mouthX = mx + mw * .5, mouthY = my + mh * .22;
   ctx.globalCompositeOperation = "lighter"; bloom(mouthX, mouthY + mh * .1, mw * .9, "255,120,30", .35 + .15 * Math.sin(frame / 6) + (t > done ? .25 : 0)); ctx.globalCompositeOperation = "source-over";
@@ -2281,7 +2280,7 @@ function drawMelt() {
     if (u > .9) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(mouthX, mouthY, FX(40), "255,200,90", .6); ctx.restore(); } });
   meltLamps(CVW / 2, lampY, 9, 30, MELT.full && t > done + 14 ? MELT_N : Math.min(S.melt, MELT_N), t > done && t < done + 30);
   // the Molten Upgrade pours out beside the melter (never into the text below)
-  if (payout) { const ir = R("iconL_molten"), k = Math.min(1, (t - done - 30) / 20), s2 = Math.min(3, sc) * k, ix = Math.min(CVW - ir[2] * s2 - 10, mx + mw + 20), iy = my + mh - ir[3] * s2;
+  if (payout) { const ir = R("big_molten"), k = Math.min(1, (t - done - 30) / 20), s2 = (sc >= 2 ? Math.max(1, sc - 1) : sc) * k, ix = Math.min(CVW - ir[2] * s2 - 10, mx + mw + 20), iy = my + mh - ir[3] * s2;
     ctx.globalCompositeOperation = "lighter"; bloom(ix + ir[2] * s2 / 2, iy + ir[3] * s2 / 2, FX(60), "255,190,80", .5 * k); ctx.globalCompositeOperation = "source-over";
     ctx.drawImage(atlasImg, ir[0], ir[1], ir[2], ir[3], ix, iy, ir[2] * s2, ir[3] * s2); }
   if (t > done + 20) { ftext(MELT.full ? "FULL! PICK A PART TO UPGRADE" : `MELTER ${S.melt} OF ${MELT_N}`, CVW / 2, msgY, "ink", C.gold, "c", { outline: C.dark });
