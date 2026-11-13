@@ -15,6 +15,7 @@ from PIL import Image, ImageDraw
 sys.path.insert(0, "art/pixel")
 import pix
 
+ROOT_ART = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..") + "/"
 SRC = "art/pixel/src/"
 OUT = "art/pixel/"
 SQUARE = {"uikit": 3.197, "radio5": 3.236}     # sources whose fixed rows need evening out: real pixel size in source px (both axes)
@@ -219,6 +220,21 @@ def main():
     for nm, fn in (("iconL_melter", "melter_icon_fixed.png"), ("iconL_molten", "molten_icon_fixed.png"), ("cab_top", "cab_top_fixed.png"), ("cab_row", "cab_row_fixed.png"), ("big_melter", "melter_big_fixed.png"), ("big_molten", "molten_big_fixed.png")):
         ti = np.asarray(Image.open(SRC + fn).convert("RGBA")).copy(); r_, g_, b_ = ti[..., 0].astype(int), ti[..., 1].astype(int), ti[..., 2].astype(int)
         mg = (b_ > 120) & (r_ > 120) & (g_ < r_ - 60) & (g_ < b_ - 60); ti[..., 3] = np.where(mg, 0, 255); imgs[nm] = Image.fromarray(ti, "RGBA")
+    # The Pixel Bench (Chris 2026-11-13, art/bench/: his pixel touch-up page): the framed pieces as they are under the rivets go
+    # to art/bench/img/ for him to paint on, and a piece he sends back (saved as src/bench/NAME.png, exactly as painted) replaces
+    # the cut one here, before the rivets go on.
+    BENCH = {"logbox": "The log box / sheets frame (corners are kept; the middle repeats)", "plate": "Brass plate (bare: no rivets)",
+             "slot": "Part slot / part case frame", "bar_left": "The bar: left end", "bar_mid": "The bar: the middle that repeats",
+             "bar_right": "The bar: right end", "tplate": "Title menu plate", "tplate_lit": "Title menu plate (lit)"}
+    os.makedirs(ROOT_ART + "bench/img", exist_ok=True); man = []
+    for nm, lab in BENCH.items():
+        fix = SRC + "bench/" + nm + ".png"
+        if os.path.exists(fix):
+            imgs[nm] = Image.open(fix).convert("RGBA")
+            if nm == "plate": imgs["plate_bare"] = imgs["plate"].copy()
+        im_ = imgs["plate_bare"] if nm == "plate" else imgs[nm]; im_.save(ROOT_ART + "bench/img/" + nm + ".png")
+        man.append({"file": "img/" + nm + ".png", "group": "Frames under the rivets", "label": lab + (" (rivets go at " + ", ".join(f"{x},{y}" for x, y in RIVETS.get(nm, [])) + ")" if nm in RIVETS else ""), "w": im_.width, "h": im_.height, "key": nm})
+    json.dump(man, open(ROOT_ART + "bench/manifest.json", "w"), indent=1)
     for nm, cs in RIVETS.items():
         im_ = imgs[nm].copy()
         for cx, cy in cs: im_.alpha_composite(rivet, (cx - 3, cy - 3))

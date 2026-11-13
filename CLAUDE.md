@@ -30,4 +30,8 @@ Read the workflow in `.claude/skills/lexicon-signal-dev/SKILL.md` before changin
 - `art/pixel/` the pixel art: sources in `src/`, `build.py` makes the palette, sprites, icons, fonts and `atlas.png`/`atlas.json`.
 - `web/` the installable web app for GitHub Pages, made by `tools/web.py` (with `tools/web/pwa.js` and `sw.js`); never edit web/ by hand.
 - `android/` the Retroid app (downloads the newest dist/lexicon-signal.html itself); `tools/release.py` makes dist/.
+- `art/bench/` the Pixel Bench (Chris's pixel touch-up page, https://claude.ai/artifact/9VAQd2RwmbaReh6yxaFVuD): build.py writes the framed
+  pieces as they are under the rivets to `art/bench/img/` + `manifest.json`. When Chris sends a fix: read ArtifactData collection `edits`
+  (name, source, asset id, note), fetch the PNG with Artifact read `path: <asset id>`, save it exactly as painted (no resizing or
+  recoloring) as `art/pixel/src/bench/<name>.png`, mark the doc `done: true`, rebuild, republish the game and the bench.
 - `art/concept/look-target.png` the look we're matching. Older painted layers in `art/` are kept for reference only.
