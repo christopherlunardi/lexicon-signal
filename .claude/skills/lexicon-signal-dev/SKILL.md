@@ -363,7 +363,7 @@ the same batch.
   waves); a real logo from ChatGPT replaces it later. A press during an entrance skips to its settled screen (`titleBusy`).
 - tgap-r1 (decided: 1 blank keys, now the game's look, 2026-11-13): what fills the dark strips beside the painted 4x4 logo in the wider 5x5 title glass, TITLE_GAP 0..5
   (as now, blank keys, soft edges, thicker frame, band scales, zoom to fill), `#title-6-tgap-N`; drawn once into titleBg (titleGapDraw).
-- goldkey-r1 (open, 2026-11-13): how the Gold Key looks and works on the glass, GOLD_STYLE 0..5 (0 as now and the default, letter reel,
+- goldkey-r1 (decided: 1, the letter reel, now the game's look) (open, 2026-11-13): how the Gold Key looks and works on the glass, GOLD_STYLE 0..5 (0 as now and the default, letter reel,
   gold lamp board, shows its letter, brass housing, gilded word), `#goldkey-N`; `#test-word-gold-goldkey-N` fits it with the gold key
   at H5(13) and nothing traced (L, I, N then the gold key makes LINE), `#test-word-goldred-goldkey-N` makes it the red key too. All in
   `gkKey` / `gkBase` / `gkGlow` / `gkAfter` (cached in gvSpr); in 1..5 the key shows the letter it stands for (`gkLetterOf`) and that

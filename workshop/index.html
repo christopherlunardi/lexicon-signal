@@ -130,15 +130,16 @@ function saveSoon(key) { clearTimeout(saveT); status('Saving…'); saveT = setTi
 async function save(key) {
   const f = fb[key]; store.set('fb.' + key, f); const mine = dirty[key];
   if (!db) { status('Saved on this device only (not signed in to claude.ai)'); return; }
-  try { await db.doc('feedback/' + key).set({ pick: f.pick || null, notes: f.notes || {}, general: f.general || '', submitted: !!f.submitted, submittedAt: f.submittedAt || null, updatedAt: new Date().toISOString() });
+  try { await db.doc('feedback/' + key).set({ pick: f.pick || null, notes: f.notes || {}, general: f.general || '', submitted: !!f.submitted, submittedAt: f.submittedAt || null, updatedAt: f.updatedAt || new Date().toISOString() });
     if (dirty[key] === mine) delete dirty[key]; status(f.submitted ? 'Sent to Claude' : 'Draft saved — press Send when you’re done'); } catch (e) { status('Could not save: ' + (e.message || e.code || e)); }
 }
-function edited(key) { const f = fb[key]; dirty[key] = (dirty[key] || 0) + 1; if (f.submitted) { f.submitted = false; const b = $('#send'); if (b) { b.classList.remove('done'); b.textContent = 'Send to Claude'; } } saveSoon(key); }
+function edited(key) { const f = fb[key]; f.updatedAt = new Date().toISOString(); dirty[key] = (dirty[key] || 0) + 1; if (f.submitted) { f.submitted = false; const b = $('#send'); if (b) { b.classList.remove('done'); b.textContent = 'Send to Claude'; } } saveSoon(key); }
 function watch(key) {
   if (!db || subs[key]) return;
   try { subs[key] = db.doc('feedback/' + key).onSnapshot(snap => { const d = snap && (snap.data ? snap.data() : snap); if (!d) return;
     if (dirty[key] || (document.activeElement && document.activeElement.tagName === 'TEXTAREA')) return; // don't overwrite what's being typed
-    fb[key] = { pick: d.pick || null, notes: d.notes || {}, general: d.general || '', submitted: !!d.submitted, submittedAt: d.submittedAt || null }; renderNav(); if (keyOf(cur.topic, cur.round) === key) renderRound(); }, () => {}); } catch (e) {}
+    const mine = fb[key]; if (mine && mine.updatedAt && (!d.updatedAt || d.updatedAt < mine.updatedAt)) return; // an older copy coming back: keep ours
+    fb[key] = { pick: d.pick || null, notes: d.notes || {}, general: d.general || '', submitted: !!d.submitted, submittedAt: d.submittedAt || null, updatedAt: d.updatedAt || null }; renderNav(); if (keyOf(cur.topic, cur.round) === key) renderRound(); }, () => {}); } catch (e) {}
 }
 
 // ---------- page ----------
@@ -174,7 +175,7 @@ function renderRound() {
   });
   let general = null;
   if (!decided) { const g = h('textarea', { 'aria-label': 'Anything else', onchange: e => { f.general = e.target.value; edited(key); }, placeholder: 'Mix them? Something else entirely?', oninput: e => { f.general = e.target.value; edited(key); } }); g.value = f.general || '';
-    const send = h('button', { type: 'button', id: 'send', class: 'btn send' + (f.submitted ? ' done' : ''), onclick: () => { document.querySelectorAll('textarea[data-oid]').forEach(t => { f.notes[t.dataset.oid] = t.value; }); const gt = $('#gen'); if (gt) f.general = gt.value; f.submitted = true; f.submittedAt = new Date().toISOString(); clearTimeout(saveT); save(key); send.classList.add('done'); send.textContent = 'Sent ✓'; renderNav(); } }, f.submitted ? 'Sent ✓' : 'Send to Claude');
+    const send = h('button', { type: 'button', id: 'send', class: 'btn send' + (f.submitted ? ' done' : ''), onclick: () => { document.querySelectorAll('textarea[data-oid]').forEach(t => { if (t.value) f.notes[t.dataset.oid] = t.value; }); const gt = $('#gen'); if (gt && gt.value) f.general = gt.value; f.updatedAt = new Date().toISOString(); f.submitted = true; f.submittedAt = new Date().toISOString(); clearTimeout(saveT); save(key); send.classList.add('done'); send.textContent = 'Sent ✓'; renderNav(); } }, f.submitted ? 'Sent ✓' : 'Send to Claude');
     general = h('section', { class: 'general' }, h('label', { for: 'gen' }, 'Anything else'), g, h('div', { class: 'sendrow' }, send, h('span', { class: 'status', id: 'status' }, f.submitted ? 'Sent to Claude' : (f.pick ? 'Draft — press Send when you’re done' : 'Pick one, add notes, then Send')))); g.id = 'gen'; }
   main.replaceChildren(...[roundsBar, decided ? h('div', { class: 'banner' }, 'Decided — ' + (r.options.find(o => o.id === r.chosen) || {}).title) : null,
     h('h2', { class: 'q' }, r.question), r.found ? h('p', { class: 'found' }, r.found) : null, h('div', { class: 'grid' }, cards), general].filter(Boolean));

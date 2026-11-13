@@ -6,7 +6,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "How should the Gold Key look and behave on the glass?",
      "found": "Five new looks plus the one in the game now. Every clip is the same moves: the gold key at rest, L-I-N traced, then the gold key (it becomes the E of LINE), the word sent; then the same again with the gold key also being the red key. In the five new looks the key shows the letter it stands for once the word is real, and that letter flies to the tower in gold (today it stays a \"?\"). All of them cost the same as the current look on Retroid-size screens (within measuring noise). Play opens with the Gold Key fitted; put \"goldred\" in place of \"gold\" in the link to try it as the red key.",
      "options": [
@@ -130,7 +130,8 @@
        ],
        "play": "play.html#test-word-gold-goldkey-5"
       }
-     ]
+     ],
+     "chosen": "1"
     }
    ]
   },
@@ -140,7 +141,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "How should the label on each part case look (NEW, STACKS X2, SWAP A PART, RARE: ONCE ONLY)?",
      "found": "The label used to sit over the case's bottom border and long ones ran off. Four ways to fix it. Each picture shows an overdrive picker with all four kinds of label: a part you already have (stacks), the rare Gold Key, and parts that need a swap (phone and Retroid) or are new (computer).",
      "options": [
@@ -244,7 +245,8 @@
        ],
        "play": "play.html#test-shop-tags-full-tag-4"
       }
-     ]
+     ],
+     "chosen": "3"
     }
    ]
   },

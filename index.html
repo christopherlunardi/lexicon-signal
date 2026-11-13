@@ -1221,7 +1221,8 @@ function gvPathEdge(ok) { if (!S.path.length) return;
    In 1..5 the key shows the letter it stands for once the word is real, and that letter flies to the tower in gold.
    #goldkey-N picks one (#test-word-gold-goldkey-N, #test-word-goldred-goldkey-N when it is the red key too). Cached pictures only. */
 const GOLD_NAMES = ["As now", "Letter reel", "Gold lamp board", "Shows its letter", "Brass housing", "Gilded word"];
-let GOLD_STYLE = 0; { const m = location.hash.match(/goldkey-(\d)/); if (m) GOLD_STYLE = Math.min(GOLD_NAMES.length - 1, +m[1]); }
+let GOLD_STYLE = 1; {   // Chris picked 1, the letter reel (2026-11-13)
+  const m = location.hash.match(/goldkey-(\d)/); if (m) GOLD_STYLE = Math.min(GOLD_NAMES.length - 1, +m[1]); }
 const GK = { off: "#2e1e06", offR: "#3c0f08", on: "#ffcf3a", hot: "#fffbe0", bg: "#4a3004", bgh: "#94690f", bgR: "#5a120a", bghR: "#c8301c", rgb: "255,205,60" };
 const GK_REEL = "AKEWSTMOIRNGLUHDBCFYPVJXZQ";
 let gkNow = { ch: null, hint: null, gild: false, red: false }, goldFlash = 0, tubeGold = 0, gkFx = [];
