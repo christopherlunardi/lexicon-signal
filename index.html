@@ -173,7 +173,7 @@ if (!CanvasRenderingContext2D.prototype.roundRect) CanvasRenderingContext2D.prot
   r = Math.max(0, Math.min(typeof r === "number" ? r : (r && r[0]) || 0, Math.abs(w) / 2, Math.abs(h) / 2));
   this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r); this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath(); return this; };
 const DICT = new Set((window.LEX_WORDS || "").split(" "));
-const cv = $("screen"), ctx = cv.getContext("2d", { alpha: false });   // the screen: 2 fine pixels per world pixel (opaque: cheaper to put on screen)
+const cv = $("screen"), ctx = cv.getContext("2d", { alpha: false }); window.__lexCtx = ctx;   // the screen: 2 fine pixels per world pixel (opaque: cheaper to put on screen)
 { const d = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, "imageSmoothingEnabled");
   if (d && d.set) Object.defineProperty(ctx, "imageSmoothingEnabled", { get() { return d.get.call(ctx); }, set(v) { d.set.call(ctx, !!v || RS < 1); } }); }
 let H = 425, BAR_H = 120, SCENE_H = 305; const FINE = 2;
@@ -286,7 +286,9 @@ const READPX = () => Math.round(3 * TK * .85);   // "read": the same letters big
 const ADV = { ink: 12, key: 24, dot: 18, read: 18 };   // advance per character, fine pixels
 const textW = (s, kind) => s.length * ADV[kind] - (kind === "ink" ? 2 * TK : kind === "read" ? READPX() : kind === "dot" ? 3 : 1);
 // draw text on the fine grid. x,y in fine pixels. Styles: ink (typed/stamped), key (big engraved), dot (lit dot matrix)
+let TXT = null;   // while set, ftext draws into this context instead of the screen (cached layers)
 function ftext(s, x, y, kind, col, align, opts = {}) {
+  const ctx = TXT || window.__lexCtx;
   s = String(s).toUpperCase().replace(/X(\d)/g, "x$1"); if (align === "c") x -= Math.round(textW(s, kind) / 2); else if (align === "r") x -= textW(s, kind);
   x = Math.round(x); y = Math.round(y);
   for (const ch of s) { if (ch !== " ") {
@@ -1294,7 +1296,7 @@ function tubeGlows() {
   for (const bm of beams) if (bm.hx != null) bloom(FX(bm.hx), FX(bm.hy), bm.big ? 46 : 34, "255,190,110", .55);
 }
 // ---------- menus: dim the room with a checker of dark pixels, parchment panels, then fine text ----------
-function dim() { octx.fillStyle = C.shade; for (let y = 0; y < L.barY; y++) for (let x = (y & 1); x < W; x += 2) octx.fillRect(x, y, 1, 1); }
+function dim() { octx.save(); octx.globalAlpha = .5; octx.fillStyle = C.shade; octx.fillRect(0, 0, W, L.barY); octx.restore(); }   // one even shade (it was a per-pixel checkerboard: 100k fills a frame, the part picker crawled on the handheld)
 function blitOver() { ctx.drawImage(over, 0, 0, W * FINE, H * FINE); }
 /* ---------- title screens (Workshop topic "title", round 1) ----------
    Each style brings the logo in its own way, then settles on the logo and "PRESS A TO TUNE IN". A press during the entrance jumps to
@@ -1745,37 +1747,48 @@ function plate3(c, x, y, w, hh) { const [, , pw, ph] = R("plate"), E = 16, M = 2
   row(0, y, T); for (let yy = y + T; yy < y + hh - (ph - T - 4); yy += 4) row(my, yy, Math.min(4, y + hh - (ph - T - 4) - yy)); row(T + 4, y + hh - (ph - T - 4), ph - T - 4); }
 // the part picker: each part sits in a case built from the same brass frame as the bar's slots (it's what goes into one), lit from
 // behind, with its name stamped on a brass plate and what it does in lit amber. The chosen case rises and glows; the others dim.
+const shopBase = { k: "", cv: document.createElement("canvas") }, shopTop = { k: "", cv: document.createElement("canvas") };
 function drawShop() {
-  dim(); const G = shopGeom(), [, , , ph] = R("plate");
+  const G = shopGeom(), [, , , ph] = R("plate");
   const geo = (k) => { const f = k === shopFocus, x = G.x0 + k * (G.cw + 10), y = G.y0 - (f ? 5 : 0); return { f, x, y, py: y + 82 }; };
   const nameLines = (p) => wrap(p.name, "ink", FX(G.cw - 20) - 30), plH = (p) => nameLines(p).length > 1 ? ph + Math.ceil(20 * TK / FINE) + 2 : ph;
-  shopChoices.forEach((p, k) => { const g = geo(k);
-    nine(octx, "slot", g.x, g.y, G.cw, G.ch, 18);
-    plate3(octx, g.x + 10, g.py, G.cw - 20, plH(p)); });
-  blitOver();
+  // the shade and the three cases change only when the choice or the screen does: built once into shopBase, then one blit a frame
+  // (the cases are 9-sliced from small tiles, hundreds of draws: redrawn every frame they made the picker crawl on the handheld)
+  const bk = [W, H, L.barY, shopFocus, TK, shopChoices.map(p => p.id).join()].join("|");
+  if (shopBase.k !== bk) { shopBase.k = bk; shopBase.cv.width = W; shopBase.cv.height = H; const c = shopBase.cv.getContext("2d"); c.imageSmoothingEnabled = false;
+    c.save(); c.globalAlpha = .5; c.fillStyle = C.shade; c.fillRect(0, 0, W, L.barY); c.restore();
+    shopChoices.forEach((p, k) => { const g = geo(k); nine(c, "slot", g.x, g.y, G.cw, G.ch, 18); plate3(c, g.x + 10, g.py, G.cw - 20, plH(p)); }); }
+  ctx.drawImage(shopBase.cv, 0, 0, W * FINE, H * FINE);
   // light behind each part, then the part itself in world pixels on top of the glow
   ctx.save(); ctx.globalCompositeOperation = "lighter";
   shopChoices.forEach((p, k) => { const g = geo(k), r = R("iconL_" + p.id); bloom(FX(g.x + G.cw / 2), FX(g.y + 12 + 34), FX(46), "255,180,100", g.f ? .32 + .05 * Math.sin(frame / 10) : .14);
     if (g.f) bloom(FX(g.x + G.cw / 2), FX(g.y + G.ch / 2), FX(G.cw * .75), "255,170,80", .1); });
   ctx.restore();
-  shopChoices.forEach((p, k) => { const g = geo(k), r = R("iconL_" + p.id), s = Math.min(1, 64 / r[3]);
-    ctx.drawImage(atlasImg, r[0], r[1], r[2], r[3], FX(g.x + G.cw / 2 - r[2] / 2), FX(g.y + 14 + (64 - r[3]) / 2), FX(r[2]), FX(r[3])); });
-  ftext(TK > 1 ? "FIT A RADIO PART" : `NIGHT ${S.night} LOCKED IN. FIT A RADIO PART`, FX(W / 2), 22, "ink", C.hot, "c", { outline: C.dark });
-  shopChoices.forEach((p, k) => { const g = geo(k), cx = FX(g.x + G.cw / 2), lh = Math.round(20 * TK), maxW = FX(G.cw) - 48;
-    // name: stamped on the plate (smaller lettering if a long name needs it)
-    const nl = nameLines(p), PH = plH(p), top = FX(g.py) + Math.round((FX(PH) - (nl.length - 1) * lh - 14 * TK) / 2) + 1;
-    nl.forEach((s, j) => ftext(s, cx, top + j * lh, "ink", C.ink, "c", { under: C.brassHi, uy: 2 }));
-    // what it does, in lit amber on the dark glass
-    wrap(p.desc, "ink", maxW).forEach((s, j) => ftext(s, cx, FX(g.py + PH) + 16 + j * lh, "ink", g.f ? C.gold : C.amber, "c"));
-    // what fitting it will do to the slots, as a small lamp label at the foot
-    const have = partSlots().find(s => s.id === p.id), note = have ? `STACKS  X${have.n + 1}` : partSlots().length >= PART_SLOTS ? "SWAP A PART" : "NEW";
-    const ny = FX(g.y + G.ch) - 34, nw = textW(note, "ink") + 30;
-    ctx.fillStyle = "rgba(10,6,4,.9)"; ctx.beginPath(); ctx.roundRect(cx - nw / 2, ny - 8, nw, 30, 6); ctx.fill();
-    ctx.strokeStyle = have ? C.gold : partSlots().length >= PART_SLOTS ? C.redHot : C.dotDim; ctx.lineWidth = 2; ctx.stroke();
-    ftext(note, cx, ny, "ink", have ? C.gold : partSlots().length >= PART_SLOTS ? C.redHot : C.amber, "c");
-    if (!g.f) { ctx.fillStyle = "rgba(8,5,3,.38)"; ctx.fillRect(FX(g.x), FX(g.y), FX(G.cw), FX(G.ch)); }
-    else { ctx.save(); ctx.strokeStyle = (frame >> 4) & 1 ? C.hot : C.gold; ctx.lineWidth = 3; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 16; ctx.beginPath(); ctx.roundRect(FX(g.x) - 5, FX(g.y) - 5, FX(G.cw) + 10, FX(G.ch) + 10, 8); ctx.stroke(); ctx.restore(); } });
-  ftext(usingTouch ? "TAP A PART" : "LEFT / RIGHT TO LOOK, A TO FIT", FX(W / 2), FX(G.y0 + G.ch) + 22, "ink", C.gold, "c", { outline: C.dark });
+  // the icons, the writing and the lamp labels only change with the choice too: a second cached layer at fine size (shopTop),
+  // drawn over the live glow; only the chosen case's blinking frame is drawn every frame
+  const tk = [bk, usingTouch, S.night, partSlots().map(s => s.id + s.n).join()].join("|");
+  if (shopTop.k !== tk) { shopTop.k = tk; shopTop.cv.width = CVW; shopTop.cv.height = CVH; const c = shopTop.cv.getContext("2d"); c.imageSmoothingEnabled = false; TXT = c;
+    shopChoices.forEach((p, k) => { const g = geo(k), r = R("iconL_" + p.id);
+      c.drawImage(atlasImg, r[0], r[1], r[2], r[3], FX(g.x + G.cw / 2 - r[2] / 2), FX(g.y + 14 + (64 - r[3]) / 2), FX(r[2]), FX(r[3])); });
+    ftext(TK > 1 ? "FIT A RADIO PART" : `NIGHT ${S.night} LOCKED IN. FIT A RADIO PART`, FX(W / 2), 22, "ink", C.hot, "c", { outline: C.dark });
+    shopChoices.forEach((p, k) => { const g = geo(k), cx = FX(g.x + G.cw / 2), lh = Math.round(20 * TK), maxW = FX(G.cw) - 48;
+      // name: stamped on the plate (smaller lettering if a long name needs it)
+      const nl = nameLines(p), PH = plH(p), top = FX(g.py) + Math.round((FX(PH) - (nl.length - 1) * lh - 14 * TK) / 2) + 1;
+      nl.forEach((s, j) => ftext(s, cx, top + j * lh, "ink", C.ink, "c", { under: C.brassHi, uy: 2 }));
+      // what it does, in lit amber on the dark glass
+      wrap(p.desc, "ink", maxW).forEach((s, j) => ftext(s, cx, FX(g.py + PH) + 16 + j * lh, "ink", g.f ? C.gold : C.amber, "c"));
+      // what fitting it will do to the slots, as a small lamp label at the foot
+      const have = partSlots().find(s => s.id === p.id), note = have ? `STACKS  X${have.n + 1}` : partSlots().length >= PART_SLOTS ? "SWAP A PART" : "NEW";
+      const ny = FX(g.y + G.ch) - 34, nw = textW(note, "ink") + 30;
+      c.fillStyle = "rgba(10,6,4,.9)"; c.beginPath(); c.roundRect(cx - nw / 2, ny - 8, nw, 30, 6); c.fill();
+      c.strokeStyle = have ? C.gold : partSlots().length >= PART_SLOTS ? C.redHot : C.dotDim; c.lineWidth = 2; c.stroke();
+      ftext(note, cx, ny, "ink", have ? C.gold : partSlots().length >= PART_SLOTS ? C.redHot : C.amber, "c");
+      if (!g.f) { c.fillStyle = "rgba(8,5,3,.38)"; c.fillRect(FX(g.x), FX(g.y), FX(G.cw), FX(G.ch)); } });
+    ftext(usingTouch ? "TAP A PART" : "LEFT / RIGHT TO LOOK, A TO FIT", FX(W / 2), FX(G.y0 + G.ch) + 22, "ink", C.gold, "c", { outline: C.dark });
+    TXT = null; }
+  ctx.drawImage(shopTop.cv, 0, 0, CVW, CVH);
+  shopChoices.forEach((p, k) => { const g = geo(k); if (!g.f) return;
+    ctx.save(); ctx.strokeStyle = (frame >> 4) & 1 ? C.hot : C.gold; ctx.lineWidth = 3; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 16; ctx.beginPath(); ctx.roundRect(FX(g.x) - 5, FX(g.y) - 5, FX(G.cw) + 10, FX(G.ch) + 10, 8); ctx.stroke(); ctx.restore(); });
 }
 function drawOver() {
   const w = Math.min(W - 48, 340), lh = Math.round(22 * TK);
