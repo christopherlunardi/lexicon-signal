@@ -1,10 +1,10 @@
 [
  {
-  "file": "img/bar_right.png",
+  "file": "img/tplate.png",
   "group": "To do: frames under the rivets",
-  "label": "The bar: right end (rivets go at 26,12, 26,81)",
-  "w": 39,
-  "h": 95,
-  "key": "bar_right"
+  "label": "Title menu plate (rivets go at 7,7, 90,7, 7,25, 90,25)",
+  "w": 98,
+  "h": 35,
+  "key": "tplate"
  }
 ]
