@@ -585,10 +585,7 @@ function draw() {
     if (was < 1 && barShow === 1 && want === 1) { Sound.thud(3); shake = Math.max(shake, 4); }
     const u = 1 - barShow, e = u * u; L.barY = SCENE_H + Math.round(e * (BAR_H + 4)); } ctx.setTransform(RS, 0, 0, RS, 0, 0); wctx.imageSmoothingEnabled = false; ctx.imageSmoothingEnabled = false;
   if (S.phase === "splash") { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, CVW, CVH);
-    // big smooth type so it reads on any screen size (Chris: on the handheld it was pixelated with a line through it)
-    { const u = CVW / (cv.getBoundingClientRect().width || CVW), a = .55 + .45 * Math.sin(frame / 14); ctx.save(); ctx.globalAlpha = a; ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.font = `${Math.round(26 * u)}px ${HOWF.title}`; ctx.fillStyle = "#ffb84a"; ctx.shadowColor = "rgba(255,150,60,.6)"; ctx.shadowBlur = 18 * u; ctx.fillText(usingTouch ? "TAP TO START" : "PRESS ANY BUTTON", CVW / 2, CVH / 2); ctx.restore(); }
-    return; }
+    if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO START" : "PRESS ANY BUTTON", CVW / 2, CVH / 2 - 8, "dot", C.amber, "c"); return; }
   const sx = shake > 0 ? Math.round((Math.random() - .5) * Math.min(2, shake)) : 0;
   wctx.fillStyle = "#000"; wctx.fillRect(0, 0, W, H); wctx.drawImage(roomCv, sx, 0);
   wctx.save(); wctx.translate(sx, 0); drawBeacon(); drawRadioLive(); drawGrid(); drawSparks(); wctx.restore();
@@ -1255,7 +1252,9 @@ function drawTube() {
   tubeLit = lit; const full = play && pr >= 1; if (full && !tubeFull) { tubeFlash = tubeFlash.map(() => 1); tubeKick = 1.5; Sound.full(); const t = L.tube; for (let x = 0; x < t.w; x += 24) burst(t.x + x, L.barY + t.y + t.h / 2, 2, C.gold); }
   tubeFull = full;
   // what the traced word would add, blinking
-  const ok = S.phase === "play" && S.path.length >= 3 && isValid(), add = ok ? Math.ceil(Math.min(1, (S.shown + scoreOf(S.path).pts) / S.target) * G.n) : 0;
+  const ok = S.phase === "play" && S.path.length >= 3 && isValid(), pts = ok ? scoreOf(S.path).pts : 0, fills = ok && S.score + pts >= S.target;
+  // a word that falls short never lights the last cell: only a word that really fills the tube reaches the end (and lights the end lamp)
+  const add = !ok ? 0 : fills ? G.n : Math.min(G.n - 1, Math.floor((S.shown + pts) / S.target * G.n));
   const sheen = ((frame * 9) % (G.n * (G.cw + G.gap) + 400)) - 200, blink = .45 + .3 * Math.sin(frame / 4);
   for (let k = 0; k < G.n; k++) {
     const x = G.ix + k * (G.cw + G.gap), f = tubeFlash[k] || 0;
@@ -1271,6 +1270,14 @@ function drawTube() {
     if (f) tubeFlash[k] = f > .03 ? f * .9 : 0;
   }
   tubeKick *= .9;
+  // the end lamp (Chris 2026-11-12): lights and pulses at the far end of the tube only while the traced word would fill it,
+  // so a word that won't quite get there is easy to spot by the lamp staying dark
+  { const t = L.tube, ex = FX(t.x + t.w) - 10, ey = FX(L.barY + t.y + t.h / 2), p = .65 + .35 * Math.sin(frame / 5);
+    ctx.fillStyle = "#1a0d06"; ctx.beginPath(); ctx.arc(ex, ey, 15, 0, 6.283); ctx.fill();
+    ctx.fillStyle = "#b8873a"; ctx.beginPath(); ctx.arc(ex, ey, 12.5, 0, 6.283); ctx.fill();
+    ctx.fillStyle = fills ? `rgba(255,${Math.round(220 + 30 * p)},${Math.round(150 + 90 * p)},1)` : "#3a1f10"; ctx.beginPath(); ctx.arc(ex, ey, 9, 0, 6.283); ctx.fill();
+    if (fills) { ctx.fillStyle = "rgba(255,255,245,.9)"; ctx.beginPath(); ctx.arc(ex - 3, ey - 3, 3, 0, 6.283); ctx.fill();
+      ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(ex, ey, 64, "255,200,110", .55 * p); ctx.restore(); } }
   // the signal travelling down from the tower: a bright head with a fading tail
   for (const bm of beams) { const q = tubeHead(), b = L.beacon, cx = (b.x + q.x) / 2, cy = Math.min(b.y, q.y) - 30;
     for (let j = 10; j >= 0; j--) { const u = Math.max(0, Math.min(1, (bm.t - j * .8) / bm.dur)), e = u * u, x = (1 - e) ** 2 * b.x + 2 * (1 - e) * e * cx + e * e * q.x, y = (1 - e) ** 2 * b.y + 2 * (1 - e) * e * cy + e * e * q.y;
@@ -1317,6 +1324,7 @@ const TIPS = [
   "PRESS Y OR TAP THE RIGHT KNOB TO RETUNE",
   "X SENDS THE WORD YOU HAVE SPELLED",
   "START PAUSES THE NIGHT",
+  "THE LAMP AT THE END OF THE TUBE LIGHTS WHEN YOUR WORD WILL FILL IT",
   "EACH NEW LETTER MUST TOUCH THE LAST ONE, EVEN CORNER TO CORNER",
   "CLICK THE LAST LETTER AGAIN TO SEND THE WORD",
   "PRESS A ON THE LAST LETTER TO SEND THE WORD",
@@ -1559,7 +1567,7 @@ const HOW_CARDS = [
     setup() {}, steps: [[30, 4], [62, 1], [94, 2], [140, 15], [200, 3]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])) },
   { title: "SEND IT", keys: ["A", "X"], len: 330, text: "Press A on the last letter again (or X from anywhere), or tap it again, to send the word. Its letters fly to the tower and the signal comes back down into the tube.",
     setup() {}, steps: [...[[30, 8], [58, 9], [86, 10], [114, 11]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(11))]] },
-  { title: "FILL THE TUBE", keys: [], len: 340, text: "Fill the signal tube before the lamps go dark. Every word you send uses one lamp. Longer words and letters with more dots fill it faster.",
+  { title: "FILL THE TUBE", keys: [], len: 340, text: "Fill the signal tube before the lamps go dark. Every word you send uses one lamp. Longer words and letters with more dots fill it faster. When the lamp at the end of the tube lights, the word you've spelled will fill it.",
     setup() { S.score = S.shown = 18; S.words = 3; }, steps: [...[[30, 12], [58, 13], [86, 14], [114, 15]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(15))]] },
   { title: "STUCK? RETUNE", keys: ["Y"], len: 220, text: "Press Y, or tap the right knob, to swap every letter for new ones, once a night. The small light under that knob shows you still have it.",
     setup() {}, steps: [[80, () => retune()]] },
@@ -1606,25 +1614,24 @@ function pauseKey(k) { if (!PAUSE.on) return false; const items = pauseItems();
   PAUSE.sel = Math.min(PAUSE.sel, pauseItems().length - 1);
   if (PAUSE.sure && pauseItems()[PAUSE.sel][2] !== PAUSE.sure) PAUSE.sure = null;   // moved off the line: not armed any more
   return true; }
-function drawPause() {
+function drawPause() {   // one parchment panel like the log box, in the game's own key lettering (Chris: no outside fonts here)
   PAUSE.t++; if (PAUSE.noteT > 0) PAUSE.noteT--;
-  const items = pauseItems(), u = CVW / (cv.getBoundingClientRect().width || CVW), cw = CVW, chh = CVH;
-  ctx.save(); ctx.fillStyle = "rgba(6,4,10,.62)"; ctx.fillRect(0, 0, cw, chh);
-  const size = Math.max(13, Math.min(22, Math.round(chh / u / 28))), tf = `${Math.round(size * 1.5 * u)}px ${HOWF.title}`, bf = `${Math.round(size * u)}px ${HOWF.title}`, lh = Math.round(size * 2 * u);
-  ctx.font = bf; let wMax = 0; for (const t of items) wMax = Math.max(wMax, ctx.measureText(t[0]).width); ctx.font = tf; wMax = Math.max(wMax, ctx.measureText("PAUSED").width);
-  const PAD = Math.max(30, 18 * u), bw = Math.min(cw - 20 * u, wMax + 2 * PAD + 34 * u), th = size * 2.4 * u, bh = PAD + th + items.length * lh + (PAUSE.noteT ? lh : 0) + lh * .8 + PAD * .8;
-  const bx = Math.round((cw - bw) / 2), by = Math.round(Math.max(8 * u, (Math.min(chh, FX(SCENE_H)) - bh) / 2));
-  octx.clearRect(0, 0, W, H); const ww = Math.round(bw / FINE), hh = Math.round(bh / FINE); nine(octx, "logbox", 0, 0, ww, hh); ctx.drawImage(over, 0, 0, ww, hh, bx, by, ww * FINE, hh * FINE);
-  ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.font = tf; ctx.fillStyle = C.inkRed; ctx.fillText("PAUSED", cw / 2, by + PAD + th / 2);
-  PAUSE.hits = []; ctx.font = bf;
-  items.forEach((t, i) => { const y = by + PAD + th + i * lh + lh / 2, sel = i === PAUSE.sel;
-    if (sel) { ctx.fillStyle = "rgba(150,40,26,.16)"; ctx.beginPath(); ctx.roundRect(bx + PAD * .6, y - lh * .42, bw - PAD * 1.2, lh * .84, lh * .42); ctx.fill();
-      ctx.fillStyle = C.inkRed; const ax = bx + PAD * .6 + 12 * u + ((PAUSE.t >> 4) & 1) * 2 * u; ctx.beginPath(); ctx.moveTo(ax, y - 6 * u); ctx.lineTo(ax + 8 * u, y); ctx.lineTo(ax, y + 6 * u); ctx.fill(); }
-    ctx.fillStyle = sel ? C.inkRed : C.ink; ctx.fillText(t[0], cw / 2, y + 1 * u);
-    PAUSE.hits.push({ i, y0: y - lh / 2, y1: y + lh / 2, x0: bx, x1: bx + bw }); });
-  let ny = by + PAD + th + items.length * lh; ctx.font = `${Math.round(size * .8 * u)}px ${HOWF.body}`; ctx.fillStyle = C.inkSoft;
-  if (PAUSE.noteT) { ctx.fillText(PAUSE.note, cw / 2, ny + lh / 2); ny += lh; }
-  ctx.globalAlpha = .7; ctx.font = `${Math.round(size * .62 * u)}px ${HOWF.body}`; ctx.fillText(`${Math.round(1000 / PERF.dt)} FPS · DRAW ${PERF.draw.toFixed(1)} MS · ${RS < 1 ? "HALF" : "FULL"} SIZE · ${cv.width}x${cv.height}`, cw / 2, ny + lh * .4);
+  const items = pauseItems(), kh = glyphCv("key", "N", C.ink).height, rh = glyphCv("read", "N", C.ink).height, lh = kh + 16;
+  const iw = Math.max(textW("PAUSED", "key"), ...items.map(t => textW(t[0], "key"))) + 90, pw = Math.round(Math.min(CVW - 20, iw) / FINE);
+  const ph = Math.round((30 + kh + 22 + items.length * lh + (PAUSE.noteT ? rh + 10 : 0) + rh + 48) / FINE), x = Math.round(W / 2 - pw / 2) * FINE, top = Math.max(6, Math.round((CVH / FINE - ph) / 2)) * FINE;
+  ctx.save(); ctx.fillStyle = "rgba(6,4,10,.6)"; ctx.fillRect(0, 0, CVW, CVH);
+  octx.clearRect(0, 0, W, H); nine(octx, "logbox", 0, 0, pw, ph); ctx.drawImage(over, 0, 0, pw, ph, x, top, pw * FINE, ph * FINE);
+  const cx = x + pw * FINE / 2; ftext("PAUSED", cx, top + 30, "key", C.inkRed, "c");
+  ctx.fillStyle = C.inkSoft; ctx.globalAlpha = .35; ctx.fillRect(x + 30, top + 30 + kh + 9, pw * FINE - 60, 2); ctx.globalAlpha = 1;
+  PAUSE.hits = [];
+  items.forEach((t, i) => { const y = top + 30 + kh + 22 + i * lh, on = i === PAUSE.sel;
+    if (on) { ctx.fillStyle = "rgba(150,40,26,.13)"; ctx.fillRect(x + 22, y, pw * FINE - 44, lh);
+      const ax = x + 32 + ((PAUSE.t >> 4) & 1) * 3, ay = y + lh / 2; ctx.fillStyle = C.inkRed; ctx.beginPath(); ctx.moveTo(ax, ay - 7); ctx.lineTo(ax + 9, ay); ctx.lineTo(ax, ay + 7); ctx.fill(); }
+    ftext(t[0], cx, y + Math.round((lh - kh) / 2), "key", on ? C.inkRed : C.ink, "c");
+    PAUSE.hits.push({ i, y0: y, y1: y + lh, x0: x, x1: x + pw * FINE }); });
+  let ny = top + 30 + kh + 22 + items.length * lh + 8;
+  if (PAUSE.noteT) { ftext(PAUSE.note, cx, ny, "read", C.inkSoft, "c"); ny += rh + 10; }
+  ctx.globalAlpha = .55; ftext(`${Math.round(1000 / PERF.dt)} FPS  ${PERF.draw.toFixed(1)} MS${RS < 1 ? "  HALF" : ""}`, cx, ny + 4, "read", C.inkSoft, "c");
   ctx.restore(); }
 function howStart() { HOW.on = true; HOW.card = 0; HOW.t = 0; Sound.ensure(); Sound.music(); howReset(); HOW_CARDS[0].setup(); Sound.click(); }
 function howGo(k) { HOW.card = k; HOW.t = 0; howReset(); HOW_CARDS[k].setup(); Sound.click(); }
@@ -2147,7 +2154,7 @@ async function boot() {
   // test hook: #test-shop opens the part picker after night 1 (for screenshots)
   if (location.hash === "#test-shop") { newRun(); S.parts.push("amp", "coil"); nightClear(); }
   if (location.hash === "#test-swap") { newRun(); S.parts.push("amp", "amp", "coil", "echo", "owl", "short"); nightClear(); const k = shopChoices.findIndex(c => !S.parts.includes(c.id)); if (k >= 0) choosePart(k); }
-  if (location.hash.startsWith("#test-word")) { newRun(); setTimeout(() => { "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); S.path = [0, 1, 2]; usingButtons = true; S.cursor = 3; if (location.hash.includes("fill")) S.score = S.shown = 17; if (location.hash.includes("hot")) { S.parts = ["carrier"]; S.grid.forEach(t => t.hot = false); S.grid[H5(6)].hot = true; S.grid[H5(9)].hot = false; } if (location.hash.includes("parts")) { S.parts = ["battery", "battery", "knob", "echo", "amp"]; S.words = maxWords(); S.retunes = maxRetunes(); } nightCard = 0; }, 300); }
+  if (location.hash.startsWith("#test-word")) { newRun(); setTimeout(() => { "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); S.path = [0, 1, 2]; usingButtons = true; S.cursor = 3; if (location.hash.includes("fill")) S.score = S.shown = 17; if (location.hash.includes("near")) S.score = S.shown = S.target - 3; if (location.hash.includes("hot")) { S.parts = ["carrier"]; S.grid.forEach(t => t.hot = false); S.grid[H5(6)].hot = true; S.grid[H5(9)].hot = false; } if (location.hash.includes("parts")) { S.parts = ["battery", "battery", "knob", "echo", "amp"]; S.words = maxWords(); S.retunes = maxRetunes(); } nightCard = 0; }, 300); }
 }
 boot();
 })();

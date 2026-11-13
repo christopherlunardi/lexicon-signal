@@ -162,6 +162,12 @@ the same batch.
 - Screen colour (pause menu, saved in lexsig.colour): NORMAL / SOFT / SOFTER, a CSS filter on the canvas (less saturation, a touch
   darker, hue nudged from red toward orange). The 2S screen shows the warm browns far redder and stronger than a phone; the page
   itself sends the same colours, so this is a per-screen setting, not a fix in the art.
+- Fonts: Chris doesn't want outside display fonts on the game screen (2026-11-12: "big blocky text... doesn't match anything").
+  The pause menu is a logbox parchment panel in the game's own "key" lettering; the start prompt is back to the dial's "dot"
+  lettering. The smooth fonts (HOWF) stay only on the How to Play cards, which he liked.
+- Tube end lamp (Chris 2026-11-12): a round lamp at the right end of the signal tube lights and pulses only while the traced word would
+  fill the tube (S.score + pts >= S.target); a word that falls short never lights the last preview cell. How to Play's FILL THE TUBE
+  card and the tips say so. Test with #test-word-near (score 3 short) and #test-word-fill.
 - Sound on the handheld (Chris heard crackling): in the app the AudioContext uses latencyHint "playback" (bigger buffers), the music
   pads use one oscillator per note instead of a detuned pair, and a limiter (DynamicsCompressor) sits after master so stacked sounds
   can't clip. Keep idle sources off the sound thread: nothing runs into a silent gain.
