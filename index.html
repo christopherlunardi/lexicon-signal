@@ -411,10 +411,10 @@ function buildBar() {
 
 /* ================= game rules ================= */
 const WEIGHTS = { E:12, A:9, I:8, O:8, N:6, R:6, T:6, S:5, L:4, U:4, D:4, G:3, B:2, C:2, M:2, P:2, F:2, H:2, W:2, Y:2, V:1, K:1, J:1, X:1, Qu:1, Z:1 };
-const VALUES = { A:1,E:1,I:1,O:1,U:1,N:1,R:1,S:1,T:1,L:1, D:2,G:2,H:2, B:3,C:3,M:3,P:3,F:3,W:3,Y:3, K:4,V:4, J:6,X:6, Qu:7,Z:7 };
+const VALUES = { "?":0,  A:1,E:1,I:1,O:1,U:1,N:1,R:1,S:1,T:1,L:1, D:2,G:2,H:2, B:3,C:3,M:3,P:3,F:3,W:3,Y:3, K:4,V:4, J:6,X:6, Qu:7,Z:7 };
 const VOWELS = new Set(["A","E","I","O","U"]), HARD = new Set(["Qu","X","Z","J"]);
-// Radio parts (Chris 2026-11-13: every part stacks; each copy adds the same again). A red key is always on the glass now (a word
-// through it scores x2); Red Lamp and Red Heat build on that. icon: the atlas picture to use when it isn't the part's own id.
+// Radio parts (Chris 2026-11-13: every part stacks; each copy adds the same again). One red key is always on the glass (a word
+// through it scores x2); Red Lamp and Red Heat make that one key stronger. Rare parts (gold frame) come once only. icon: the atlas picture to use when it isn't the part's own id.
 const PARTS = [
   { id:"amp",     name:"Tube Amp",          desc:"+1 boost on every word." },
   { id:"battery", name:"Spare Battery",     desc:"+1 word every night." },
@@ -425,8 +425,10 @@ const PARTS = [
   { id:"owl",     name:"Night Owl Clock",   desc:"Last word each night x3 (x4, x5...)." },
   { id:"treble",  name:"Treble Slider",     desc:"+3 signal per letter worth 3+." },
   { id:"vowel",   name:"Vowel Antenna",     desc:"Vowels +1 signal each." },
-  { id:"carrier", name:"Red Lamp",          desc:"+1 red key on the glass." },
-  { id:"heat",    name:"Red Heat",          desc:"Red keys multiply one more.", icon:"fuse" },
+  { id:"carrier", name:"Red Lamp",          desc:"The red key adds +5 signal." },
+  { id:"heat",    name:"Red Heat",          desc:"The red key multiplies one more.", icon:"fuse" },
+  // rare (gold): only one, now and then in the picker (more often after an overdrive)
+  { id:"gold",    name:"Gold Key",          desc:"A gold key on the glass can be any letter.", rare:true },
 ];
 const PART = Object.fromEntries(PARTS.map(p => [p.id, p]));
 const iconOf = (id) => "iconL_" + ((PART[id] && PART[id].icon) || id);
@@ -446,8 +448,10 @@ function pickLetter() {
 }
 const newTile = () => ({ id: ++uid, ch: pickLetter(), hot: false, yOff: 0, vy: 0, wait: 0, lit: 0, land: 0, seed: Math.random() });
 const vowelCount = () => S.grid.filter(t => VOWELS.has(t.ch)).length;
-function ensureHot() { const want = 1 + has("carrier"); let n = S.grid.filter(t => t.hot).length, g = 0;   // a red key is always on the glass, one more per Red Lamp
-  while (n < want && g++ < 99) { const t = S.grid[(Math.random() * NN) | 0]; if (!t.hot) { t.hot = true; n++; } } }
+function ensureHot() { let g = 0;   // one red key is always on the glass; with the Gold Key, one gold wildcard key too
+  // (the gold key can be the red key too, Chris 2026-11-13: then it's any letter AND doubles the word)
+  while (!S.grid.some(t => t.hot) && g++ < 99) S.grid[(Math.random() * NN) | 0].hot = true;
+  if (has("gold")) { g = 0; while (!S.grid.some(t => t.wild) && g++ < 99) { const t = S.grid[(Math.random() * NN) | 0]; t.wild = true; t.ch = "?"; } } }
 function fillGrid(dropIn) {
   S.grid = Array.from({ length: NN }, newTile);
   let g = 0; while (vowelCount() < 6 && g++ < 50) S.grid[(Math.random() * NN) | 0].ch = "AEIOU"[(Math.random() * 5) | 0];
@@ -468,7 +472,10 @@ function collapse(used) {
   ensureHot();
 }
 const moving = () => S.grid.some(t => t.yOff !== 0 || t.vy !== 0);
-const pathWord = (p = S.path) => p.map(i => S.grid[i].ch).join("").toLowerCase();
+const ABC = "abcdefghijklmnopqrstuvwxyz";
+// the Gold Key's "?" stands for any letter: a word with it reads as the first real word it can make
+function resolveWord(w) { const i = w.indexOf("?"); if (i < 0) return w; for (const c of ABC) { const t = w.slice(0, i) + c + w.slice(i + 1); if (t.length >= 3 && DICT.has(t)) return t; } return w; }
+const pathWord = (p = S.path) => resolveWord(p.map(i => S.grid[i].ch).join("").toLowerCase());
 const adjacent = (a, b) => a !== b && Math.abs((a % N) - (b % N)) <= 1 && Math.abs(((a / N) | 0) - ((b / N) | 0)) <= 1;
 const isValid = (p = S.path) => { const w = pathWord(p); return w.length >= 3 && DICT.has(w); };
 function scoreOf(p) {
@@ -476,9 +483,10 @@ function scoreOf(p) {
   let signal = 2 + tiles.reduce((s, t) => s + VALUES[t.ch], 0);   // every word carries 2 signal, so short words still count
   signal += 3 * has("treble") * tiles.filter(t => VALUES[t.ch] >= 3).length + has("vowel") * tiles.filter(t => VOWELS.has(t.ch)).length;
   if (len <= 4) signal += 6 * has("short");
+  if (reds) signal += 5 * has("carrier");
   const boost = Math.max(1, len - 2) + has("amp") + (has("knob") ? S.retunes : 0); let mult = 1;
   if (has("coil") && len >= 5) mult *= 1 + has("coil"); if (used < has("echo")) mult *= 2; if (has("owl") && S.words === 1) mult *= 2 + has("owl");
-  if (reds) mult *= 1 + reds + has("heat");
+  if (reds) mult *= 2 + has("heat");
   return { word, len, signal, boost, mult, pts: signal * boost * mult };
 }
 // which fitted parts change this word, and how (shown on their slots: lit while tracing, a flash and a tag when the signal lands)
@@ -492,13 +500,33 @@ function partHits(p) {
   if (n("coil") && len >= 5) hits.coil = "x" + (1 + n("coil"));
   if (used < n("echo")) hits.echo = "x2";
   if (n("owl") && S.words === 1) hits.owl = "x" + (2 + n("owl"));
-  if (reds && n("carrier") && reds > 1) hits.carrier = "x" + (1 + reds + n("heat"));
-  if (reds && n("heat")) hits.heat = "x" + (1 + reds + n("heat"));
+  if (reds && n("carrier")) hits.carrier = "+" + 5 * n("carrier");
+  if (reds && n("heat")) hits.heat = "x" + (2 + n("heat"));
+  if (n("gold") && tiles.some(t => t.wild)) hits.gold = "?";
   return hits;
 }
 // the log types itself out: each entry reveals a few letters per frame
 function log(s) { S.log.push({ s: s.toUpperCase(), n: 0 }); if (S.log.length > 14) S.log.shift(); }
-function newRun() { S = fresh("play"); log("Tuned in."); startNight(); }
+/* ---- play log (Chris 2026-11-13: study how people really play, to tune the game). Gameplay only, nothing personal: every word sent
+   (night, word, points, red key, words and retunes left, seconds spent), failed tries, retunes, the parts offered and picked, and how
+   each night and run ended. Kept on the device (lexsig.runs, the last 40 runs); on the claude.ai link it is also saved to the
+   artifact's shared database (collection "plays", readable only by the owner) so it can be studied. Pause menu: SHARE PLAY LOG. ---- */
+const PLAYLOG = { run: null, db: null, last: 0 };
+try { if (window.claude && claude.use) claude.use("db").then(d => { PLAYLOG.db = d; }).catch(() => {}); } catch (e) {}
+const playWhere = () => document.body.classList.contains("pwa") ? "webapp" : document.body.classList.contains("inapp") ? "android" : /github\.io$/.test(location.hostname) ? "web" : window.claude ? "link" : "other";
+function plStart() { if (HOW.on) return; PLAYLOG.run = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), at: Date.now(), build: window.LEX_BUILD || 0, where: playWhere(),
+    screen: innerWidth + "x" + innerHeight, input: usingTouch ? "touch" : usingButtons ? "buttons" : "mouse", words: [], nights: [], fails: 0, retunes: 0, end: "" }; PLAYLOG.last = Date.now(); }
+function plWord(sc) { const r = PLAYLOG.run; if (!r || HOW.on) return; const now = Date.now();
+  r.words.push({ n: S.night, w: sc.word, p: sc.pts, len: sc.len, m: sc.mult, red: sc.red, gold: sc.gold, left: S.words, rt: S.retunes, s: Math.round((now - PLAYLOG.last) / 100) / 10 }); PLAYLOG.last = now; }
+function plNight(offered) { const r = PLAYLOG.run; if (!r || HOW.on) return; r.nights.push({ n: S.night, target: S.target, score: S.score, over: !!S.over, wordsLeft: S.words, offered: offered.map(p => p.id), picked: null, parts: S.parts.slice() }); plSave(); }
+function plPick(id) { const r = PLAYLOG.run; if (!r) return; const nn = r.nights[r.nights.length - 1]; if (nn) nn.picked = id; }
+function plEnd(how) { const r = PLAYLOG.run; if (!r || r.end) return; r.end = how; r.total = S.total; r.reached = S.night; r.parts = S.parts.slice(); plSave(); PLAYLOG.run = null; }
+function plSave() { const r = PLAYLOG.run; if (!r) return; r.total = S.total;
+  try { const a = JSON.parse(localStorage.getItem("lexsig.runs") || "[]").filter(x => x.id !== r.id); a.push(r); localStorage.setItem("lexsig.runs", JSON.stringify(a.slice(-40))); } catch (e) {}
+  if (PLAYLOG.db) PLAYLOG.db.collection("plays").doc(r.id).set(JSON.parse(JSON.stringify(r))).catch(() => {}); }
+function plShare() { let txt = "[]"; try { txt = localStorage.getItem("lexsig.runs") || "[]"; } catch (e) {}
+  if (navigator.share) navigator.share({ title: "Lexicon Signal play log", text: txt }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(() => log("Play log copied.")).catch(() => {}); }
+function newRun() { S = fresh("play"); log("Tuned in."); plStart(); startNight(); }
 function startNight() {
   S.score = 0; S.shown = 0; S.over = false; S.firstWord = true; S.target = targetFor(S.night); S.words = maxWords(); S.retunes = maxRetunes(); S.path = [];
   if (S.grid.length === NN && S.night > 1) ensureHot(); else fillGrid(true);   // the glass keeps its letters from night to night; a new run starts fresh
@@ -524,8 +552,8 @@ function tapTile(i) {
 function back() { if (canAct() && S.path.length) setPath(S.path.slice(0, -1)); }
 function send() {
   if (!canAct() || !S.path.length) return;
-  if (!isValid()) { const short = S.path.length < 3; dialFlash = { text: short ? "TOO SHORT" : "NO SIGNAL", bad: true, t: 70 }; shake = 6; staticKick = .4; Sound.fail(); log(short ? "Too short." : `${pathWord()}: no signal.`); return; }
-  const sc = scoreOf(S.path), used = [...S.path], hits = partHits(S.path);
+  if (!isValid()) { const short = S.path.length < 3; dialFlash = { text: short ? "TOO SHORT" : "NO SIGNAL", bad: true, t: 70 }; if (PLAYLOG.run && !HOW.on) PLAYLOG.run.fails++; shake = 6; staticKick = .4; Sound.fail(); log(short ? "Too short." : `${pathWord()}: no signal.`); return; }
+  const sc = scoreOf(S.path), used = [...S.path], hits = partHits(S.path); sc.red = used.some(i => S.grid[i].hot) ? 1 : 0; sc.gold = used.some(i => S.grid[i].wild) ? 1 : 0; plWord(sc);
   if (S.words > BASE_WORDS) log("Spare battery spent."); S.words -= 1; S.firstWord = false; if (sc.pts > S.best.pts) S.best = { word: sc.word, pts: sc.pts };
   const big = sc.len >= 6 || sc.pts >= 60; busy++;
   const letters = used.map(i => ({ ch: S.grid[i].ch, ...tileC(i) }));
@@ -548,13 +576,15 @@ function arrive() {
   else if (S.words <= 0) { busy++; setTimeout(() => { busy--; gameOver(); }, 1400); }
   else log(`${S.target - S.score} to go, ${S.words} word${S.words === 1 ? "" : "s"} left.`);
 }
-function retune() { if (!canAct() || S.retunes <= 0) return; if (S.retunes > 1) log("Tuning knob spent."); S.retunes--; S.path = []; pathSound = 0; fillGrid(true); knobA.R += 2.4; staticKick = .5; Sound.retune(); log("Retuned."); }
+function retune() { if (!canAct() || S.retunes <= 0) return; if (PLAYLOG.run && !HOW.on) PLAYLOG.run.retunes++; if (S.retunes > 1) log("Tuning knob spent."); S.retunes--; S.path = []; pathSound = 0; fillGrid(true); knobA.R += 2.4; staticKick = .5; Sound.retune(); log("Retuned."); }
 let shopChoices = [], shopFocus = 0;
 function nightClear() {
   if (HOW.on && !HOW.shop) return;
   S.phase = "shop"; Sound.clear(); log(`Night ${S.night} locked in.`);
-  const bag = PARTS.slice(); shopChoices = [];   // every part stacks, so any part can come up; overdrive offers four
-  while (shopChoices.length < (S.over ? 4 : 3) && bag.length) shopChoices.push(bag.splice((Math.random() * bag.length) | 0, 1)[0]); shopFocus = 0;
+  const bag = PARTS.filter(p => !p.rare); shopChoices = [];   // every part stacks, so any part can come up; overdrive offers four
+  while (shopChoices.length < (S.over ? 4 : 3) && bag.length) shopChoices.push(bag.splice((Math.random() * bag.length) | 0, 1)[0]);
+  const rare = PARTS.filter(p => p.rare && !S.parts.includes(p.id)); if (rare.length && Math.random() < (S.over ? .5 : 1 / 6)) shopChoices[(Math.random() * shopChoices.length) | 0] = rare[(Math.random() * rare.length) | 0]; shopFocus = 0;
+  plNight(shopChoices);
 }
 // the fitted parts as slots: one per kind, in the order they were first fitted, with how many copies are stacked in it
 function partSlots() { const c = []; S.parts.forEach(id => { const e = c.find(e => e.id === id); if (e) e.n++; else c.push({ id, n: 1 }); }); return c; }
@@ -565,7 +595,7 @@ function choosePart(k) {
   if (!S.parts.includes(p.id) && partSlots().length >= PART_SLOTS) { S.phase = "swap"; swapNew = p; swapFocus = 0; Sound.click(); return; }
   fitPart(p);
 }
-function fitPart(p) { S.parts.push(p.id); Sound.pick(); log(`Fitted: ${p.name}.`); S.night += 1; knobA.L += 3; staticKick = .5; Sound.retune(); startNight(); }
+function fitPart(p) { plPick(p.id); S.parts.push(p.id); Sound.pick(); log(`Fitted: ${p.name}.`); S.night += 1; knobA.L += 3; staticKick = .5; Sound.retune(); startNight(); }
 function swapConfirm(k) { const sl = partSlots()[k]; if (!sl || !swapNew) return; S.parts = S.parts.filter(id => id !== sl.id); log(`Took out: ${PART[sl.id].name}.`); const p = swapNew; swapNew = null; fitPart(p); }
 function swapCancel() { S.phase = "shop"; swapNew = null; Sound.click(); }
 // the run score is all the signal beamed in a run; the best ten runs on this device are kept (lexsig.scores)
@@ -574,7 +604,7 @@ function saveRun() { const a = loadScores(), run = { s: S.total, n: S.night - 1,
   a.push(run); a.sort((x, y) => y.s - x.s || y.n - x.n); const top = a.slice(0, 10); try { localStorage.setItem("lexsig.scores", JSON.stringify(top)); } catch (e) {}
   const i = top.indexOf(run); return i < 0 ? 0 : i + 1; }
 function gameOver() {
-  S.phase = "over"; Sound.over(); staticKick = .9; log("Dead air."); S.rank = S.total > 0 ? saveRun() : 0;
+  S.phase = "over"; Sound.over(); staticKick = .9; log("Dead air."); S.rank = S.total > 0 ? saveRun() : 0; plEnd("lost");
   try { const prev = JSON.parse(localStorage.getItem("lexsig-best") || "null"), cleared = S.night - 1;
     if (!prev || cleared > prev.nights || (cleared === prev.nights && S.total > prev.total)) localStorage.setItem("lexsig-best", JSON.stringify({ nights: cleared, total: S.total, word: S.best.word })); } catch (e) {}
 }
@@ -1216,10 +1246,10 @@ function paGlassVar({ G, tiles, ok, low }) {
       const H = dotSpr(P.hot); ctx.globalAlpha = 1; for (let r = 0; r < 7; r++) for (let c = 1; c < 8; c++) if (hsh(c + r * 9 + (frame >> 1) * 3.1, t.seed * 17) < .42) ctx.drawImage(H, mx + c * 6, my + r * 6, 6, 6);
     } else if (lit > .5) { const a = wave ? fl : 1;
       if (GF.deep) { ctx.globalAlpha = a; ctx.drawImage(gvGlow(o.ch, "rgba(255,196,120,.6)"), mx - 14, my - 14); }
-      ctx.globalAlpha = a; ctx.drawImage(gvLet(o.ch, hot ? "#ff9a7e" : P.hot), mx, my);
+      ctx.globalAlpha = a; ctx.drawImage(gvLet(o.ch, t.wild ? "#fff2a8" : hot ? "#ff9a7e" : P.hot), mx, my);
     } else { const a = Math.min(1, la + (GF.warm ? 0 : land));
       if (GF.deep) { ctx.globalAlpha = a; ctx.drawImage(gvGlow(o.ch, "rgba(255,120,24,.6)"), mx - 14, my - 14); }
-      ctx.globalAlpha = a; ctx.drawImage(gvLet(o.ch, P.on), mx, my);
+      ctx.globalAlpha = a; ctx.drawImage(gvLet(o.ch, t.wild ? "#ffcf3a" : P.on), mx, my);
       if (warm[1] > 0) { ctx.globalAlpha = warm[1]; ctx.drawImage(gvLet(o.ch, P.hot), mx, my); } }
     if (hot && HOT_STYLE === 5) { const scan = ((frame * .3 + o.i * 3) % 10) - 1.5, R = gvAll("#ff4630");   // the Carrier key's red scan, row by row
       for (let r = Math.max(0, Math.ceil(scan - 1)); r < 7 && r < scan + 1; r++) { ctx.globalAlpha = .8 * (1 - Math.abs(r - scan)); ctx.drawImage(R, 0, r * 6, 54, 6, mx, my + r * 6, 54, 6); } }
@@ -1260,6 +1290,7 @@ const PA_RGB = ["255,130,40", "120,255,170", "255,120,40", "255,180,80", "255,15
 function paGlows(okNow) {
   const g = L.glass, rgb = PA_RGB[KS - 6];
   S.grid.forEach((t, i) => { if (!t || t.ch === " ") return; const c = tileC(i), lit = t.lit || 0, hot = okNow && lit > .5;
+    if (t.wild && KS === 10) bloom(FX(c.x), FX(c.y + t.yOff), 52, "255,210,70", .3 * (.8 + .2 * Math.sin(frame / 7)));
     if (t.hot && KS === 10) bloom(FX(c.x), FX(c.y + t.yOff), [0, 46, 56, 50, 30, 44][HOT_STYLE], "255,60,40", [0, .32, .3, .26, .14, .22][HOT_STYLE] * (.8 + .2 * Math.sin(frame / 9 + i)));
     const gk = GF.any ? gvGlowK(t, lit > .5) : GV_ONE;
     bloom(FX(c.x), FX(c.y + t.yOff), 40 + 20 * lit, hot ? "255,225,160" : GF.side ? "255,128,34" : rgb, PA_BASE[KS - 6] * gk[0] + (KS === 9 ? .42 : .3) * lit + .22 * (t.land || 0) * gk[1]); });
@@ -1390,7 +1421,8 @@ function slotState(id, n) {
   if (id === "knob") { st.pips = n; st.lit = play ? Math.max(0, Math.min(n, S.retunes - 1)) : n; }
   if (id === "echo") { const used = maxWords() - S.words; st.armed = play && used < n; st.spent = play && used >= n; }
   if (id === "owl") st.armed = play && S.words === 1;
-  if (id === "carrier" || id === "heat") st.armed = play;
+  if (id === "carrier" || id === "heat" || id === "gold") st.armed = play;
+  if (PART[id] && PART[id].rare) st.pips = 0;
   return st;
 }
 // reading a fitted part (Chris 2026-11-13): tap its slot, or press down past the bottom row of keys and left/right along the slots;
@@ -1555,8 +1587,10 @@ const TIPS = [
   "THE NIGHT OWL CLOCK TRIPLES YOUR LAST WORD OF THE NIGHT, MORE WITH COPIES",
   "THE ECHO TUBE DOUBLES YOUR FIRST WORD OF THE NIGHT",
   "THE RED KEY DOUBLES ANY WORD THAT USES IT",
-  "A RED LAMP PUTS ONE MORE RED KEY ON THE GLASS",
-  "RED HEAT MAKES EVERY RED KEY MULTIPLY ONE MORE",
+  "A RED LAMP MAKES THE RED KEY ADD 5 SIGNAL",
+  "RED HEAT MAKES THE RED KEY MULTIPLY ONE MORE",
+  "GOLD PARTS ARE RARE: YOU ONLY GET ONE",
+  "THE GOLD KEY CAN BE ANY LETTER YOU NEED",
   "EVERY RADIO PART STACKS: EACH COPY ADDS THE SAME AGAIN",
   "TAP A PART'S SLOT, OR PRESS DOWN PAST THE BOTTOM ROW, TO READ IT",
   "THE VOWEL ANTENNA MAKES EVERY VOWEL WORTH ONE MORE",
@@ -1875,8 +1909,9 @@ function pauseItems() {
   const it = [["RESUME", () => pauseClose()],
     ["SOUND: " + (Sound.muted() ? "OFF" : "ON"), () => Sound.toggle()],
     ["SCREEN COLOUR: " + COLOURS[colourMode][0], () => { colourMode = (colourMode + 1) % COLOURS.length; applyColour(); try { localStorage.setItem("lexsig.colour", colourMode); } catch (e) {} }],
-    sure("new", "NEW RUN", () => { pauseClose(); start(); }),
-    sure("title", "QUIT TO TITLE", () => { pauseClose(); howExit(); titleSel = 0; })];
+    sure("new", "NEW RUN", () => { pauseClose(); plEnd("quit"); start(); }),
+    sure("title", "QUIT TO TITLE", () => { pauseClose(); plEnd("quit"); howExit(); titleSel = 0; }),
+    ["SHARE PLAY LOG", () => plShare()]];
   const n = NATIVE();
   if (n) {
     if (buildReady) it.push(sure("reload", "LOAD NEW BUILD " + buildReady, () => { try { n.reload(); } catch (e) {} }));
@@ -2039,7 +2074,8 @@ function drawShop() {
   // light behind each part, then the part itself in world pixels on top of the glow
   ctx.save(); ctx.globalCompositeOperation = "lighter";
   shopChoices.forEach((p, k) => { const g = geo(k), r = R(iconOf(p.id)); bloom(FX(g.x + G.cw / 2), FX(g.y + 12 + 34), FX(46), "255,180,100", g.f ? .32 + .05 * Math.sin(frame / 10) : .14);
-    if (g.f) bloom(FX(g.x + G.cw / 2), FX(g.y + G.ch / 2), FX(G.cw * .75), "255,170,80", .1); });
+    if (g.f) bloom(FX(g.x + G.cw / 2), FX(g.y + G.ch / 2), FX(G.cw * .75), "255,170,80", .1);
+    if (p.rare) bloom(FX(g.x + G.cw / 2), FX(g.y + G.ch / 2), FX(G.cw * .9), "255,214,80", .16 + .06 * Math.sin(frame / 9)); });
   ctx.restore();
   // the icons, the writing and the lamp labels only change with the choice too: a second cached layer at fine size (shopTop),
   // drawn over the live glow; only the chosen case's blinking frame is drawn every frame
@@ -2055,15 +2091,17 @@ function drawShop() {
       // what it does, in lit amber on the dark glass
       wrap(p.desc, "ink", maxW).forEach((s, j) => ftext(s, cx, FX(g.py + PH) + 16 + j * lh, "ink", g.f ? C.gold : C.amber, "c"));
       // what fitting it will do to the slots, as a small lamp label at the foot
-      const have = partSlots().find(s => s.id === p.id), note = have ? `STACKS  X${have.n + 1}` : partSlots().length >= PART_SLOTS ? "SWAP A PART" : "NEW";
+      const have = partSlots().find(s => s.id === p.id), note = p.rare ? "RARE: ONCE ONLY" : have ? `STACKS  X${have.n + 1}` : partSlots().length >= PART_SLOTS ? "SWAP A PART" : "NEW";
       const ny = FX(g.y + G.ch) - 34, nw = textW(note, "ink") + 30;
       c.fillStyle = "rgba(10,6,4,.9)"; c.beginPath(); c.roundRect(cx - nw / 2, ny - 8, nw, 30, 6); c.fill();
-      c.strokeStyle = have ? C.gold : partSlots().length >= PART_SLOTS ? C.redHot : C.dotDim; c.lineWidth = 2; c.stroke();
-      ftext(note, cx, ny, "ink", have ? C.gold : partSlots().length >= PART_SLOTS ? C.redHot : C.amber, "c");
+      c.strokeStyle = p.rare ? "#ffd24a" : have ? C.gold : partSlots().length >= PART_SLOTS ? C.redHot : C.dotDim; c.lineWidth = 2; c.stroke();
+      ftext(note, cx, ny, "ink", p.rare ? "#ffd24a" : have ? C.gold : partSlots().length >= PART_SLOTS ? C.redHot : C.amber, "c");
       if (!g.f) { c.fillStyle = "rgba(8,5,3,.38)"; c.fillRect(FX(g.x), FX(g.y), FX(G.cw), FX(G.ch)); } });
     ftext(usingTouch ? "TAP A PART" : "LEFT / RIGHT TO LOOK, A TO FIT", FX(W / 2), FX(G.y0 + G.ch) + 22, "ink", C.gold, "c", { outline: C.dark });
     TXT = null; }
   ctx.drawImage(shopTop.cv, 0, 0, CVW, CVH);
+  shopChoices.forEach((p, k) => { const g = geo(k); if (!p.rare) return;   // rare parts: a gold frame round the case
+    ctx.save(); ctx.strokeStyle = "#ffd24a"; ctx.lineWidth = 4; ctx.beginPath(); ctx.roundRect(FX(g.x) - 2, FX(g.y) - 2, FX(G.cw) + 4, FX(G.ch) + 4, 6); ctx.stroke(); ctx.restore(); });
   shopChoices.forEach((p, k) => { const g = geo(k); if (!g.f) return;
     ctx.save(); ctx.strokeStyle = (frame >> 4) & 1 ? C.hot : C.gold; ctx.lineWidth = 3; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 16; ctx.beginPath(); ctx.roundRect(FX(g.x) - 5, FX(g.y) - 5, FX(G.cw) + 10, FX(G.ch) + 10, 8); ctx.stroke(); ctx.restore(); });
 }
@@ -2328,7 +2366,7 @@ function devCodePrompt() {
 }
 function devFit(id) {
   if (!S.parts.includes(id) && partSlots().length >= PART_SLOTS) { log("Dev: slots full, take one out first."); return; }
-  S.parts.push(id); if (id === "battery") S.words++; if (id === "knob") S.retunes++; if (id === "carrier") ensureHot(); log("Dev: fitted " + PART[id].name + ".");
+  S.parts.push(id); if (id === "battery") S.words++; if (id === "knob") S.retunes++; ensureHot(); log("Dev: fitted " + PART[id].name + ".");
 }
 function devTakeOut(id) { S.parts = S.parts.filter(x => x !== id); S.words = Math.min(S.words, maxWords()); S.retunes = Math.min(S.retunes, maxRetunes()); if (id === "carrier") ensureHot(); log("Dev: took out " + PART[id].name + "."); }
 function devPlay() { if (S.phase !== "play" && S.phase !== "shop" && S.phase !== "swap") { newRun(); barShow = 1; } }
@@ -2455,8 +2493,9 @@ async function boot() {
   if (/-step$/.test(location.hash)) window.LEXSTEP = (n = 1) => { while (n-- > 0) { update(); draw(); } }; else requestAnimationFrame(loop);
   // test hook: #test-shop opens the part picker after night 1 (for screenshots)
   if (location.hash === "#test-shop") { newRun(); S.parts.push("amp", "coil"); nightClear(); }
+  if (location.hash === "#test-shop-gold") { newRun(); S.parts.push("amp", "coil"); nightClear(); shopChoices[1] = PART.gold; }
   if (location.hash === "#test-swap") { newRun(); S.parts.push("amp", "amp", "coil", "echo", "owl", "short"); nightClear(); const k = shopChoices.findIndex(c => !S.parts.includes(c.id)); if (k >= 0) choosePart(k); }
-  if (location.hash.startsWith("#test-word")) { newRun(); setTimeout(() => { "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); S.path = [0, 1, 2]; usingButtons = true; S.cursor = 3; if (location.hash.includes("fill")) S.score = S.shown = 17; if (location.hash.includes("near")) S.score = S.shown = S.target - 3; if (location.hash.includes("-od")) S.score = S.shown = Math.ceil(S.target * OVERDRIVE) - 5; if (location.hash.includes("hot")) { S.parts = ["carrier"]; S.grid.forEach(t => t.hot = false); S.grid[H5(6)].hot = true; S.grid[H5(9)].hot = false; } if (location.hash.includes("parts")) { S.parts = ["battery", "battery", "knob", "echo", "amp"]; S.words = maxWords(); S.retunes = maxRetunes(); } nightCard = 0; }, 300); }
+  if (location.hash.startsWith("#test-word")) { newRun(); setTimeout(() => { "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); S.path = [0, 1, 2]; usingButtons = true; S.cursor = 3; if (location.hash.includes("fill")) S.score = S.shown = 17; if (location.hash.includes("near")) S.score = S.shown = S.target - 3; if (location.hash.includes("-od")) S.score = S.shown = Math.ceil(S.target * OVERDRIVE) - 5; if (location.hash.includes("-gold")) { S.parts.push("gold"); S.grid[H5(13)].hot = false; S.grid[H5(13)].wild = true; S.grid[H5(13)].ch = "?"; } if (location.hash.includes("hot")) { S.parts = ["carrier"]; S.grid.forEach(t => t.hot = false); S.grid[H5(6)].hot = true; S.grid[H5(9)].hot = false; } if (location.hash.includes("parts")) { S.parts = ["battery", "battery", "knob", "echo", "amp"]; S.words = maxWords(); S.retunes = maxRetunes(); } nightCard = 0; }, 300); }
 }
 boot();
 })();

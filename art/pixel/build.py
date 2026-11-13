@@ -11,7 +11,7 @@ Run from the repo root: python3 -I art/pixel/build.py"""
 import json, sys
 import numpy as np
 from scipy import ndimage
-from PIL import Image
+from PIL import Image, ImageDraw
 sys.path.insert(0, "art/pixel")
 import pix
 
@@ -158,6 +158,22 @@ def main():
     full = Image.fromarray(vi, "RGBA"); imgs["iconL_vowel"] = full; fa = np.asarray(full); hw, hh = max(1, fa.shape[1] // 2), max(1, fa.shape[0] // 2)
     vpal = np.unique(fa[..., :3][fa[..., 3] > 0].reshape(-1, 3), axis=0).astype(float)
     imgs["icon_vowel"] = Image.fromarray(pix.mode_shrink(fa[..., :3].astype(float), fa[..., 3] > 0, hw, hh, vpal), "RGBA")
+    # the Gold Key (rare part, 2026-11-13): src/gold_icon_fixed.png when it's drawn; until then a stand-in made here: a gold key cap
+    # with a dark question mark, so the game has something to show
+    import os
+    if os.path.exists(SRC + "gold_icon_fixed.png"):
+        gi = np.asarray(Image.open(SRC + "gold_icon_fixed.png").convert("RGBA")).copy(); mg = (gi[..., 0] > 170) & (gi[..., 1] < 110) & (gi[..., 2] > 170); gi[..., 3] = np.where(mg, 0, 255)
+        gold = Image.fromarray(gi, "RGBA")
+    else:
+        gold = Image.new("RGBA", (40, 46), (0, 0, 0, 0)); d = ImageDraw.Draw(gold)
+        d.rounded_rectangle((1, 1, 38, 44), 6, fill=(92, 56, 12, 255)); d.rounded_rectangle((3, 3, 36, 38), 5, fill=(214, 160, 40, 255)); d.rounded_rectangle((5, 5, 34, 20), 4, fill=(246, 206, 92, 255))
+        q = ["01110", "10001", "00001", "00010", "00100", "00000", "00100"]
+        for r, row in enumerate(q):
+            for c, on in enumerate(row):
+                if on == "1": d.rectangle((10 + c * 4, 7 + r * 4, 13 + c * 4, 10 + r * 4), fill=(60, 30, 6, 255))
+    imgs["iconL_gold"] = gold; fa = np.asarray(gold); hw, hh = max(1, fa.shape[1] // 2), max(1, fa.shape[0] // 2)
+    gpal = np.unique(fa[..., :3][fa[..., 3] > 0].reshape(-1, 3), axis=0).astype(float)
+    imgs["icon_gold"] = Image.fromarray(pix.mode_shrink(fa[..., :3].astype(float), fa[..., 3] > 0, hw, hh, gpal), "RGBA")
     # pack
     order = sorted(imgs, key=lambda n: -imgs[n].height); AW = 1400; x = y = sh = 0; rects = {}
     for n in order:

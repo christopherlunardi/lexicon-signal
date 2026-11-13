@@ -152,6 +152,17 @@ the same batch.
 - Targets 30 x 1.5^(n-1) rounded to 5 (30, 45, 70, 100, 150...). Balance is checked with a bot simulator (three skill levels on the
   real word list, letter draw and parts; kept in the session scratchpad as bal/sim.js and partval.js): with this curve a casual bot
   runs ~7 nights, a good one ~11, a strong one ~16. Rerun it after any change to scoring, parts or targets.
+- The red key (2026-11-13): always exactly one; a word through it x(2 + Red Heat copies). Red Lamp (id carrier, its red lamp icon)
+  now adds +5 signal per copy to a word through the red key. Rare parts (`rare:true`, gold frame and gold label RARE: ONCE ONLY,
+  offered one night in six, one in two after an overdrive, never twice): the Gold Key (id gold) puts a gold wildcard key "?" on
+  the glass (t.wild, ch "?", value 0); resolveWord() reads it as the first letter that makes a real word. It can also be the red key
+  (then it's any letter and doubles). Its icon is a stand-in drawn in build.py until src/gold_icon_fixed.png exists.
+  Tests: #test-word-gold, #test-shop-gold.
+- Play log (2026-11-13, Chris: study how people really play): every word (night, word, points, length, multiplier, red/gold used,
+  words and retunes left, seconds taken), failed tries, retunes, parts offered and picked, nights and how the run ended. Kept on
+  the device in localStorage lexsig.runs (last 40 runs); on the claude.ai link also saved to the artifact database, collection
+  "plays" (owner reads; read it with ArtifactData list). The web app and Android app have no database: pause menu SHARE PLAY LOG
+  sends the log through the phone's share sheet (or copies it). Use the logs to build human-like bots for the balance check.
 - Arcade scoring (Chris 2026-11-13: the goal is a high score, the run goes on until you lose): the run score is all signal beamed
   (S.total), shown in the dial's marquee and at game over; the best ten runs on this device are kept in localStorage lexsig.scores
   (HIGH SCORES on the title menu, HIGH SCORE n under it, NEW HIGH SCORE / NUMBER n ON YOUR BOARD at game over).
