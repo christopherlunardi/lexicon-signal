@@ -10,6 +10,9 @@ part; every run builds a different radio. One HTML page, played:
 
 Read the workflow in `.claude/skills/lexicon-signal-dev/SKILL.md` before changing anything, and keep it up to date.
 
+## Spelling
+- American English everywhere (color, center, gray): game text, code, comments, docs, commits.
+
 ## Originality rules (the repo is public)
 - Everything here is our own: names, art, words, sounds, music, code. Never copy another game's art, layouts, sounds, characters or names.
 - Never name another game, game company or game character anywhere in this repo: code, comments, docs, art prompts kept here, file names,

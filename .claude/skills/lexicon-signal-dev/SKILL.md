@@ -11,6 +11,7 @@ changes, update this skill (propose it again as an improvement) and the repo cop
 the same batch.
 
 ## Rules that always apply
+- American English everywhere: game text, code, comments, docs (color, center, gray...). Chris 2026-11-13.
 - Originality (the repo is public): never name another game, game company, game character or a copyrighted/living artist anywhere in
   the repo: code, comments, docs, file names, commit messages, issues, art prompts saved here. Describe what something does instead.
   Talking about references with Chris in chat is fine; none of it goes in the repo.
@@ -39,14 +40,14 @@ the same batch.
   are 9-sliced from the log box, the bar is made taller by repeating its plain middle rows. Narrow (4:3) screens tuck the window
   behind the radio's left edge (beacon still visible).
 - Part slots (2026-11-12): always 5, on every screen (a rule of play, PART_SLOTS). Copies of one part stack in its slot (x2, x3).
-  Wide screens: log | plates | 5 slots in one row. Narrow: log and plates on top, the 5 slots centred in a row under them.
+  Wide screens: log | plates | 5 slots in one row. Narrow: log and plates on top, the 5 slots centered in a row under them.
   All 5 full and a new kind of part picked: the swap screen (phase "swap") asks which part to take out (all its copies go);
   left/right + A, or tap the slot; B or a tap on the room goes back to the picker. Picker cards say "STACKS: XN" or
   "SLOTS FULL: SWAP ONE". `#test-swap` opens the swap screen.
 - The night's goal is a signal tube along the top of the bar, the full inner width (2026-11-12, Chris wanted a satisfying fill bar):
   a brass-capped glass channel (drawn in buildBar) with a row of light cells drawn on the fine layer (`drawTube`, `tubeGlows`).
   When a word reaches the tower, a glowing beam arcs from the beacon down to the tube's head and lands with a thump and sparks; only
-  then does the count run. Each cell pops on white and fades to its colour (deep amber to gold to white-hot along the tube) with a
+  then does the count run. Each cell pops on white and fades to its color (deep amber to gold to white-hot along the tube) with a
   click that climbs in pitch; a sheen runs along the lit part; a word that can be sent blinks the cells it would add; a full tube
   flashes, bursts and pulses white-hot, then the night clears. A new night drains it. `#test-word-fill` starts at 17 of 30.
 - Slots show what their part is doing (2026-11-12, Chris: parts need a logical visual). Spare Battery and Fine Tuning Knob carry a
@@ -58,21 +59,21 @@ the same batch.
 - The room is built the full screen height (the sideboard's drawer rows carry on down, fading into shadow). On the title screen the
   bar is away; it rises into place with a thud when a run starts (`barShow` moves `L.barY`).
 - Lit lamps are drawn on the fine layer (`drawLamp`) at the socket's true middle (`L.lamps`: half a pixel right of the marked
-  point, the fifth one more), radius 7 world px, so they sit dead centre (2026-11-12, Chris saw them off-centre).
+  point, the fifth one more), radius 7 world px, so they sit dead center (2026-11-12, Chris saw them off-center).
 - The window (2026-11-12): Chris picked design 7 of 9 (stained glass sun across the top, tall pane below), 141 wide x 233 tall.
   Its ChatGPT source had no recoverable pixel grid (fix_pixel_art standard found nonsense, neural redrew it), so it was shrunk with
-  our own k-centroid downscale (`art/pixel/kdown.py`): each pixel takes the main colour of what it covers, sharp and true. Use
+  our own k-centroid downscale (`art/pixel/kdown.py`): each pixel takes the main color of what it covers, sharp and true. Use
   that when fix_pixel_art can't find the grid. build.py marks the panes (WIN_PANES, the glass: emissive, rain falls there), the
   light spots (window_lights: lit building windows, the stained glass; the game blooms them) and keeps the beacon's pink halo by
   keying only magenta that touches the picture's edge. A sash bar (a copy of the transom) crosses the tall pane at SASH_Y so it
   reads as a window that opens; the panes split there (rain stays off the bar).
-  The night is option 2's teal-green (Chris): build.py recolours the panes' blue pixels by brightness rank to option 2's colours,
+  The night is option 2's teal-green (Chris): build.py recolors the panes' blue pixels by brightness rank to option 2's colors,
   sampled from windows9.png; the rain is tinted to match.
 - Rain (drawRain): faint slanted streaks and drops sliding down the panes in fits and starts, clipped to the panes and kept off
   the radio on narrow screens. The room's sound is rain (a soft filtered-noise wash, fine hiss, the odd drip); there is no constant
   static hiss any more (static is only a sound effect, e.g. retune).
 - Every part's effect shows where it acts (Chris 2026-11-12: "no visual indicator that I have another word"). A Spare Battery adds
-  a small light on the radio's bottom lip under the lamp row (one per battery, centred), separate from the tuning lights; spare
+  a small light on the radio's bottom lip under the lamp row (one per battery, centered), separate from the tuning lights; spare
   words are spent first. A used lamp or light flares white and fades with a click. Retunes are small lamps on the base lip under the right (tuning) knob, one per retune a night, lit while
   unused (a Fine Tuning Knob adds one). Slot lamps still show copies too. Any new part gets a visual like this in the same batch.
 - The radio's round meter (top right) was painted out in build.py (a mirror of the cabinet's plain left side, plus plain wood
@@ -81,7 +82,7 @@ the same batch.
 - The radio is radio5 (482 x 274 true size, glass 229 x 152): ChatGPT redraw of the old radio with a bigger glass, fixed with
   fix_pixel_art (standard) and its rows evened out (SQUARE 3.236). The old 4x4 radio source stays in src/ for reference. The title's
   painted glass is still the 4x4 picture, kept in proportion inside the bigger glass for now.
-- Bar contents always sit inside the bar's inner gold border, centred on one line with one equal gap.
+- Bar contents always sit inside the bar's inner gold border, centered on one line with one equal gap.
 - Part icons (2026-11-12, Chris found the old ones not good enough): build.py cuts each icon as the biggest blob in its sheet cell
   (no neighbour bits or specks). Slots draw the full icon on the fine layer at one art pixel per fine pixel (full detail, no shrink),
   lit softly from behind; never make the slots bigger (Chris). Stackable parts show a lamp per copy instead of an "x2".
@@ -173,10 +174,20 @@ the same batch.
 - Title menu (MENU_STYLE 6, Chris's art src/title_console.png cut to tpanel / tplate / tplate_lit): the wooden console under the
   radio with a brass plate per option (START, HOW TO PLAY, HIGH SCORES), the chosen one pressed in and lit; slice3Cv stretches a
   sprite from its ends and repeated middle.
-- Night report (2026-11-13, phase "report", drawReport): after a night and before the part picker, a parchment card lists every word
-  sent (S.nw: word, points, what boosted it, e.g. RED x2, AMP +1, OWL x3), the night's score against its target (OVERDRIVE in red)
-  and the run score counting up from where the night started. A or a tap skips ahead, then goes on to the parts. #test-report.
-- The run score is always on show in a small lit counter at the room's bottom-left corner above the bar (drawScoreBox).
+- Night report (2026-11-13, redone after Chris: text crowded the gold frames and the score wasn't the star; phase "report",
+  drawReport, reportTimes): a parchment sheet with NIGHT N CLEARED on a brass nameplate riding its top edge, OVERDRIVE! in red (or
+  SIGNAL LOCKED IN) under it, a ruled ledger (WORD | PARTS chips like RED x2, AMP +1 | SIGNAL column; each row drops in with a
+  climbing tick and its points pop; more words than fit split it into two columns), NIGHT TOTAL against the target, then the night's
+  points fly up ("+52") into the RUN SCORE: a dark display with a big lit dot-matrix number (glyph kind "big", every dot place faintly
+  there) that counts up with climbing ticks and jumps when done, with HIGH n / NEW HIGH SCORE! beside its label. A plate on the bottom
+  edge says TALLYING... then PRESS A: PICK A PART. A or a tap skips to the end, then goes on. #test-report, #test-report-long (8 words).
+- Sheets and margins (2026-11-13, Chris: "things are always too close to the gold borders"): text never sits nearer a frame than
+  INSET (logbox 22 world px x, 18 y: the gold frame is 8 deep and the corner rivets reach 12; plate 16 x, 6 y). Parchment screens use
+  sheet() (logbox + top nameplate + optional bottom prompt plate, body kept inside INSET) and edgePlate(); the run score shows in
+  scoreDisplay(). The report, DEAD AIR, HIGH SCORES and PAUSED are built this way. Any new panel follows the same rule.
+- The run score is always on show in a small lit counter at the room's bottom-left corner above the bar (drawScoreBox), except while
+  the report or DEAD AIR shows it big.
+- `#test-...` pages expose window.__lex(js) to run code in the game's scope, for screenshots of any screen.
 - The melter (2026-11-13, art iconL_melter / iconL_molten): once all five slots are full the picker shows a MELT THEM plate under the
   cases (down to reach it, or tap; meltPlate, kept above the bar). Choosing it opens the melter screen (phase "melt", drawMelt): the
   parts on offer arc into its mouth one by one, a lamp lights (S.melt, kept all run), then the next night. At five lamps it pours a
@@ -212,16 +223,16 @@ the same batch.
   pills. Select alone does nothing (held 1.5 s: dev panel). The pause menu (pauseItems) is RESUME, SOUND, NEW RUN,
   QUIT TO TITLE, and in the app CHECK FOR UPDATE / LOAD NEW BUILD, UPDATE APP (when launcher.json is newer) and EXIT GAME; anything
   that throws the run away asks twice. The Android launcher maps BUTTON_X to "x" and BUTTON_Y to "y".
-  Colours on Android: the launcher uses a 32-bit window and turns off WebView dark recolouring (forceDark / algorithmic darkening,
+  Colors on Android: the launcher uses a 32-bit window and turns off WebView dark recoloring (forceDark / algorithmic darkening,
   values-v29 forceDarkAllowed=false); the screen canvas is opaque ({alpha:false}).
 - Render scale (2026-11-12, after Chris's side-by-side video of the Pocket 2S lagging behind his phone): everything draws in fine
   units (CVW x CVH = W*FINE x H*FINE; never use cv.width/cv.height for layout). When the screen shows the canvas at under .62 of its
   size in device pixels, RS = .5: the canvas holds half the pixels each way and draw() starts with ctx.setTransform(RS,...) (the title
   close-up's own setTransform multiplies by RS). ctx.imageSmoothingEnabled is forced on while RS < 1 so halved text never drops rows.
   The pause menu's foot shows FPS, draw ms, FULL/HALF size and the canvas size: ask Chris to read it off the device.
-- Screen colour (pause menu, saved in lexsig.colour): NORMAL / SOFT / SOFTER, a CSS filter on the canvas (less saturation, a touch
+- Screen color (pause menu, saved in lexsig.colour): NORMAL / SOFT / SOFTER, a CSS filter on the canvas (less saturation, a touch
   darker, hue nudged from red toward orange). The 2S screen shows the warm browns far redder and stronger than a phone; the page
-  itself sends the same colours, so this is a per-screen setting, not a fix in the art.
+  itself sends the same colors, so this is a per-screen setting, not a fix in the art.
 - Fonts: Chris doesn't want outside display fonts on the game screen (2026-11-12: "big blocky text... doesn't match anything").
   The pause menu is a logbox parchment panel in the game's own "key" lettering; the start prompt is back to the dial's "dot"
   lettering. The smooth fonts (HOWF) stay only on the How to Play cards, which he liked.
@@ -257,7 +268,7 @@ the same batch.
   spot that doesn't matter for what's shown (HOW_AT: the wall left of the radio; below the tower light when the beam matters; on
   phones, the bar under the tube, or between the picker and slots for parts), and what it's about is ringed with a moving dashed
   glow (howTarget). NEVER shrink the game or cover what's being shown (Chris). Its words are smooth type at the page's real size (title Alfa Slab One, text Special Elite; Chris said the
-  big pixel letters looked terrible and off-centre), button chips with centred labels. A/right next, B/left back (B on the first: title), tap right/left half. The demo never clears the night.
+  big pixel letters looked terrible and off-center), button chips with centered labels. A/right next, B/left back (B on the first: title), tap right/left half. The demo never clears the night.
 - ALWAYS keep How to Play true to the game (Chris): any change to a rule, number, control, part or what something looks like
   updates the card text and its demo script in the same batch, along with the dial TIPS.
 
@@ -309,7 +320,7 @@ the same batch.
 - Keep the Android app (android/, dist/) building and working for now. Ask Chris before retiring it.
 - Build: `python3 -I tools/web.py`, always after `tools/release.py` (every content change needs a new build number: the service
   worker's cache is named lexsig-BUILD and an unchanged number keeps serving the old files). It writes `web/`: index.html wrapped in
-  a full head (manifest link, theme colour, icons, the fonts from web/fonts instead of the internet, window.LEX_BUILD, pwa.js at the
+  a full head (manifest link, theme color, icons, the fonts from web/fonts instead of the internet, window.LEX_BUILD, pwa.js at the
   end), words.js, studio.js, the art (atlas + title glass), icons (192, 512 and a maskable 512, made from the radio sprite with LS
   in dial dots), manifest.webmanifest, version.json, pwa.js and sw.js (their sources are tools/web/pwa.js and tools/web/sw.js), and
   .nojekyll. Never edit web/ by hand. Commit web/; `.github/workflows/pages.yml` deploys it on every push that changes web/.
@@ -386,7 +397,7 @@ the same batch.
 
 ## Art prompts (ChatGPT)
 - The Vowel Antenna icon was redrawn on its own (src/vowel_icon.png, k-centroid shrunk to vowel_icon_fixed.png, 35x62) and swapped
-  in after the palette is taken in build.py, so the interface colours don't shift. Do the same for any other single redrawn icon.
+  in after the palette is taken in build.py, so the interface colors don't shift. Do the same for any other single redrawn icon.
 - One layer at a time, the look target attached for style. Pixel-art wording: low-resolution late-1990s computer game look, crisp
   hard-edged square pixels, no anti-aliasing, limited palette, small ordered dithering. Lit flatly and evenly (the game adds light).
 - Solid flat pure magenta (#FF00FF) background, never "transparent" (it comes back as a painted checkerboard).
