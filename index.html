@@ -1870,7 +1870,7 @@ window.addEventListener("resize", layout); if (window.ResizeObserver) new Resize
 
 /* ================= sound: Web Audio synth, 84 BPM night pulse ================= */
 const Sound = (() => {
-  let ac = null, master, mus, sfx, nb, stat, padF, playing = false, nextBeat = 0, beatN = 0, muted = false, lastTick = 0, lastType = 0, lastCell = 0, rainOn = false;
+  let ac = null, lowEnd = false, master, mus, sfx, nb, padF, playing = false, nextBeat = 0, beatN = 0, muted = false, lastTick = 0, lastType = 0, lastCell = 0, rainOn = false;
   const m2f = (m) => 440 * Math.pow(2, (m - 69) / 12), CH = [[57, 60, 64, 67], [53, 57, 60, 64], [48, 55, 59, 64], [55, 59, 62, 64]], RT = [45, 41, 36, 43], PENT = [69, 72, 74, 76, 79, 81, 84, 86, 88, 91, 93, 96, 98];
   // iPhone: the silent switch mutes web audio. Inside the press that starts the sound, say the page plays media (iOS 17+) and loop
   // a second of real silence in an audio element, so iOS treats the page like a music player and plays it (the studio's other games
@@ -1883,12 +1883,14 @@ const Sound = (() => {
     if (!window.__lexSilent) try { const a = document.createElement("audio"); a.setAttribute("playsinline", ""); a.setAttribute("webkit-playsinline", ""); a.loop = true; a.src = silentWav(); document.body.appendChild(a);
       const pr = a.play(); if (pr && pr.catch) pr.catch(() => { window.__lexSilent = null; }); window.__lexSilent = a; } catch (e) {}
   }
-  function ensure() { unlock(); if (ac) { if (ac.state === "suspended" || ac.state === "interrupted") ac.resume(); return; } try { ac = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { return; }
+  function ensure() { unlock(); if (ac) { if (ac.state === "suspended" || ac.state === "interrupted") ac.resume(); return; } lowEnd = document.body.classList.contains("inapp");   // the handheld app: bigger audio buffers so a busy frame can't starve the sound (crackling)
+    try { const A = window.AudioContext || window.webkitAudioContext; try { ac = new A({ latencyHint: lowEnd ? "playback" : "interactive" }); } catch (e) { ac = new A(); } } catch (e) { return; }
     if (ac.state !== "running") ac.resume();
-    master = ac.createGain(); master.gain.value = .8; master.connect(ac.destination); mus = ac.createGain(); mus.gain.value = .5; mus.connect(master); sfx = ac.createGain(); sfx.gain.value = .7; sfx.connect(master);
+    master = ac.createGain(); master.gain.value = .8;
+    // a gentle limiter at the end: several sounds landing together used to add up past full scale and crackle
+    { const lim = ac.createDynamicsCompressor(); lim.threshold.value = -6; lim.knee.value = 6; lim.ratio.value = 12; lim.attack.value = .003; lim.release.value = .15; master.connect(lim); lim.connect(ac.destination); } mus = ac.createGain(); mus.gain.value = .5; mus.connect(master); sfx = ac.createGain(); sfx.gain.value = .7; sfx.connect(master);
     nb = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate); const d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
-    const n = ac.createBufferSource(); n.buffer = nb; n.loop = true; const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.frequency.value = 2200; bp.Q.value = .5;
-    stat = ac.createGain(); stat.gain.value = 0; n.connect(bp); bp.connect(stat); stat.connect(master); n.start();
+    // (the old constant static ran a noise source into a silent gain all game long; it's gone, it only cost the sound thread time)
     padF = ac.createBiquadFilter(); padF.type = "lowpass"; padF.frequency.value = 700; padF.Q.value = 2; padF.connect(mus); }
   function env(g, t, a, p, d) { g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(p, t + a); g.gain.exponentialRampToValueAtTime(.0001, t + a + d); }
   function osc(type, f, t, a, p, d, dest, slide) { const o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + a + d); env(g, t, a, p, d); o.connect(g); g.connect(dest || sfx); o.start(t); o.stop(t + a + d + .05); }
@@ -1897,8 +1899,8 @@ const Sound = (() => {
     while (nextBeat < ac.currentTime + .25) { const t = nextBeat, inBar = beatN % 4, bar = (beatN / 4) | 0, ci = ((bar / 2) | 0) % 4;
       osc("sine", 120, t, .004, .5, .32, mus, 38); noise(t + beat / 2, .05, .045, "highpass", 7000, .7, mus); if (inBar === 2) noise(t, .12, .07, "bandpass", 1800, 1.2, mus);
       if (inBar === 0 || inBar === 2) osc("triangle", m2f(RT[ci]), t, .02, .26, beat * 1.6, mus);
-      if (inBar === 0 && bar % 2 === 0) CH[ci].forEach(m => [-6, 6].forEach(det => { const o = ac.createOscillator(), g = ac.createGain(); o.type = "sawtooth"; o.frequency.value = m2f(m); o.detune.value = det;
-        g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.032, t + 1.2); g.gain.setValueAtTime(.032, t + beat * 7); g.gain.exponentialRampToValueAtTime(.0001, t + beat * 8.4); o.connect(g); g.connect(padF); o.start(t); o.stop(t + beat * 8.5); }));
+      if (inBar === 0 && bar % 2 === 0) CH[ci].forEach(m => (lowEnd ? [0] : [-6, 6]).forEach(det => { const o = ac.createOscillator(), g = ac.createGain(); o.type = "sawtooth"; o.frequency.value = m2f(m); o.detune.value = det;
+        g.gain.setValueAtTime(.0001, t); const pk = lowEnd ? .045 : .032; g.gain.exponentialRampToValueAtTime(pk, t + 1.2); g.gain.setValueAtTime(pk, t + beat * 7); g.gain.exponentialRampToValueAtTime(.0001, t + beat * 8.4); o.connect(g); g.connect(padF); o.start(t); o.stop(t + beat * 8.5); }));
       nextBeat += beat; beatN++; }
     if (S && S.target) padF.frequency.setTargetAtTime(600 + Math.min(1, S.score / S.target) * 1800, ac.currentTime, .4); }
   // rain on the window: a soft wash of filtered noise, a fine hiss on top, and now and then a drip on the sill

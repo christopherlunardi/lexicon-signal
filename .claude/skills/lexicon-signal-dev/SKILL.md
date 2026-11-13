@@ -162,6 +162,9 @@ the same batch.
 - Screen colour (pause menu, saved in lexsig.colour): NORMAL / SOFT / SOFTER, a CSS filter on the canvas (less saturation, a touch
   darker, hue nudged from red toward orange). The 2S screen shows the warm browns far redder and stronger than a phone; the page
   itself sends the same colours, so this is a per-screen setting, not a fix in the art.
+- Sound on the handheld (Chris heard crackling): in the app the AudioContext uses latencyHint "playback" (bigger buffers), the music
+  pads use one oscillator per note instead of a detuned pair, and a limiter (DynamicsCompressor) sits after master so stacked sounds
+  can't clip. Keep idle sources off the sound thread: nothing runs into a silent gain.
   Also
   touch/mouse drag or tap. Gamepad standard mapping, bottom face = A.
 - Keyboard (Chris 2026-11-12, after a typing experiment he rejected: the keyboard does NOT type words): WASD/arrows move, Space or
