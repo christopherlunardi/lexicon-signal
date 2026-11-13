@@ -178,7 +178,7 @@ def main():
     for r in (0, 1, 2, lh_ - 3, lh_ - 2, lh_ - 1):
         seg = lb[r, 14:lw_ - 14]; op = seg[..., 3] > 0
         if op.sum(): lb[r, 14:lw_ - 14, :3] = np.median(seg[op][:, :3], axis=0).astype(np.uint8); lb[r, 14:lw_ - 14, 3] = 255 if op.mean() > .5 else 0
-    lb[2, 14:lw_ - 14] = lb[3, 14:lw_ - 14]   # the line between the wood and the brass takes the brass under it (Chris: not a dark band)
+    lb[0, 14:lw_ - 14] = lb[1, 14:lw_ - 14]   # the thin darker wood line on top takes the lighter wood under it (Chris 2026-11-13)
     lb[lh_ - 1, 14:lw_ - 14, 3] = 0           # (the very bottom row was a leftover purple edge from the keyed background)
     imgs["logbox"] = Image.fromarray(lb, "RGBA")
     imgs["plate"] = Image.fromarray(pa, "RGBA"); imgs["plate_bare"] = imgs["plate"].copy()   # (bare: for short plates, which get one rivet each end)
