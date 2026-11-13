@@ -143,7 +143,7 @@
      "id": "r1",
      "status": "open",
      "question": "Which screen finish ties the art together best?",
-     "found": "An overlay drawn over the finished frame, over everything including menus. Stills show play and the part picker at true size, plus a close-up of the radio. Options 1 and 2 cost almost nothing; 3, 4 and 5 use the haze and cost a few milliseconds a frame (to be checked on the Retroid before shipping). Play opens the game with that finish. Separately, the radio and interface art are now shrunk straight from the original pictures, so their pixels are even (live in build 51).",
+     "found": "Now as videos (Chris: the finishes have to be seen moving): each one shows a word sent and the night clearing, full screen and a close-up at true size. 1 and 2 cost almost nothing (cached pictures laid over each frame); 3, 4 and 5 use the haze, a shrunk copy of the whole frame each frame, so they cost more and would need checking on the Retroid.",
      "options": [
       {
        "id": "0",
@@ -151,12 +151,12 @@
        "note": "No overlay, for comparison.",
        "images": [
         {
-         "src": "img/finish-r1/finish-0.jpg",
-         "label": "Play"
+         "src": "img/finish-r1/finish-0.mp4",
+         "label": "Play (video)"
         },
         {
-         "src": "img/finish-r1/finish-0-close.jpg",
-         "label": "Close-up"
+         "src": "img/finish-r1/finish-0-close.mp4",
+         "label": "Close-up at true size (video)"
         },
         {
          "src": "img/finish-r1/finish-0-shop.jpg",
@@ -171,12 +171,12 @@
        "note": "A soft vignette darkens the screen's edges and a light warm tint pulls every piece toward the same lamplight. Two cached pictures a frame: about the cheapest option.",
        "images": [
         {
-         "src": "img/finish-r1/finish-1.jpg",
-         "label": "Play"
+         "src": "img/finish-r1/finish-1.mp4",
+         "label": "Play (video)"
         },
         {
-         "src": "img/finish-r1/finish-1-close.jpg",
-         "label": "Close-up"
+         "src": "img/finish-r1/finish-1-close.mp4",
+         "label": "Close-up at true size (video)"
         },
         {
          "src": "img/finish-r1/finish-1-shop.jpg",
@@ -191,12 +191,12 @@
        "note": "The lamp-lit room plus a faint moving film grain over everything, so painted art, pixel art and lettering all share the same texture. Still cheap: four small noise tiles, reused.",
        "images": [
         {
-         "src": "img/finish-r1/finish-2.jpg",
-         "label": "Play"
+         "src": "img/finish-r1/finish-2.mp4",
+         "label": "Play (video)"
         },
         {
-         "src": "img/finish-r1/finish-2-close.jpg",
-         "label": "Close-up"
+         "src": "img/finish-r1/finish-2-close.mp4",
+         "label": "Close-up at true size (video)"
         },
         {
          "src": "img/finish-r1/finish-2-shop.jpg",
@@ -211,12 +211,12 @@
        "note": "A soft glow of the whole picture is laid back over it, so light spills a little past edges and the lit keys, lamps and window bloom into their surroundings. The most 'tied together' but costs the most: one shrunk copy of the frame each frame.",
        "images": [
         {
-         "src": "img/finish-r1/finish-3.jpg",
-         "label": "Play"
+         "src": "img/finish-r1/finish-3.mp4",
+         "label": "Play (video)"
         },
         {
-         "src": "img/finish-r1/finish-3-close.jpg",
-         "label": "Close-up"
+         "src": "img/finish-r1/finish-3-close.mp4",
+         "label": "Close-up at true size (video)"
         },
         {
          "src": "img/finish-r1/finish-3-shop.jpg",
@@ -231,12 +231,12 @@
        "note": "Fine scanlines, a little haze and a vignette: as if the whole room were on an old monitor. Brings back a light screen look we had dropped before.",
        "images": [
         {
-         "src": "img/finish-r1/finish-4.jpg",
-         "label": "Play"
+         "src": "img/finish-r1/finish-4.mp4",
+         "label": "Play (video)"
         },
         {
-         "src": "img/finish-r1/finish-4-close.jpg",
-         "label": "Close-up"
+         "src": "img/finish-r1/finish-4-close.mp4",
+         "label": "Close-up at true size (video)"
         },
         {
          "src": "img/finish-r1/finish-4-shop.jpg",
@@ -251,12 +251,12 @@
        "note": "Vignette, warm tint, faint grain, light haze and half-strength scanlines together, each turned down.",
        "images": [
         {
-         "src": "img/finish-r1/finish-5.jpg",
-         "label": "Play"
+         "src": "img/finish-r1/finish-5.mp4",
+         "label": "Play (video)"
         },
         {
-         "src": "img/finish-r1/finish-5-close.jpg",
-         "label": "Close-up"
+         "src": "img/finish-r1/finish-5-close.mp4",
+         "label": "Close-up at true size (video)"
         },
         {
          "src": "img/finish-r1/finish-5-shop.jpg",
