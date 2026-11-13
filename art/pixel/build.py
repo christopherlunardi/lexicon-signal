@@ -187,7 +187,7 @@ def main():
     # its rivets sit a pixel inside the brass)
     RIVETS = {"plate": [(8, 8), (93, 8), (8, 17), (93, 17)], "logbox": [(8, 7), (184, 7), (8, 71), (184, 71)],
               "slot": [(6, 6), (52, 6), (6, 56), (52, 56)], "bar_left": [(11, 13), (11, 81)], "bar_right": [(26, 12), (26, 81)],
-              "tplate": [(7, 7), (90, 7), (7, 25), (90, 25)], "tplate_lit": [(7, 7), (90, 7), (7, 25), (90, 25)]}
+              "tplate": [(9, 9), (88, 9), (9, 24), (88, 24)], "tplate_lit": [(9, 9), (88, 9), (9, 24), (88, 24)]}
     # the Vowel Antenna was redrawn on its own (2026-11-13, Chris: the old one was crooked and too skinny): vowel_icon.png is the
     # ChatGPT picture, vowel_icon_fixed.png its k-centroid downscale (kdown.py) to 35x62; magenta is keyed out here (after the palette is taken, so the interface colours stay as they were)
     vi = np.asarray(Image.open(SRC + "vowel_icon_fixed.png").convert("RGBA")).copy(); mg = (vi[..., 0] > 170) & (vi[..., 1] < 110) & (vi[..., 2] > 170); vi[..., 3] = np.where(mg, 0, 255)
