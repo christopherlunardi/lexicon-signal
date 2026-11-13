@@ -171,10 +171,19 @@ def main():
         for r in list(range(4, 13)) + list(range(16, 23)): pa[r, c0:c1] = pa[13, c0:c1]
     # the face's bottom edge: a dark line like the one under the top rim, so the bottom rim doesn't run into the face (Chris 2026-11-13)
     pa[22, 3:pw_ - 3] = pa[3, 3:pw_ - 3]
+    # and down each side, so the side rims read apart from the face too
+    dk = pa[3, pw_ // 2].copy(); pa[3:23, 2] = dk; pa[3:23, pw_ - 3] = dk
+    # the log box's outer edge, top and bottom: clean even bands instead of speckled pixels (Chris: it looked hairy)
+    lb = np.asarray(imgs["logbox"]).copy(); lw_, lh_ = lb.shape[1], lb.shape[0]
+    for r in (0, 1, 2, lh_ - 3, lh_ - 2, lh_ - 1):
+        seg = lb[r, 14:lw_ - 14]; op = seg[..., 3] > 0
+        if op.sum(): lb[r, 14:lw_ - 14, :3] = np.median(seg[op][:, :3], axis=0).astype(np.uint8); lb[r, 14:lw_ - 14, 3] = 255 if op.mean() > .5 else 0
+    imgs["logbox"] = Image.fromarray(lb, "RGBA")
     imgs["plate"] = Image.fromarray(pa, "RGBA"); imgs["plate_bare"] = imgs["plate"].copy()   # (bare: for short plates, which get one rivet each end)
-    RIVETS = {"plate": [(6, 7), (96, 7), (6, 19), (96, 19)], "logbox": [(8, 7), (184, 7), (8, 71), (184, 71)],
-              "slot": [(5, 5), (52, 5), (5, 56), (52, 56)], "bar_left": [(11, 13), (11, 81)], "bar_right": [(26, 12), (26, 81)],
-              "tplate": [(7, 7), (90, 7), (7, 25), (90, 25)], "tplate_lit": [(7, 7), (90, 7), (7, 25), (90, 25)]}
+    # (each a pixel in from the frame's inner corner, so the rivet sits inside the brass with a little room, Chris 2026-11-13)
+    RIVETS = {"plate": [(7, 8), (95, 8), (7, 18), (95, 18)], "logbox": [(9, 8), (183, 8), (9, 70), (183, 70)],
+              "slot": [(6, 6), (51, 6), (6, 55), (51, 55)], "bar_left": [(12, 14), (12, 80)], "bar_right": [(25, 13), (25, 80)],
+              "tplate": [(8, 8), (89, 8), (8, 24), (89, 24)], "tplate_lit": [(8, 8), (89, 8), (8, 24), (89, 24)]}
     # the Vowel Antenna was redrawn on its own (2026-11-13, Chris: the old one was crooked and too skinny): vowel_icon.png is the
     # ChatGPT picture, vowel_icon_fixed.png its k-centroid downscale (kdown.py) to 35x62; magenta is keyed out here (after the palette is taken, so the interface colours stay as they were)
     vi = np.asarray(Image.open(SRC + "vowel_icon_fixed.png").convert("RGBA")).copy(); mg = (vi[..., 0] > 170) & (vi[..., 1] < 110) & (vi[..., 2] > 170); vi[..., 3] = np.where(mg, 0, 255)
