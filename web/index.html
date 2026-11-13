@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 79;</script><script>
+<script>window.LEX_BUILD = 80;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -443,7 +443,7 @@ const PARTS = [
   { id:"coil",    name:"Long Wave Coil",    desc:"Words of 5+ letters x2 (x3, x4...)." },
   { id:"short",   name:"Shortwave Crystal", desc:"Words of 3 or 4 letters +6 signal." },
   { id:"echo",    name:"Echo Tube",         desc:"First word each night x2 (more words)." },
-  { id:"owl",     name:"Night Owl Clock",   desc:"Last word each night x3 (x4, x5...)." },
+  { id:"owl",     name:"Night Owl Clock",   desc:"Last word each night x3 (x4...), even if left over." },
   { id:"treble",  name:"Treble Slider",     desc:"+3 signal per letter worth 3+." },
   { id:"vowel",   name:"Vowel Antenna",     desc:"Vowels +1 signal each." },
   { id:"carrier", name:"Red Lamp",          desc:"The red key adds +5 signal." },
@@ -649,8 +649,13 @@ const REPORT = { t: 0 };
 // retune not used, rounded to 5. Night 1: 10 a word, 5 a retune; night 5: 40 and 25.
 const round5 = (v) => Math.max(5, Math.round(v / 5) * 5);
 function nightBonus() { const wl = HOW.on ? 0 : Math.max(0, S.words), rl = HOW.on ? 0 : Math.max(0, S.retunes), wv = round5(S.target / 4), rv = round5(S.target / 6);
-  const rows = []; if (wl) rows.push({ k: "WORDS LEFT", n: wl, v: wv }); if (rl) rows.push({ k: rl === 1 ? "RETUNE LEFT" : "RETUNES LEFT", n: rl, v: rv });
-  return { rows, sum: wl * wv + rl * rv }; }
+  const rows = [], owl = has("owl"), om = 2 + owl;
+  // the Night Owl Clock pays on the night's last word even when you clear the night before reaching it: that leftover lamp is
+  // the last word, so it gets its own row (the last lamp to go dark) worth the word bonus times the clock (Chris 2026-11-13)
+  if (wl && owl) { if (wl > 1) rows.push({ k: "WORDS LEFT", n: wl - 1, v: wv }); rows.push({ k: "LAST WORD: OWL X" + om, n: 1, v: wv * om, note: `${wv} X${om}` }); }
+  else if (wl) rows.push({ k: "WORDS LEFT", n: wl, v: wv });
+  if (rl) rows.push({ k: rl === 1 ? "RETUNE LEFT" : "RETUNES LEFT", n: rl, v: rv });
+  return { rows, sum: rows.reduce((a, r) => a + r.n * r.v, 0) }; }
 const fmtNum = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 // the safe area inside a framed panel, in world px from its edge: text never goes nearer the frame than this.
 // logbox: the gold frame is 8 px deep and its corner rivets reach 12, so 22 leaves clear parchment; plate: rivets reach 11 at the sides.
@@ -796,7 +801,7 @@ function drawReport() {
       ctx.fillStyle = on ? "#ffb040" : `rgba(255,240,200,${flare})`; ctx.beginPath(); ctx.arc(lxp, lyp, lr, 0, 7); ctx.fill(); ctx.fillStyle = "rgba(255,248,220,.85)"; ctx.beginPath(); ctx.arc(lxp - lr * .3, lyp - lr * .35, lr * .35, 0, 7); ctx.fill(); }
     else { ctx.fillStyle = "#3a2410"; ctx.beginPath(); ctx.arc(lxp, lyp, lr, 0, 7); ctx.fill(); } };
   (S.bonus ? S.bonus.rows : []).forEach((r, ri) => { const y0 = sgY0 + (ri + 1) * lh, yy = my(y0); if (t < T.tot) return;
-    RT.lab(r.k, in0, yy, "l", C.ink); RT.lab(`${r.v} EACH`, in1, yy, "r", C.inkSoft);
+    RT.lab(r.k, in0, yy, "l", C.ink); RT.lab(r.note || `${r.v} EACH`, in1, yy, "r", C.inkSoft);
     const step = lr * 2 + 12, lx0 = mid - Math.round((r.n - 1) * step / 2);
     for (let k = 0; k < r.n; k++, li++) { const d = T.ld[li], on = t < d, age = t - d, px2 = lx0 + k * step;
       lamp(px2, yy, on, on ? 0 : Math.max(0, 1 - age / 14));
@@ -2004,6 +2009,7 @@ const TIPS = [
   "A PART'S SLOT LIGHTS UP WHEN IT WILL BOOST YOUR WORD",
   "A SPARE BATTERY ADDS A LIGHT UNDER THE LAMPS: AN EXTRA WORD EVERY NIGHT",
   "THE NIGHT OWL CLOCK TRIPLES YOUR LAST WORD OF THE NIGHT, MORE WITH COPIES",
+  "CLEAR A NIGHT EARLY WITH THE NIGHT OWL CLOCK AND ITS LAST WORD LAMP STILL PAYS TRIPLE",
   "THE ECHO TUBE DOUBLES YOUR FIRST WORD OF THE NIGHT",
   "THE RED KEY DOUBLES ANY WORD THAT USES IT",
   "A RED LAMP MAKES THE RED KEY ADD 5 SIGNAL",
