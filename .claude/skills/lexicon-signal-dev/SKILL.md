@@ -222,6 +222,10 @@ the same batch.
   feedback read/write owner, plus user; omit them on republish.
 - Read his answers: ArtifactData list on the Workshop, collection `feedback`, doc `<topic>-<round>` {pick, notes{id:text}, general,
   submitted}. Act on submitted ones, then mark the round decided (chosen) in workshop.json and republish.
+- menu-r1 (open, 2026-11-12): five title-menu looks under the radio, MENU_STYLE 1..5 (bar and parchment, brass plates, station
+  buttons, dial windows, parchment tags), `#menu-N`; each option its own container on dark floorboards (Chris: no bare black).
+- Speed (2026-11-12, Chris: the app lagged): the game steps at a fixed 60 a second (loop), glows are cached sprites (bloomSpr),
+  resting keys draw from two cached layers (dotKeyCache), the dial's dot field is cached; keep per-frame drawing lean.
 - carrier-r1 (decided: 5, red scan, now the game's look): five looks for the Carrier Lamp's red key in dot glass, HOT_STYLE 1..5 (red letter, red
   backlight, ember fill, pilot lamp, red scan), `#hot-N` opens one (`#test-word-hot-N` fits the carrier). No red outline (Chris).
   A picked red key fills red in every look.

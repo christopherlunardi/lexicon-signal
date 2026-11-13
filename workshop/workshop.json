@@ -1,6 +1,100 @@
 {
  "topics": [
   {
+   "id": "menu",
+   "title": "Title menu",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "How should the title menu look under the radio?",
+     "found": "Five ways, four of them with each option in its own container on dark floorboards (no bare black). Pictures for a computer and a phone; play links open the title with that look (left/right or up/down to choose, A to pick).",
+     "options": [
+      {
+       "id": "1",
+       "title": "Bar and parchment (now)",
+       "note": "What you didn't like, for comparison: the game's wood-and-brass bar across the bottom with one parchment holding the list.",
+       "images": [
+        {
+         "src": "img/menu-r1/1-desk.png",
+         "label": "Computer"
+        },
+        {
+         "src": "img/menu-r1/1-phone.png",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#title-6-menu-1"
+      },
+      {
+       "id": "2",
+       "title": "Brass plates",
+       "note": "Dark floorboards under the sideboard, each option on its own brass plate side by side. The chosen one is lit from behind with a red arrow; the other sits in shadow.",
+       "images": [
+        {
+         "src": "img/menu-r1/2-desk.png",
+         "label": "Computer"
+        },
+        {
+         "src": "img/menu-r1/2-phone.png",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#title-6-menu-2"
+      },
+      {
+       "id": "3",
+       "title": "Station buttons",
+       "note": "Each option is a big cream push button, like the preset keys on an old radio. The chosen one is pressed in and glows amber.",
+       "images": [
+        {
+         "src": "img/menu-r1/3-desk.png",
+         "label": "Computer"
+        },
+        {
+         "src": "img/menu-r1/3-phone.png",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#title-6-menu-3"
+      },
+      {
+       "id": "4",
+       "title": "Dial windows",
+       "note": "Each option is its own little lit display in a brass rim, lettered in the radio's dot-matrix lights. The chosen one burns bright; the other is dim.",
+       "images": [
+        {
+         "src": "img/menu-r1/4-desk.png",
+         "label": "Computer"
+        },
+        {
+         "src": "img/menu-r1/4-phone.png",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#title-6-menu-4"
+      },
+      {
+       "id": "5",
+       "title": "Parchment tags",
+       "note": "Each option is a parchment tag hanging from the radio's base on brass chains. The chosen one is lit and sways gently.",
+       "images": [
+        {
+         "src": "img/menu-r1/5-desk.png",
+         "label": "Computer"
+        },
+        {
+         "src": "img/menu-r1/5-phone.png",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#title-6-menu-5"
+      }
+     ]
+    }
+   ]
+  },
+  {
    "id": "carrier",
    "title": "Red key (Carrier Lamp)",
    "rounds": [

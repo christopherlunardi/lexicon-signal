@@ -299,6 +299,8 @@ function layout() {
   const nTK = ww / nW < 1.15 ? 1.5 : 1; if (nTK !== TK) { TK = nTK; glyphCache.clear(); ADV.ink = 12 * TK; ADV.read = 6 * READPX(); }
   if (nW !== W || nH !== H || !L.ready) { W = nW; H = nH; BAR_H = tall ? 190 : 120; SCENE_H = H - BAR_H; world.width = W; world.height = H; over.width = W; over.height = H; cv.width = W * FINE; cv.height = H * FINE;
     computeLayout(); buildRoom(); buildBar(); L.ready = true; }
+  // shown smaller than it's drawn (small handheld screens): scale smoothly; hard pixel scaling down drops whole rows (lines through letters)
+  cv.style.imageRendering = Math.min(ww / (W * FINE), wh / (H * FINE)) < .99 ? "auto" : "";
 }
 function computeLayout() {
   const rw = R("radio")[2], wide = W >= 650;
@@ -549,6 +551,7 @@ function bestLine() { try { const b = JSON.parse(localStorage.getItem("lexsig-be
 let flyers = [], sparks = [], pops = [], beams = [], beaconFlash = 0, shake = 0, staticLvl = .05, staticKick = 0, marquee = 0;
 function burst(x, y, n, col) { for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, s = .8 + Math.random() * 2.6; sparks.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 1, life: 1, d: .025 + Math.random() * .03, col }); } }
 function update() {
+  frame++;
   const thudCols = new Set();
   for (let i = 0; i < NN; i++) { const t = S.grid[i]; if (!t) continue; if (t.wait > 0) { t.wait--; continue; }
     if (t.yOff < 0 || t.vy !== 0) { t.vy += .72; t.yOff += t.vy;
@@ -571,13 +574,15 @@ function update() {
 // order: world (room, keys, bar) at world pixels -> scaled 2x -> fine displays and letters -> menus (world pixels, 2x) -> menu text
 let frame = 0, barShow = 1;
 function draw() {
-  frame++;
   { const want = (S.phase === "title" && !titleFX.bar) || S.phase === "splash" || S.phase === "studio" ? 0 : 1, was = barShow;
     barShow = want > barShow ? Math.min(1, barShow + .045) : want < barShow ? Math.max(0, barShow - .08) : barShow;
     if (was < 1 && barShow === 1 && want === 1) { Sound.thud(3); shake = Math.max(shake, 4); }
     const u = 1 - barShow, e = u * u; L.barY = SCENE_H + Math.round(e * (BAR_H + 4)); } wctx.imageSmoothingEnabled = false; ctx.imageSmoothingEnabled = false;
   if (S.phase === "splash") { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, cv.width, cv.height);
-    if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO START" : "PRESS ANY BUTTON", cv.width / 2, cv.height / 2 - 8, "dot", C.amber, "c"); return; }
+    // big smooth type so it reads on any screen size (Chris: on the handheld it was pixelated with a line through it)
+    { const u = cv.width / (cv.getBoundingClientRect().width || cv.width), a = .55 + .45 * Math.sin(frame / 14); ctx.save(); ctx.globalAlpha = a; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.font = `${Math.round(26 * u)}px ${HOWF.title}`; ctx.fillStyle = "#ffb84a"; ctx.shadowColor = "rgba(255,150,60,.6)"; ctx.shadowBlur = 18 * u; ctx.fillText(usingTouch ? "TAP TO START" : "PRESS ANY BUTTON", cv.width / 2, cv.height / 2); ctx.restore(); }
+    return; }
   const sx = shake > 0 ? Math.round((Math.random() - .5) * Math.min(2, shake)) : 0;
   wctx.fillStyle = "#000"; wctx.fillRect(0, 0, W, H); wctx.drawImage(roomCv, sx, 0);
   wctx.save(); wctx.translate(sx, 0); drawBeacon(); drawRadioLive(); drawGrid(); drawSparks(); wctx.restore();
@@ -637,6 +642,7 @@ function drawBarLive() {
 }
 // ---------- fine layer ----------
 const FX = (x) => Math.round(x * FINE);
+const dialDots = new Map();
 function drawDial() {
   // lit dot-matrix display: every dot position faintly visible, lit dots bright with a dim halo
   const d = L.dial, x0 = FX(d.x) + 4, y0 = FX(d.y) + Math.round((FX(d.h) - 21) / 2), cols = Math.floor((FX(d.w) - 8 + 3) / 18);
@@ -644,7 +650,9 @@ function drawDial() {
   const cand = S.phase === "play" && !dialFlash ? candidate() : -1, live = S.phase === "play" && !dialFlash && (S.path.length || cand >= 0);
   const ok = live && S.path.length >= 3 && isValid();
   // unlit dots: dark normally, warm when the word can be sent (the whole display lights up)
-  ctx.fillStyle = ok ? C.dotDim : C.dotOff; for (let cx = 0; cx < cols * 6; cx++) for (let r = 0; r < 7; r++) if (cx % 6 < 5) ctx.fillRect(x0 + cx * 3, y0 + r * 3, 2, 2);
+  { const key = cols + (ok ? "on" : "off"); let g = dialDots.get(key);   // the unlit dot field, drawn once and kept (it was 1,600 little squares a frame)
+    if (!g) { g = document.createElement("canvas"); g.width = cols * 18; g.height = 21; const x = g.getContext("2d"); x.fillStyle = ok ? C.dotDim : C.dotOff; for (let cx = 0; cx < cols * 6; cx++) for (let r = 0; r < 7; r++) if (cx % 6 < 5) x.fillRect(cx * 3, r * 3, 2, 2); dialDots.set(key, g); }
+    ctx.drawImage(g, x0, y0); }
   let s = "", col = C.amber, blink = false;
   if (dialFlash) { s = dialFlash.text; col = dialFlash.bad ? C.redHot : C.hot; blink = true; dialVal = 0; }
   else if (live) {
@@ -971,8 +979,15 @@ function paBoard({ G, tiles, ok, low, last }) {
    bottom and its letter goes white; the link is a run of dots between modules. A sent word comes apart into its dots, which stream
    to the tower. Modules scramble for a moment when they land. */
 const dotSprs = {};
-function dotSpr(col) { let c = dotSprs[col]; if (!c) { c = dotSprs[col] = document.createElement("canvas"); c.width = c.height = 12; const x = c.getContext("2d"); x.fillStyle = col; x.beginPath(); x.arc(6, 6, 4.7, 0, 7); x.fill(); } return c; }
+function dotSpr(col) { let c = dotSprs[col]; if (!c) { c = dotSprs[col] = document.createElement("canvas"); c.width = c.height = 6; const x = c.getContext("2d"); x.fillStyle = col; x.beginPath(); x.arc(3, 3, 2.35, 0, 7); x.fill(); } return c; }   // drawn at the size it's used (6px), so no scaling each draw
 const U3 = [[1, 0, 1], [1, 0, 1], [1, 1, 1]];
+const dotKeys = new Map();
+function dotKeyCache(k, b, qu, lc, dots, OFF, ON, VAL) { let c = dotKeys.get(k); if (c) return c;
+  const base = document.createElement("canvas"), let_ = document.createElement("canvas"); base.width = let_.width = 54; base.height = let_.height = 42;
+  const bx = base.getContext("2d"), lx = let_.getContext("2d");
+  for (let r = 0; r < 7; r++) for (let cc = 0; cc < 9; cc++) { let isL = cc >= lc && cc < lc + 5 && b[r][cc - lc]; if (qu && cc >= 6 && r < 3 && U3[r][cc - 6]) isL = 1; const isV = cc === 8 && r >= 7 - dots;
+    bx.drawImage(isV ? VAL : OFF, cc * 6, r * 6, 6, 6); if (isL && !isV) lx.drawImage(ON, cc * 6, r * 6, 6, 6); }
+  c = [base, let_]; dotKeys.set(k, c); return c; }
 let dotOkAt = 0, dotOkWas = false;
 /* the Carrier Lamp's red key (Workshop topic "carrier", Chris 2026-11-12: the red outline was no good). HOT_STYLE picks the look;
    #hot-N opens style N: 1 red letter, 2 red backlight, 3 ember fill, 4 pilot lamp, 5 red scan. */
@@ -998,6 +1013,10 @@ function paDotGlass({ G, tiles, ok, low }) {
     // another; while the word stays good, a faint one runs through now and then
     const ws = frame - dotOkAt - (o.k || 0) * 4, wipe = o.on && ok && ws >= 0 ? (ws < 22 ? ws * .75 - 2 : ((ws - 22) % 150) * .5 - 2) : -9, wa = ws < 22 ? .6 : .2;
     frameOf(x, y, 1);
+    // the common case (a key at rest: not picked, not landing, no wipe, not the red key) draws from two cached layers: the dark dot
+    // field with its value dots, and the letter's lit dots on top at the key's brightness (63 dots a key every frame was slow on handhelds)
+    if (lit <= .03 && !scr && !hot && wipe <= -9 && !(t.land > .01)) { const k = o.ch + "|" + o.dots + "|" + w0 + "x" + h0, ca = dotKeyCache(k, b, qu, lc, o.dots, OFF, ON, VAL);
+      ctx.globalAlpha = 1; ctx.drawImage(ca[0], mx, my); ctx.globalAlpha = Math.min(1, dim * fl); ctx.drawImage(ca[1], mx, my); ctx.globalAlpha = 1; if (o.hv) { ctx.strokeStyle = "rgba(255,200,130,.6)"; ctx.stroke(); } continue; }
     if (lit > .03) { ctx.strokeStyle = `rgba(255,${ok ? 226 : 180},${ok ? 160 : 96},${lit * .85})`; ctx.shadowColor = "#ff8a20"; ctx.shadowBlur = 10; ctx.lineWidth = 2; ctx.stroke(); ctx.shadowBlur = 0; }
     else if (o.hv) { ctx.strokeStyle = "rgba(255,200,130,.6)"; ctx.stroke(); }
     for (let r = 0; r < 7; r++) for (let c = 0; c < 9; c++) { const dx = mx + c * 6, dy = my + r * 6;
@@ -1084,7 +1103,10 @@ function paFlyers() {
   for (const p of pops) ftext(p.text, FX(p.x), FX(p.y - p.t * .5) - 14, "key", (p.t >> 2) & 1 ? C.hot : C.gold, "c", { outline: C.dark });
 }
 // soft light: every light source blooms (added light, drawn over the scene)
-function bloom(x, y, r, rgb, a) { const g = ctx.createRadialGradient(x, y, 0, x, y, r); g.addColorStop(0, `rgba(${rgb},${a})`); g.addColorStop(.4, `rgba(${rgb},${a * .35})`); g.addColorStop(1, `rgba(${rgb},0)`); ctx.fillStyle = g; ctx.fillRect(x - r, y - r, r * 2, r * 2); }
+const bloomCache = {};
+function bloomSpr(rgb) { let c = bloomCache[rgb]; if (c) return c; c = bloomCache[rgb] = document.createElement("canvas"); c.width = c.height = 128; const x = c.getContext("2d"), g = x.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, `rgba(${rgb},1)`); g.addColorStop(.4, `rgba(${rgb},.35)`); g.addColorStop(1, `rgba(${rgb},0)`); x.fillStyle = g; x.fillRect(0, 0, 128, 128); return c; }
+function bloom(x, y, r, rgb, a) { if (a <= .005 || r <= 0) return; const ga = ctx.globalAlpha; ctx.globalAlpha = ga * Math.min(1, a); ctx.drawImage(bloomSpr(rgb), x - r, y - r, r * 2, r * 2); ctx.globalAlpha = ga; }
 function drawGlows() {
   ctx.save(); ctx.globalCompositeOperation = "lighter";
   const pulse = .75 + .25 * Math.sin(frame / 9), b = L.beacon;
@@ -1446,22 +1468,61 @@ function drawTitleRadio(T) {
   // the room around falls into shadow so the radio carries the screen
   const v = ctx.createRadialGradient(cv.width / 2, cv.height * .42, cv.height * .45, cv.width / 2, cv.height * .45, cv.width * .62); v.addColorStop(0, "rgba(6,3,2,0)"); v.addColorStop(1, "rgba(6,3,2,.85)"); ctx.fillStyle = v; ctx.fillRect(0, 0, cv.width, cv.height);
   // PRESS START on a brass plate on the radio's base
-  // under the radio (Chris: no bare black there): the game's own wood-and-brass bar across the bottom, a parchment in it, and the
-  // menu on the parchment (START, HOW TO PLAY, an arrow by the one you're on). The bar is the same one that holds the log in play.
+  // under the radio: the menu (START, HOW TO PLAY). Workshop topic "menu" (Chris: the bar-and-parchment didn't work; each option its own
+  // container): MENU_STYLE 1..5, #menu-N opens one.
   const a = ease((T - 150) / 15), bandTop = Math.min(cv.height - 150, zy(L.radioY + rh) + 2), bandH = cv.height - bandTop;
-  { const bw = Math.ceil(cv.width / FINE), bh = Math.ceil(bandH / FINE); octx.clearRect(0, 0, W, H); barStrip(octx, bw, bh); ctx.drawImage(over, 0, 0, bw, bh, 0, bandTop, bw * FINE, bh * FINE); }
-  const mgh = glyphCv("key", "S", C.ink).height, rowH = mgh + 18, items = TITLE_MENU.length, best = bestLine(), lh = Math.round(20 * TK);
-  const pw = Math.ceil((Math.max(...TITLE_MENU.map(m => textW(m, "key")), best ? textW(best, "ink") : 0) + 2 * 60) / FINE), phh = Math.ceil((26 + items * rowH + (best ? lh + 6 : 0) + 18) / FINE);
-  const px = Math.round(cv.width / FINE / 2 - pw / 2), py = Math.round((bandTop + bandH / 2) / FINE - phh / 2);
-  ctx.save(); ctx.globalAlpha = Math.max(.35, a); octx.clearRect(0, 0, W, H); nine(octx, "logbox", 0, 0, pw, phh); ctx.drawImage(over, 0, 0, pw, phh, px * FINE, py * FINE, pw * FINE, phh * FINE); ctx.restore();
-  titleHits = [];
-  if (a > 0) { ctx.save();
-    TITLE_MENU.forEach((m, i) => { const y = py * FINE + 22 + i * rowH, on = i === titleSel, tw = textW(m, "key");
-      ctx.globalAlpha = a * (on ? 1 : .55); ftext(m, cv.width / 2, y, "key", on ? C.ink : C.inkSoft, "c", { under: C.brassHi, uy: 3 });
-      if (on) { const ax = cv.width / 2 - tw / 2 - 30 + ((frame >> 4) & 1) * 4, ay = y + mgh / 2; ctx.fillStyle = C.inkRed; ctx.beginPath(); ctx.moveTo(ax, ay - 9); ctx.lineTo(ax + 13, ay); ctx.lineTo(ax, ay + 9); ctx.fill(); }
-      titleHits.push({ y0: y - 8, y1: y + mgh + 8, i }); });
-    if (best) { ctx.globalAlpha = a; ftext(best, cv.width / 2, py * FINE + 22 + items * rowH + 4, "ink", C.inkSoft, "c"); }
-    ctx.restore(); }
+  titleHits = []; drawTitleMenu(a, bandTop, bandH);
+}
+// the title menu's looks
+const MENU_NAMES = ["", "Bar and parchment", "Brass plates", "Station buttons", "Dial windows", "Parchment tags"];
+let MENU_STYLE = 2; { const m = location.hash.match(/menu-(\d)/); if (m) MENU_STYLE = Math.max(1, Math.min(5, +m[1])); }
+function floorBoards(top, hh) {   // dark wooden floorboards in the lamp's last light
+  const g = ctx.createLinearGradient(0, top, 0, top + hh); g.addColorStop(0, "#2a160b"); g.addColorStop(1, "#0d0604"); ctx.fillStyle = g; ctx.fillRect(0, top, cv.width, hh);
+  const rows = 6; for (let i = 0; i < rows; i++) { const y0 = top + hh * (i / rows) ** 1.4, y1 = top + hh * ((i + 1) / rows) ** 1.4; ctx.fillStyle = "rgba(0,0,0,.45)"; ctx.fillRect(0, Math.round(y0), cv.width, 2);
+    ctx.fillStyle = "rgba(255,170,90,.05)"; ctx.fillRect(0, Math.round(y0) + 2, cv.width, 1);
+    const n = 5 + i * 2; for (let k = 0; k <= n; k++) { const x = ((k + (i % 2) * .5) / n) * cv.width; ctx.fillStyle = "rgba(0,0,0,.35)"; ctx.fillRect(Math.round(x), Math.round(y0), 2, Math.round(y1 - y0)); } }
+  const v = ctx.createRadialGradient(cv.width * .72, top, 10, cv.width * .6, top, cv.width * .7); v.addColorStop(0, "rgba(255,150,60,.16)"); v.addColorStop(1, "rgba(255,150,60,0)"); ctx.fillStyle = v; ctx.fillRect(0, top, cv.width, hh);
+}
+function drawTitleMenu(a, top, hh) {
+  const S_ = MENU_STYLE, M = TITLE_MENU, n = M.length, best = bestLine(), cx = cv.width / 2, pulse = .8 + .2 * Math.sin(frame / 10), arrowAt = (x, y) => { ctx.fillStyle = C.inkRed; ctx.beginPath(); ctx.moveTo(x, y - 9); ctx.lineTo(x + 13, y); ctx.lineTo(x, y + 9); ctx.fill(); };
+  const kh = glyphCv("key", "S", C.ink).height;
+  if (S_ === 1) {   // the game's bar with one parchment holding the list
+    { const bw = Math.ceil(cv.width / FINE), bh = Math.ceil(hh / FINE); octx.clearRect(0, 0, W, H); barStrip(octx, bw, bh); ctx.drawImage(over, 0, 0, bw, bh, 0, top, bw * FINE, bh * FINE); }
+    const rowH = kh + 18, pw = Math.ceil((Math.max(...M.map(m => textW(m, "key"))) + 120) / FINE), phh = Math.ceil((26 + n * rowH + 18) / FINE), px = Math.round(cv.width / FINE / 2 - pw / 2), py = Math.round((top + hh / 2) / FINE - phh / 2);
+    octx.clearRect(0, 0, W, H); nine(octx, "logbox", 0, 0, pw, phh); ctx.drawImage(over, 0, 0, pw, phh, px * FINE, py * FINE, pw * FINE, phh * FINE);
+    ctx.save(); M.forEach((m, i) => { const y = py * FINE + 22 + i * rowH, on = i === titleSel, tw = textW(m, "key"); ctx.globalAlpha = a * (on ? 1 : .55); ftext(m, cx, y, "key", on ? C.ink : C.inkSoft, "c", { under: C.brassHi, uy: 3 });
+      if (on) arrowAt(cx - tw / 2 - 30 + ((frame >> 4) & 1) * 4, y + kh / 2); titleHits.push({ y0: y - 8, y1: y + kh + 8, i }); }); ctx.restore(); return; }
+  floorBoards(top, hh);
+  // the containers sit side by side, centred in the floor
+  const gap = 34, ws = M.map(m => Math.max(textW(m, S_ === 4 ? "dot" : "key") + 90, 250)), tw = ws.reduce((s, w) => s + w, 0) + gap * (n - 1), ch = S_ === 5 ? kh + 70 : kh + 56;
+  let x = Math.round(cx - tw / 2); const y = Math.round(top + hh / 2 - ch / 2 - (best ? 12 : 0));
+  ctx.save(); ctx.globalAlpha = a;
+  M.forEach((m, i) => { const w = ws[i], on = i === titleSel, mx = x + w / 2;
+    if (S_ === 2) {   // brass plates: the chosen one lit from behind, the others in shadow
+      if (on) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(mx, y + ch / 2, w * .75, "255,180,90", .3 * pulse); ctx.restore(); }
+      octx.clearRect(0, 0, W, H); plate3(octx, 0, 0, Math.round(w / FINE), Math.round(ch / FINE)); ctx.globalAlpha = a * (on ? 1 : .7); ctx.drawImage(over, 0, 0, Math.round(w / FINE), Math.round(ch / FINE), x, y, Math.round(w / FINE) * FINE, Math.round(ch / FINE) * FINE);
+      ctx.globalAlpha = a; ftext(m, mx, y + Math.round((ch - kh) / 2) + 1, "key", on ? C.ink : C.inkSoft, "c", { under: C.brassHi, uy: 3 });
+      if (on) arrowAt(x + 14 + ((frame >> 4) & 1) * 3, y + ch / 2); }
+    else if (S_ === 3) {   // station buttons: cream push keys on a wooden rail; the chosen one pressed in and lit amber
+      const d = on ? 4 : 0; ctx.fillStyle = "#1a0d06"; ctx.beginPath(); ctx.roundRect(x - 6, y - 6, w + 12, ch + 16, 12); ctx.fill();
+      if (on) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(mx, y + ch / 2, w * .7, "255,170,70", .35 * pulse); ctx.restore(); }
+      ctx.fillStyle = "#5a4436"; ctx.beginPath(); ctx.roundRect(x, y + 8, w, ch, 10); ctx.fill();
+      const gr = ctx.createLinearGradient(0, y + d, 0, y + d + ch); gr.addColorStop(0, on ? "#ffe7b0" : "#efe2c6"); gr.addColorStop(1, on ? "#f0b860" : "#c9b48e"); ctx.fillStyle = gr; ctx.beginPath(); ctx.roundRect(x, y + d, w, ch - 4, 10); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,.5)"; ctx.fillRect(x + 10, y + d + 4, w - 20, 3);
+      ftext(m, mx, y + d + Math.round((ch - 4 - kh) / 2), "key", on ? "#3a1a08" : "#6a5440", "c"); }
+    else if (S_ === 4) {   // dial windows: each a little lit dot-matrix display in a brass rim, like the radio's dial
+      ctx.fillStyle = "#b07a2a"; ctx.beginPath(); ctx.roundRect(x - 5, y - 5, w + 10, ch + 10, 10); ctx.fill(); ctx.fillStyle = "#0b0604"; ctx.beginPath(); ctx.roundRect(x, y, w, ch, 7); ctx.fill();
+      if (on) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(mx, y + ch / 2, w * .6, "255,170,70", .3 * pulse); ctx.restore(); }
+      const tx = mx - textW(m, "dot") / 2, ty = y + Math.round((ch - 21) / 2); ftextDot(m, tx, ty, on ? C.hot : C.amber); if (!on) { ctx.fillStyle = "rgba(11,6,4,.45)"; ctx.fillRect(x, y, w, ch); } }
+    else if (S_ === 5) {   // parchment tags hanging from the radio's base on brass chains; the chosen one swings and is lit
+      const sw = on ? Math.sin(frame / 18) * .03 : 0; ctx.save(); ctx.translate(mx, top - 2); ctx.rotate(sw); ctx.translate(-mx, -(top - 2));
+      ctx.strokeStyle = "#c89a48"; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(mx - w * .3, top - 2); ctx.lineTo(mx - w * .3, y); ctx.moveTo(mx + w * .3, top - 2); ctx.lineTo(mx + w * .3, y); ctx.stroke();
+      if (on) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(mx, y + ch / 2, w * .7, "255,190,110", .3 * pulse); ctx.restore(); }
+      octx.clearRect(0, 0, W, H); nine(octx, "logbox", 0, 0, Math.round(w / FINE), Math.round(ch / FINE)); ctx.globalAlpha = a * (on ? 1 : .75); ctx.drawImage(over, 0, 0, Math.round(w / FINE), Math.round(ch / FINE), x, y, Math.round(w / FINE) * FINE, Math.round(ch / FINE) * FINE);
+      ctx.globalAlpha = a; ftext(m, mx, y + Math.round((ch - kh) / 2), "key", on ? C.ink : C.inkSoft, "c", { under: C.brassHi, uy: 3 }); ctx.restore(); }
+    titleHits.push({ x0: x, x1: x + w, y0: y - 10, y1: y + ch + 10, i }); x += w + gap; });
+  ctx.restore();
+  if (best) ftext(best, cx, y + ch + 22, "ink", C.amber, "c", { outline: C.dark });
 }
 /* ---------- HOW TO PLAY (off the title menu; Chris 2026-11-12: like the studio's other game, simple, with visuals) ----------
    A few cards over a live demo: the real radio, keys, tube and lamps, played by a little script (the cursor moves, letters are picked,
@@ -1643,7 +1704,7 @@ function drawOver() {
 let usingButtons = false, usingTouch = matchMedia("(pointer:coarse)").matches;
 function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ? "up" : "down"; if (devKey(dk)) return; if (howKey(dk)) return; dismissCard();
   usingButtons = true; Sound.ensure();
-  if (S.phase === "title" && TS === 6 && dy) { if (titleBusy()) return; titleSel = (titleSel + dy + TITLE_MENU.length) % TITLE_MENU.length; Sound.click(); return; }
+  if (S.phase === "title" && TS === 6 && (dy || dx)) { dy = dy || dx; if (titleBusy()) return; titleSel = (titleSel + dy + TITLE_MENU.length) % TITLE_MENU.length; Sound.click(); return; }
   if (S.phase === "shop") { shopFocus = (shopFocus + (dx || dy) + shopChoices.length) % shopChoices.length; Sound.click(); return; }
   if (S.phase === "swap") { const n = partSlots().length; swapFocus = (swapFocus + (dx || dy) + n) % n; Sound.click(); return; }
   if (S.phase !== "play") return;
@@ -1673,7 +1734,7 @@ let down = null, dragging = false;
 cv.addEventListener("pointerdown", (e) => {
   Sound.ensure(); usingButtons = false; e.preventDefault(); if (introPress()) return; const p = toWorld(e);
   if (HOW.on) { howKey(p.x < W / 2 ? "b" : "a"); return; }
-  if (titleBusy()) return; if (S.phase === "title") { const fy = p.y * FINE, hit = TS === 6 && titleHits.find(r => fy >= r.y0 && fy <= r.y1); titleChoose(hit ? hit.i : 0); return; } if (S.phase === "over") { start(); return; }
+  if (titleBusy()) return; if (S.phase === "title") { const fy = p.y * FINE, fx = p.x * FINE, hit = TS === 6 && titleHits.find(r => fy >= r.y0 && fy <= r.y1 && (r.x0 == null || (fx >= r.x0 && fx <= r.x1))); titleChoose(hit ? hit.i : 0); return; } if (S.phase === "over") { start(); return; }
   if (S.phase === "swap") { const [, , sw, sh] = R("slot"), y0 = L.barY + L.slotY, k = Math.floor((p.x - L.slotX) / L.slotStep);
     if (p.y >= y0 && p.y <= y0 + sh && k >= 0 && k < partSlots().length && p.x - L.slotX - k * L.slotStep <= sw) { if (swapFocus === k || usingTouch) swapConfirm(k); else swapFocus = k; }
     else if (p.y < SCENE_H) swapCancel(); return; }
@@ -1977,7 +2038,13 @@ window.ssKey = (k, down) => {
   if (k === "a") pressA(); else if (k === "b") pressB(); else if (k === "start") pressStart();
 };
 /* ================= boot ================= */
-function loop(now) { update(); draw(); pollPad(now); requestAnimationFrame(loop); }
+// the game runs at a steady 60 steps a second whatever the screen does (a slow handheld used to slow the whole game down, and a
+// 120Hz screen would speed it up): as many steps as the time that passed, then one picture
+let lastNow = 0, stepAcc = 0;
+function loop(now) {
+  if (!lastNow) lastNow = now; stepAcc += Math.min(250, now - lastNow); lastNow = now;
+  let n = 0; while (stepAcc >= 1000 / 60 && n < 6) { update(); stepAcc -= 1000 / 60; n++; } if (n === 6) stepAcc = 0;
+  if (n) draw(); pollPad(now); requestAnimationFrame(loop); }
 async function boot() {
   const LA = window.LEX_ASSETS;   // the Android app's one-file build carries its art inside the page (it plays offline, from a file)
   A = LA ? LA.atlasJson : await (await fetch("art/pixel/atlas.json")).json();
