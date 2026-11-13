@@ -1,10 +1,10 @@
 [
  {
-  "file": "img/bar_mid.png",
+  "file": "img/bar_right.png",
   "group": "To do: frames under the rivets",
-  "label": "The bar: the middle that repeats",
-  "w": 81,
+  "label": "The bar: right end (rivets go at 26,12, 26,81)",
+  "w": 39,
   "h": 95,
-  "key": "bar_mid"
+  "key": "bar_right"
  }
 ]
