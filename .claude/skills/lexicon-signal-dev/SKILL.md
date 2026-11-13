@@ -191,7 +191,9 @@ the same batch.
 - The melter (2026-11-13, art iconL_melter / iconL_molten): once all five slots are full the picker shows a MELT THEM plate under the
   cases (down to reach it, or tap; meltPlate, kept above the bar). Choosing it opens the melter screen (phase "melt", drawMelt): the
   parts on offer arc into its mouth one by one, a lamp lights (S.melt, kept all run), then the next night. At five lamps it pours a
-  Molten Upgrade (phase "upgrade", drawUpgrade): pick a fitted part, it gains a copy; rare parts can't. A or a tap skips ahead.
+  Molten Upgrade (phase "upgrade", drawUpgrade): the screen goes back to the picker's card view with one gold-framed case, MOLTEN
+  UPGRADE (the ingot, its plate, "One of your parts gains a copy.", and at its foot which part: COIL X1 > X2); left / right or a tap
+  on a bar slot picks the part (it glows with +1), A upgrades it; rare parts can't. #test-upgrade. A or a tap skips the melter ahead.
   The melter screen's block (title, big melter, lamps, message, prompt) is centered in the room above the bar (Chris: it sat too high).
   Tests: #test-melt (one lamp lit), #test-melt-full (four lit, so the next melt pays out).
 - Arcade scoring (Chris 2026-11-13: the goal is a high score, the run goes on until you lose): the run score is all signal beamed

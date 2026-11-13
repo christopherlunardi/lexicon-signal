@@ -607,7 +607,7 @@ function choosePart(k) {
    and it gains a copy, as if it had been offered again. Rare parts (once only) can't take it. ---- */
 const MELT_N = 5;
 const meltOpen = () => S.phase === "shop" && partSlots().length >= PART_SLOTS;
-const MELT = { t: 0, items: [], full: false, k: 0 };
+const MELT = { t: 0, items: [], full: false, k: 0, ut: 0 };
 function meltStart() { MELT.t = 0; MELT.items = shopChoices.map(p => p.id); MELT.full = S.melt + 1 >= MELT_N; S.phase = "melt"; plPick("melt"); log("Into the melter."); Sound.click(); }
 function meltUpdate() { if (S.phase !== "melt") return; MELT.t++;
   const n = MELT.items.length, hit = (k) => 26 + k * 18 + 30;
@@ -615,7 +615,7 @@ function meltUpdate() { if (S.phase !== "melt") return; MELT.t++;
   if (MELT.t === hit(n - 1) + 14) { S.melt++; Sound.lock(); staticKick = .4; }
   if (MELT.t === hit(n - 1) + 30 && MELT.full) { Sound.full(); shake = 6; } }
 function meltDone() { if (S.phase !== "melt") return; const n = MELT.items.length; if (MELT.t < 26 + (n - 1) * 18 + 30 + 40) { MELT.t = 26 + (n - 1) * 18 + 30 + 40; return; }
-  if (S.melt >= MELT_N) { S.melt = 0; S.phase = "upgrade"; swapFocus = Math.max(0, partSlots().findIndex(s => !PART[s.id].rare)); Sound.click(); return; }
+  if (S.melt >= MELT_N) { S.melt = 0; S.phase = "upgrade"; MELT.ut = 0; swapFocus = Math.max(0, partSlots().findIndex(s => !PART[s.id].rare)); Sound.click(); return; }
   S.night += 1; knobA.L += 3; staticKick = .5; Sound.retune(); startNight(); }
 function upgradeConfirm(k) { const sl = partSlots()[k]; if (!sl || PART[sl.id].rare) return; plPick("up:" + sl.id); S.parts.push(sl.id); log(`Molten upgrade: ${PART[sl.id].name} x${sl.n + 1}.`); Sound.pick(); S.night += 1; knobA.L += 3; Sound.retune(); startNight(); }
 /* ---- the night report (Chris 2026-11-13): after a night, before the parts: every word sent with its points and what boosted it,
@@ -2374,15 +2374,31 @@ function drawMelt() {
     if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO GO ON" : "PRESS A TO GO ON", CVW / 2, promptY, "ink", C.amber, "c", { outline: C.dark }); }
   ctx.restore(); }
 // the Molten Upgrade: pick one of your parts to gain a copy (like the swap screen, but adding)
+// the Molten Upgrade, back in the picker's card view (Chris 2026-11-13): one display case like a part's, gold-framed, the molten
+// ingot lit inside, its name on the brass plate and what it does in amber; its foot shows which fitted part gains the copy, and
+// that slot in the bar glows with a +1. Left / right (or a tap on a slot) picks the part, A upgrades it.
 function drawUpgrade() {
-  const w = Math.min(W - 48, 400), h = 104, x = Math.round(W / 2 - w / 2), y = Math.max(12, Math.round((SCENE_H - h) / 2) - 10), r = R("iconL_molten");
-  dim(); octx.drawImage(panelCv("logbox", w, h), x, y); spr(octx, "iconL_molten", x + 18, y + Math.round((h - r[3]) / 2)); blitOver();
-  const tx = FX(x + 18 + r[2] + (w - 18 - r[2]) / 2), lh = Math.round(22 * TK); let ty = FX(y) + 26;
-  ftext("MOLTEN UPGRADE", tx, ty, "key", C.ink, "c", { under: C.brassHi, uy: 3 }); ty += 50;
-  const sl = partSlots()[swapFocus];
-  wrap("Pick a part: it gains a copy.", "ink", FX(w - r[2] - 40) - 40).forEach(s => { ftext(s, tx, ty, "ink", C.ink, "c"); ty += lh; });
-  if (sl) ftext(`${PART[sl.id].name} X${sl.n} > X${sl.n + 1}`.toUpperCase(), tx, ty + 6, "ink", C.inkRed, "c");
-  ftext(usingTouch ? "TAP A PART BELOW" : "LEFT / RIGHT TO CHOOSE, A TO UPGRADE", FX(W / 2), FX(y + h) + 16, "ink", C.gold, "c", { outline: C.dark });
+  const cw = Math.min(TK > 1 ? 230 : 210, W - 24), ph = R("plate")[3], lh = Math.round(20 * TK), desc = wrap("One of your parts gains a copy.", "ink", FX(cw) - 48);
+  const ch = Math.round(Math.max(TK > 1 ? 200 : 174, 82 + ph + (16 + desc.length * lh + 8 + TAG_ZONE) / FINE)), x = Math.round(W / 2 - cw / 2), y = 36, cx = FX(x + cw / 2), t = ++MELT.ut;
+  dim(); blitOver();
+  const k = Math.min(1, t / 12), lift = Math.round((1 - k) * 14);   // the case rises into place
+  ctx.save(); ctx.globalAlpha = k;
+  ctx.globalCompositeOperation = "lighter"; bloom(cx, FX(y + 46 + lift), FX(52), "255,150,60", .34 + .06 * Math.sin(frame / 10)); bloom(cx, FX(y + ch / 2 + lift), FX(cw * .9), "255,200,80", .16 + .05 * Math.sin(frame / 9)); ctx.globalCompositeOperation = "source-over";
+  const cs = panelCvKey("upcase:" + cw + "x" + ch, () => { const c = document.createElement("canvas"); c.width = cw; c.height = ch; const g = c.getContext("2d"); g.imageSmoothingEnabled = false; nine(g, "slot", 0, 0, cw, ch, 18); plate3(g, 10, 82, cw - 20, ph); return c; });
+  ctx.drawImage(cs, FX(x), FX(y + lift), FX(cw), FX(ch));
+  const r = R("iconL_molten"); ctx.drawImage(atlasImg, r[0], r[1], r[2], r[3], FX(x + cw / 2 - r[2] / 2), FX(y + lift + 14 + (64 - r[3]) / 2), FX(r[2]), FX(r[3]));
+  ftext("MOLTEN UPGRADE", cx, FX(y + lift + 82) + Math.round((FX(ph) - 14 * TK) / 2) + 1, "ink", C.ink, "c", { under: C.brassHi, uy: 2 });
+  desc.forEach((s, j) => ftext(s, cx, FX(y + lift + 82 + ph) + 16 + j * lh, "ink", C.gold, "c"));
+  // the foot: which part gains the copy
+  const sl = partSlots()[swapFocus], note = sl ? `${PART[sl.id].name} X${sl.n} > X${sl.n + 1}`.toUpperCase() : "", by = FX(y + lift + ch) - 30 - 26, x0 = FX(x), x1 = FX(x + cw);
+  ctx.fillStyle = "#ffd24a"; ctx.fillRect(x0 + 24, by - 6, x1 - x0 - 48, 2);
+  if (note) { const sc = Math.min(1, (x1 - x0 - 48) / textW(note, "ink")); ctx.save(); ctx.translate(cx, by + 2); ctx.scale(sc, sc); ftext(note, 0, 0, "ink", C.hot, "c"); ctx.restore(); }
+  ctx.strokeStyle = "#ffd24a"; ctx.lineWidth = 4; ctx.beginPath(); ctx.roundRect(FX(x) - 2, FX(y + lift) - 2, FX(cw) + 4, FX(ch) + 4, 6); ctx.stroke();
+  ctx.strokeStyle = (frame >> 4) & 1 ? C.hot : C.gold; ctx.lineWidth = 3; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 16; ctx.beginPath(); ctx.roundRect(FX(x) - 7, FX(y + lift) - 7, FX(cw) + 14, FX(ch) + 14, 9); ctx.stroke();
+  ctx.restore();
+  ftext("THE MELTER PAID OUT", FX(W / 2), 22, "ink", C.hot, "c", { outline: C.dark });
+  ftext(usingTouch ? "TAP A PART IN THE BAR" : "LEFT / RIGHT: CHOOSE A PART   A: UPGRADE IT", FX(W / 2), FX(y + ch) + 26, "ink", C.gold, "c", { outline: C.dark });
+  // the part in the bar that gains the copy
   const [, , sw, shh] = R("slot"), sx = FX(L.slotX + swapFocus * L.slotStep), sy = FX(L.barY + L.slotY);
   ctx.save(); ctx.strokeStyle = (frame >> 3) & 1 ? "#ffd24a" : "#fff2c0"; ctx.lineWidth = 4; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 14; ctx.strokeRect(sx - 4, sy - 4, FX(sw) + 8, FX(shh) + 8); ctx.restore();
   ftext("+1", sx + FX(sw) / 2, sy - 22, "ink", C.hot, "c", { outline: C.dark });
@@ -2886,6 +2902,7 @@ async function boot() {
   if (/^#test-report/.test(location.hash)) { newRun(); S.parts.push("amp", "owl"); S.target = 30; S.score = 52; S.total = 214; S.startTotal = 162; S.over = true; S.night = 3;
     S.nw = [{ w: "rat", p: 5, tags: [] }, { w: "quartz", p: 24, tags: ["RED x2", "AMP +1"] }, { w: "dogs", p: 9, tags: ["AMP +1"] }, { w: "link", p: 14, tags: ["OWL x3"] }];
     if (/long/.test(location.hash)) { S.nw.push({ w: "zebras", p: 31, tags: ["COIL x2", "AMP +1", "VOWEL +2"] }, { w: "quixotic", p: 88, tags: ["RED x2", "COIL x2"] }, { w: "jab", p: 7, tags: ["SHORT +6"] }, { w: "ton", p: 4, tags: [] }); S.total = 13914; S.startTotal = 13780; S.score = 134; } nightClear(); }
+  if (location.hash === "#test-upgrade") { newRun(); S.parts.push("amp", "coil", "battery", "knob", "echo"); nightClear(); S.phase = "upgrade"; MELT.ut = 0; swapFocus = 1; }
   if (/^#test-melt/.test(location.hash)) { newRun(); S.parts.push("amp", "coil", "battery", "knob", "echo"); S.melt = /full/.test(location.hash) ? 4 : 1; nightClear(); S.phase = "shop"; }
   if (/^#test-shop-tags/.test(location.hash)) { newRun(); S.parts.push("amp", "coil", "battery", "knob"); if (/full/.test(location.hash)) S.parts.push("echo"); S.over = true; nightClear(); S.phase = "shop"; shopChoices = [PART.coil, PART.gold, PART.owl, PART.amp]; }
   if (location.hash === "#test-shop-gold") { newRun(); S.parts.push("amp", "coil"); nightClear(); S.phase = "shop"; shopChoices[1] = PART.gold; }
