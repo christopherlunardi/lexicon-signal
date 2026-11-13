@@ -234,8 +234,9 @@ def main():
             if nm == "plate": imgs["plate_bare"] = imgs["plate"].copy()
         im_ = imgs["plate_bare"] if nm == "plate" else imgs[nm]; im_.save(ROOT_ART + "bench/img/" + nm + ".png")
         man.append({"file": "img/" + nm + ".png", "group": "Done: in the game" if os.path.exists(fix) else "To do: frames under the rivets", "label": lab + (" (rivets go at " + ", ".join(f"{x},{y}" for x, y in RIVETS.get(nm, [])) + ")" if nm in RIVETS else ""), "w": im_.width, "h": im_.height, "key": nm})
-    man.sort(key=lambda m: m["group"].startswith("Done"))   # the next piece to do comes up first
-    json.dump(man, open(ROOT_ART + "bench/manifest.json", "w"), indent=1)
+    # one piece at a time (Chris 2026-11-13): the bench shows only the next one to do; when he sends it, the next goes up
+    todo = [m for m in man if not m["group"].startswith("Done")]
+    json.dump(todo[:1], open(ROOT_ART + "bench/manifest.json", "w"), indent=1)
     for nm, cs in RIVETS.items():
         im_ = imgs[nm].copy()
         for cx, cy in cs: im_.alpha_composite(rivet, (cx - 3, cy - 3))

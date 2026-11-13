@@ -210,6 +210,7 @@ the same batch.
   under the rivets (logbox, plate bare, slot, bar ends and middle, title plates) to art/bench/img/ and manifest.json, and uses
   art/pixel/src/bench/NAME.png instead of the cut piece when Chris has sent one (before the rivets are stamped). Fixes arrive in
   ArtifactData collection "edits": fetch with Artifact read path <asset id>, save as painted, mark done, rebuild, republish both.
+  One piece at a time (Chris): manifest.json holds only the next piece to do; after a fix goes in, the next goes up.
 - Sheets and margins (2026-11-13, Chris: "things are always too close to the gold borders"): text never sits nearer a frame than
   INSET (logbox 22 world px x, 18 y: the gold frame is 8 deep and the corner rivets reach 12; plate 16 x, 6 y). Parchment screens use
   sheet() (logbox + top nameplate + optional bottom prompt plate, body kept inside INSET) and edgePlate(); the run score shows in
