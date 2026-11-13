@@ -814,7 +814,7 @@ function drawScoreDrums() {
   ctx.fillStyle = "rgba(6,3,2,.55)"; ctx.fillRect(x + 4, y + 6, w, h);
   const g = ctx.createLinearGradient(0, y, 0, y + h); g.addColorStop(0, "#c8963e"); g.addColorStop(.5, "#8a5a22"); g.addColorStop(1, "#5a3812"); ctx.fillStyle = g; ctx.beginPath(); ctx.roundRect(x, y, w, h, 8); ctx.fill();
   ctx.strokeStyle = k > 0 ? `rgba(255,236,170,${.4 + .6 * k})` : "#e8c070"; ctx.lineWidth = 2; ctx.stroke();
-  ctx.fillStyle = "#f4d58a"; for (const [rx, ry] of [[x + 8, y + 8], [x + w - 10, y + 8], [x + 8, y + h - 10], [x + w - 10, y + h - 10]]) ctx.fillRect(rx, ry, 3, 3);
+  { const rv = R("rivet"); for (const [rx, ry] of [[x + 4, y + 4], [x + w - 18, y + 4], [x + 4, y + h - 18], [x + w - 18, y + h - 18]]) ctx.drawImage(atlasImg, rv[0], rv[1], 7, 7, rx, ry, 14, 14); }   // the game's one rivet
   ftext("RUN", x + 6 + Math.round((lab - textW("RUN", "ink")) / 2), y + Math.round((h - 14 * TK) / 2), "ink", "#3a1c06", "l", { under: "#f0cf88", uy: 2 });
   const wx = x + lab + 16, wy = y + 11, dh = h - 22, str = String(SC.shown).padStart(digs, "0"), lead = digs - String(SC.shown).length;
   ctx.fillStyle = "#0c0705"; ctx.fillRect(wx - 4, wy - 3, digs * 28 + 6, dh + 6);

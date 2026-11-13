@@ -181,7 +181,9 @@ the same batch.
   points fly up ("+52") into the RUN SCORE: a dark display with a big lit dot-matrix number (glyph kind "big", every dot place faintly
   there) that counts up with climbing ticks and jumps when done, with HIGH n / NEW HIGH SCORE! beside its label. A plate on the bottom
   edge says TALLYING... then PRESS A: PICK A PART. A or a tap skips to the end, then goes on. #test-report, #test-report-long (8 words).
-- The brass plate's four rivets are all copies of its clean bottom-right one, the top pair as far from the top rim as the bottom pair from the bottom (build.py, after the palette; Chris 2026-11-13).
+- One rivet everywhere (Chris 2026-11-13): build.py draws a clean 7x7 brass rivet (dark rim, bright top-left, screw slot) and stamps it
+  over every painted rivet (RIVETS: plate, logbox, slot, bar_left/right, tplate/_lit; centres measured per piece, kept symmetric); it is
+  also the sprite "rivet", drawn at world size for rivets made in code (the score counter). New framed art gets its rivets stamped too.
 - Sheets and margins (2026-11-13, Chris: "things are always too close to the gold borders"): text never sits nearer a frame than
   INSET (logbox 22 world px x, 18 y: the gold frame is 8 deep and the corner rivets reach 12; plate 16 x, 6 y). Parchment screens use
   sheet() (logbox + top nameplate + optional bottom prompt plate, body kept inside INSET) and edgePlate(); the run score shows in

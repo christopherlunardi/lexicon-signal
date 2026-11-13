@@ -152,15 +152,23 @@ def main():
     # interface colours are picked from a palette of the art itself
     sample = np.concatenate([np.asarray(im)[..., :3][np.asarray(im)[..., 3] > 0].reshape(-1, 3) for im in imgs.values() if im.mode == "RGBA"])
     pal = pix.kmeans(sample[::9].astype(float), 56); pal = np.concatenate([pal, np.array(pix.ACCENTS, float)]); pal = np.clip(np.round(pal[np.argsort(pal.mean(1))]), 0, 255).astype(int)
-    # the brass plate's rivets came out uneven (Chris 2026-11-13: the top ones smeared and set low, the left ones unlike the right):
-    # all four become the clean bottom-right rivet, the top pair moved up to sit as far from the top rim as the bottom pair from the
-    # bottom one (after the palette is taken, so the interface colours stay as they were)
-    pa = np.asarray(imgs["plate"]).copy(); pw_ = pa.shape[1]; riv = pa[16:23, pw_ - 10:pw_ - 4].copy()
+    # One rivet everywhere (Chris 2026-11-13: the painted rivets didn't match from piece to piece): a clean 7x7 brass rivet with a dark
+    # rim, a bright top-left, a shaded bottom-right and a screw slot, stamped over every painted one at its frame corner (centres measured
+    # per piece, kept symmetric). Also saved as its own sprite "rivet" for anything drawn in code. After the palette is taken.
+    RIV = ["..OOO..", ".OHHBO.", "OHHBBSO", "OKKKKKO", "OBBBSSO", ".OSSSO.", "..OOO.."]
+    RC = {"O": (42, 12, 2, 255), "H": (255, 242, 160, 255), "B": (246, 178, 28, 255), "S": (176, 106, 4, 255), "K": (58, 20, 4, 255)}
+    rivet = Image.new("RGBA", (7, 7), (0, 0, 0, 0))
+    for j, row in enumerate(RIV):
+        for i, c in enumerate(row):
+            if c in RC: rivet.putpixel((i, j), RC[c])
+    # the plate's old rivets are painted out with its plain face first (they were smeared and uneven)
+    pa = np.asarray(imgs["plate"]).copy(); pw_ = pa.shape[1]
     for c0, c1 in [(3, 10), (pw_ - 11, pw_ - 4)]:
-        for r in list(range(4, 13)) + list(range(16, 23)): pa[r, c0:c1] = pa[13, c0:c1]   # plain face first
-    for r0 in (4, 16):
-        pa[r0:r0 + 7, 4:10] = riv; pa[r0:r0 + 7, pw_ - 10:pw_ - 4] = riv
+        for r in list(range(4, 13)) + list(range(16, 23)): pa[r, c0:c1] = pa[13, c0:c1]
     imgs["plate"] = Image.fromarray(pa, "RGBA")
+    RIVETS = {"plate": [(6, 7), (96, 7), (6, 19), (96, 19)], "logbox": [(8, 7), (184, 7), (8, 71), (184, 71)],
+              "slot": [(5, 5), (52, 5), (5, 56), (52, 56)], "bar_left": [(11, 13), (11, 81)], "bar_right": [(26, 12), (26, 81)],
+              "tplate": [(7, 7), (90, 7), (7, 25), (90, 25)], "tplate_lit": [(7, 7), (90, 7), (7, 25), (90, 25)]}
     # the Vowel Antenna was redrawn on its own (2026-11-13, Chris: the old one was crooked and too skinny): vowel_icon.png is the
     # ChatGPT picture, vowel_icon_fixed.png its k-centroid downscale (kdown.py) to 35x62; magenta is keyed out here (after the palette is taken, so the interface colours stay as they were)
     vi = np.asarray(Image.open(SRC + "vowel_icon_fixed.png").convert("RGBA")).copy(); mg = (vi[..., 0] > 170) & (vi[..., 1] < 110) & (vi[..., 2] > 170); vi[..., 3] = np.where(mg, 0, 255)
@@ -193,6 +201,11 @@ def main():
     for nm, fn in (("iconL_melter", "melter_icon_fixed.png"), ("iconL_molten", "molten_icon_fixed.png"), ("cab_top", "cab_top_fixed.png"), ("cab_row", "cab_row_fixed.png"), ("big_melter", "melter_big_fixed.png"), ("big_molten", "molten_big_fixed.png")):
         ti = np.asarray(Image.open(SRC + fn).convert("RGBA")).copy(); r_, g_, b_ = ti[..., 0].astype(int), ti[..., 1].astype(int), ti[..., 2].astype(int)
         mg = (b_ > 120) & (r_ > 120) & (g_ < r_ - 60) & (g_ < b_ - 60); ti[..., 3] = np.where(mg, 0, 255); imgs[nm] = Image.fromarray(ti, "RGBA")
+    for nm, cs in RIVETS.items():
+        im_ = imgs[nm].copy()
+        for cx, cy in cs: im_.alpha_composite(rivet, (cx - 3, cy - 3))
+        imgs[nm] = im_
+    imgs["rivet"] = rivet
     # pack
     order = sorted(imgs, key=lambda n: -imgs[n].height); AW = 1400; x = y = sh = 0; rects = {}
     for n in order:
