@@ -169,6 +169,8 @@ def main():
     pa = np.asarray(imgs["plate"]).copy(); pw_ = pa.shape[1]
     for c0, c1 in [(3, 10), (pw_ - 11, pw_ - 4)]:
         for r in list(range(4, 13)) + list(range(16, 23)): pa[r, c0:c1] = pa[13, c0:c1]
+    # the face's bottom edge: a dark line like the one under the top rim, so the bottom rim doesn't run into the face (Chris 2026-11-13)
+    pa[22, 3:pw_ - 3] = pa[3, 3:pw_ - 3]
     imgs["plate"] = Image.fromarray(pa, "RGBA"); imgs["plate_bare"] = imgs["plate"].copy()   # (bare: for short plates, which get one rivet each end)
     RIVETS = {"plate": [(6, 7), (96, 7), (6, 19), (96, 19)], "logbox": [(8, 7), (184, 7), (8, 71), (184, 71)],
               "slot": [(5, 5), (52, 5), (5, 56), (52, 56)], "bar_left": [(11, 13), (11, 81)], "bar_right": [(26, 12), (26, 81)],

@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 59;</script><script>
+<script>window.LEX_BUILD = 60;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -2585,7 +2585,7 @@ function shopGeom() { const n = shopChoices.length, cw = Math.min(170, Math.floo
 // the brass name plate, stretched to any width: its two ends and a repeated plain middle
 // a brass plate any size. A plate shorter than the art (Chris 2026-11-13) has room for one rivet each end, not four: it's built from
 // the bare plate and gets a rivet at each end, in the middle of the face (a pixel above halfway: the bottom rim is deeper)
-function plate3(c, x, y, w, hh) { const [, , pw, ph] = R("plate"), E = 16, M = 20, T = 12, mx = Math.round(pw / 2 - M / 2), my = T; hh = hh || ph;
+function plate3(c, x, y, w, hh) { const [, , pw, ph] = R("plate"), E = 16, M = pw - 2 * E, T = 12, mx = E, my = T; hh = hh || ph;   // (the middle repeats the whole middle span: a short strip repeated its specks)
   const nm = hh < ph - 2 ? "plate_bare" : "plate";
   const row = (sy, dy, sh) => { spr(c, nm, x, dy, 0, sy, E, sh); for (let xx = x + E; xx < x + w - E; xx += M) spr(c, nm, xx, dy, mx, sy, Math.min(M, x + w - E - xx), sh); spr(c, nm, x + w - E, dy, pw - E, sy, E, sh); };
   row(0, y, T); for (let yy = y + T; yy < y + hh - (ph - T - 4); yy += 4) row(my, yy, Math.min(4, y + hh - (ph - T - 4) - yy)); row(T + 4, y + hh - (ph - T - 4), ph - T - 4);
