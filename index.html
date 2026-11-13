@@ -63,6 +63,10 @@ body.padmode .pad,body.padmode .foot,body.inapp .pad,body.inapp .foot{display:no
 body.padmode #console,body.inapp #console{display:block;height:100%;padding:0;max-width:none}
 body.padmode .top{position:fixed;top:4px;left:12px;right:12px;width:auto;z-index:2;opacity:.6}
 body.inapp{padding:0}body.inapp .top{display:none!important}
+/* the installed web app (web/pwa.js adds .pwa only when it runs installed): no controller, the screen fills the display */
+body.pwa{padding:0!important;background:#000!important}body.pwa .pad,body.pwa .foot,body.pwa .top,body.pwa #console::after{display:none!important}
+body.pwa #console{display:block!important;height:100%!important;padding:0!important;max-width:none!important;margin:0!important}
+body.pwa #screenWrap{position:fixed!important;top:0!important;right:0!important;bottom:0!important;left:0!important;align-self:stretch!important;justify-self:stretch!important;width:auto!important;height:auto!important;max-width:none!important;aspect-ratio:auto!important;border-radius:0!important;box-shadow:none!important;margin:0!important}
 body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bottom:0;left:0;width:auto;height:auto;max-width:none;aspect-ratio:auto;border-radius:0;box-shadow:none}
 @supports not (aspect-ratio:1/1){ #screenWrap{height:60vw} }
 @media (prefers-reduced-motion:reduce){ .btn.on,.pill.on{transform:none} }
@@ -1324,6 +1328,7 @@ const TIPS = [
   "PRESS Y OR TAP THE RIGHT KNOB TO RETUNE",
   "X SENDS THE WORD YOU HAVE SPELLED",
   "START PAUSES THE NIGHT",
+  "TAP THE LEFT KNOB TO PAUSE",
   "THE LAMP AT THE END OF THE TUBE LIGHTS WHEN YOUR WORD WILL FILL IT",
   "EACH NEW LETTER MUST TOUCH THE LAST ONE, EVEN CORNER TO CORNER",
   "CLICK THE LAST LETTER AGAIN TO SEND THE WORD",
@@ -1635,7 +1640,8 @@ function drawPause() {   // one parchment panel like the log box, in the game's 
   ctx.restore(); }
 function howStart() { HOW.on = true; HOW.card = 0; HOW.t = 0; Sound.ensure(); Sound.music(); howReset(); HOW_CARDS[0].setup(); Sound.click(); }
 function howGo(k) { HOW.card = k; HOW.t = 0; howReset(); HOW_CARDS[k].setup(); Sound.click(); }
-function maybeReload() { if (buildReady) { try { LexNative.reload(); } catch (e) {} } }
+function reloadBuild() { try { if (window.LEX_RELOAD) window.LEX_RELOAD(); else LexNative.reload(); } catch (e) {} }
+function maybeReload() { if (buildReady) reloadBuild(); }
 function howExit() { HOW.on = false; S = fresh("title"); fillGrid(false); S.grid.forEach(t => t.ch = " "); "LEXICONSIGNAL".split("").forEach((ch, k) => { S.grid[H5([0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13][k])].ch = ch; });
   titleT = 0; titleSkip = true; titleSel = 1; flyers = []; beams = []; busy = 0; pending = null; Sound.click(); }
 function howKey(k) { if (!HOW.on) return false;
@@ -1829,6 +1835,7 @@ cv.addEventListener("pointerdown", (e) => {
     else if (p.y < SCENE_H) swapCancel(); return; }
   if (S.phase === "shop") { const G = shopGeom(), k = Math.floor((p.x - G.x0) / (G.cw + 10)); if (k >= 0 && k < G.n && p.y > G.y0 - 6 && p.y < G.y0 + G.ch) { if (shopFocus === k || usingTouch) choosePart(k); else shopFocus = k; } return; }
   if (S.phase === "play" && Math.hypot(p.x - L.knobR.x, p.y - L.knobR.y) < 18) { retune(); return; }   // the right tuning knob retunes
+  if (S.phase === "play" && Math.hypot(p.x - L.knobL.x, p.y - L.knobL.y) < 18) { pauseOpen(); return; }   // the left knob pauses (touch has no Start button)
   if (!canAct()) return; const i = keyAt(p, false); if (i < 0) return;
   down = i; dragging = false; try { cv.setPointerCapture(e.pointerId); } catch (er) {}
 });
@@ -2118,7 +2125,7 @@ async function devCheck() {
 let appUpdate = 0, buildReady = 0;
 window.ssLog = (s) => log(s);
 window.ssInApp = () => { document.body.classList.add("inapp"); usingTouch = false; usingButtons = true; setTimeout(layout, 30); };
-window.ssUpdateReady = (b) => { buildReady = b; if (S.phase === "title" || S.phase === "splash") { try { LexNative.reload(); } catch (e) {} } else log("A new build is ready. It loads on the title screen."); };
+window.ssUpdateReady = (b) => { buildReady = b; if (S.phase === "title" || S.phase === "splash") reloadBuild(); else log("A new build is ready. It loads on the title screen."); };
 window.ssAppUpdate = (n) => { appUpdate = n; if (!TITLE_MENU.includes("UPDATE APP")) TITLE_MENU.push("UPDATE APP"); };
 let ssRep = {}, ssSel = false;
 window.ssKey = (k, down) => {

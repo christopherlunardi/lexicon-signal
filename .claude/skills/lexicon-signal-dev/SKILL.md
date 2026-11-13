@@ -237,6 +237,24 @@ the same batch.
   dist/lexicon-signal.html with words, studio intro, art and fonts inside, and dist/version.json), then commit and push.
   The page reads window.LEX_ASSETS when present (that build) and fetches the art files otherwise (the phone link).
 
+## The installable web app (2026-11-12)
+- Why: the Android app runs in the device's built-in WebView, which on Chris's Pocket 2S is an old version (about 15 fps, crackle);
+  installed from Chrome, the same game runs in Chrome's current engine. Both stay: the app is unchanged.
+- `python3 -I tools/web.py` (always after `tools/release.py`, so every content change gets a new build number: the service worker's
+  cache is named lexsig-BUILD and an unchanged number keeps serving the old files) writes `web/`: index.html wrapped in a full head
+  (manifest, theme colour, icons, fonts from web/fonts instead of the internet, window.LEX_BUILD), words.js, studio.js, the art,
+  icons made from the radio sprite with LS in dial dots, manifest.webmanifest (fullscreen, landscape, start_url/scope ./),
+  version.json, pwa.js and sw.js (sources in tools/web/). Commit web/; `.github/workflows/pages.yml` deploys it on push.
+- Installed (display-mode fullscreen/standalone or navigator.standalone), pwa.js adds body.pwa: no controller, name bar or foot,
+  the screen fills the display (it needs align-self/justify-self stretch: the shell's grid rules otherwise shrink the fixed screen).
+  .pwa is not .inapp (that one changes the sound and expects the Android bridge).
+- Updates: the new service worker installs and waits; pwa.js sets window.LEX_RELOAD and calls ssUpdateReady(build); the game
+  switches on the title screen (reloadBuild uses LEX_RELOAD when present, else the Android bridge); the old cache is deleted.
+- Touch has no Start button: tapping the radio's left knob pauses (the right one retunes). Everything else is reachable by touch.
+- Test: serve a folder holding a `lexicon-signal` link to web/ with http.server (the Pages path), check manifest + service worker,
+  go offline and reload, play a word; fake installed mode by patching matchMedia in an init script (the display-mode emulation in
+  the dev tools protocol doesn't take).
+
 ## Workshop (options Chris looks at and plays, like the other games)
 - Lexicon Signal Workshop: https://claude.ai/artifact/LuTEWxDDeCazkUDjiXCrdj , built from `workshop/` (index.html + workshop.json +
   img/<topic>-<round>/). `python3 -I workshop/build.py` makes the playable copy `workshop/play.html` (+ words.js, art/pixel/atlas.*,

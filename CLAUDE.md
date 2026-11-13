@@ -24,5 +24,6 @@ Read the workflow in `.claude/skills/lexicon-signal-dev/SKILL.md` before changin
 - `index.html` the whole game (shell, canvas, script). Written as a page body: the artifact host adds the doctype and head.
 - `words.js` the word list (ENABLE, public domain), 3-12 letters.
 - `art/pixel/` the pixel art: sources in `src/`, `build.py` makes the palette, sprites, icons, fonts and `atlas.png`/`atlas.json`.
+- `web/` the installable web app for GitHub Pages, made by `tools/web.py` (with `tools/web/pwa.js` and `sw.js`); never edit web/ by hand.
 - `android/` the Retroid app (downloads the newest dist/lexicon-signal.html itself); `tools/release.py` makes dist/.
 - `art/concept/look-target.png` the look we're matching. Older painted layers in `art/` are kept for reference only.
