@@ -1,0 +1,33 @@
+# Builds the Lexicon Signal app (android/) with the current game inside it, and puts it on the "launcher" release:
+#   https://github.com/christopherlunardi/lexicon-signal/releases/download/launcher/LexiconSignal.apk
+# Game updates don't need this: the app downloads dist/ itself. This runs when the app changes (or by hand).
+name: Android app
+on:
+  push:
+    paths: ['android/**', '.github/workflows/android.yml']
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: gradle/actions/setup-gradle@v4
+        with: { gradle-version: '8.9' }
+      - name: Put the current game inside the app (played until the first download, and offline on a fresh install)
+        run: |
+          mkdir -p android/app/src/main/assets
+          cp dist/lexicon-signal.html android/app/src/main/assets/game.html
+          cp dist/version.json android/app/src/main/assets/version.json
+      - name: Build the app (version code = run number)
+        run: VERSION_CODE=$GITHUB_RUN_NUMBER gradle -p android assembleRelease --no-daemon
+      - name: Publish to the launcher release
+        env: { GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}' }
+        run: |
+          cp android/app/build/outputs/apk/release/app-release.apk LexiconSignal.apk
+          echo "{\"versionCode\": $GITHUB_RUN_NUMBER}" > launcher.json  # the app compares this with its own versionCode to offer UPDATE APP
+          gh release delete launcher -y --cleanup-tag || true
+          gh release create launcher LexiconSignal.apk launcher.json --title "Lexicon Signal app (Android)" --notes "Built from ${{ github.sha }}. Install once; the game updates itself." --prerelease

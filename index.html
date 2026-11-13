@@ -167,6 +167,9 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
+if (!CanvasRenderingContext2D.prototype.roundRect) CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {   // (older WebViews lack it)
+  r = Math.max(0, Math.min(typeof r === "number" ? r : (r && r[0]) || 0, Math.abs(w) / 2, Math.abs(h) / 2));
+  this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r); this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath(); return this; };
 const DICT = new Set((window.LEX_WORDS || "").split(" "));
 const cv = $("screen"), ctx = cv.getContext("2d");          // the screen: 2 fine pixels per world pixel
 let H = 425, BAR_H = 120, SCENE_H = 305; const FINE = 2;   // narrower screens (phones) get a taller world with a two-row bar (H 495, bar 190)
@@ -1243,7 +1246,7 @@ const LD = 14, LP = 6 * LD;   // logo letter cell and letter pitch, in fine pixe
 let titleT = 0, titleSkip = false, logoCv = null, logoSig = null, logoNeon = null;
 const titleFX = { lamps: 6, tube: null, bar: false };
 const TITLE_MENU = ["START", "HOW TO PLAY"]; let titleSel = 0, titleHits = [];
-function titleChoose(i) { if (i === 1) howStart(); else start(); }
+function titleChoose(i) { const m = TITLE_MENU[i]; if (m === "HOW TO PLAY") howStart(); else if (m === "UPDATE APP") { try { LexNative.installApp(); } catch (e) {} } else start(); }
 const titleGlass = { ready: false };
 /* Tips shown scrolling on the dial of the title screen, one at a time in random order. KEEP THIS LIST TRUE TO THE GAME: whenever a
    rule, number, control or part changes, fix the tips it touches, drop the ones that no longer hold and add tips for new things. */
@@ -1283,8 +1286,8 @@ const tipNow = () => TIPS[tipI];
 function nextTip() { let k; do k = (Math.random() * TIPS.length) | 0; while (k === tipI && TIPS.length > 1); tipI = k; }
 // random flicker for the title glass letters: each letter keeps its own clock for when it next stutters, and how
 let glassFl = null, titleTipX = null;
-async function loadTitleGlass() { try { const j = await (await fetch("art/title/glass.json")).json(); const ld = (s) => { const i = new Image(); i.src = s; return i.decode().then(() => i); };
-  const [lit, dim] = await Promise.all([ld("art/title/glass-lit.png"), ld("art/title/glass-dim.png")]); Object.assign(titleGlass, j, { lit, dim, ready: true }); } catch (e) {} }
+async function loadTitleGlass() { try { const LA = window.LEX_ASSETS, j = LA ? LA.glassJson : await (await fetch("art/title/glass.json")).json(); const ld = (s) => { const i = new Image(); i.src = s; return i.decode().then(() => i); };
+  const [lit, dim] = await Promise.all([ld(LA ? LA.glassLit : "art/title/glass-lit.png"), ld(LA ? LA.glassDim : "art/title/glass-dim.png")]); Object.assign(titleGlass, j, { lit, dim, ready: true }); } catch (e) {} }
 const TITLE_LEN = [0, 200, 190, 200, 170, 150, 170];
 function buildLogo() {
   // LEXICON: 10 px cells, dark outline, brass from light at the top to deep amber at the bottom, a lit edge on top, a dark lip under
@@ -1475,6 +1478,7 @@ function howReset() {
 }
 function howStart() { HOW.on = true; HOW.card = 0; HOW.t = 0; Sound.ensure(); Sound.music(); howReset(); HOW_CARDS[0].setup(); Sound.click(); }
 function howGo(k) { HOW.card = k; HOW.t = 0; howReset(); HOW_CARDS[k].setup(); Sound.click(); }
+function maybeReload() { if (buildReady) { try { LexNative.reload(); } catch (e) {} } }
 function howExit() { HOW.on = false; S = fresh("title"); fillGrid(false); S.grid.forEach(t => t.ch = " "); "LEXICONSIGNAL".split("").forEach((ch, k) => { S.grid[H5([0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13][k])].ch = ch; });
   titleT = 0; titleSkip = true; titleSel = 1; flyers = []; beams = []; busy = 0; pending = null; Sound.click(); }
 function howKey(k) { if (!HOW.on) return false;
@@ -1631,7 +1635,7 @@ function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ?
   const x = S.cursor % N + dx, y = ((S.cursor / N) | 0) + dy; S.cursor = ((y + N) % N) * N + ((x + N) % N); knobA.L += .35 * (dx + dy); Sound.tickMove();
 }
 function titleBusy() { if (S.phase === "title" && !titleSkip && titleT < TITLE_LEN[TS]) { titleSkip = true; return true; } return false; }
-function start() { Sound.ensure(); Sound.music(); newRun(); }
+function start() { if (buildReady) return maybeReload(); Sound.ensure(); Sound.music(); newRun(); }   // (a new build waiting in the app loads first)
 function pressA() { if (devKey("a")) return; if (howKey("a")) return; Sound.ensure(); usingButtons = true; dismissCard(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
 function pressB() { if (devKey("b")) return; if (howKey("b")) return; if (S.phase === "swap") return swapCancel(); if (S.phase === "play") back(); }
 function pressStart() { if (devKey("start")) return; if (howKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); retune(); }
@@ -1873,7 +1877,7 @@ function devInstall() {
   const css = document.createElement("style");
   css.textContent = `#devPanel,#devBtn{--shell:#241510;--shell-hi:#3a2216;--ink:#f7ecde;--muted:#c9a77a;--accent:#ffb84a;--button:#57331c;color-scheme:dark}
   #devBtn{font:700 11px system-ui;letter-spacing:.14em;background:var(--accent);color:var(--shell);border:0;border-radius:4px;padding:4px 10px;cursor:pointer;margin-left:8px}
-  #devPanel{position:fixed;inset:0;z-index:60;background:rgba(10,6,4,.72);display:flex;justify-content:center;align-items:flex-start;overflow:auto;padding:max(16px,env(safe-area-inset-top,0px)) 16px 24px}
+  #devPanel{position:fixed;top:0;right:0;bottom:0;left:0;z-index:60;background:rgba(10,6,4,.72);display:flex;justify-content:center;align-items:flex-start;overflow:auto;padding:max(16px,env(safe-area-inset-top,0px)) 16px 24px}
   #devPanel[hidden]{display:none}
   #devPanel .card{background:var(--shell-hi);color:var(--ink);border:1px solid var(--accent);border-radius:8px;max-width:560px;width:100%;padding:16px;display:flex;flex-direction:column;font:13px/1.4 system-ui}
   #devPanel .card>*+*{margin-top:12px}
@@ -1938,11 +1942,31 @@ async function devCheck() {
   try { const u = window.claude && (await window.claude.use("user")); if (u && (await u.isOwner())) { try { localStorage.setItem("lexsig.devkey", DEV_HASH); } catch (_) {} devInstall(); } } catch (e) {}
 }
 
+/* ================= the Android app (the launcher on the Retroids) =================
+   The app plays the newest build it has (downloaded from GitHub, or the one inside it), offline too. Android's WebView doesn't hand
+   game controllers to the page, so the app sends each button here: ssKey(name, down). It calls ssInApp() when the page has loaded,
+   ssUpdateReady(build) when it has downloaded a newer build (it loads on the title screen), and ssAppUpdate(code) when a newer app
+   is out (UPDATE APP shows on the title menu). It's reached back through window.LexNative. */
+let appUpdate = 0, buildReady = 0;
+window.ssLog = (s) => log(s);
+window.ssInApp = () => { document.body.classList.add("inapp"); usingTouch = false; usingButtons = true; setTimeout(layout, 30); };
+window.ssUpdateReady = (b) => { buildReady = b; if (S.phase === "title" || S.phase === "splash") { try { LexNative.reload(); } catch (e) {} } else log("A new build is ready. It loads on the title screen."); };
+window.ssAppUpdate = (n) => { appUpdate = n; if (!TITLE_MENU.includes("UPDATE APP")) TITLE_MENU.push("UPDATE APP"); };
+let ssRep = {}, ssSel = false;
+window.ssKey = (k, down) => {
+  const DIR = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+  if (DIR[k]) { clearTimeout(ssRep[k]); clearInterval(ssRep[k]); if (!down) return; if (introPress()) return; move(...DIR[k]);
+    ssRep[k] = setTimeout(() => { ssRep[k] = setInterval(() => move(...DIR[k]), 110); }, 260); return; }
+  if (k === "select") { if (down) { if (introPress()) return; selectDown(); } else if (!selectUp()) pressSel(); return; }
+  if (!down) return; if (introPress()) return;
+  if (k === "a") pressA(); else if (k === "b") pressB(); else if (k === "start") pressStart();
+};
 /* ================= boot ================= */
 function loop(now) { update(); draw(); pollPad(now); requestAnimationFrame(loop); }
 async function boot() {
-  A = await (await fetch("art/pixel/atlas.json")).json();
-  atlasImg = new Image(); atlasImg.src = "art/pixel/atlas.png"; await atlasImg.decode();
+  const LA = window.LEX_ASSETS;   // the Android app's one-file build carries its art inside the page (it plays offline, from a file)
+  A = LA ? LA.atlasJson : await (await fetch("art/pixel/atlas.json")).json();
+  atlasImg = new Image(); atlasImg.src = LA ? LA.atlasPng : "art/pixel/atlas.png"; await atlasImg.decode();
   PAL = A.palette; const acc = new Set(A.accents.map(c => c.join(","))); ROOMPAL = PAL.filter(c => !acc.has(c.join(",")));
   makeColours(); buildLUT(); artReady = true;
   loadTitleGlass();

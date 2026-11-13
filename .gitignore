@@ -4,3 +4,6 @@ workshop/play.html
 workshop/words.js
 workshop/art/
 workshop/studio.js
+android/app/build/
+android/.gradle/
+android/app/src/main/assets/

@@ -200,6 +200,18 @@ the same batch.
    yuv420p, no sound) into `workshop/img/<topic>-<round>/`. A Workshop option's images may be .mp4 files.
 4. Name check, commit with a plain message, push, republish the link. Tell Chris in a few lines what changed.
 
+## The Retroid app (Android, built the same way as the studio's other game)
+- `android/`: a small launcher app (MainActivity, ApkProvider; package com.idlelooping.lexiconsignal, fixed sideload key
+  lexiconsignal-sideload.jks). On start and on coming back it reads dist/version.json from GitHub (main); if that build is newer it
+  downloads dist/lexicon-signal.html, checks its sha256 and replaces the older copy, then plays the newest build it has (the
+  downloaded one or the one inside the app). Offline it plays what it has. It sends the buttons to the game's ssKey(name, down),
+  calls ssInApp(), ssUpdateReady(build) (loads on the title screen) and ssAppUpdate(code) (UPDATE APP on the title menu).
+- `.github/workflows/android.yml` builds the app on GitHub when android/ changes and puts it on the "launcher" release:
+  https://github.com/christopherlunardi/lexicon-signal/releases/download/launcher/LexiconSignal.apk (Chris installs it once).
+- Every game change that should reach the Retroids: `python3 -I tools/release.py` (bumps tools/build.txt, writes the one-file
+  dist/lexicon-signal.html with words, studio intro, art and fonts inside, and dist/version.json), then commit and push.
+  The page reads window.LEX_ASSETS when present (that build) and fetches the art files otherwise (the phone link).
+
 ## Workshop (options Chris looks at and plays, like the other games)
 - Lexicon Signal Workshop: https://claude.ai/artifact/LuTEWxDDeCazkUDjiXCrdj , built from `workshop/` (index.html + workshop.json +
   img/<topic>-<round>/). `python3 -I workshop/build.py` makes the playable copy `workshop/play.html` (+ words.js, art/pixel/atlas.*,
