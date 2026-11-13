@@ -36,10 +36,11 @@ body{background:var(--shell);color:var(--ink);font-family:var(--ui);overflow:hid
 .dpad .up{left:59px;top:10px;border-bottom-color:var(--ink)}.dpad .dn{left:59px;bottom:10px;border-top-color:var(--ink)}
 .dpad .lf{top:59px;left:10px;border-right-color:var(--ink)}.dpad .rt{top:59px;right:10px;border-left-color:var(--ink)}
 .dpad.on-up .v,.dpad.on-dn .v,.dpad.on-lf .h,.dpad.on-rt .h{filter:brightness(1.3)}
-.btns{display:flex;gap:16px;align-items:center;transform:rotate(-14deg)}
-.btn{width:64px;height:64px;border-radius:50%;border:0;color:var(--ink);font:700 18px var(--ui);background:var(--button-a);box-shadow:inset 0 -4px 0 rgba(0,0,0,.35),0 2px 0 #000;touch-action:none}
-.btn.b{background:var(--button-b);margin-top:34px}
-.btn small{display:block;font-size:8px;letter-spacing:.08em;opacity:.75;margin-top:-2px}
+.btns{position:relative;--dia:150px;--fb:calc(var(--dia) * .36);width:var(--dia);height:var(--dia)}
+.btn{position:absolute;width:var(--fb);height:var(--fb);margin:0;padding:0;line-height:1.05;border-radius:50%;border:0;color:var(--ink);font:700 18px var(--ui);background:var(--button-a);box-shadow:inset 0 -4px 0 rgba(0,0,0,.35),0 2px 0 #000;touch-action:none}
+.btn.a{right:0;top:calc(50% - var(--fb) / 2)}.btn.b{background:var(--button-b);bottom:0;left:calc(50% - var(--fb) / 2)}
+.btn.x{top:0;left:calc(50% - var(--fb) / 2)}.btn.y{background:var(--button-b);left:0;top:calc(50% - var(--fb) / 2)}
+.btn small{display:block;font-size:7px;letter-spacing:.08em;opacity:.75;margin-top:-2px}
 .btn.on,.pill.on{filter:brightness(1.3);transform:translateY(2px)}
 .pills{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);display:flex;gap:14px}
 .pill{width:54px;height:18px;border-radius:9px;border:0;background:var(--button);color:var(--muted);font:700 8px var(--ui);letter-spacing:.12em;box-shadow:inset 0 -2px 0 rgba(0,0,0,.35);touch-action:none;padding:0}
@@ -84,10 +85,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
   body:not(.padmode):not(.inapp) .dpad .dn{left:calc(50% - 6px);bottom:5%;top:auto}
   body:not(.padmode):not(.inapp) .dpad .lf{top:calc(50% - 6px);left:5%;right:auto}
   body:not(.padmode):not(.inapp) .dpad .rt{top:calc(50% - 6px);right:5%;left:auto}
-  body:not(.padmode):not(.inapp) .btns{grid-area:btns;transform:none;display:block;position:relative;gap:0;zoom:1;width:calc(var(--bt) * 2 + var(--bgap));height:calc(var(--bt) + var(--bdy))}
-  body:not(.padmode):not(.inapp) .btn{position:absolute;width:var(--bt);height:var(--bt);margin:0;padding:0;line-height:1.05}
-  body:not(.padmode):not(.inapp) .btn.a{right:0;top:0}
-  body:not(.padmode):not(.inapp) .btn.b{left:0;bottom:0}
+  body:not(.padmode):not(.inapp) .btns{grid-area:btns;zoom:1;--dia:calc(var(--dp) + 10px)}
   body:not(.padmode):not(.inapp) .pill{width:76px;height:44px;background:none;box-shadow:none;border-radius:0;display:grid;place-items:center;transform:none;filter:none;overflow:visible}
   body:not(.padmode):not(.inapp) .pill .cap{display:block;width:60px;height:20px;line-height:20px;border-radius:10px;text-align:center;pointer-events:none;font:700 8px/20px var(--ui);letter-spacing:.1em}
   body:not(.padmode):not(.inapp) .pill.on .cap{filter:brightness(1.25)}
@@ -155,8 +153,8 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
   <div id="screenWrap"><canvas id="screen" width="1280" height="720" aria-label="Game screen"></canvas></div>
   <div class="pad" id="pad">
     <div class="dpad" id="dpad" aria-label="Direction pad"><span class="h"></span><span class="v"></span><i class="up"></i><i class="dn"></i><i class="lf"></i><i class="rt"></i></div>
-    <div class="btns"><button class="btn b" id="btnB" aria-label="B button, back">B<small>BACK</small></button><button class="btn a" id="btnA" aria-label="A button, add letter or send">A<small>TUNE</small></button></div>
-    <div class="pills"><button class="pill" id="btnSel" aria-label="Retune: new letters"><span class="cap">RETUNE</span></button><button class="pill" id="btnStart" aria-label="Start, pause"><span class="cap">PAUSE</span></button></div>
+    <div class="btns"><button class="btn x" id="btnX" aria-label="X button, send the word">X<small>SEND</small></button><button class="btn y" id="btnY" aria-label="Y button, retune">Y<small>RETUNE</small></button><button class="btn a" id="btnA" aria-label="A button, add letter or send">A<small>TUNE</small></button><button class="btn b" id="btnB" aria-label="B button, back">B<small>BACK</small></button></div>
+    <div class="pills"><button class="pill" id="btnSel" aria-label="Select"><span class="cap">SELECT</span></button><button class="pill" id="btnStart" aria-label="Start, pause"><span class="cap">PAUSE</span></button></div>
   </div>
   <p class="foot">Move <kbd>WASD</kbd> <kbd>Arrows</kbd> · Pick letter, again to send <kbd>Space</kbd> <kbd>Enter</kbd> · Back <kbd>Backspace</kbd> · Retune <kbd>R</kbd> · Pause <kbd>Esc</kbd> <kbd>P</kbd> · Or click / tap letters, or drag across them</p>
 </div>
@@ -1834,9 +1832,9 @@ $("dpad").addEventListener("pointermove", () => {});
 $("dpad").addEventListener("pointermove", (e) => { if (padCur !== null) padSet(padDir(e)); });
 ["pointerup", "pointercancel"].forEach(ev => $("dpad").addEventListener(ev, () => padSet(null)));
 function bindBtn(id, fn) { const b = $(id); b.addEventListener("pointerdown", (e) => { e.preventDefault(); b.classList.add("on"); if (!introPress()) fn(); }); ["pointerup", "pointercancel", "pointerleave"].forEach(ev => b.addEventListener(ev, () => b.classList.remove("on"))); }
-bindBtn("btnA", pressA); bindBtn("btnB", pressB); bindBtn("btnStart", pressStart);
+bindBtn("btnA", pressA); bindBtn("btnB", pressB); bindBtn("btnX", pressX); bindBtn("btnY", pressY); bindBtn("btnStart", pressStart);
 { const b = $("btnSel"); b.addEventListener("pointerdown", (e) => { e.preventDefault(); b.classList.add("on"); if (introPress()) return; selectDown(); });
-  b.addEventListener("pointerup", () => { b.classList.remove("on"); if (!selectUp()) pressY(); });   // the left pill retunes (held: dev mode)
+  b.addEventListener("pointerup", () => { b.classList.remove("on"); if (!selectUp()) pressSel(); });   // Select: held a moment, dev mode
   ["pointercancel", "pointerleave"].forEach(ev => b.addEventListener(ev, () => { b.classList.remove("on"); clearTimeout(selHold); })); }
 const padPrev = {}, rep = {};
 function pollPad(now) {

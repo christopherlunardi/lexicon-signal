@@ -147,8 +147,9 @@ the same batch.
   When it can be sent the whole dial lights warm, the word and number go bright and the number gets a "+". A hovered key (mouse,
   or the button cursor) previews dimly: its letter after the word and "+gain" before the number. Every key shows its value as dots.
 - Input (Chris 2026-11-12: a four-button game, Start is a real pause, Select doesn't mute): A add letter, A on the last letter sends,
-  X sends from anywhere, B back, Y retune (also R, the phone's RETUNE pill, or tapping the right tuning knob), Start pause (Esc/P;
-  the phone's PAUSE pill). Select alone does nothing (held 1.5 s: dev panel). The pause menu (pauseItems) is RESUME, SOUND, NEW RUN,
+  X sends from anywhere, B back, Y retune (also R, or tapping the right tuning knob), Start pause (Esc/P). The phone shell has all
+  four face buttons in a diamond (X SEND top, Y RETUNE left, A TUNE right, B BACK bottom; .btns --dia/--fb) and the SELECT and PAUSE
+  pills. Select alone does nothing (held 1.5 s: dev panel). The pause menu (pauseItems) is RESUME, SOUND, NEW RUN,
   QUIT TO TITLE, and in the app CHECK FOR UPDATE / LOAD NEW BUILD, UPDATE APP (when launcher.json is newer) and EXIT GAME; anything
   that throws the run away asks twice. The Android launcher maps BUTTON_X to "x" and BUTTON_Y to "y".
   Colours on Android: the launcher uses a 32-bit window and turns off WebView dark recolouring (forceDark / algorithmic darkening,
