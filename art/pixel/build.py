@@ -174,6 +174,15 @@ def main():
     imgs["iconL_gold"] = gold; fa = np.asarray(gold); hw, hh = max(1, fa.shape[1] // 2), max(1, fa.shape[0] // 2)
     gpal = np.unique(fa[..., :3][fa[..., 3] > 0].reshape(-1, 3), axis=0).astype(float)
     imgs["icon_gold"] = Image.fromarray(pix.mode_shrink(fa[..., :3].astype(float), fa[..., 3] > 0, hw, hh, gpal), "RGBA")
+    # the title screen's console (2026-11-13, Chris's art src/title_console.png): a wooden console panel and two brass button plates
+    # (unlit, lit), k-centroid shrunk to *_fixed.png; magenta keyed out. Taken after the palette so the interface colours don't move.
+    for nm, fn in (("tpanel", "title_panel_fixed.png"), ("tplate", "title_plate_fixed.png"), ("tplate_lit", "title_plate_lit_fixed.png")):
+        ti = np.asarray(Image.open(SRC + fn).convert("RGBA")).copy(); r_, g_, b_ = ti[..., 0].astype(int), ti[..., 1].astype(int), ti[..., 2].astype(int)
+        mg = (b_ > 120) & (r_ > 120) & (g_ < r_ - 60) & (g_ < b_ - 60); ti[..., 3] = np.where(mg, 0, 255); imgs[nm] = Image.fromarray(ti, "RGBA")
+    # the melter and its reward, the molten upgrade (2026-11-13, Chris's art src/melter_icon.png, molten_icon.png), k-centroid shrunk
+    for nm, fn in (("iconL_melter", "melter_icon_fixed.png"), ("iconL_molten", "molten_icon_fixed.png")):
+        ti = np.asarray(Image.open(SRC + fn).convert("RGBA")).copy(); r_, g_, b_ = ti[..., 0].astype(int), ti[..., 1].astype(int), ti[..., 2].astype(int)
+        mg = (b_ > 120) & (r_ > 120) & (g_ < r_ - 60) & (g_ < b_ - 60); ti[..., 3] = np.where(mg, 0, 255); imgs[nm] = Image.fromarray(ti, "RGBA")
     # pack
     order = sorted(imgs, key=lambda n: -imgs[n].height); AW = 1400; x = y = sh = 0; rects = {}
     for n in order:

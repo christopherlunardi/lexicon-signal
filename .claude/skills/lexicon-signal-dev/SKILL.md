@@ -163,6 +163,14 @@ the same batch.
   the device in localStorage lexsig.runs (last 40 runs); on the claude.ai link also saved to the artifact database, collection
   "plays" (owner reads; read it with ArtifactData list). The web app and Android app have no database: pause menu SHARE PLAY LOG
   sends the log through the phone's share sheet (or copies it). Use the logs to build human-like bots for the balance check.
+- Part labels (Workshop tags-r1, Chris picked 3, the lit line): cardTag() draws a thin brass rule near the case's foot with the label
+  lit under it (gold for rare). Layout rule: every case keeps a TAG_ZONE (64 fine px) at its foot that nothing else may enter, and
+  all cases grow to the tallest one's needs (shopGeom); `#test-shop-all-N` shows parts 4N..4N+3 to check.
+- Title menu (MENU_STYLE 6, Chris's art src/title_console.png cut to tpanel / tplate / tplate_lit): the wooden console under the
+  radio with a brass plate per option (START, HOW TO PLAY, HIGH SCORES), the chosen one pressed in and lit; slice3Cv stretches a
+  sprite from its ends and repeated middle.
+- Melter art is in the atlas (iconL_melter, iconL_molten) for the planned melter: once all slots are full the picker offers MELT;
+  five melts fill its lamps and give a wildcard upgrade (+1 copy of a fitted part). Not built yet.
 - Arcade scoring (Chris 2026-11-13: the goal is a high score, the run goes on until you lose): the run score is all signal beamed
   (S.total), shown in the dial's marquee and at game over; the best ten runs on this device are kept in localStorage lexsig.scores
   (HIGH SCORES on the title menu, HIGH SCORE n under it, NEW HIGH SCORE / NUMBER n ON YOUR BOARD at game over).
@@ -355,6 +363,13 @@ the same batch.
   waves); a real logo from ChatGPT replaces it later. A press during an entrance skips to its settled screen (`titleBusy`).
 - tgap-r1 (decided: 1 blank keys, now the game's look, 2026-11-13): what fills the dark strips beside the painted 4x4 logo in the wider 5x5 title glass, TITLE_GAP 0..5
   (as now, blank keys, soft edges, thicker frame, band scales, zoom to fill), `#title-6-tgap-N`; drawn once into titleBg (titleGapDraw).
+- goldkey-r1 (open, 2026-11-13): how the Gold Key looks and works on the glass, GOLD_STYLE 0..5 (0 as now and the default, letter reel,
+  gold lamp board, shows its letter, brass housing, gilded word), `#goldkey-N`; `#test-word-gold-goldkey-N` fits it with the gold key
+  at H5(13) and nothing traced (L, I, N then the gold key makes LINE), `#test-word-goldred-goldkey-N` makes it the red key too. All in
+  `gkKey` / `gkBase` / `gkGlow` / `gkAfter` (cached in gvSpr); in 1..5 the key shows the letter it stands for (`gkLetterOf`) and that
+  letter is sent in gold (flyer/ghost `gold`), the beacon flashes gold (`goldFlash`), 4 and 5 bring the beam and tube down gold too.
+  Media in workshop/img/goldkey-r1/ (gold-N.mp4: gold key, then the same as the red key; gold-N.jpg; gold-N-close.jpg). Frame time at
+  640x480, processor slowed 6x: every option within noise of option 0 (about 27-30 ms at rest, 28-35 with a word, both ways).
 - Rounds: keys-r1 decided (glow tubes), keys-r2 decided: first signal scope, then Chris saw dot glass on his phone and switched to it (KS 10, always on).
   Next: build dot glass out as THE play area and drop the other styles' code.
 

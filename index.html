@@ -557,19 +557,20 @@ function send() {
   const sc = scoreOf(S.path), used = [...S.path], hits = partHits(S.path); sc.red = used.some(i => S.grid[i].hot) ? 1 : 0; sc.gold = used.some(i => S.grid[i].wild) ? 1 : 0; plWord(sc);
   if (S.words > BASE_WORDS) log("Spare battery spent."); S.words -= 1; S.firstWord = false; if (sc.pts > S.best.pts) S.best = { word: sc.word, pts: sc.pts };
   const big = sc.len >= 6 || sc.pts >= 60; busy++;
-  const letters = used.map(i => ({ ch: S.grid[i].ch, ...tileC(i) }));
+  const gch = GOLD_STYLE ? gkLetterOf(used) : null, gall = GOLD_STYLE === 5 && gch != null;   // (Workshop gold looks: the gold key leaves as the letter it stood for, in gold)
+  const letters = used.map(i => { const t = S.grid[i], wk = !!(t.wild && gch); return { ch: wk ? gch : t.ch, wk, gold: wk || gall, red: wk && !!t.hot, ...tileC(i) }; });
   dialFlash = { text: sc.word.toUpperCase() + " +" + sc.pts, t: 100 };
   S.path = []; pathSound = 0; collapse(used); Sound.send(big); sendT = 0;
-  letters.forEach((l, k) => { const t0 = PA() ? (GF.lift ? -16 - k * 4 : -10 - k * 3) : -k * 4, pv = letters[Math.max(0, k - 1)]; ghosts.push({ ch: l.ch, x: l.x, y: l.y, px: pv.x, py: pv.y, k, t: 0 });
-    flyers.push({ ch: l.ch, k, t0, ax: l.x, ay: l.y, cx: (l.x + L.beacon.x) / 2, cy: Math.min(l.y, L.beacon.y) - 90 - Math.random() * 30, t: t0, dur: 46 + k * 2, last: k === letters.length - 1 });
+  letters.forEach((l, k) => { const t0 = PA() ? (GF.lift ? -16 - k * 4 : -10 - k * 3) : -k * 4, pv = letters[Math.max(0, k - 1)]; ghosts.push({ ch: l.ch, x: l.x, y: l.y, px: pv.x, py: pv.y, k, t: 0, gold: l.gold, wk: l.wk, red: l.red });
+    flyers.push({ ch: l.ch, k, t0, ax: l.x, ay: l.y, cx: (l.x + L.beacon.x) / 2, cy: Math.min(l.y, L.beacon.y) - 90 - Math.random() * 30, t: t0, dur: 46 + k * 2, last: k === letters.length - 1, gold: l.gold });
     burst(l.x, l.y, big ? 12 : 7, C.amber); });
-  pending = { sc, big, hits };
+  pending = { sc, big, hits, gold: gch != null };
 }
 function arrive() {
-  const { sc, big, hits } = pending; pending = null; busy--; arriveT = 0;
+  const { sc, big, hits, gold } = pending; pending = null; busy--; arriveT = 0; if (gold) { goldFlash = 44; burst(L.beacon.x, L.beacon.y, 14, C.gold); }
   S.score += sc.pts; S.total += sc.pts; beaconFlash = big ? 40 : 24; burst(L.beacon.x, L.beacon.y, big ? 30 : 16, C.redHot);
   pops.push({ text: "+" + sc.pts, x: L.beacon.x, y: L.beacon.y - 14, t: 0, big }); if (big) shake = 5;
-  beams.push({ t: 0, dur: 24, big, hits }); Sound.beacon(big); log(`${sc.word} +${sc.pts}${sc.mult > 1 ? " x" + sc.mult : ""}`);
+  beams.push({ t: 0, dur: 24, big, hits, gold: gold && GOLD_STYLE >= 4 }); Sound.beacon(big); log(`${sc.word} +${sc.pts}${sc.mult > 1 ? " x" + sc.mult : ""}`);
   if (HOW.on) {}   // (the how-to-play demo never clears the night or ends the run)
   else if (S.score >= S.target) { S.over = S.score >= S.target * OVERDRIVE;
     if (S.over) { overT = 1; shake = 8; Sound.full(); Sound.beacon(true); dialFlash = { text: "OVERDRIVE", t: 140 }; log(`Overdrive! ${S.score} of ${S.target}.`); }
@@ -626,9 +627,9 @@ function update() {
   for (let k = flyers.length - 1; k >= 0; k--) { const f = flyers[k]; f.t++; if (f.t >= f.dur) { flyers.splice(k, 1); if (f.last && pending) arrive(); } }
   for (const p of sparks) { p.x += p.vx; p.y += p.vy; p.vy += .08; p.vx *= .97; p.life -= p.d; } sparks = sparks.filter(p => p.life > 0);
   for (const p of pops) p.t++; pops = pops.filter(p => p.t < 70);
-  if (beaconFlash > 0) beaconFlash--; if (shake > 0) shake -= .5; if (dialFlash && dialFlash.t > 0 && --dialFlash.t === 0) dialFlash = null;
+  if (beaconFlash > 0) beaconFlash--; if (goldFlash > 0) goldFlash--; tubeGold *= .94; if (shake > 0) shake -= .5; if (dialFlash && dialFlash.t > 0 && --dialFlash.t === 0) dialFlash = null;
   // the tower sends the signal down into the tube; the count starts when it lands
-  for (const b of beams) b.t++; beams = beams.filter(b => { if (b.t < b.dur) return true; const q = tubeHead(); burst(q.x, q.y, b.big ? 18 : 10, C.amber); tubeKick = 1; Sound.land(b.big); slotHits(b.hits); return false; });
+  for (const b of beams) b.t++; beams = beams.filter(b => { if (b.t < b.dur) return true; const q = tubeHead(); burst(q.x, q.y, b.big ? 18 : 10, b.gold ? C.gold : C.amber); tubeKick = 1; if (b.gold) tubeGold = 1; Sound.land(b.big); slotHits(b.hits); return false; });
   if (S.shown < S.score && !beams.length) S.shown = Math.min(S.score, S.shown + Math.max(1, Math.ceil((S.score - S.shown) / 12)));
   // type the log out, oldest unfinished entry first
   const e = S.log.find(e => e.n < e.s.length); if (e) { e.n = Math.min(e.s.length, e.n + 1); if (e.s[e.n - 1] !== " " && (e.n & 1)) Sound.type(); }
@@ -1202,7 +1203,7 @@ function gvPath(ok) { const segs = paLinks(0); if (!segs.length) return; ctx.sav
 // clear path (4): the word's order as lit links from one key's dot field to the next one's, each ending in an arrowhead, so nothing
 // crosses a letter; a lit stud marks the first key and a bead runs along every link
 function gvPathEdge(ok) { if (!S.path.length) return;
-  const pts = S.path.map(i => { const c = tileC(i); return { x: FX(c.x), y: FX(c.y + S.grid[i].yOff) }; }), rgb = ok ? "255,234,180" : "255,190,110";
+  const pts = S.path.map(i => { const c = tileC(i); return { x: FX(c.x), y: FX(c.y + S.grid[i].yOff) }; }), rgb = gkNow.gild ? "255,212,84" : ok ? "255,234,180" : "255,190,110";
   ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.lineCap = "round";
   bloom(pts[0].x - 33, pts[0].y, 13, "255,170,70", .55); ctx.fillStyle = `rgba(${rgb},.95)`; ctx.beginPath(); ctx.arc(pts[0].x - 33, pts[0].y, 3.6, 0, 6.283); ctx.fill();
   for (let k = 1; k < pts.length; k++) { const a = pts[k - 1], b = pts[k], d = Math.hypot(b.x - a.x, b.y - a.y) || 1, ux = (b.x - a.x) / d, uy = (b.y - a.y) / d;
@@ -1213,23 +1214,133 @@ function gvPathEdge(ok) { if (!S.path.length) return;
     ctx.fillStyle = `rgba(${rgb},.95)`; ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(sx - uy * 8, sy + ux * 8); ctx.lineTo(sx + uy * 8, sy - ux * 8); ctx.fill();
     if (len > 16 && grow === 1) { const q = (frame * 1.1 + k * 9) % (len - hd); ctx.fillStyle = "rgba(255,250,236,.95)"; ctx.beginPath(); ctx.arc(ax + ux * q, ay + uy * q, 2.6, 0, 6.283); ctx.fill(); } }
   ctx.restore(); }
+/* the Gold Key on the glass (Workshop topic "goldkey", round 1). GOLD_STYLE 0 is the game's look, untouched and the default.
+   1 letter reel (letters roll through the key like a reel and it locks onto the letter it becomes), 2 gold lamp board (a lit gold
+   field with a slow shimmer and glints), 3 shows its letter (the key shows the letter it would be while you trace next to it),
+   4 brass housing (its own brass bezel; the letter flips in), 5 gilded word (the whole word turns gold and is sent gold).
+   In 1..5 the key shows the letter it stands for once the word is real, and that letter flies to the tower in gold.
+   #goldkey-N picks one (#test-word-gold-goldkey-N, #test-word-goldred-goldkey-N when it is the red key too). Cached pictures only. */
+const GOLD_NAMES = ["As now", "Letter reel", "Gold lamp board", "Shows its letter", "Brass housing", "Gilded word"];
+let GOLD_STYLE = 0; { const m = location.hash.match(/goldkey-(\d)/); if (m) GOLD_STYLE = Math.min(GOLD_NAMES.length - 1, +m[1]); }
+const GK = { off: "#2e1e06", offR: "#3c0f08", on: "#ffcf3a", hot: "#fffbe0", bg: "#4a3004", bgh: "#94690f", bgR: "#5a120a", bghR: "#c8301c", rgb: "255,205,60" };
+const GK_REEL = "AKEWSTMOIRNGLUHDBCFYPVJXZQ";
+let gkNow = { ch: null, hint: null, gild: false, red: false }, goldFlash = 0, tubeGold = 0, gkFx = [];
+const gkMemo = new Map();
+// the letter the gold key stands for in a traced path (null while the letters aren't a real word)
+function gkLetterOf(path) { const raw = path.map(i => S.grid[i].ch).join("").toLowerCase(), q = raw.indexOf("?"); if (q < 0) return null;
+  let v = gkMemo.get(raw); if (v === undefined) { const w = resolveWord(raw); v = w.length >= 3 && DICT.has(w) ? w[q].toUpperCase() : null; if (gkMemo.size > 80) gkMemo.clear(); gkMemo.set(raw, v); } return v; }
+function gkFrame() { const wi = S.grid.findIndex(t => t && t.wild); let ch = null, hint = null;
+  if (S.phase === "play" && wi >= 0) { if (S.path.includes(wi)) ch = gkLetterOf(S.path);
+    else if (GOLD_STYLE === 3 && S.path.length >= 2 && adjacent(S.path[S.path.length - 1], wi)) hint = gkLetterOf([...S.path, wi]); }
+  gkNow = { ch, hint, gild: GOLD_STYLE === 5 && ch != null, red: wi >= 0 && !!S.grid[wi].hot }; }
+Object.assign(GV_RIMS, { grest: ["rgba(255,210,96,.7)", 1.5, "#ffb400", 7], gpick: ["rgba(255,214,96,.9)", 2, "#ffb400", 10], gok: ["rgba(255,240,170,.95)", 2.5, "#ffc21a", 12], gring: ["rgba(255,232,150,.9)", 3, "#ffbe1e", 12] });
+// the gold key's housing with its dark dot field: a gold-lipped well, or (4) a brass bezel round a small window
+function gkBase(P, st, red, lit, w0, h0) { return gvSpr("gkb|" + st + (red ? "r" : "") + lit + "|" + w0 + "x" + h0, w0 + 8, h0 + 8, (c) => {
+  const x = 4, y = 4, mx = x + Math.round((w0 - 54) / 2), my = y + Math.round((h0 - 42) / 2); let g;
+  if (st === 4) {
+    g = c.createLinearGradient(0, y - 1, 0, y + h0 + 1); g.addColorStop(0, lit ? "#fff3b4" : "#e2bd62"); g.addColorStop(.45, lit ? "#e8ba4a" : "#a87c2c"); g.addColorStop(1, lit ? "#a87a22" : "#644410");
+    c.fillStyle = g; rr(c, x + 1, y - 1, w0 - 2, h0 + 2, 5); c.fill(); c.strokeStyle = "rgba(26,15,5,.95)"; c.lineWidth = 1.5; c.stroke();
+    c.strokeStyle = "rgba(255,247,206,.6)"; c.lineWidth = 1; c.beginPath(); c.moveTo(x + 6, y + .5); c.lineTo(x + w0 - 6, y + .5); c.stroke();
+    c.fillStyle = red ? "#140403" : "#060402"; rr(c, mx - 4, my - 3, 62, 48, 3); c.fill();
+    g = c.createLinearGradient(0, my - 3, 0, my + 45); g.addColorStop(0, "rgba(20,10,2,.95)"); g.addColorStop(1, "rgba(255,236,170,.85)"); c.strokeStyle = g; c.lineWidth = 1.5; c.stroke();
+    c.save(); rr(c, mx - 4, my - 3, 62, 48, 3); c.clip(); g = c.createLinearGradient(0, my - 3, 0, my + 8); g.addColorStop(0, "rgba(0,0,0,.8)"); g.addColorStop(1, "rgba(0,0,0,0)"); c.fillStyle = g; c.fillRect(mx - 4, my - 3, 62, 11); c.restore();
+    for (const [rx, ry] of [[x + 5.5, y + 6], [x + w0 - 5.5, y + 6], [x + 5.5, y + h0 - 6], [x + w0 - 5.5, y + h0 - 6]]) { c.fillStyle = "#4a3009"; c.beginPath(); c.arc(rx, ry, 2.5, 0, 7); c.fill(); c.fillStyle = lit ? "#fffbe0" : "#ffe9a0"; c.beginPath(); c.arc(rx - .6, ry - .6, 1.4, 0, 7); c.fill(); }
+  } else { c.drawImage(gvBase(P, GLASS_STYLE, 0, w0, h0), 0, 0);
+    g = c.createLinearGradient(0, y - 1, 0, y + h0 + 1); g.addColorStop(0, "rgba(120,84,20,.9)"); g.addColorStop(.5, "rgba(214,160,50,.75)"); g.addColorStop(1, "rgba(255,222,120,.95)"); c.strokeStyle = g; c.lineWidth = 1.5; rr(c, x + 1, y - 1, w0 - 2, h0 + 2, 5); c.stroke(); }
+  if (st === 2) for (let r = 0; r < 7; r++) c.drawImage(gvAll(red ? mixc([104, 72, 10], [140, 24, 10], r / 6) : "#5e4009"), 0, r * 6, 54, 6, mx, my + r * 6, 54, 6);   // the lamp board: every dot softly lit
+  else c.drawImage(gvAll(red ? GK.offR : GK.off), mx, my);
+  if (st === 1) { c.fillStyle = "#ffd24a"; for (const s of [-1, 1]) { const px = s < 0 ? mx - 9 : mx + 63, py = my + 21; c.beginPath(); c.moveTo(px + s * -1 + (s < 0 ? 6 : -6), py); c.lineTo(px, py - 4.5); c.lineTo(px, py + 4.5); c.fill(); } }   // the reel's two index marks
+}); }
+// a reel of letters rolling up through the dot field, a whole dot row at a time
+function gkReel(mx, my, R, col) { const n = Math.floor(R / 9), rw = R - n * 9, L_ = GK_REEL.length;
+  if (rw < 7) ctx.drawImage(gvLet(GK_REEL[n % L_], col), 0, rw * 6, 54, (7 - rw) * 6, mx, my, 54, (7 - rw) * 6);
+  if (rw > 2) { const h = Math.min(7, rw - 2); ctx.drawImage(gvLet(GK_REEL[(n + 1) % L_], col), 0, 0, 54, h * 6, mx, my + (9 - rw) * 6, 54, h * 6); } }
+const gkShade = () => gvSpr("gkshade", 54, 42, (c) => { const g = c.createLinearGradient(0, 0, 0, 42); g.addColorStop(0, "rgba(6,3,1,.72)"); g.addColorStop(.3, "rgba(6,3,1,0)"); g.addColorStop(.7, "rgba(6,3,1,0)"); g.addColorStop(1, "rgba(6,3,1,.72)"); c.fillStyle = g; c.fillRect(0, 0, 54, 42); });
+const gkStar = () => gvSpr("gkstar", 32, 32, (c) => { let g = c.createRadialGradient(16, 16, 0, 16, 16, 7); g.addColorStop(0, "rgba(255,252,230,1)"); g.addColorStop(.4, "rgba(255,220,110,.5)"); g.addColorStop(1, "rgba(255,200,60,0)"); c.fillStyle = g; c.fillRect(0, 0, 32, 32);
+  for (const v of [0, 1]) { g = v ? c.createLinearGradient(16, 1, 16, 31) : c.createLinearGradient(1, 16, 31, 16); g.addColorStop(0, "rgba(255,236,160,0)"); g.addColorStop(.5, "rgba(255,250,220,1)"); g.addColorStop(1, "rgba(255,236,160,0)"); c.fillStyle = g; v ? c.fillRect(15.25, 1, 1.5, 30) : c.fillRect(1, 15.25, 30, 1.5); } });
+// the gold key (and, in the gilded word, every key of the word) drawn in gold
+function gkKey(o, P, w0, h0, ox, oy, ok, low, fl, lockT) {
+  const { t, x, y } = o, GS = GOLD_STYLE, wild = !!t.wild, hot = !!t.hot, red = hot && wild, lit = t.lit, mx = x + ox, my = y + oy, land = t.land || 0, wave = o.on && ok, scr = land > .4;
+  const now = wild ? (o.on && gkNow.ch) || "?" : o.ch;   // what the key shows: "?" or the letter it stands for
+  if (wild) { if (t.gkCh == null) { t.gkCh = t.gkPrev = now; t.gkAt = -999; t.gkF = frame; t.gkP = Math.floor(t.seed * 200); }
+    if (now !== t.gkCh) { t.gkPrev = t.gkCh; t.gkCh = now; t.gkAt = frame; } }
+  const age = wild ? frame - t.gkAt : 999, locked = wild && now !== "?", GLO = "rgba(255,190,40,.6)";
+  ctx.globalAlpha = 1;
+  if (!wild) ctx.drawImage(gvBase(P, GLASS_STYLE, o.dots, w0, h0), x - 4, y - 4);
+  else { ctx.drawImage(gkBase(P, GS, red, 0, w0, h0), x - 4, y - 4);
+    if (GS === 4) { const B1 = gkBase(P, GS, red, 1, w0, h0); if (lit > .03) { ctx.globalAlpha = lit; ctx.drawImage(B1, x - 4, y - 4); }
+      const u = ((frame + Math.floor(t.seed * 170)) % 170) / 34; if (u < 1) for (let k = 0; k < 3; k++) { const sx = Math.floor(u * (w0 - 8)) + k * 5; ctx.globalAlpha = k === 1 ? .85 : .4; ctx.drawImage(B1, sx, 0, 5, h0 + 8, x - 4 + sx, y - 4, 5, h0 + 8); }   // a sheen slides along the brass
+      ctx.globalAlpha = 1; } }
+  if (lit > .03) { const r0 = Math.max(0, Math.floor(6.6 - 8.4 * lit) + 1);
+    if (r0 < 7) { const hg = 42 - r0 * 6; ctx.drawImage(gvAll(hot ? GK.bgR : GK.bg), 0, r0 * 6, 54, hg, mx, my + r0 * 6, 54, hg);
+      if (wave) { ctx.globalAlpha = .25 + .25 * Math.sin(frame * .3 - o.k * 2); ctx.drawImage(gvAll(hot ? GK.bghR : GK.bgh), 0, r0 * 6, 54, hg, mx, my + r0 * 6, 54, hg); ctx.globalAlpha = 1; }
+      if (!wild && o.dots) ctx.drawImage(gvVal(o.dots, P.val), mx, my); }
+    if (GS !== 4 || !wild) { ctx.globalAlpha = lit; ctx.drawImage(gvRim(ok ? "gok" : "gpick", w0, h0), x - 16, y - 16); ctx.globalAlpha = 1; }
+  } else if (o.hv) ctx.drawImage(gvRim("hv", w0, h0), x - 16, y - 16);
+  else if (wild && GS !== 4) { ctx.globalAlpha = (.5 + .3 * Math.sin(frame / 14 + t.seed * 6)) * (GS === 3 && gkNow.hint ? 1.6 : 1); ctx.drawImage(gvRim("grest", w0, h0), x - 16, y - 16); ctx.globalAlpha = 1; }
+  const a = lit > .5 ? (wave ? fl : 1) : Math.min(1, Math.min(1, (1 - low * .35 * (1 - lit)) * fl) + land), col = lit > .5 ? GK.hot : GK.on;
+  const glyph = (ch, c, al) => { if (al <= .01) return; ctx.globalAlpha = al; if (GF.deep) ctx.drawImage(gvGlow(ch, GLO), mx - 14, my - 14); ctx.drawImage(gvLet(ch, c), mx, my); };
+  const rows = (ch, c, r0, r1, al) => { if (r1 < r0) return; ctx.globalAlpha = al; ctx.drawImage(gvLet(ch, c), 0, r0 * 6, 54, (r1 - r0 + 1) * 6, mx, my + r0 * 6, 54, (r1 - r0 + 1) * 6); };
+  if (wild) { t.gkP += (frame - t.gkF) * (o.on ? 1 : .2); t.gkF = frame; }
+  if (scr) { const H = dotSpr(GK.hot); ctx.globalAlpha = 1; for (let r = 0; r < 7; r++) for (let c = 1; c < 8; c++) if (hsh(c + r * 9 + (frame >> 1) * 3.1, t.seed * 17) < .42) ctx.drawImage(H, mx + c * 6, my + r * 6, 6, 6); }
+  else if (!wild) glyph(o.ch, hot ? "#ffc4a0" : GK.hot, a);
+  else if (GS === 1) {   // letter reel: rolls slowly at rest, spins while traced, then the letter comes up from below and locks with a flash
+    if (locked && age >= 4) { const off = Math.round(8 * (1 - clamp01((age - 4) / 9)) ** 2);
+      if (off) { if (off < 7) { ctx.globalAlpha = 1; ctx.drawImage(gvLet(now, GK.hot), 0, 0, 54, (7 - off) * 6, mx, my + off * 6, 54, (7 - off) * 6); } }
+      else { glyph(now, GK.hot, a); if (age < 28) { ctx.globalAlpha = 1 - (age - 13) / 15; ctx.drawImage(gvLet(now, "#ffffff"), mx, my); gkFx.push([0, o.cx, o.cy, 1 + .5 * (age - 13) / 15, .8 * (1 - (age - 13) / 15)]); } } }
+    else { ctx.globalAlpha = a; gkReel(mx, my, Math.floor(t.gkP), col); ctx.globalAlpha = 1; ctx.drawImage(gkShade(), mx, my); } }
+  else if (GS === 2) {   // gold lamp board: "?" melts into the letter; a shimmer crosses the lit field and glints come and go
+    const k = clamp01(age / 8), c2 = lit > .5 ? "#fffbe2" : "#fff0a0"; if (k < 1) glyph(t.gkPrev, c2, a * (1 - k)); glyph(now, c2, a * k);
+    const ws = (frame + Math.floor(t.seed * 150)) % 150; if (ws < 46) { const H = dotSpr("#ffe9a0"), wipe = ws * .45 - 2; for (let r = 0; r < 7; r++) for (let c = 0; c < 9; c++) { const band = Math.max(0, 1 - Math.abs((c + r) * .9 - wipe) / 1.8) * .5; if (band > .03) { ctx.globalAlpha = band; ctx.drawImage(H, mx + c * 6, my + r * 6, 6, 6); } } }
+    for (let j = 0; j < 2; j++) { const cyc = frame + j * 37 + Math.floor(t.seed * 90), n = Math.floor(cyc / 56), u = (cyc % 56) / 56; gkFx.push([1, mx + Math.floor(hsh(n + .5, j * 3 + t.seed) * 9) * 6 + 3, my + Math.floor(hsh(n, j + t.seed) * 7) * 6 + 3, .55 + .35 * u, Math.sin(u * 3.1416) ** 2 * .9]); }
+    if (locked && age < 22) for (let j = 0; j < 7; j++) { const an = j * .9 + t.seed * 6, d = 14 + age * 2.4; gkFx.push([1, o.cx + Math.cos(an) * d * 1.3, o.cy + Math.sin(an) * d, .8 - age / 40, 1 - age / 22]); } }
+  else if (GS === 3) {   // shows its letter: while the traced letters could end on it, the letter it would be comes and goes with the "?"
+    if (o.on) { glyph(now, col, a); if (age < 9) { ctx.globalAlpha = 1 - age / 9; ctx.drawImage(gvLet(now, "#ffffff"), mx, my); } }
+    else if (gkNow.hint) { if (t.gkH !== gkNow.hint) { t.gkH = gkNow.hint; t.gkHA = frame; } const cyc = (frame - t.gkHA) % 76, k = cyc < 56 ? Math.min(1, cyc / 7, (56 - cyc) / 7) : 0; glyph("?", GK.on, a * (1 - k)); glyph(t.gkH, "#ffe27a", a * k); }
+    else { t.gkH = null; glyph("?", GK.on, a * (.8 + .2 * Math.sin(frame / 20))); } }
+  else if (GS === 4) {   // brass housing: the glyph closes to a line and the new one opens out from it, like a flap turning over
+    if (age < 12) { const g = age < 5 ? t.gkPrev : now, kk = age < 5 ? 3 - age * .8 : (age - 5) * .6; rows(g, col, Math.max(0, Math.ceil(3 - kk)), Math.min(6, Math.floor(3 + kk)), a);
+      ctx.globalAlpha = .8 * Math.max(0, 1 - Math.abs(age - 5) / 5); ctx.drawImage(gvAll(GK.hot), 0, 18, 54, 6, mx, my + 18, 54, 6); }
+    else glyph(now, col, a); }
+  else {   // gilded word: the key takes its letter with a flash and the gold runs through the whole word
+    glyph(now, col, a); if (age < 10) { ctx.globalAlpha = 1 - age / 10; ctx.drawImage(gvLet(now, "#ffffff"), mx, my); }
+    if (!o.on) { const u = ((frame + Math.floor(t.seed * 140)) % 140) / 44; if (u < 1) gkFx.push([0, o.cx, o.cy, 1 + .45 * u, .5 * (1 - u)]); } }
+  if (GS === 5 && wave && lockT < 20) { const e = lockT / 20; gkFx.push([0, o.cx, o.cy, 1 + .55 * (1 - (1 - e) ** 2), .8 * (1 - e)]); }
+  if (HOT_STYLE === 5 && (hot || (gkNow.gild && gkNow.red && o.on))) { const scan = ((frame * .3 + (wild || hot ? o.i * 3 : 100 - o.k * 1.5)) % 10) - 1.5, R = gvAll("#ff4630");   // the red key's scan line
+    for (let r = Math.max(0, Math.ceil(scan - 1)); r < 7 && r < scan + 1; r++) { ctx.globalAlpha = .8 * (1 - Math.abs(r - scan)); ctx.drawImage(R, 0, r * 6, 54, 6, mx, my + r * 6, 54, 6); } }
+  if (wave && lit > .5) { const ws = frame - dotOkAt - (o.k || 0) * 4, wipe = ws < 0 ? -9 : ws < 22 ? ws * .75 - 2 : ((ws - 22) % 150) * .5 - 2, wa = ws < 22 ? .6 : .2;   // the light wipe over a real word, in gold
+    if (wipe > -3 && wipe < 16) { const H = dotSpr(GK.hot), b = bits(now === "Qu" ? "Q" : now), qu = now === "Qu";
+      for (let r = 0; r < 7; r++) for (let c = 0; c < 9; c++) { const band = Math.max(0, 1 - Math.abs((c + r) * .9 - wipe) / 1.6) * wa;
+        if (band > .02 && !gvIsL(b, qu, r, c) && !(c === 8 && r >= 7 - o.dots)) { ctx.globalAlpha = band; ctx.drawImage(H, mx + c * 6, my + r * 6, 6, 6); } } } }
+  ctx.globalAlpha = 1;
+}
+// rings of gold light and star glints, drawn over all the keys
+function gkAfter(w0, h0) { if (!gkFx.length) return; ctx.globalCompositeOperation = "lighter"; const R = gvRim("gring", w0, h0), St = gkStar();
+  for (const [kind, x, y, s, al] of gkFx) { if (al <= .01) continue; ctx.globalAlpha = Math.min(1, al); if (kind) ctx.drawImage(St, x - 16 * s, y - 16 * s, 32 * s, 32 * s); else ctx.drawImage(R, x - R.width * s / 2, y - R.height * s / 2, R.width * s, R.height * s); }
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over"; gkFx.length = 0; }
+function gkGlow(t, c) { const x = FX(c.x), y = FX(c.y + t.yOff), GS = GOLD_STYLE, p = Math.sin(frame / 7), locked = t.gkCh && t.gkCh !== "?", age = frame - (t.gkAt || 0);
+  const k = [1, 1, 1.35, .8, .8, 1][GS] * (GS === 3 && gkNow.hint ? 1.5 : 1) * (locked ? 1.3 : 1) * (1 - .55 * (t.lit || 0));
+  if (t.hot) { bloom(x - 13, y - 9, 42, GK.rgb, .32 * k * (.72 + .28 * p)); bloom(x + 13, y + 9, 46, "255,60,40", .3 * (.72 - .28 * p)); }   // gold and red side by side, taking turns
+  else bloom(x, y, 52, GK.rgb, .3 * k * (.8 + .2 * p));
+  if (locked && age < 16) bloom(x, y, 74, "255,230,140", .34 * (1 - age / 16)); }
 function paGlassVar({ G, tiles, ok, low }) {
   const GS = GLASS_STYLE, P = GF.side ? GV_EMB : GV_STD, w0 = FX(L.tw), h0 = FX(L.th), ox = Math.round((w0 - 54) / 2), oy = Math.round((h0 - 42) / 2);
-  if (ok && !dotOkWas) dotOkAt = frame; dotOkWas = ok; const lockT = frame - dotOkAt;
+  if (ok && !dotOkWas) dotOkAt = frame; dotOkWas = ok; const lockT = frame - dotOkAt; if (GOLD_STYLE) gkFrame();
   if (GF.deep) ctx.drawImage(gvBack(G), G.x, G.y); else { ctx.fillStyle = "#070403"; ctx.fillRect(G.x, G.y, G.w, G.h); }
   // the places a sent word left
   for (const g of ghosts) { const x = FX(g.x) - w0 / 2, y = FX(g.y) - h0 / 2;
     if (GF.lift) {   // lift-off: the fill drains away down the key while its letter hangs over it, an ember of the letter fades, then the housing goes
       const rel = Math.min(34, 16 + g.k * 4), a = g.t <= rel ? 1 : 1 - (g.t - rel) / 9; if (a <= 0) continue;
-      ctx.globalAlpha = a; ctx.drawImage(gvBase(P, GS, 0, w0, h0), x - 4, y - 4);
-      const r0 = Math.ceil(g.t / rel * 7); if (r0 < 7) ctx.drawImage(gvAll(P.bg), 0, r0 * 6, 54, 42 - r0 * 6, x + ox, y + oy + r0 * 6, 54, 42 - r0 * 6);
-      ctx.globalAlpha = a * .55 * Math.max(0, 1 - g.t / (rel + 8)); ctx.drawImage(gvLet(g.ch, P.on), x + ox, y + oy); ctx.globalAlpha = 1; continue; }
+      ctx.globalAlpha = a; ctx.drawImage(g.wk ? gkBase(P, GOLD_STYLE, g.red, 0, w0, h0) : gvBase(P, GS, 0, w0, h0), x - 4, y - 4);
+      const r0 = Math.ceil(g.t / rel * 7); if (r0 < 7) ctx.drawImage(gvAll(g.gold ? (g.red ? GK.bgR : GK.bg) : P.bg), 0, r0 * 6, 54, 42 - r0 * 6, x + ox, y + oy + r0 * 6, 54, 42 - r0 * 6);
+      ctx.globalAlpha = a * .55 * Math.max(0, 1 - g.t / (rel + 8)); ctx.drawImage(gvLet(g.ch, g.gold ? GK.on : P.on), x + ox, y + oy); ctx.globalAlpha = 1; continue; }
     if (g.t < 16) { ctx.globalAlpha = 1 - g.t / 16; ctx.drawImage(gvBase(P, GS, 0, w0, h0), x - 4, y - 4); ctx.globalAlpha = 1; } }
   const rings = [];
   for (const o of tiles) { const { t, x, y } = o, lit = t.lit, hot = !!t.hot, mx = x + ox, my = y + oy, land = t.land || 0, wave = o.on && ok;
     if (t.flN == null || t.flN < frame - 600) t.flN = frame + 60 + Math.random() * 500;
     if (frame >= t.flN) { t.flE = frame + 2 + Math.random() * 10; t.flN = frame + 40 + Math.random() * (Math.random() < .3 ? 120 : 700); }
     const fl = t.flE > frame ? .68 + .27 * hsh(frame >> 1, t.seed * 7) : 1;   // the whole letter dips gently, never single dots
+    if (GOLD_STYLE && (t.wild || (gkNow.gild && o.on))) { gkKey(o, P, w0, h0, ox, oy, ok, low, fl, lockT); continue; }
     const warm = GF.warm ? gvWarm(t) : GV_REST, scr = !GF.warm && land > .4;
     let la = Math.min(1, (1 - low * .35 * (1 - lit)) * fl) * warm[0]; if (GF.lock && !o.on) la *= 1 - .42 * lockK;   // word lock: the rest of the glass dips while a real word is traced
     ctx.globalAlpha = 1; ctx.drawImage(gvBase(P, GS, o.dots, w0, h0), x - 4, y - 4);
@@ -1264,6 +1375,7 @@ function paGlassVar({ G, tiles, ok, low }) {
   if (rings.length) { ctx.globalCompositeOperation = "lighter"; const e = lockT / 20, s = 1 + .55 * (1 - (1 - e) ** 2), R = gvRim("ring", w0, h0);   // a ring of light opens out from every key of the word
     for (const o of rings) { ctx.globalAlpha = .8 * (1 - e); ctx.drawImage(R, o.cx - R.width * s / 2, o.cy - R.height * s / 2, R.width * s, R.height * s); }
     ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over"; }
+  if (GOLD_STYLE) gkAfter(w0, h0);
   if (GF.edge) gvPathEdge(ok); else gvPath(ok);
   ctx.globalAlpha = 1;
 }
@@ -1291,8 +1403,9 @@ const PA_RGB = ["255,130,40", "120,255,170", "255,120,40", "255,180,80", "255,15
 function paGlows(okNow) {
   const g = L.glass, rgb = PA_RGB[KS - 6];
   S.grid.forEach((t, i) => { if (!t || t.ch === " ") return; const c = tileC(i), lit = t.lit || 0, hot = okNow && lit > .5;
-    if (t.wild && KS === 10) bloom(FX(c.x), FX(c.y + t.yOff), 52, "255,210,70", .3 * (.8 + .2 * Math.sin(frame / 7)));
-    if (t.hot && KS === 10) bloom(FX(c.x), FX(c.y + t.yOff), [0, 46, 56, 50, 30, 44][HOT_STYLE], "255,60,40", [0, .32, .3, .26, .14, .22][HOT_STYLE] * (.8 + .2 * Math.sin(frame / 9 + i)));
+    if (t.wild && KS === 10) { if (GOLD_STYLE) gkGlow(t, c); else bloom(FX(c.x), FX(c.y + t.yOff), 52, "255,210,70", .3 * (.8 + .2 * Math.sin(frame / 7))); }
+    else if (gkNow.gild && lit > .5) bloom(FX(c.x), FX(c.y + t.yOff), 58, GK.rgb, .24);
+    if (t.hot && KS === 10 && !(GOLD_STYLE && t.wild)) bloom(FX(c.x), FX(c.y + t.yOff), [0, 46, 56, 50, 30, 44][HOT_STYLE], "255,60,40", [0, .32, .3, .26, .14, .22][HOT_STYLE] * (.8 + .2 * Math.sin(frame / 9 + i)));
     const gk = GF.any ? gvGlowK(t, lit > .5) : GV_ONE;
     bloom(FX(c.x), FX(c.y + t.yOff), 40 + 20 * lit, hot ? "255,225,160" : GF.side ? "255,128,34" : rgb, PA_BASE[KS - 6] * gk[0] + (KS === 9 ? .42 : .3) * lit + .22 * (t.land || 0) * gk[1]); });
   if (sendT < 18) bloom(FX(g.x + g.w / 2), FX(g.y + g.h / 2), FX(g.w) * .9, KS === 7 ? "255,216,128" : "255,190,110", .32 * (1 - sendT / 18));   // the glass flares as a word leaves
@@ -1303,11 +1416,11 @@ const flyAt = (f, t) => { const u = clamp01(t / f.dur), e = u * u * (3 - 2 * u);
 const PA_FLY = [[F_VALVE, 38, "255,170,80", 1], [F_SCOPE, 37, "255,216,128", 0], ["700 " + F_PLATE, 38, "255,160,70", 0], [F_BOARD, 26, "255,200,110", 0]];
 // lift-off (5): a sent letter rises whole off its key, bigger and brighter, its shadow left on the glass; then it comes apart into its
 // dots from there and streams to the tower
-function gvLift(f, chg) { const up = chg * chg * (3 - 2 * chg), K = 1 + .45 * up, lift = 16 * up, HOT = dotSpr("#fff2d4"), TAIL = dotSpr("#ffb050");
+function gvLift(f, chg) { const up = chg * chg * (3 - 2 * chg), K = 1 + (f.gold ? .6 : .45) * up, lift = 16 * up, HOT = dotSpr(f.gold ? "#ffe45c" : "#fff2d4"), TAIL = dotSpr(f.gold ? "#f2a400" : "#ffb050");
   if (f.t < 0) { const x = FX(f.ax), y = FX(f.ay), sh = gvSpr("shadow", 96, 40, (c) => { const g = c.createRadialGradient(48, 20, 2, 48, 20, 46); g.addColorStop(0, "rgba(0,0,0,.85)"); g.addColorStop(1, "rgba(0,0,0,0)"); c.setTransform(1, 0, 0, .42, 0, 11.6); c.fillStyle = g; c.fillRect(0, -30, 96, 100); });
     ctx.globalAlpha = .7 * up; ctx.drawImage(sh, x - 48, y - 4);
-    ctx.globalCompositeOperation = "lighter"; bloom(x, y - lift, 44 + 16 * up, "255,200,120", .4 * up); ctx.globalCompositeOperation = "source-over";
-    ctx.globalAlpha = 1; ctx.drawImage(gvLet(f.ch, "#fff2d4"), x - 27 * K, y - 21 * K - lift, 54 * K, 42 * K); return; }
+    ctx.globalCompositeOperation = "lighter"; bloom(x, y - lift, 44 + 16 * up, f.gold ? GK.rgb : "255,200,120", (f.gold ? .6 : .4) * up); ctx.globalCompositeOperation = "source-over";
+    ctx.globalAlpha = 1; ctx.drawImage(gvLet(f.ch, f.gold ? "#ffe45c" : "#fff2d4"), x - 27 * K, y - 21 * K - lift, 54 * K, 42 * K); return; }
   const qu = f.ch === "Qu", b = bits(qu ? "Q" : f.ch);
   for (let r = 0; r < 7; r++) for (let c = 0; c < 9; c++) if (gvIsL(b, qu, r, c)) { const tt = f.t - hsh(c + f.k * 5, r) * 12, p = flyAt(f, tt), sp = (1 - p.e) ** 1.5, ox = (c - 4) * 6 * 1.45 * sp, oy = ((r - 3) * 6 * 1.45 - 16) * sp, sz = (7 - 3.5 * p.u) * (1 + .3 * sp);
     if (p.u > .93) continue;
@@ -1349,6 +1462,7 @@ function drawGlows() {
   const prog = S.phase === "play" ? Math.min(1, S.shown / S.target) : .5;   // the tower burns brighter as the night's signal fills
   bloom(FX(b.x), FX(b.y), 46 + prog * 60 + beaconFlash * 2, "255,60,40", (.25 + .55 * prog) * pulse + beaconFlash / 50);
   bloom(FX(b.x), FX(b.y), 20, "255,200,170", .5 + beaconFlash / 40);
+  if (goldFlash > 0) { bloom(FX(b.x), FX(b.y), 70 + goldFlash * 3, GK.rgb, goldFlash / 44); bloom(FX(b.x), FX(b.y), 30, "255,244,190", goldFlash / 44); }   // a word that used the gold key lands gold
   for (const [x, y, n, kind] of P("window_lights") || []) { if (kind !== "warm") continue; const big = n > 40;
     bloom(FX(L.winX + x), FX(L.winY + y), big ? FX(22) : 10 + Math.sqrt(n) * 3, "255,190,90", big ? .18 : Math.min(.35, .08 + n * .02)); }
   bloom(FX(W - 20), FX(SCENE_H - 30), FX(220), "255,150,60", .16 + .03 * Math.sin(frame / 50));     // the unseen lamp, breathing
@@ -1360,7 +1474,7 @@ function drawGlows() {
   const sel = new Set(S.path); if (PA()) paGlows(okNow); else S.grid.forEach((t, i) => { if (!t) return; const c = tileC(i);
     if (sel.has(i)) bloom(FX(c.x), FX(c.y + t.yOff), 56, okNow ? "255,225,150" : "255,170,70", .35);
     else if (KS === 2 || KS === 3) bloom(FX(c.x), FX(c.y + t.yOff), 34, "255,130,40", .08); });
-  for (const f of flyers) if (f.t > 0) { const q = flyPos(f); if (q.u < .95) bloom(FX(q.x), FX(q.y), 40, "255,200,110", .45); }
+  for (const f of flyers) if (f.t > 0) { const q = flyPos(f); if (q.u < .95) bloom(FX(q.x), FX(q.y), f.gold ? 52 : 40, f.gold ? GK.rgb : "255,200,110", f.gold ? .6 : .45); }
   tubeGlows(); slotGlows();
   for (const p of sparks) if (p.life > .3) bloom(FX(p.x), FX(p.y), 8, "255,190,110", p.life * .5);
   // lit windows across the city twinkle faintly
@@ -1525,13 +1639,14 @@ function drawTube() {
   // the signal travelling down from the tower: a bright head with a fading tail
   for (const bm of beams) { const q = tubeHead(), b = L.beacon, cx = (b.x + q.x) / 2, cy = Math.min(b.y, q.y) - 30;
     for (let j = 10; j >= 0; j--) { const u = Math.max(0, Math.min(1, (bm.t - j * .8) / bm.dur)), e = u * u, x = (1 - e) ** 2 * b.x + 2 * (1 - e) * e * cx + e * e * q.x, y = (1 - e) ** 2 * b.y + 2 * (1 - e) * e * cy + e * e * q.y;
-      const r = (bm.big ? 7 : 5) * (1 - j / 12); ctx.fillStyle = j ? `rgba(255,170,80,${.5 * (1 - j / 11)})` : C.hot; ctx.beginPath(); ctx.arc(FX(x), FX(y), r, 0, 6.283); ctx.fill(); bm.hx = x; bm.hy = y; } }
+      const r = (bm.big ? 7 : 5) * (1 - j / 12); ctx.fillStyle = j ? `rgba(${bm.gold ? GK.rgb : "255,170,80"},${.5 * (1 - j / 11)})` : bm.gold ? "#fff2a8" : C.hot; ctx.beginPath(); ctx.arc(FX(x), FX(y), r, 0, 6.283); ctx.fill(); bm.hx = x; bm.hy = y; } }
 }
 function tubeGlows() {
   const G = tubeGeom(), q = tubeHead(), cy = FX(q.y), full = tubeFull;
   if (tubeV > 0) { for (let x = G.ix; x < FX(q.x); x += 70) bloom(x + 35, cy, 46, "255,160,70", full ? .12 + .05 * Math.sin(frame / 6) : .07);
     bloom(FX(q.x), cy, 40 + tubeKick * 30, "255,210,130", full ? .3 : .3 + tubeKick * .3); }
-  for (const bm of beams) if (bm.hx != null) bloom(FX(bm.hx), FX(bm.hy), bm.big ? 46 : 34, "255,190,110", .55);
+  for (const bm of beams) if (bm.hx != null) bloom(FX(bm.hx), FX(bm.hy), bm.big ? 46 : 34, bm.gold ? GK.rgb : "255,190,110", bm.gold ? .75 : .55);
+  if (tubeGold > .02) bloom(FX(q.x), cy, 90, GK.rgb, .7 * tubeGold);
 }
 // ---------- menus: dim the room with a checker of dark pixels, parchment panels, then fine text ----------
 function dim() { octx.save(); octx.globalAlpha = .5; octx.fillStyle = C.shade; octx.fillRect(0, 0, W, L.barY); octx.restore(); }   // one even shade (it was a per-pixel checkerboard: 100k fills a frame, the part picker crawled on the handheld)
@@ -1799,8 +1914,30 @@ function drawTitleRadio(T) {
   titleHits = []; drawTitleMenu(a, bandTop, bandH);
 }
 // the title menu's looks
-const MENU_NAMES = ["", "Bar and parchment", "Brass plates", "Station buttons", "Dial windows", "Parchment tags"];
-let MENU_STYLE = 2; { const m = location.hash.match(/menu-(\d)/); if (m) MENU_STYLE = Math.max(1, Math.min(5, +m[1])); }
+const MENU_NAMES = ["", "Bar and parchment", "Brass plates", "Station buttons", "Dial windows", "Parchment tags", "Console"];
+let MENU_STYLE = 6; { const m = location.hash.match(/menu-(\d)/); if (m) MENU_STYLE = Math.max(1, Math.min(6, +m[1])); }
+// a sprite stretched sideways from its two ends and a repeated middle (built once per width, world pixels)
+function slice3Cv(name, w, end) { return panelCvKey("s3:" + name + ":" + w, () => { const r = R(name), c = document.createElement("canvas"); c.width = w; c.height = r[3]; const x = c.getContext("2d"); x.imageSmoothingEnabled = false;
+  const mid = r[2] - 2 * end; x.drawImage(atlasImg, r[0], r[1], end, r[3], 0, 0, end, r[3]); for (let xx = end; xx < w - end; xx += mid) { const ww = Math.min(mid, w - end - xx); x.drawImage(atlasImg, r[0] + end, r[1], ww, r[3], xx, 0, ww, r[3]); }
+  x.drawImage(atlasImg, r[0] + r[2] - end, r[1], end, r[3], w - end, 0, end, r[3]); return c; }); }
+function panelCvKey(k, make) { let c = panelCache.get(k); if (!c) { if (panelCache.size > 80) panelCache.clear(); c = make(); panelCache.set(k, c); } return c; }
+// 6. Console (Chris's art, 2026-11-13): the wooden console the radio stands on, with a brass push-button plate per option; the chosen
+// one is pressed in and lit from within
+function drawConsoleMenu(a, top, hh, best) {
+  floorBoards(top, hh);
+  const M = TITLE_MENU, n = M.length, kh = glyphCv("key", "S", C.ink).height, P = R("tplate"), ph = P[3];
+  const ws = M.map(m => Math.max(70, Math.round(textW(m, "key") / FINE) + 40)), inner = ws.reduce((s, w) => s + w, 0), gapW = 10, pw = Math.min(W - 12, inner + gapW * (n - 1) + 56);
+  const px = Math.round(W / 2 - pw / 2), py = Math.round(top / FINE) + 4, panH = R("tpanel")[3];
+  ctx.save(); ctx.globalAlpha = a; ctx.drawImage(slice3Cv("tpanel", pw, 24), FX(px), FX(py), FX(pw), FX(panH));
+  let x = Math.round(W / 2 - (inner + gapW * (n - 1)) / 2); const y = py + Math.round((panH - ph) / 2);
+  M.forEach((m, i) => { const w = ws[i], on = i === titleSel, mx = FX(x + w / 2);
+    if (on) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(mx, FX(y + ph / 2), FX(w) * .7, "255,190,80", .32 * (.8 + .2 * Math.sin(frame / 10))); ctx.restore(); }
+    ctx.drawImage(slice3Cv(on ? "tplate_lit" : "tplate", w, 18), FX(x), FX(y) + (on ? 2 : 0), FX(w), FX(ph));
+    ftext(m, mx, FX(y) + (on ? 2 : 0) + Math.round((FX(ph) - kh) / 2) + 1, "key", on ? "#3a1806" : C.ink, "c", { under: on ? "rgba(255,240,180,.55)" : C.brassHi, uy: 2 });
+    titleHits.push({ x0: FX(x), x1: FX(x + w), y0: FX(y) - 10, y1: FX(y + ph) + 10, i }); x += w + gapW; });
+  ctx.restore();
+  if (best) ftext(best, CVW / 2, FX(py + panH) + 14, "ink", C.amber, "c", { outline: C.dark });
+}
 const floorBg = { k: "", cv: document.createElement("canvas") };
 function floorBoards(top, hh) { hh = Math.max(1, Math.round(hh));
   const k = CVW + "x" + hh; if (floorBg.k !== k) { floorBg.k = k; floorBg.cv.width = CVW; floorBg.cv.height = hh; floorBoardsDraw(floorBg.cv.getContext("2d"), 0, hh); }
@@ -1821,6 +1958,7 @@ function drawTitleMenu(a, top, hh) {
     ctx.drawImage(panelCv("logbox", pw, phh), px * FINE, py * FINE, pw * FINE, phh * FINE);
     ctx.save(); M.forEach((m, i) => { const y = py * FINE + 22 + i * rowH, on = i === titleSel, tw = textW(m, "key"); ctx.globalAlpha = a * (on ? 1 : .55); ftext(m, cx, y, "key", on ? C.ink : C.inkSoft, "c", { under: C.brassHi, uy: 3 });
       if (on) arrowAt(cx - tw / 2 - 30 + ((frame >> 4) & 1) * 4, y + kh / 2); titleHits.push({ y0: y - 8, y1: y + kh + 8, i }); }); ctx.restore(); return; }
+  if (S_ === 6) return drawConsoleMenu(a, top, hh, best);
   floorBoards(top, hh);
   // the containers sit side by side, centred in the floor
   const gap = 34, ws = M.map(m => Math.max(textW(m, S_ === 4 ? "dot" : "key") + 90, 250)), tw = ws.reduce((s, w) => s + w, 0) + gap * (n - 1), ch = S_ === 5 ? kh + 70 : kh + 56;
@@ -2051,15 +2189,47 @@ function drawSwap() {
   ftext("OUT", sx + FX(sw) / 2, sy - 22, "ink", C.redHot, "c", { outline: C.dark });
 }
 function shopGeom() { const n = shopChoices.length, cw = Math.min(170, Math.floor((W - 24 - (n - 1) * 10) / n)), lh = Math.round(20 * TK) / FINE,
-  // the cases grow to fit the longest description (and a two-line name) when four narrow cases share the screen
-  extra = Math.max(0, ...shopChoices.map(p => (wrap(p.desc, "ink", FX(cw) - 48).length - 2) * lh + (wrap(p.name, "ink", FX(cw - 20) - 30).length > 1 ? lh : 0))),
-  ch = Math.round((TK > 1 ? 200 : 174) + extra), total = n * cw + (n - 1) * 10; return { n, cw, ch, x0: Math.round(W / 2 - total / 2), y0: 36 }; }
+  // the cases grow to fit their contents. Layout rule (Chris 2026-11-13: a label must never overlap writing): top to bottom, the icon
+  // (82), the name plate, the description, then a reserved label zone of TAG_ZONE fine pixels above the bottom border that nothing
+  // else may enter; every case is as tall as the tallest one needs
+  ph = R("plate")[3], need = Math.max(...shopChoices.map(p => { const two = wrap(p.name, "ink", FX(cw - 20) - 30).length > 1, PH = two ? ph + Math.ceil(20 * TK / FINE) + 2 : ph;
+    return 82 + PH + (16 + wrap(p.desc, "ink", FX(cw) - 48).length * lh * FINE + 8 + TAG_ZONE) / FINE; })),
+  ch = Math.round(Math.max(TK > 1 ? 200 : 174, need)), total = n * cw + (n - 1) * 10; return { n, cw, ch, x0: Math.round(W / 2 - total / 2), y0: 36 }; }
 // the brass name plate, stretched to any width: its two ends and a repeated plain middle
 function plate3(c, x, y, w, hh) { const [, , pw, ph] = R("plate"), E = 16, M = 20, T = 12, mx = Math.round(pw / 2 - M / 2), my = T; hh = hh || ph;
   const row = (sy, dy, sh) => { spr(c, "plate", x, dy, 0, sy, E, sh); for (let xx = x + E; xx < x + w - E; xx += M) spr(c, "plate", xx, dy, mx, sy, Math.min(M, x + w - E - xx), sh); spr(c, "plate", x + w - E, dy, pw - E, sy, E, sh); };
   row(0, y, T); for (let yy = y + T; yy < y + hh - (ph - T - 4); yy += 4) row(my, yy, Math.min(4, y + hh - (ph - T - 4) - yy)); row(T + 4, y + hh - (ph - T - 4), ph - T - 4); }
 // the part picker: each part sits in a case built from the same brass frame as the bar's slots (it's what goes into one), lit from
 // behind, with its name stamped on a brass plate and what it does in lit amber. The chosen case rises and glows; the others dim.
+/* the label on each part case (what fitting it does: NEW / STACKS X2 / SWAP A PART / RARE: ONCE ONLY). Workshop topic "tags"
+   (Chris 2026-11-13: the old one sat over the case's bottom border): TAG_STYLE 0 = as before, 1 brass tab inside the case, 2 lit dial
+   strip, 3 a brass rule with the label lit under it, 4 badge on the top edge of the case. #tag-N picks one. */
+let TAG_STYLE = 3; { const m = location.hash.match(/tag-(\d)/); if (m) TAG_STYLE = Math.min(4, +m[1]); }   // Chris picked 3, the lit line
+const TAG_ZONE = 64;   // fine pixels kept for the label at the foot of a part case (its rule, the label and the bottom border)
+function cardTag(c, p, g, G, cx) {
+  const have = partSlots().find(s => s.id === p.id), full = !p.rare && !have && partSlots().length >= PART_SLOTS;
+  const note = p.rare ? "RARE: ONCE ONLY" : have ? `STACKS X${have.n + 1}` : full ? "SWAP A PART" : "NEW";
+  const col = p.rare ? "#ffd24a" : have ? C.gold : full ? C.redHot : C.amber, bot = FX(g.y + G.ch) - 30, x0 = FX(g.x), x1 = FX(g.x + G.cw);
+  if (TAG_STYLE === 0) { const ny = FX(g.y + G.ch) - 34, nw = textW(note, "ink") + 30;
+    c.fillStyle = "rgba(10,6,4,.9)"; c.beginPath(); c.roundRect(cx - nw / 2, ny - 8, nw, 30, 6); c.fill(); c.strokeStyle = p.rare ? "#ffd24a" : have ? C.gold : full ? C.redHot : C.dotDim; c.lineWidth = 2; c.stroke();
+    ftext(note, cx, ny, "ink", col, "c"); return; }
+  if (TAG_STYLE === 1) {   // a small brass tab stamped with the label, sitting inside the case just above its bottom border
+    const w = Math.min(Math.round(G.cw - 26), Math.round(textW(note, "ink") / FINE) + 22), hh = R("plate")[3], y = bot - FX(hh) + 4, x = cx - FX(w) / 2;
+    c.drawImage(panelCv("plate", w, hh), x, y, FX(w), FX(hh));
+    if (p.rare) { c.save(); c.globalCompositeOperation = "source-atop"; c.fillStyle = "rgba(255,210,60,.35)"; c.fillRect(x, y, FX(w), FX(hh)); c.restore(); }
+    ftext(note, cx, y + Math.round((FX(hh) - 14 * TK) / 2) + 1, "ink", p.rare || full ? C.inkRed : C.ink, "c", { under: C.brassHi, uy: 2 }); return; }
+  if (TAG_STYLE === 2) {   // a little lit dial window: dark glass with the label in the radio's dot lights
+    const tw = textW(note, "dot"), sc = Math.min(1, (x1 - x0 - 56) / tw), w = Math.round(tw * sc) + 24, hh = 34, y = bot - hh - 2;
+    c.fillStyle = "#0b0604"; c.beginPath(); c.roundRect(cx - w / 2, y, w, hh, 5); c.fill(); c.strokeStyle = p.rare ? "#ffd24a" : "#8a5a28"; c.lineWidth = 2; c.stroke();
+    c.save(); c.translate(cx, y + 6); c.scale(sc, sc); ftext(note, 0, 0, "dot", col, "c"); c.restore(); return; }
+  if (TAG_STYLE === 3) {   // no box at all: a thin brass rule above the case's foot and the label lit beneath it
+    const y = bot - 26; c.fillStyle = p.rare ? "#ffd24a" : "rgba(200,150,70,.55)"; c.fillRect(x0 + 24, y - 6, x1 - x0 - 48, 2);
+    const tw = textW(note, "ink"), sc = Math.min(1, (x1 - x0 - 40) / tw); c.save(); c.translate(cx, y + 2); c.scale(sc, sc); ftext(note, 0, 0, "ink", col, "c"); c.restore(); return; }
+  if (TAG_STYLE === 4) {   // a badge riding the top edge of the case, over its frame
+    const tw = textW(note, "ink"), w = tw + 34, hh = 30, y = FX(g.y) - hh / 2 + 2;
+    c.fillStyle = p.rare ? "#3a2604" : "#140a05"; c.beginPath(); c.roundRect(cx - w / 2, y, w, hh, hh / 2); c.fill();
+    c.strokeStyle = col; c.lineWidth = 3; c.stroke(); ftext(note, cx, y + 8, "ink", col, "c"); return; }
+}
 const shopBase = { k: "", cv: document.createElement("canvas") }, shopTop = { k: "", cv: document.createElement("canvas") };
 function drawShop() {
   const G = shopGeom(), [, , , ph] = R("plate");
@@ -2092,11 +2262,7 @@ function drawShop() {
       // what it does, in lit amber on the dark glass
       wrap(p.desc, "ink", maxW).forEach((s, j) => ftext(s, cx, FX(g.py + PH) + 16 + j * lh, "ink", g.f ? C.gold : C.amber, "c"));
       // what fitting it will do to the slots, as a small lamp label at the foot
-      const have = partSlots().find(s => s.id === p.id), note = p.rare ? "RARE: ONCE ONLY" : have ? `STACKS  X${have.n + 1}` : partSlots().length >= PART_SLOTS ? "SWAP A PART" : "NEW";
-      const ny = FX(g.y + G.ch) - 34, nw = textW(note, "ink") + 30;
-      c.fillStyle = "rgba(10,6,4,.9)"; c.beginPath(); c.roundRect(cx - nw / 2, ny - 8, nw, 30, 6); c.fill();
-      c.strokeStyle = p.rare ? "#ffd24a" : have ? C.gold : partSlots().length >= PART_SLOTS ? C.redHot : C.dotDim; c.lineWidth = 2; c.stroke();
-      ftext(note, cx, ny, "ink", p.rare ? "#ffd24a" : have ? C.gold : partSlots().length >= PART_SLOTS ? C.redHot : C.amber, "c");
+      cardTag(c, p, g, G, cx);
       if (!g.f) { c.fillStyle = "rgba(8,5,3,.38)"; c.fillRect(FX(g.x), FX(g.y), FX(G.cw), FX(G.ch)); } });
     ftext(usingTouch ? "TAP A PART" : "LEFT / RIGHT TO LOOK, A TO FIT", FX(W / 2), FX(G.y0 + G.ch) + 22, "ink", C.gold, "c", { outline: C.dark });
     TXT = null; }
@@ -2487,16 +2653,18 @@ async function boot() {
   makeColours(); buildLUT(); artReady = true;
   loadTitleGlass();
   // only our own test and Workshop links skip straight to the title (the page can be opened with other hashes, which must not skip the intro)
-  S = fresh(/^#(test-|keys-|title-|glass-)/.test(location.hash) ? "title" : "splash"); barShow = 0; layout(); fillGrid(false);
+  S = fresh(/^#(test-|keys-|title-|glass-|goldkey-)/.test(location.hash) ? "title" : "splash"); barShow = 0; layout(); fillGrid(false);
   S.grid.forEach(t => t.ch = " "); "LEXICONSIGNAL".split("").forEach((ch, k) => { S.grid[H5([0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13][k])].ch = ch; });
   // test hook: a hash ending in -step does not run by itself; window.LEXSTEP(n) advances n frames (for recording clips frame by frame)
   devHooks();
   if (/-step$/.test(location.hash)) window.LEXSTEP = (n = 1) => { while (n-- > 0) { update(); draw(); } }; else requestAnimationFrame(loop);
   // test hook: #test-shop opens the part picker after night 1 (for screenshots)
   if (location.hash === "#test-shop") { newRun(); S.parts.push("amp", "coil"); nightClear(); }
+  { const m = location.hash.match(/^#test-shop-all-(\d)/); if (m) { newRun(); S.parts.push("amp", "coil"); S.over = true; nightClear(); shopChoices = PARTS.slice(+m[1] * 4, +m[1] * 4 + 4); } }
+  if (/^#test-shop-tags/.test(location.hash)) { newRun(); S.parts.push("amp", "coil", "battery", "knob"); if (/full/.test(location.hash)) S.parts.push("echo"); S.over = true; nightClear(); shopChoices = [PART.coil, PART.gold, PART.owl, PART.amp]; }
   if (location.hash === "#test-shop-gold") { newRun(); S.parts.push("amp", "coil"); nightClear(); shopChoices[1] = PART.gold; }
   if (location.hash === "#test-swap") { newRun(); S.parts.push("amp", "amp", "coil", "echo", "owl", "short"); nightClear(); const k = shopChoices.findIndex(c => !S.parts.includes(c.id)); if (k >= 0) choosePart(k); }
-  if (location.hash.startsWith("#test-word")) { newRun(); setTimeout(() => { "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); S.path = [0, 1, 2]; usingButtons = true; S.cursor = 3; if (location.hash.includes("fill")) S.score = S.shown = 17; if (location.hash.includes("near")) S.score = S.shown = S.target - 3; if (location.hash.includes("-od")) S.score = S.shown = Math.ceil(S.target * OVERDRIVE) - 5; if (location.hash.includes("-gold")) { S.parts.push("gold"); S.grid[H5(13)].hot = false; S.grid[H5(13)].wild = true; S.grid[H5(13)].ch = "?"; } if (location.hash.includes("hot")) { S.parts = ["carrier"]; S.grid.forEach(t => t.hot = false); S.grid[H5(6)].hot = true; S.grid[H5(9)].hot = false; } if (location.hash.includes("parts")) { S.parts = ["battery", "battery", "knob", "echo", "amp"]; S.words = maxWords(); S.retunes = maxRetunes(); } nightCard = 0; }, 300); }
+  if (location.hash.startsWith("#test-word")) { newRun(); setTimeout(() => { "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); S.path = [0, 1, 2]; usingButtons = true; S.cursor = 3; if (location.hash.includes("fill")) S.score = S.shown = 17; if (location.hash.includes("near")) S.score = S.shown = S.target - 3; if (location.hash.includes("-od")) S.score = S.shown = Math.ceil(S.target * OVERDRIVE) - 5; if (location.hash.includes("-gold")) { S.parts.push("gold"); S.grid[H5(13)].hot = false; S.grid[H5(13)].wild = true; S.grid[H5(13)].ch = "?"; if (location.hash.includes("-goldred")) { S.grid.forEach(t => t.hot = false); S.grid[H5(13)].hot = true; } if (GOLD_STYLE || location.hash.includes("-goldred")) S.path = []; } if (location.hash.includes("hot")) { S.parts = ["carrier"]; S.grid.forEach(t => t.hot = false); S.grid[H5(6)].hot = true; S.grid[H5(9)].hot = false; } if (location.hash.includes("parts")) { S.parts = ["battery", "battery", "knob", "echo", "amp"]; S.words = maxWords(); S.retunes = maxRetunes(); } nightCard = 0; }, 300); }
 }
 boot();
 })();

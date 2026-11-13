@@ -1,6 +1,254 @@
 {
  "topics": [
   {
+   "id": "goldkey",
+   "title": "Gold Key on the glass",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "How should the Gold Key look and behave on the glass?",
+     "found": "Five new looks plus the one in the game now. Every clip is the same moves: the gold key at rest, L-I-N traced, then the gold key (it becomes the E of LINE), the word sent; then the same again with the gold key also being the red key. In the five new looks the key shows the letter it stands for once the word is real, and that letter flies to the tower in gold (today it stays a \"?\"). All of them cost the same as the current look on Retroid-size screens (within measuring noise). Play opens with the Gold Key fitted; put \"goldred\" in place of \"gold\" in the link to try it as the red key.",
+     "options": [
+      {
+       "id": "0",
+       "title": "As now",
+       "note": "For comparison: a gold \"?\" with a soft gold glow. It stays a \"?\" while traced and flies to the tower as an ordinary amber \"?\". As the red key too, it's the gold \"?\" with the red scan line over it.",
+       "images": [
+        {
+         "src": "img/goldkey-r1/gold-0.mp4",
+         "label": "Clip: a word through it, then as the red key too"
+        },
+        {
+         "src": "img/goldkey-r1/gold-0.jpg",
+         "label": "Word traced"
+        },
+        {
+         "src": "img/goldkey-r1/gold-0-close.jpg",
+         "label": "Close-up: at rest and in a word (top), the same as the red key (bottom)"
+        }
+       ],
+       "play": "play.html#test-word-gold-goldkey-0"
+      },
+      {
+       "id": "1",
+       "title": "Letter reel",
+       "note": "Letters roll slowly up through the key like a reel, with two small gold pointers at its sides, so it reads as \"any letter\". Trace it and the reel spins fast; the moment your word is real the right letter rolls up from below and locks with a white flash and a ring of light. That letter lifts off and flies to the tower in gold, and the tower light flashes gold. As the red key: the same reel on a dark red field with the red scan line and a red glow beside the gold.",
+       "images": [
+        {
+         "src": "img/goldkey-r1/gold-1.mp4",
+         "label": "Clip: a word through it, then as the red key too"
+        },
+        {
+         "src": "img/goldkey-r1/gold-1.jpg",
+         "label": "Word traced"
+        },
+        {
+         "src": "img/goldkey-r1/gold-1-close.jpg",
+         "label": "Close-up: at rest and in a word (top), the same as the red key (bottom)"
+        }
+       ],
+       "play": "play.html#test-word-gold-goldkey-1"
+      },
+      {
+       "id": "2",
+       "title": "Gold lamp board",
+       "note": "The whole key is softly lit gold with a bright \"?\"; a slow shimmer crosses it and small star glints come and go. When your word is real the \"?\" melts into the letter and glints fly off the key. Sent in gold with a gold flash on the tower. As the red key: the board runs from gold at the top to red embers at the bottom, with the red scan line.",
+       "images": [
+        {
+         "src": "img/goldkey-r1/gold-2.mp4",
+         "label": "Clip: a word through it, then as the red key too"
+        },
+        {
+         "src": "img/goldkey-r1/gold-2.jpg",
+         "label": "Word traced"
+        },
+        {
+         "src": "img/goldkey-r1/gold-2-close.jpg",
+         "label": "Close-up: at rest and in a word (top), the same as the red key (bottom)"
+        }
+       ],
+       "play": "play.html#test-word-gold-goldkey-2"
+      },
+      {
+       "id": "3",
+       "title": "Shows its letter",
+       "note": "The calmest look, and the one that helps you play: a breathing gold \"?\". When the letters you've traced could finish on the gold key, it shows the letter it would be (it comes and goes with the \"?\") before you pick it, and its edge glows brighter. Picked, it becomes that letter with a quick flash. Sent in gold. As the red key: gold letter on a dark red field with the red scan line.",
+       "images": [
+        {
+         "src": "img/goldkey-r1/gold-3.mp4",
+         "label": "Clip: a word through it, then as the red key too"
+        },
+        {
+         "src": "img/goldkey-r1/gold-3.jpg",
+         "label": "Word traced"
+        },
+        {
+         "src": "img/goldkey-r1/gold-3-close.jpg",
+         "label": "Close-up: at rest and in a word (top), the same as the red key (bottom)"
+        }
+       ],
+       "play": "play.html#test-word-gold-goldkey-3"
+      },
+      {
+       "id": "4",
+       "title": "Brass housing",
+       "note": "The gold key gets its own housing: a brass bezel with four rivets round a small dark window, and a sheen that slides along the brass now and then. Traced, the brass lights up. When the word is real the \"?\" closes to a bright line and the letter opens out of it, like a flap turning over. Sent in gold, and the signal comes down from the tower into the tube in gold too. As the red key: the window glows red behind the gold letter, with the red scan line.",
+       "images": [
+        {
+         "src": "img/goldkey-r1/gold-4.mp4",
+         "label": "Clip: a word through it, then as the red key too"
+        },
+        {
+         "src": "img/goldkey-r1/gold-4.jpg",
+         "label": "Word traced"
+        },
+        {
+         "src": "img/goldkey-r1/gold-4-close.jpg",
+         "label": "Close-up: at rest and in a word (top), the same as the red key (bottom)"
+        }
+       ],
+       "play": "play.html#test-word-gold-goldkey-4"
+      },
+      {
+       "id": "5",
+       "title": "Gilded word",
+       "note": "The gold spreads: a gold \"?\" sends out a slow ring of light at rest, and when your word is real every key in the word turns gold (letters, edges, arrows) with a ring opening from each. The whole word flies to the tower in gold, the tower flashes gold and the signal lands in the tube in gold. As the red key: the word is gold and the red scan line runs through every key of it.",
+       "images": [
+        {
+         "src": "img/goldkey-r1/gold-5.mp4",
+         "label": "Clip: a word through it, then as the red key too"
+        },
+        {
+         "src": "img/goldkey-r1/gold-5.jpg",
+         "label": "Word traced"
+        },
+        {
+         "src": "img/goldkey-r1/gold-5-close.jpg",
+         "label": "Close-up: at rest and in a word (top), the same as the red key (bottom)"
+        }
+       ],
+       "play": "play.html#test-word-gold-goldkey-5"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "tags",
+   "title": "Part labels",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "How should the label on each part case look (NEW, STACKS X2, SWAP A PART, RARE: ONCE ONLY)?",
+     "found": "The label used to sit over the case's bottom border and long ones ran off. Four ways to fix it. Each picture shows an overdrive picker with all four kinds of label: a part you already have (stacks), the rare Gold Key, and parts that need a swap (phone and Retroid) or are new (computer).",
+     "options": [
+      {
+       "id": "0",
+       "title": "As now",
+       "note": "For comparison: a dark chip low in the case that sits over its bottom border, and long labels run off it.",
+       "images": [
+        {
+         "src": "img/tags-r1/0-desk.png",
+         "label": "Computer"
+        },
+        {
+         "src": "img/tags-r1/0-phone.png",
+         "label": "Phone"
+        },
+        {
+         "src": "img/tags-r1/0-handheld.png",
+         "label": "Retroid size"
+        }
+       ],
+       "play": "play.html#test-shop-tags-full-tag-0"
+      },
+      {
+       "id": "1",
+       "title": "Brass tab",
+       "note": "A small brass plate stamped with the label, sitting inside the case above its bottom border, like the name plate above it. Rare parts get a gold-tinted tab.",
+       "images": [
+        {
+         "src": "img/tags-r1/1-desk.png",
+         "label": "Computer"
+        },
+        {
+         "src": "img/tags-r1/1-phone.png",
+         "label": "Phone"
+        },
+        {
+         "src": "img/tags-r1/1-handheld.png",
+         "label": "Retroid size"
+        }
+       ],
+       "play": "play.html#test-shop-tags-full-tag-1"
+      },
+      {
+       "id": "2",
+       "title": "Dial window",
+       "note": "A little dark lit window with the label in the radio's amber dot lights; rare parts get a gold rim and gold dots.",
+       "images": [
+        {
+         "src": "img/tags-r1/2-desk.png",
+         "label": "Computer"
+        },
+        {
+         "src": "img/tags-r1/2-phone.png",
+         "label": "Phone"
+        },
+        {
+         "src": "img/tags-r1/2-handheld.png",
+         "label": "Retroid size"
+        }
+       ],
+       "play": "play.html#test-shop-tags-full-tag-2"
+      },
+      {
+       "id": "3",
+       "title": "Lit line",
+       "note": "No box at all: a thin brass rule near the foot of the case with the label lit underneath. The cleanest; rare parts get a gold rule.",
+       "images": [
+        {
+         "src": "img/tags-r1/3-desk.png",
+         "label": "Computer"
+        },
+        {
+         "src": "img/tags-r1/3-phone.png",
+         "label": "Phone"
+        },
+        {
+         "src": "img/tags-r1/3-handheld.png",
+         "label": "Retroid size"
+        }
+       ],
+       "play": "play.html#test-shop-tags-full-tag-3"
+      },
+      {
+       "id": "4",
+       "title": "Top badge",
+       "note": "A rounded badge riding the top edge of the case, over its frame, so it's the first thing you see. Rare parts get a gold badge.",
+       "images": [
+        {
+         "src": "img/tags-r1/4-desk.png",
+         "label": "Computer"
+        },
+        {
+         "src": "img/tags-r1/4-phone.png",
+         "label": "Phone"
+        },
+        {
+         "src": "img/tags-r1/4-handheld.png",
+         "label": "Retroid size"
+        }
+       ],
+       "play": "play.html#test-shop-tags-full-tag-4"
+      }
+     ]
+    }
+   ]
+  },
+  {
    "id": "tgap",
    "title": "Title glass sides",
    "rounds": [
