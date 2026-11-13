@@ -188,6 +188,11 @@ the same batch.
 - One rivet everywhere (Chris 2026-11-13): build.py draws a clean 7x7 brass rivet (dark rim, bright top-left, screw slot) and stamps it
   over every painted rivet (RIVETS: plate, logbox, slot, bar_left/right, tplate/_lit; centres measured per piece, kept symmetric); it is
   also the sprite "rivet", drawn at world size for rivets made in code (the score counter). New framed art gets its rivets stamped too.
+- Leftover bonus (Chris 2026-11-13): when a night clears, each word (lit lamp, spare battery words too) left pays a quarter of the
+  night's target and each unused retune a sixth, rounded to 5 (nightBonus; night 1: 10 and 5, night 5: 40 and 25), added to the run
+  score. The report shows them under NIGHT TOTAL (which carries OVERDRIVE! in red now) row by row with a pop each (WORDS LEFT 2 x 10
+  +20, RETUNE LEFT 1 x 5 +5), then TONIGHT +N, which is what flies into the RUN SCORE. How to Play (FILL THE TUBE, STUCK? RETUNE) and
+  the tips say so.
 - Sheets and margins (2026-11-13, Chris: "things are always too close to the gold borders"): text never sits nearer a frame than
   INSET (logbox 22 world px x, 18 y: the gold frame is 8 deep and the corner rivets reach 12; plate 16 x, 6 y). Parchment screens use
   sheet() (logbox + top nameplate + optional bottom prompt plate, body kept inside INSET) and edgePlate(); the run score shows in
