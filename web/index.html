@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 53;</script><script>
+<script>window.LEX_BUILD = 54;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -280,15 +280,15 @@ const glyphCache = new Map();
 // a glyph bitmap as a canvas in one color; px = size of one font pixel in fine pixels
 function glyphCv(kind, ch, col) {
   const key = kind + ch + col; let g = glyphCache.get(key); if (g) return g;
-  let b, px = 2, pitch = 2; if (kind === "ink") { b = bits(ch); px = pitch = Math.round(2 * TK); } else if (kind === "read") { b = bits(ch); px = pitch = READPX(); } else if (kind === "key") { b = KEYB(ch); } else if (kind === "big") { b = ch === "#" ? Array.from({ length: 7 }, () => [1, 1, 1, 1, 1]) : bits(ch); pitch = 8; px = 6; } else { b = bits(ch); pitch = 3; }
+  let b, px = 2, pitch = 2; if (kind === "ink") { b = bits(ch); px = pitch = Math.round(2 * TK); } else if (kind === "ink3") { b = bits(ch); px = pitch = Math.round(3 * TK); } else if (kind === "read") { b = bits(ch); px = pitch = READPX(); } else if (kind === "key") { b = KEYB(ch); } else if (kind === "big") { b = ch === "#" ? Array.from({ length: 7 }, () => [1, 1, 1, 1, 1]) : bits(ch); pitch = 8; px = 6; } else { b = bits(ch); pitch = 3; }
   g = document.createElement("canvas"); g.width = b[0].length * pitch; g.height = b.length * pitch; const x = g.getContext("2d"); x.fillStyle = col;
   // big: the dial's dot matrix at nearly three times the size, each dot a rounded 6x6 lamp
   b.forEach((row, y) => row.forEach((v, xx) => { if (!v) return; if (kind === "big") { x.fillRect(xx * pitch + 1, y * pitch, 4, 6); x.fillRect(xx * pitch, y * pitch + 1, 6, 4); } else x.fillRect(xx * pitch, y * pitch, px, px); }));
   glyphCache.set(key, g); return g;
 }
 const READPX = () => Math.round(3 * TK * .85);   // "read": the same letters bigger, for How to Play
-const ADV = { ink: 12, key: 24, dot: 18, read: 18, big: 48 };   // advance per character, fine pixels
-const textW = (s, kind) => s.length * ADV[kind] - (kind === "ink" ? 2 * TK : kind === "read" ? READPX() : kind === "dot" ? 3 : kind === "big" ? 8 : 1);
+const ADV = { ink: 12, ink3: 18, key: 24, dot: 18, read: 18, big: 48 };   // advance per character, fine pixels
+const textW = (s, kind) => s.length * ADV[kind] - (kind === "ink" ? 2 * TK : kind === "ink3" ? 3 * TK : kind === "read" ? READPX() : kind === "dot" ? 3 : kind === "big" ? 8 : 1);
 // draw text on the fine grid. x,y in fine pixels. Styles: ink (typed/stamped), key (big engraved), dot (lit dot matrix)
 let TXT = null;   // while set, ftext draws into this context instead of the screen (cached layers)
 function ftext(s, x, y, kind, col, align, opts = {}) {
@@ -309,7 +309,7 @@ function layout() {
   if (!artReady) return;   // never build the room before the art has fully loaded (a fresh load used to build it from a blank image)
   const wrapEl = $("screenWrap"); const ww = wrapEl.clientWidth || 640, wh = wrapEl.clientHeight || 360;
   const tall = ww / wh < 1.7, nH = tall ? 495 : 425, nW = Math.max(532, Math.min(950, Math.round(nH * ww / wh / 2) * 2));
-  const nTK = ww / nW < 1.15 ? 1.5 : 1; if (nTK !== TK) { TK = nTK; glyphCache.clear(); ADV.ink = 12 * TK; ADV.read = 6 * READPX(); }
+  const nTK = ww / nW < 1.15 ? 1.5 : 1; if (nTK !== TK) { TK = nTK; glyphCache.clear(); ADV.ink = 12 * TK; ADV.ink3 = 18 * TK; ADV.read = 6 * READPX(); }
   if (nW !== W || nH !== H || !L.ready) { W = nW; H = nH; BAR_H = tall ? 190 : 120; SCENE_H = H - BAR_H; world.width = W; world.height = H; over.width = W; over.height = H; CVW = W * FINE; CVH = H * FINE;
     computeLayout(); buildRoom(); buildBar(); L.ready = true; }
   { const dpr = window.devicePixelRatio || 1, nRS = Math.min(ww * dpr / CVW, wh * dpr / CVH) < .62 ? .5 : 1;
@@ -637,7 +637,11 @@ const fmtNum = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ","
 // logbox: the gold frame is 8 px deep and its corner rivets reach 12, so 22 leaves clear parchment; plate: rivets reach 11 at the sides.
 const INSET = { logbox: { x: 22, y: 18 }, plate: { x: 16, y: 6 } };
 // a brass nameplate riding a panel's edge, its text stamped in the middle (fine px in, world px for the plate)
-function edgePlate(s, kind, cx, cy, col) { const th = glyphCv(kind, "N", C.ink).height, w = Math.round(textW(s, kind) / FINE) + 2 * INSET.plate.x + 8, hh = Math.round((th + 2 * FINE * INSET.plate.y + 8) / FINE), x = Math.round(cx / FINE - w / 2), y = Math.round(cy / FINE - hh / 2);
+function edgePlate(s, kind, cx, cy, col) { const rf = S.phase === "report" && RT_FONTS[REPORT_TYPE];
+  if (rf) { const f = (kind === "key" ? rf[2] : rf[0]).replace(/(\d+)px/, (m, n) => Math.round(n * TK) + "px"); ctx.save(); ctx.font = f; const tw = ctx.measureText(s).width, th2 = parseInt(f.match(/(\d+)px/)[1]) * .8, w = Math.round(tw / FINE) + 2 * INSET.plate.x + 8, hh = Math.round((th2 + 2 * FINE * INSET.plate.y + 8) / FINE), x = Math.round(cx / FINE - w / 2), y = Math.round(cy / FINE - hh / 2);
+    ctx.fillStyle = "rgba(8,4,2,.45)"; ctx.fillRect(FX(x + 2), FX(y + 3), FX(w), FX(hh)); ctx.drawImage(panelCv("plate", w, hh), FX(x), FX(y), FX(w), FX(hh));
+    ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "rgba(255,240,200,.6)"; ctx.fillText(s, FX(x + w / 2), FX(y + hh / 2) + 2); ctx.fillStyle = col || C.ink; ctx.fillText(s, FX(x + w / 2), FX(y + hh / 2)); ctx.restore(); return { w, hh }; }
+  const th = glyphCv(kind, "N", C.ink).height, w = Math.round(textW(s, kind) / FINE) + 2 * INSET.plate.x + 8, hh = Math.round((th + 2 * FINE * INSET.plate.y + 8) / FINE), x = Math.round(cx / FINE - w / 2), y = Math.round(cy / FINE - hh / 2);
   ctx.fillStyle = "rgba(8,4,2,.45)"; ctx.fillRect(FX(x + 2), FX(y + 3), FX(w), FX(hh)); ctx.drawImage(panelCv("plate", w, hh), FX(x), FX(y), FX(w), FX(hh));
   ftext(s, FX(x + w / 2), FX(y) + Math.round((FX(hh) - th) / 2) - 1, kind, col || C.ink, "c", { under: C.brassHi, uy: kind === "key" ? 3 : 2 }); return { w, hh }; }
 // a parchment sheet for any screen: brass nameplate on its top edge, an optional plate on its bottom edge, the body (bodyH fine px)
@@ -678,12 +682,19 @@ function reportRun() { return S.phase === "report" && REPORT.t < reportTimes().f
 // how the report's words are set (Workshop "report type", 2026-11-13; Chris: the tables look weak next to the other game's cards).
 // REPORT_TYPE 0 the small pixel ink as before, 1 the game's bold key lettering, 2 the How to Play cards' type (slab figures, typewriter
 // labels). #rtype-N picks one. Every helper takes the row's middle (y) so rows line up whatever the type.
-let REPORT_TYPE = 0; { const m = location.hash.match(/rtype-(\d)/); if (m) REPORT_TYPE = Math.min(2, +m[1]); }
+let REPORT_TYPE = 0; { const m = location.hash.match(/rtype-(\d)/); if (m) REPORT_TYPE = Math.min(7, +m[1]); }
+// fonts on trial for the game's type (Workshop "type"): [label font, value font] for REPORT_TYPE 4..7
+const RT_FONTS = { 4: ['30px "VT323"', '40px "VT323"', '44px "VT323"'], 5: ['22px "Pixelify Sans"', '600 28px "Pixelify Sans"', '600 32px "Pixelify Sans"'], 6: ['18px "Silkscreen"', '24px "Silkscreen"', '28px "Silkscreen"'], 7: ['22px "Special Elite"', '28px "Special Elite"', '32px "Special Elite"'] };
 function rtSet() { const ih = Math.round(14 * TK), kh = glyphCv("key", "N", C.ink).height, st = REPORT_TYPE;
   const px = (kind, s, x, y, col, al, opt) => ftext(s, x, Math.round(y - glyphCv(kind, "N", C.ink).height / 2), kind, col, al, opt);
   const fnt = (f, s, x, y, col, al, sh) => { ctx.save(); ctx.font = f; ctx.textAlign = al === "r" ? "right" : al === "c" ? "center" : "left"; ctx.textBaseline = "middle";
     if (sh) { ctx.fillStyle = "rgba(255,240,200,.55)"; ctx.fillText(s, x, y + 2); } ctx.fillStyle = col; ctx.fillText(s, x, y); ctx.restore(); };
   const fw = (f, s) => { ctx.save(); ctx.font = f; const w = ctx.measureText(s).width; ctx.restore(); return w; };
+  if (RT_FONTS[st]) { const sz = (f) => f.replace(/(\d+)px/, (m, n) => Math.round(n * TK) + "px"), LF = sz(RT_FONTS[st][0]), VF = sz(RT_FONTS[st][1]);
+    return { lh: Math.round(40 * TK), lead: true, lab: (s, x, y, al, col) => fnt(LF, s, x, y, col || C.ink, al), labW: (s) => fw(LF, s),
+      val: (s, x, y, al, col) => fnt(VF, s, x, y, col || C.inkRed, al), valW: (s) => fw(VF, s) }; }
+  if (st === 3) return { lh: Math.round(30 * TK), lead: true, lab: (s, x, y, al, col) => px("ink", s, x, y, col || C.ink, al), labW: (s) => textW(s, "ink"),
+    val: (s, x, y, al, col) => px("ink3", s, x, y, col || C.inkRed, al), valW: (s) => textW(s, "ink3") };
   if (st === 2) { const LF = `${Math.round(21 * TK)}px ${HOWF.body}`, VF = `${Math.round(27 * TK)}px ${HOWF.title}`;
     return { lh: Math.round(38 * TK), lead: true, lab: (s, x, y, al, col) => fnt(LF, s, x, y, col || C.ink, al), labW: (s) => fw(LF, s),
       val: (s, x, y, al, col) => fnt(VF, s, x, y, col || C.inkRed, al, true), valW: (s) => fw(VF, s) }; }

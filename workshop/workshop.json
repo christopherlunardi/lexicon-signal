@@ -1,6 +1,140 @@
 {
  "topics": [
   {
+   "id": "type",
+   "title": "Lettering",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "Which lettering should the game use on its paper and brass (log, plates, sheets, menus)?",
+     "found": "What the game uses now: our own 5x7 pixel 'ink' (log, labels, sheets), a bold doubled version 'key' (plates, titles: the 'big thick' one), lit dial dots (the dial, the night score, the run score drums), and two outside fonts only on the How to Play cards (Alfa Slab One titles, Special Elite text). Proposed rule: one lettering for everything printed on paper or brass, in two or three set sizes (small labels, figures, titles), and lit dots for anything that is a lit display. Each option shows the night report set in it (plates too). Pick one and it becomes the rule everywhere.",
+     "options": [
+      {
+       "id": "0",
+       "title": "Small pixel ink (as now)",
+       "note": "Our own 5x7 lettering, one small size for everything; values only stand out by color.",
+       "images": [
+        {
+         "src": "img/type-r1/type-0-desk.jpg",
+         "label": "Report"
+        },
+        {
+         "src": "img/type-r1/type-0-open.jpg",
+         "label": "Words open"
+        },
+        {
+         "src": "img/type-r1/type-0-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-report-long-rtype-0"
+      },
+      {
+       "id": "3",
+       "title": "Our pixel ink, two sizes",
+       "note": "The same thin lettering of ours, with figures half again as big. No new font, no thick type.",
+       "images": [
+        {
+         "src": "img/type-r1/type-3-desk.jpg",
+         "label": "Report"
+        },
+        {
+         "src": "img/type-r1/type-3-open.jpg",
+         "label": "Words open"
+        },
+        {
+         "src": "img/type-r1/type-3-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-report-long-rtype-3"
+      },
+      {
+       "id": "4",
+       "title": "VT323",
+       "note": "A thin, tall terminal font: reads like an old station readout. Free font, would be kept in the repo.",
+       "images": [
+        {
+         "src": "img/type-r1/type-4-desk.jpg",
+         "label": "Report"
+        },
+        {
+         "src": "img/type-r1/type-4-open.jpg",
+         "label": "Words open"
+        },
+        {
+         "src": "img/type-r1/type-4-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-report-long-rtype-4"
+      },
+      {
+       "id": "5",
+       "title": "Pixelify Sans",
+       "note": "A clean modern pixel font with a semibold for figures. Free font.",
+       "images": [
+        {
+         "src": "img/type-r1/type-5-desk.jpg",
+         "label": "Report"
+        },
+        {
+         "src": "img/type-r1/type-5-open.jpg",
+         "label": "Words open"
+        },
+        {
+         "src": "img/type-r1/type-5-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-report-long-rtype-5"
+      },
+      {
+       "id": "6",
+       "title": "Silkscreen",
+       "note": "Tiny square pixel capitals, very crisp, wide. Free font.",
+       "images": [
+        {
+         "src": "img/type-r1/type-6-desk.jpg",
+         "label": "Report"
+        },
+        {
+         "src": "img/type-r1/type-6-open.jpg",
+         "label": "Words open"
+        },
+        {
+         "src": "img/type-r1/type-6-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-report-long-rtype-6"
+      },
+      {
+       "id": "7",
+       "title": "Special Elite",
+       "note": "The typewriter face from the How to Play cards, for labels and figures alike (no slab).",
+       "images": [
+        {
+         "src": "img/type-r1/type-7-desk.jpg",
+         "label": "Report"
+        },
+        {
+         "src": "img/type-r1/type-7-open.jpg",
+         "label": "Words open"
+        },
+        {
+         "src": "img/type-r1/type-7-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-report-long-rtype-7"
+      }
+     ]
+    }
+   ]
+  },
+  {
    "id": "finish",
    "title": "Screen finish",
    "rounds": [
