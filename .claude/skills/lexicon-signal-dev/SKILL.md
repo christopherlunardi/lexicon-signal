@@ -396,6 +396,12 @@ the same batch.
   letter is sent in gold (flyer/ghost `gold`), the beacon flashes gold (`goldFlash`), 4 and 5 bring the beam and tube down gold too.
   Media in workshop/img/goldkey-r1/ (gold-N.mp4: gold key, then the same as the red key; gold-N.jpg; gold-N-close.jpg). Frame time at
   640x480, processor slowed 6x: every option within noise of option 0 (about 27-30 ms at rest, 28-35 with a word, both ways).
+- score-r1 (open, 2026-11-13; Chris: show the run score whenever it makes sense, tick up satisfyingly, room for many figures):
+  SCORE_STYLE 0..4 (0 the small lit box as before and the default; 1 rolling drums, 2 glow tubes, 3 big lit dot display, 4 on the
+  bar's lower brass plate instead of NIGHT N), `#score-N`, `#test-word-score-N` (run score 1180, RAT traced). In 1..4 the beam's
+  landing sends "+N" flying from the tube head into the counter (scoreLand, SC.fl), which counts up with Sound.cell ticks and flares
+  (SC.kick); shown in play, shop, swap, melt and upgrade (scoreShow). Displays size to max(5, figures) and scale down past their
+  corner's width (scoreBox maxW). Clips in workshop/img/score-r1/ (RAT, then a faked +248 to show a long count).
 - Rounds: keys-r1 decided (glow tubes), keys-r2 decided: first signal scope, then Chris saw dot glass on his phone and switched to it (KS 10, always on).
   Next: build dot glass out as THE play area and drop the other styles' code.
 

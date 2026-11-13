@@ -1,6 +1,84 @@
 {
  "topics": [
   {
+   "id": "score",
+   "title": "Run score on screen",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "Where should the run score show while you play, and how should it count up?",
+     "found": "Four ways to keep the run score on screen while playing, in the part picker, the melter and the upgrade (it hides on the night report and DEAD AIR, which show it big). In all four, when a word's beam lands in the tube its points fly up as a '+N' into the counter, which counts up with a climbing tick and flares. Each counter grows a place when the score needs it (never fewer than 5) and shrinks to fit its corner if a score gets huge. Each clip sends RAT (+5), then shows a big +248 word's worth landing so you can see a long count. Play opens the game in that style with RAT traced.",
+     "options": [
+      {
+       "id": "1",
+       "title": "Rolling drums",
+       "note": "A brass-framed mechanical counter in the bottom-left corner of the room. Each drum turns up to the next figure as the score counts, the frame flares when it lands. Unused places show dim zeros.",
+       "images": [
+        {
+         "src": "img/score-r1/score-1.mp4",
+         "label": "Clip"
+        },
+        {
+         "src": "img/score-r1/score-1.png",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-word-score-1"
+      },
+      {
+       "id": "2",
+       "title": "Glow tubes",
+       "note": "A small wooden case of glass tubes, each figure burning orange. Any figure that changes flares white-hot, then settles. A new tube lights up when the score needs another place.",
+       "images": [
+        {
+         "src": "img/score-r1/score-2.mp4",
+         "label": "Clip"
+        },
+        {
+         "src": "img/score-r1/score-2.png",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-word-score-2"
+      },
+      {
+       "id": "3",
+       "title": "Big lit dot display",
+       "note": "The night report's lit dot-matrix figures, smaller, in a dark brass-rimmed panel in the corner. Counts in white-hot, settles to amber, with commas.",
+       "images": [
+        {
+         "src": "img/score-r1/score-3.mp4",
+         "label": "Clip"
+        },
+        {
+         "src": "img/score-r1/score-3.png",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-word-score-3"
+      },
+      {
+       "id": "4",
+       "title": "On the bar's brass plate",
+       "note": "No new box: the lower brass plate in the bar shows the run score instead of the night number (the night is still announced at the start of each night and on the report). The plate glows and the figures pop while it counts.",
+       "images": [
+        {
+         "src": "img/score-r1/score-4.mp4",
+         "label": "Clip"
+        },
+        {
+         "src": "img/score-r1/score-4.png",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-word-score-4"
+      }
+     ]
+    }
+   ]
+  },
+  {
    "id": "goldkey",
    "title": "Gold Key on the glass",
    "rounds": [
