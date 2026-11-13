@@ -125,6 +125,11 @@ the same batch.
   wake the sound.
 
 ## Dot glass keys (the play area)
+- The game's look (Chris 2026-11-12, Workshop glass-r1): dot glass with three of the round's takes together, set by GF in the script:
+  deep glass (recessed key wells, each letter's soft glow on the dots round it, a faint curved reflection on the pane), clear path
+  (lit links from key edge to key edge with arrowheads and a running bead, a lit stud on the first key, nothing crosses a letter)
+  and lift-off (sent letters rise whole off the glass while the fill drains down the key, then break into dots with a few sparks;
+  the send holds a little longer). `#glass-N` still opens a single take (#glass-0 is plain dot glass from before).
 - The traced word's path (Chris: its order wasn't clear): a lit line from key to key through their middles (soft glow + bright core,
   brighter once it's a real word), a ring on the first key, and three bright beads running along it from first letter to last.
 - Letters flicker randomly and subtly: each key has its own random clock and now and then dips gently for a few frames; the whole

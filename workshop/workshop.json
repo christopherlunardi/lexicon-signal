@@ -6,9 +6,9 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "Which take on the dot glass letters do you like best?",
-     "found": "Six takes on the look the game has now, each with one idea, plus today's look for comparison. Every video is the same ten seconds: RAT is traced and becomes a word, it is sent and reaches the tower, new keys fall in, four letters are picked and taken back. The play links open the game with RAT traced in that look. All of them draw as fast as today's look or a little faster (measured at 640x480 on a slowed-down processor). Ideas can be combined: say which ones you want together.",
+     "found": "Six takes on the look the game has now, each with one idea, plus today's look for comparison. Every video is the same ten seconds: RAT is traced and becomes a word, it is sent and reaches the tower, new keys fall in, four letters are picked and taken back. The play links open the game with RAT traced in that look. All of them draw as fast as today's look or a little faster (measured at 640x480 on a slowed-down processor). Ideas can be combined: say which ones you want together. Chris picked deep glass with the clear path arrows and the lift-off together; that is now the game's look.",
      "options": [
       {
        "id": "0",
@@ -150,7 +150,8 @@
        ],
        "play": "play.html#test-word-glass-6"
       }
-     ]
+     ],
+     "chosen": "1+4+5"
     }
    ]
   },
