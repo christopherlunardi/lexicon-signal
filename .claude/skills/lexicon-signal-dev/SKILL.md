@@ -179,7 +179,9 @@ the same batch.
   its own scrolling list (Y, C/R, or tap the line; up/down, wheel or drag scroll; a thumb shows when it runs past what fits). Then
   SIGNAL score / target (OVERDRIVE! in red), then the leftovers as lit lamps (WORDS LEFT, RETUNE LEFT, "N EACH"): one by one each goes
   dark, a "+N" rises and the NIGHT SCORE (the sheet's lit counter) counts up. Then the night score flies down into the run score's
-  rolling drums in the room's corner (drawn over the sheet during the report), which roll up. Bottom plate: TALLYING... then PRESS A.
+  rolling drums in the room's corner (drawn over the sheet during the report), which roll up. Each lamp paying in plays
+  Sound.lampPay(i) (a switch click and a bell that climbs lamp by lamp). The night score sits on a full lit-dot screen (dotScreen,
+  every dot place faintly there, "mid" dots) that dips now and then like the glass and has a slow sheen. Bottom plate: TALLYING... then PRESS A.
   The sheet keeps clear of the drums on narrow screens. REPORT_TYPE (#rtype-N) sets the type: 0 small pixel ink (default), 1 bold key
   lettering, 2 the How to Play cards' fonts; Chris found the bold key "big thick" and wants one locked type system (open question).
   #test-report, #test-report-long (16 words).
@@ -404,11 +406,14 @@ the same batch.
   letter is sent in gold (flyer/ghost `gold`), the beacon flashes gold (`goldFlash`), 4 and 5 bring the beam and tube down gold too.
   Media in workshop/img/goldkey-r1/ (gold-N.mp4: gold key, then the same as the red key; gold-N.jpg; gold-N-close.jpg). Frame time at
   640x480, processor slowed 6x: every option within noise of option 0 (about 27-30 ms at rest, 28-35 with a word, both ways).
-- type-r1 (open, 2026-11-13; Chris: the text looks weak, "big thick font isn't right", lock down one lettering with rules): the night
-  report set in each candidate via REPORT_TYPE (#rtype-N): 0 small ink, 3 our ink with figures in 'ink3' (3 px dots), 4 VT323,
-  5 Pixelify Sans, 6 Silkscreen, 7 Special Elite (RT_FONTS; Google fonts link loads them; tools/fonts has only the two card fonts so
-  far: a chosen outside font must be added there for the web app). Proposed rule: one lettering for paper and brass in set sizes,
-  lit dots for lit displays. Screenshots need fonts.py (scratchpad) to serve the fonts locally.
+- type-r1 (decided: Silkscreen, 2026-11-13; Chris also: pixel lettering limits the HUD): everything printed on paper or brass
+  ("ink", "ink3", "key" in ftext/textW) is set in Silkscreen (OFL, tools/fonts/Silkscreen.woff2 + Silkscreen-OFL.txt; the Google
+  fonts link for the artifact) at whole multiples of its 8 px grid (ink 16*TK, ink3 24*TK, key 32), centered where the old glyphs
+  were. Lit displays keep the dots. The old lettering stands in until the font has loaded (TF_READY); #type-old shows it. Never draw a
+  pixel number scaled: the dot kinds come at their own sizes ("dot" 3 px pitch, "mid" 6, "big" 8), bigNum(s, cx, y, col, cells, z, kind).
+- Button names follow the device (Chris 2026-11-13): INPUT is "pad" (controller, handheld app, the phone shell's buttons), "keys"
+  (keyboard: Z pick, X back, V send, C retune, Esc pause, arrows move) or "touch"; BTN("A") and btn("PRESS {A} ...") name the right
+  thing everywhere (prompts, tips, How to Play text and its key chips, which become keycaps on a keyboard). New prompts use btn().
 - finish-r1 (open, 2026-11-13; Chris: an overlay to tie the art together, cheap): FINISH_STYLE 0..5 (#finish-N; 0 none is the
   default), drawFinish() at the end of draw(): 1 vignette + warm soft-light, 2 + moving grain tiles, 3 haze (the frame shrunk to 1/10
   and laid back with 'screen'), 4 scanlines + haze + vignette, 5 all light. Stills in workshop/img/finish-r1/.

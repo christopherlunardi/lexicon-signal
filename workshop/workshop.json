@@ -6,7 +6,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "Which lettering should the game use on its paper and brass (log, plates, sheets, menus)?",
      "found": "What the game uses now: our own 5x7 pixel 'ink' (log, labels, sheets), a bold doubled version 'key' (plates, titles: the 'big thick' one), lit dial dots (the dial, the night score, the run score drums), and two outside fonts only on the How to Play cards (Alfa Slab One titles, Special Elite text). Proposed rule: one lettering for everything printed on paper or brass, in two or three set sizes (small labels, figures, titles), and lit dots for anything that is a lit display. Each option shows the night report set in it (plates too). Pick one and it becomes the rule everywhere.",
      "options": [
@@ -130,7 +130,8 @@
        ],
        "play": "play.html#test-report-long-rtype-7"
       }
-     ]
+     ],
+     "chosen": "6"
     }
    ]
   },

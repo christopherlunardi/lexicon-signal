@@ -3,7 +3,7 @@
 <meta name="color-scheme" content="dark light">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=VT323&family=Pixelify+Sans:wght@400;600&family=Silkscreen&family=Bungee&family=Bungee+Hairline&family=Limelight&family=Share+Tech+Mono&family=Special+Elite&family=Stardos+Stencil:wght@700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alfa+Slab+One&family=Silkscreen&family=Bungee&family=Bungee+Hairline&family=Limelight&family=Share+Tech+Mono&family=Special+Elite&family=Stardos+Stencil:wght@700&display=swap">
 <style>
 /* ===== Shell: the studio's handheld. Screen on top, d-pad and buttons below (beside it sideways on phones).
    With a controller (padmode) or inside the Android app (inapp) it's just the screen, as big as it goes. ===== */
@@ -282,21 +282,35 @@ const glyphCache = new Map();
 // a glyph bitmap as a canvas in one color; px = size of one font pixel in fine pixels
 function glyphCv(kind, ch, col) {
   const key = kind + ch + col; let g = glyphCache.get(key); if (g) return g;
-  let b, px = 2, pitch = 2; if (kind === "ink") { b = bits(ch); px = pitch = Math.round(2 * TK); } else if (kind === "ink3") { b = bits(ch); px = pitch = Math.round(3 * TK); } else if (kind === "read") { b = bits(ch); px = pitch = READPX(); } else if (kind === "key") { b = KEYB(ch); } else if (kind === "big") { b = ch === "#" ? Array.from({ length: 7 }, () => [1, 1, 1, 1, 1]) : bits(ch); pitch = 8; px = 6; } else { b = bits(ch); pitch = 3; }
+  let b, px = 2, pitch = 2; if (kind === "ink") { b = bits(ch); px = pitch = Math.round(2 * TK); } else if (kind === "ink3") { b = bits(ch); px = pitch = Math.round(3 * TK); } else if (kind === "read") { b = bits(ch); px = pitch = READPX(); } else if (kind === "key") { b = KEYB(ch); } else if (kind === "big" || kind === "mid") { b = ch === "#" ? Array.from({ length: 7 }, () => [1, 1, 1, 1, 1]) : bits(ch); pitch = kind === "big" ? 8 : 6; px = pitch - 2; } else { b = bits(ch); pitch = 3; }
   g = document.createElement("canvas"); g.width = b[0].length * pitch; g.height = b.length * pitch; const x = g.getContext("2d"); x.fillStyle = col;
   // big: the dial's dot matrix at nearly three times the size, each dot a rounded 6x6 lamp
-  b.forEach((row, y) => row.forEach((v, xx) => { if (!v) return; if (kind === "big") { x.fillRect(xx * pitch + 1, y * pitch, 4, 6); x.fillRect(xx * pitch, y * pitch + 1, 6, 4); } else x.fillRect(xx * pitch, y * pitch, px, px); }));
+  b.forEach((row, y) => row.forEach((v, xx) => { if (!v) return; if (kind === "big" || kind === "mid") { x.fillRect(xx * pitch + 1, y * pitch, px - 2, px); x.fillRect(xx * pitch, y * pitch + 1, px, px - 2); } else x.fillRect(xx * pitch, y * pitch, px, px); }));
   glyphCache.set(key, g); return g;
 }
 const READPX = () => Math.round(3 * TK * .85);   // "read": the same letters bigger, for How to Play
 const ADV = { ink: 12, ink3: 18, key: 24, dot: 18, read: 18, big: 48 };   // advance per character, fine pixels
-const textW = (s, kind) => s.length * ADV[kind] - (kind === "ink" ? 2 * TK : kind === "ink3" ? 3 * TK : kind === "read" ? READPX() : kind === "dot" ? 3 : kind === "big" ? 8 : 1);
+// The lettering (Chris 2026-11-13, Workshop "type": Silkscreen): everything printed on paper or brass ("ink", "ink3", "key") is set in
+// Silkscreen, a free pixel typeface (OFL; tools/fonts), at whole multiples of its 8 px grid so it stays crisp. Lit displays keep their
+// dots ("dot", "big"). Each size keeps the old lettering's line height, so layouts line up. #type-old shows the old lettering.
+const TYPEFACE = /type-old/.test(location.hash) ? null : "Silkscreen", TF_SIZE = { ink: () => 16 * TK, ink3: () => 24 * TK, key: () => 32 };
+const tfW = {}, tfCtx = document.createElement("canvas").getContext("2d");
+let TF_READY = false;   // until the typeface has loaded, the old lettering stands in (never a stray system font)
+function tfOn(kind) { return TYPEFACE && TF_READY && TF_SIZE[kind]; }
+function tfWidth(s, kind) { const sz = TF_SIZE[kind](), k = sz + "|" + s; let w = tfW[k]; if (w == null) { tfCtx.font = `${sz}px "${TYPEFACE}"`; w = tfCtx.measureText(s).width - sz / 4; if (document.fonts && document.fonts.check(`${sz}px "${TYPEFACE}"`)) tfW[k] = w; } return w; }
+const textW = (s, kind) => tfOn(kind) ? tfWidth(String(s).toUpperCase(), kind) : s.length * ADV[kind] - (kind === "ink" ? 2 * TK : kind === "ink3" ? 3 * TK : kind === "read" ? READPX() : kind === "dot" ? 3 : kind === "big" ? 8 : 1);
 // draw text on the fine grid. x,y in fine pixels. Styles: ink (typed/stamped), key (big engraved), dot (lit dot matrix)
 let TXT = null;   // while set, ftext draws into this context instead of the screen (cached layers)
 function ftext(s, x, y, kind, col, align, opts = {}) {
   const ctx = TXT || window.__lexCtx;
   s = String(s).toUpperCase().replace(/X(\d)/g, "x$1"); if (align === "c") x -= Math.round(textW(s, kind) / 2); else if (align === "r") x -= textW(s, kind);
   x = Math.round(x); y = Math.round(y);
+  if (tfOn(kind)) {   // the typeface, its capitals centered where the old lettering's were
+    const sz = TF_SIZE[kind](), u = sz / 8, base = Math.round(y + (glyphCv(kind, "N", col).height + 5 * u) / 2);
+    ctx.save(); ctx.font = `${sz}px "${TYPEFACE}"`; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+    if (opts.under) { ctx.fillStyle = opts.under; ctx.fillText(s, x + (opts.ux ?? 0), base + (opts.uy ?? 2)); }
+    if (opts.outline) { ctx.fillStyle = opts.outline; for (const [dx, dy] of [[-2, 0], [2, 0], [0, -2], [0, 2], [-2, -2], [2, 2], [-2, 2], [2, -2]]) ctx.fillText(s, x + dx, base + dy); }
+    ctx.fillStyle = col; ctx.fillText(s, x, base); ctx.restore(); return; }
   for (const ch of s) { if (ch !== " ") {
     if (opts.under) ctx.drawImage(glyphCv(kind, ch, opts.under), x + (opts.ux ?? 0), y + (opts.uy ?? 2));
     if (opts.outline) for (const [dx, dy] of [[-2, 0], [2, 0], [0, -2], [0, 2]]) ctx.drawImage(glyphCv(kind, ch, opts.outline), x + dx, y + dy);
@@ -663,9 +677,17 @@ function scoreDisplay(hx, hy, hw, label, val, col, right, rightCol) { const ih =
   const g = ctx.createRadialGradient(hx + hw / 2, sy + 7 + bh / 2, 4, hx + hw / 2, sy + 7 + bh / 2, hw * .4); g.addColorStop(0, "rgba(255,176,64,.14)"); g.addColorStop(1, "rgba(255,176,64,0)"); ctx.fillStyle = g; ctx.fillRect(hx + 12, sy, hw - 24, bh + 14);
   bigNum(val, hx + hw / 2, sy + 7, col, val.length); return hgt; }
 // a big lit dot-matrix number, every dot place faintly there (like the dial), centered on cx; z grows it for a moment when it jumps
-function bigNum(s, cx, y, col, cells, z = 1) { const n = Math.max(cells, s.length), gw = 40 * z, gh = 56 * z, adv = 48 * z, x0 = Math.round(cx - (n * adv - 8 * z) / 2), pad = n - s.length;
-  for (let i = 0; i < n; i++) { const x = Math.round(x0 + i * adv), yy = Math.round(y - (gh - 56) / 2); ctx.drawImage(glyphCv("big", "#", C.dotOff), x, yy, gw, gh);
-    const ch = s[i - pad]; if (ch && ch !== " ") { ctx.drawImage(glyphCv("big", ch, C.dotDim), x - 2, yy, gw, gh); ctx.drawImage(glyphCv("big", ch, C.dotDim), x + 2, yy, gw, gh); ctx.drawImage(glyphCv("big", ch, col), x, yy, gw, gh); } } }
+function bigNum(s, cx, y, col, cells, z = 1, kind = "big") {   // drawn at the dots' own size (never scaled: scaled dots go lumpy); z pops it around its middle
+  const g0 = glyphCv(kind, "8", col), gw = g0.width, gh = g0.height, adv = gw + (kind === "big" ? 8 : 6), n = Math.max(cells, s.length), x0 = Math.round(cx - (n * adv - (adv - gw)) / 2), pad = n - s.length;
+  ctx.save(); if (z !== 1) { ctx.translate(cx, y + gh / 2); ctx.scale(z, z); ctx.translate(-cx, -(y + gh / 2)); }
+  for (let i = 0; i < n; i++) { const x = x0 + i * adv; ctx.drawImage(glyphCv(kind, "#", C.dotOff), x, y);
+    const ch = s[i - pad]; if (ch && ch !== " ") { ctx.drawImage(glyphCv(kind, ch, C.dotDim), x - 1, y); ctx.drawImage(glyphCv(kind, ch, C.dotDim), x + 1, y); ctx.drawImage(glyphCv(kind, ch, col), x, y); } }
+  ctx.restore(); }
+// a dark lit-dot screen: every dot place faintly lit across the window, on the grid that starts at (gx, gy): the "mid" dots' 6 px pitch
+let dotTile = null;
+function dotScreen(x, y, w, h, gx, gy) { if (!dotTile) { dotTile = document.createElement("canvas"); dotTile.width = dotTile.height = 6; const g = dotTile.getContext("2d"); g.fillStyle = C.dotOff; g.fillRect(1, 0, 2, 4); g.fillRect(0, 1, 4, 2); }
+  ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip(); const p = ctx.createPattern(dotTile, "repeat");
+  ctx.translate(gx, gy); ctx.fillStyle = p; ctx.fillRect(x - gx - 6, y - gy - 6, w + 12, h + 12); ctx.restore(); }
 // after each night: a parchment log sheet (Chris 2026-11-13). A brass nameplate rides its top edge. The night's words fold into one
 // line (how many, the best) that opens into its own scrolling list (Y, or tap the line; up / down, the wheel or a drag scroll it).
 // Under it the signal against the target, then the leftovers as lit lamps: one by one each goes dark and pays its points into the
@@ -684,7 +706,7 @@ function reportRun() { return S.phase === "report" && REPORT.t < reportTimes().f
 // how the report's words are set (Workshop "report type", 2026-11-13; Chris: the tables look weak next to the other game's cards).
 // REPORT_TYPE 0 the small pixel ink as before, 1 the game's bold key lettering, 2 the How to Play cards' type (slab figures, typewriter
 // labels). #rtype-N picks one. Every helper takes the row's middle (y) so rows line up whatever the type.
-let REPORT_TYPE = 0; { const m = location.hash.match(/rtype-(\d)/); if (m) REPORT_TYPE = Math.min(7, +m[1]); }
+let REPORT_TYPE = 3; { const m = location.hash.match(/rtype-(\d)/); if (m) REPORT_TYPE = Math.min(7, +m[1]); }
 // fonts on trial for the game's type (Workshop "type"): [label font, value font] for REPORT_TYPE 4..7
 const RT_FONTS = { 4: ['30px "VT323"', '40px "VT323"', '44px "VT323"'], 5: ['22px "Pixelify Sans"', '600 28px "Pixelify Sans"', '600 32px "Pixelify Sans"'], 6: ['18px "Silkscreen"', '24px "Silkscreen"', '28px "Silkscreen"'], 7: ['22px "Special Elite"', '28px "Special Elite"', '32px "Special Elite"'] };
 function rtSet() { const ih = Math.round(14 * TK), kh = glyphCv("key", "N", C.ink).height, st = REPORT_TYPE;
@@ -712,7 +734,7 @@ function drawReport() {
   const slab = REPORT_TYPE === 2, bh = slab ? Math.round(72 * TK) : 42;
   const cnt = Math.min(nW, Math.max(0, Math.floor((t - 22) / 4) + 1));
   if (t >= 22 && t < T.rd && (t - 22) % 4 === 0) Sound.cell(cnt / Math.max(1, nW)); if (t === T.tot) Sound.lock();
-  T.ld.forEach((d, i) => { if (t === d) { Sound.cell(.4 + .6 * i / Math.max(1, lamps.length)); } });
+  T.ld.forEach((d, i) => { if (t === d) Sound.lampPay(i); });
   if (t === T.ns) Sound.full(); if (t === T.f1) Sound.land(true);
   // the night score as the lamps pay in, counting up between payments
   const paid = lamps.reduce((a, l, i) => a + (t >= T.ld[i] ? l.v : 0), 0), nsT = S.score + paid;
@@ -737,7 +759,7 @@ function drawReport() {
   const wy = ly + 8, best = rows.reduce((b, r) => (!b || r.p > b.p ? r : b), null);
   if (t >= 22) { const ws = `${cnt} WORD${cnt === 1 ? "" : "S"}`; RT.val(ws, in0, my(wy), "l", C.ink);
     if (best && t >= T.rd) RT.lab(`BEST ${best.w.toUpperCase()} +${best.p}`, in0 + RT.valW(ws) + 20, my(wy), "l", C.inkSoft);
-    if (nW) { const lab = (REPORT.open ? "HIDE" : "SHOW") + (usingTouch ? "" : " (Y)"), chW = textW(lab, "ink") + 16, chX = in1 - chW, cy = my(wy) - Math.round(ih / 2);
+    if (nW) { const lab = (REPORT.open ? "HIDE" : "SHOW") + (usingTouch ? "" : ` (${BTN("Y")})`), chW = textW(lab, "ink") + 16, chX = in1 - chW, cy = my(wy) - Math.round(ih / 2);
       ctx.fillStyle = REPORT.open ? "rgba(150,40,26,.18)" : "rgba(110,60,20,.18)"; ctx.beginPath(); ctx.roundRect(chX, cy - 5, chW, ih + 10, 6); ctx.fill();
       ctx.strokeStyle = "rgba(110,60,20,.45)"; ctx.lineWidth = 2; ctx.stroke(); ftext(lab, chX + 8, cy, "ink", REPORT.open ? C.inkRed : C.ink, "l"); }
     REPORT.hit = { x0: lx, x1: lx + lw, y0: wy, y1: wy + lh }; }
@@ -786,14 +808,22 @@ function drawReport() {
     ftext("NIGHT SCORE", hx + 16, hy + 10, "ink", C.gold, "l");
     const sy = hy + 10 + ih + 8; ctx.fillStyle = "#0b0604"; ctx.fillRect(hx + 10, sy, hw - 20, bh + 12); ncy = sy + 6 + bh / 2;
     { const g = ctx.createRadialGradient(ncx, ncy, 4, ncx, ncy, hw * .4); g.addColorStop(0, `rgba(255,176,64,${counting || t >= T.ns ? .16 : .08})`); g.addColorStop(1, "rgba(255,176,64,0)"); ctx.fillStyle = g; ctx.fillRect(hx + 10, sy, hw - 20, bh + 12); }
-    bigNum(nsStr, ncx, sy + 6 - 7, leaving ? C.dotDim : counting ? C.hot : C.amber, fmtNum(nsT).length, .75 * zz); }
+    // a lit dot screen: every dot place across the whole window faintly there (not just behind the figures), the figures centered on
+    // its grid, and the same restless life as the glass: now and then the figures dip, and a faint sheen rolls down the screen
+    const sw2 = hw - 20, sh2 = bh + 12, cells = fmtNum(nsT).length, gx0 = Math.round(ncx - (cells * 36 - 6) / 2), gy0 = sy + Math.round((sh2 - 40) / 2);
+    dotScreen(hx + 10, sy, sw2, sh2, gx0, gy0);
+    if (!REPORT.dip || REPORT.dip.t <= 0) { if (Math.random() < .012) REPORT.dip = { t: 4 + (Math.random() * 6 | 0), a: .55 + Math.random() * .3 }; } else REPORT.dip.t--;
+    ctx.save(); ctx.globalAlpha = REPORT.dip && REPORT.dip.t > 0 ? REPORT.dip.a : 1;
+    bigNum(nsStr, ncx, gy0, leaving ? C.dotDim : counting ? C.hot : C.amber, cells, zz, "mid"); ctx.restore();
+    { const band = ((frame * 1.2) % (sh2 + 60)) - 30; ctx.save(); ctx.beginPath(); ctx.rect(hx + 10, sy, sw2, sh2); ctx.clip(); const g2 = ctx.createLinearGradient(0, sy + band - 14, 0, sy + band + 14);
+      g2.addColorStop(0, "rgba(255,190,110,0)"); g2.addColorStop(.5, "rgba(255,190,110,.07)"); g2.addColorStop(1, "rgba(255,190,110,0)"); ctx.fillStyle = g2; ctx.fillRect(hx + 10, sy + band - 14, sw2, 28); ctx.restore(); } }
   // the night score flies down into the run score's drums
   if (leaving) { const a = scoreDrumAnchor(), f = (t - T.f0) / (T.f1 - T.f0), e = f * f;
     const px2 = ncx + (a.x - ncx) * e, py = ncy + (a.y - ncy) * e - Math.sin(f * Math.PI) * 40, z = 1 + .3 * Math.sin(f * Math.PI);
     ctx.save(); ctx.translate(px2, py); ctx.scale(z, z); ftext("+" + fmtNum(S.total - S.startTotal), 0, -14, "key", C.hot, "c", { outline: C.dark }); ctx.restore(); }
   // nameplates on the top and bottom edges
   edgePlate(title, "key", cx, FX(y), C.ink);
-  const ready = t >= T.ready, pr = ready ? (usingTouch ? "TAP TO PICK A PART" : "PRESS A: PICK A PART") : "TALLYING...";
+  const ready = t >= T.ready, pr = ready ? (usingTouch ? "TAP TO PICK A PART" : btn("PRESS {A}: PICK A PART")) : "TALLYING...";
   edgePlate(pr, "ink", cx, FX(y + hh), ready && (frame >> 5) & 1 ? C.inkRed : C.ink);
   drawScoreDrums(true);   // the run score, on top of the dimmed room
 }
@@ -1916,7 +1946,7 @@ function tubeGlows() {
 function dim() { octx.save(); octx.globalAlpha = .5; octx.fillStyle = C.shade; octx.fillRect(0, 0, W, L.barY); octx.restore(); }   // one even shade (it was a per-pixel checkerboard: 100k fills a frame, the part picker crawled on the handheld)
 function blitOver() { ctx.drawImage(over, 0, 0, W * FINE, H * FINE); }
 /* ---------- title screens (Workshop topic "title", round 1) ----------
-   Each style brings the logo in its own way, then settles on the logo and "PRESS A TO TUNE IN". A press during the entrance jumps to
+   Each style brings the logo in its own way, then settles on the logo and btn("PRESS {A} TO TUNE IN"). A press during the entrance jumps to
    the settled screen; the next press starts. Style 0 is the old parchment box. #title-N opens style N. The logo is a placeholder made
    in code from our own 5x7 letters until the real one is drawn: LEXICON in chunky bevelled brass, SIGNAL in lit amber dot-matrix. */
 const TITLE_STYLES = ["Parchment box (now)", "Tuning in", "From the tower", "Neon across the street", "Fill the tube", "Programme sheet", "Radio close-up"];
@@ -1945,7 +1975,7 @@ const TIPS = [
   "THE FINE TUNING KNOB GIVES AN EXTRA RETUNE, AND KEPT RETUNES BOOST EVERY WORD",
   "THE LETTERS CARRY OVER TO THE NEXT NIGHT: SAVE A BIG WORD FOR LATER",
   "B TAKES BACK THE LAST LETTER",
-  "PRESS Y OR TAP THE RIGHT KNOB TO RETUNE",
+  "PRESS {Y} OR TAP THE RIGHT KNOB TO RETUNE",
   "X SENDS THE WORD YOU HAVE SPELLED",
   "START PAUSES THE NIGHT",
   "FINISH A NIGHT AT 1.5 TIMES ITS TARGET FOR OVERDRIVE: PICK FROM FOUR PARTS",
@@ -1959,7 +1989,7 @@ const TIPS = [
   "THE LAMP AT THE END OF THE TUBE LIGHTS WHEN YOUR WORD WILL FILL IT",
   "EACH NEW LETTER MUST TOUCH THE LAST ONE, EVEN CORNER TO CORNER",
   "CLICK THE LAST LETTER AGAIN TO SEND THE WORD",
-  "PRESS A ON THE LAST LETTER TO SEND THE WORD",
+  "PRESS {A} ON THE LAST LETTER TO SEND THE WORD",
   "THE DIAL LIGHTS UP WHEN YOUR WORD CAN BE SENT",
   "SENT LETTERS DROP AWAY AND THE KEYS ABOVE FALL INTO PLACE",
   "EACH NIGHT ASKS FOR MORE SIGNAL THAN THE LAST",
@@ -1985,7 +2015,7 @@ const TIPS = [
 let tipI = (Math.random() * TIPS.length) | 0;
 // every other message on the title dial is your high score (once you have one), the rest are tips
 let tipBest = false;
-const tipNow = () => tipBest && bestLine() ? bestLine() + "  *  BEAT IT" : TIPS[tipI];
+const tipNow = () => tipBest && bestLine() ? bestLine() + "  *  BEAT IT" : btn(TIPS[tipI]);
 function nextTip() { tipBest = !tipBest; let k; do k = (Math.random() * TIPS.length) | 0; while (k === tipI && TIPS.length > 1); tipI = k; }
 // random flicker for the title glass letters: each letter keeps its own clock for when it next stutters, and how
 let glassFl = null, titleTipX = null;
@@ -2037,7 +2067,7 @@ function logoGlow(cx, top, a, rgb) { if (!logoCv) buildLogo(); ctx.save(); ctx.g
   for (let x = -lw / 2 + LP / 2; x < lw / 2; x += LP) bloom(cx + x, top + 55, 110, rgb || "255,170,70", a * .35); bloom(cx, top + logoCv.height + 40, 160, "255,170,70", a * .3); ctx.restore(); }
 function pressLines(cx, y, a) {
   if (a <= 0) return; ctx.save(); ctx.globalAlpha = a;
-  if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO TUNE IN" : "PRESS A TO TUNE IN", cx, y, "ink", C.gold, "c", { outline: C.dark });
+  if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO TUNE IN" : btn("PRESS {A} TO TUNE IN"), cx, y, "ink", C.gold, "c", { outline: C.dark });
   const b = bestLine(); if (b) ftext(b, cx, y + Math.round(26 * TK), "ink", C.amber, "c", { outline: C.dark }); ctx.restore();
 }
 function shade(a) { ctx.fillStyle = `rgba(6,3,2,${a})`; ctx.fillRect(0, 0, CVW, FX(L.barY)); }
@@ -2091,7 +2121,7 @@ function drawTitle() {
       const end = drawLogo(cx, top2, { sig: ease((T - 70) / 25), waves: 0, sigCol: C.inkRed }); ctx.restore();
       const body = wrap("Spell words in the radio glass. Each word beams signal to the tower. Reach the night's target before the lamps go dark.", "ink", FX(w) - 60);
       const n = Math.max(0, Math.floor((T - 95) * 2)); let left = n, ty = end + 14; body.forEach(s => { if (left > 0) ftext(s.slice(0, left), cx, ty, "ink", C.ink, "c"); left -= s.length; ty += Math.round(22 * TK); });
-      if (T > 130 && (frame >> 5) & 1) ftext(usingTouch ? "TAP TO TUNE IN" : "PRESS A TO TUNE IN", cx, ty + 10, "ink", C.inkRed, "c"); }
+      if (T > 130 && (frame >> 5) & 1) ftext(usingTouch ? "TAP TO TUNE IN" : btn("PRESS {A} TO TUNE IN"), cx, ty + 10, "ink", C.inkRed, "c"); }
   }
 }
 // radio close-up: the room seen closer (every art pixel 3 fine pixels, a clean 1.5x), the radio centered and filling the screen. The
@@ -2288,11 +2318,11 @@ const HOW_CARDS = [
     setup() {}, steps: [[30, 0], [62, 5], [94, 2], [126, 3]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])) },
   { title: "LETTERS MUST TOUCH", keys: [], len: 290, text: "Each new letter has to touch the last one. A letter that doesn't touch won't join the word: pick one that does.",
     setup() {}, steps: [[30, 4], [62, 1], [94, 2], [140, 15], [200, 3]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])) },
-  { title: "SEND IT", keys: ["A", "X"], len: 330, text: "Press A on the last letter again (or X from anywhere), or tap it again, to send the word. Its letters fly to the tower and the signal comes back down into the tube.",
+  { title: "SEND IT", keys: ["A", "X"], len: 330, text: "Press {A} on the last letter again (or {X} from anywhere), or tap it again, to send the word. Its letters fly to the tower and the signal comes back down into the tube.",
     setup() {}, steps: [...[[30, 8], [58, 9], [86, 10], [114, 11]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(11))]] },
   { title: "FILL THE TUBE", keys: [], len: 380, text: "Fill the signal tube before the lamps go dark. Every word you send uses one lamp. Longer words and letters with more dots fill it faster. When the lamp at the end of the tube lights, the word you've spelled will fill it; when it burns red, it's overdrive: four parts to pick from. Lamps still lit when it fills pay a bonus.",
     setup() { S.score = S.shown = 18; S.words = 3; }, steps: [...[[30, 12], [58, 13], [86, 14], [114, 15]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(15))]] },
-  { title: "STUCK? RETUNE", keys: ["Y"], len: 270, text: "Press Y, or tap the right knob, to swap every letter for new ones, once a night. The small light under that knob shows you still have it. Keep it and it pays a bonus when the night clears.",
+  { title: "STUCK? RETUNE", keys: ["Y"], len: 270, text: "Press {Y}, or tap the right knob, to swap every letter for new ones, once a night. The small light under that knob shows you still have it. Keep it and it pays a bonus when the night clears.",
     setup() {}, steps: [[80, () => retune()]] },
   { title: "RADIO PARTS", keys: [], len: 260, text: "Clear a night to fit one of three radio parts. They sit in the slots below and light up when they help. Tap a slot, or press down past the bottom row, to read what a part does. That's the basics!",
     setup() { S.parts = ["battery", "echo"]; S.words = maxWords(); HOW.shop = true; nightClear(); HOW.shop = false; }, steps: [[70, () => { shopFocus = 1; Sound.click(); }], [140, () => { shopFocus = 2; Sound.click(); }], [210, () => { shopFocus = 0; Sound.click(); }]] },
@@ -2316,7 +2346,7 @@ function boardKey(k) { if (!BOARD.on) return false; if (k === "a" || k === "b" |
 function drawBoard() {   // the best ten runs on this device, on a parchment sheet with its nameplate
   const a = loadScores(), ih = Math.round(14 * TK), lh = Math.round(24 * TK), rows = a.length ? a : null, w = Math.min(W - 16, 400);
   ctx.save(); ctx.fillStyle = "rgba(6,4,10,.6)"; ctx.fillRect(0, 0, CVW, CVH);
-  const sh = sheet(w, 8 + (rows ? rows.length : 1) * lh + 8, "HIGH SCORES", C.inkRed, usingTouch ? "TAP TO GO BACK" : "PRESS B: GO BACK", H), L0 = sh.L0, R0 = sh.R0;
+  const sh = sheet(w, 8 + (rows ? rows.length : 1) * lh + 8, "HIGH SCORES", C.inkRed, usingTouch ? "TAP TO GO BACK" : btn("PRESS {B}: GO BACK"), H), L0 = sh.L0, R0 = sh.R0;
   let ty = sh.top + 8;
   if (!rows) { ftext("NO RUNS YET. GO TUNE IN!", sh.cx, ty + Math.round((lh - ih) / 2), "ink", C.ink, "c"); }
   else rows.forEach((r, i) => { const yy = ty + i * lh, tt = yy + Math.round((lh - ih) / 2); if (i & 1) { ctx.fillStyle = "rgba(110,60,20,.10)"; ctx.fillRect(L0, yy, R0 - L0, lh); }
@@ -2327,7 +2357,7 @@ function drawBoard() {   // the best ten runs on this device, on a parchment she
 const PAUSE = { on: false, sel: 0, sure: null, t: 0, hits: [], note: "", noteT: 0 };
 function NATIVE() { return typeof LexNative !== "undefined" ? LexNative : null; }
 function pauseItems() {
-  const sure = (key, label, fn) => [PAUSE.sure === key ? "SURE? PRESS A AGAIN" : label, () => { if (PAUSE.sure !== key) { PAUSE.sure = key; return; } PAUSE.sure = null; fn(); }, key];
+  const sure = (key, label, fn) => [PAUSE.sure === key ? btn("SURE? PRESS {A} AGAIN") : label, () => { if (PAUSE.sure !== key) { PAUSE.sure = key; return; } PAUSE.sure = null; fn(); }, key];
   const it = [["RESUME", () => pauseClose()],
     ["SOUND: " + (Sound.muted() ? "OFF" : "ON"), () => Sound.toggle()],
     ["SCREEN COLOR: " + COLORS[colorMode][0], () => { colorMode = (colorMode + 1) % COLORS.length; applyColor(); try { localStorage.setItem("lexsig.colour", colorMode); } catch (e) {} }],
@@ -2394,6 +2424,10 @@ const HOWF = { title: '"Alfa Slab One", Georgia, serif', body: '"Special Elite",
 function wrapPx(s, font, maxW) { ctx.font = font; const out = []; let ln = ""; for (const w of s.split(" ")) { const t = ln ? ln + " " + w : w; if (ctx.measureText(t).width > maxW && ln) { out.push(ln); ln = w; } else ln = t; } if (ln) out.push(ln); return out; }
 function keyChip(x, y, k, u) {   // a button as it looks on the handheld (A and B round, the d-pad a cross, START a pill), its label centered; returns its width
   ctx.save(); let w;
+  if (INPUT === "keys") {   // on a keyboard: keycaps (the arrows for the d-pad, Z X V C ESC for the buttons)
+    const lab = k === "DPAD" ? "ARROWS" : BTN(k), f = `${Math.round(13 * u)}px ${HOWF.chip}`; ctx.font = f; w = Math.max(28 * u, ctx.measureText(lab).width + 16 * u);
+    ctx.fillStyle = "#3a2a24"; ctx.beginPath(); ctx.roundRect(x, y - 13 * u, w, 26 * u, 5 * u); ctx.fill(); ctx.fillStyle = "#5a463c"; ctx.beginPath(); ctx.roundRect(x + 2 * u, y - 11 * u, w - 4 * u, 20 * u, 4 * u); ctx.fill();
+    ctx.fillStyle = "#f7ecde"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(lab, x + w / 2, y - 1 * u); ctx.restore(); return w; }
   if (k === "DPAD") { const a = 11 * u, b = 32 * u; ctx.fillStyle = "#3a2a24"; ctx.fillRect(x, y - a / 2, b, a); ctx.fillRect(x + (b - a) / 2, y - b / 2, a, b); w = b; }
   else if (k === "START") { w = 64 * u; ctx.fillStyle = "#6b5a52"; ctx.beginPath(); ctx.roundRect(x, y - 10 * u, w, 20 * u, 10 * u); ctx.fill(); ctx.fillStyle = "#f3e6d0"; ctx.font = `${Math.round(11 * u)}px ${HOWF.chip}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("START", x + w / 2, y + 1); }
   else { const r = 14 * u; w = r * 2; ctx.fillStyle = k === "A" ? "#a8402c" : "#7a3a2a"; ctx.beginPath(); ctx.arc(x + r, y, r, 0, 6.283); ctx.fill(); ctx.fillStyle = "#f7ecde"; ctx.font = `${Math.round(15 * u)}px ${HOWF.chip}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(k, x + r, y + 1 * u); }
@@ -2436,7 +2470,7 @@ function drawHowCard() {
   let size = 15, lines, tf, bf, lh, th, need, chipW = c.keys.length * 40;
   for (; size >= 10; size -= .5) { tf = `${Math.round(size * 1.35 * u)}px ${HOWF.title}`; bf = `${Math.round(size * u)}px ${HOWF.body}`; lh = Math.round(size * 1.32 * u); th = Math.round(size * 1.8 * u);
     ctx.font = tf; const titleOk = ctx.measureText(c.title).width + chipW * u * size / 15 <= FX(bw) - 2 * PAD - 8;
-    lines = wrapPx(c.text, bf, FX(bw) - 2 * PAD - 8); need = PAD + th + 4 * u + lines.length * lh + 6 * u + size * 1.1 * u + PAD; if (need <= maxH && titleOk) break; }
+    lines = wrapPx(btn(c.text), bf, FX(bw) - 2 * PAD - 8); need = PAD + th + 4 * u + lines.length * lh + 6 * u + size * 1.1 * u + PAD; if (need <= maxH && titleOk) break; }
   const ch = Math.min(maxH, Math.round(need)), cw = FX(bw), cx0 = FX(bx), cy0 = low ? FX(by) + maxH - ch : FX(by);
   const e = Math.min(1, howAnim.t / 10), slide = Math.round((1 - e * e) * 30 * u);
   ctx.save(); ctx.globalAlpha = e;
@@ -2458,9 +2492,9 @@ function drawTitleOld() {
   dim(); octx.drawImage(panelCv("logbox", w, h), x, y); blitOver();
   const cx = FX(W / 2); let ty = FX(y) + 26; ftext("LEXICON SIGNAL", cx, ty, "key", C.ink, "c", { under: C.brassHi, uy: 3 }); ty += 48;
   body.forEach(s => { ftext(s, cx, ty, "ink", C.ink, "c"); ty += lh; }); ty += 16;
-  if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO TUNE IN" : "PRESS A TO TUNE IN", cx, ty, "ink", C.inkRed, "c"); ty += lh;
+  if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO TUNE IN" : btn("PRESS {A} TO TUNE IN"), cx, ty, "ink", C.inkRed, "c"); ty += lh;
   ftext(bestLine(), cx, ty, "ink", C.inkSoft, "c");
-  if (TK === 1) ftext("A ADD / SEND   B BACK   Y RETUNE   START PAUSE", cx, FX(y + h) + 14, "ink", C.gold, "c", { outline: C.dark });
+  if (TK === 1) ftext(btn("{A} ADD / SEND   {B} BACK   {Y} RETUNE   {START} PAUSE"), cx, FX(y + h) + 14, "ink", C.gold, "c", { outline: C.dark });
 }
 // the small MELT THEM plate under the part cases (world pixels)
 function meltPlate() { const G = shopGeom(), w = Math.min(W - 24, 260), hh = R("tplate")[3], y = Math.min(G.y0 + G.ch + 22, SCENE_H - hh - 4); return { x: Math.round(W / 2 - w / 2), y, w, h: hh, tight: y < G.y0 + G.ch + 22 }; }   // always above the bar
@@ -2496,7 +2530,7 @@ function drawMelt() {
     ctx.globalCompositeOperation = "lighter"; bloom(ix + ir[2] * s2 / 2, iy + ir[3] * s2 / 2, FX(60), "255,190,80", .5 * k); ctx.globalCompositeOperation = "source-over";
     ctx.drawImage(atlasImg, ir[0], ir[1], ir[2], ir[3], ix, iy, ir[2] * s2, ir[3] * s2); }
   if (t > done + 20) { ftext(MELT.full ? "FULL! PICK A PART TO UPGRADE" : `MELTER ${S.melt} OF ${MELT_N}`, CVW / 2, msgY, "ink", C.gold, "c", { outline: C.dark });
-    if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO GO ON" : "PRESS A TO GO ON", CVW / 2, promptY, "ink", C.amber, "c", { outline: C.dark }); }
+    if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO GO ON" : btn("PRESS {A} TO GO ON"), CVW / 2, promptY, "ink", C.amber, "c", { outline: C.dark }); }
   ctx.restore(); }
 // the Molten Upgrade: pick one of your parts to gain a copy (like the swap screen, but adding)
 // the Molten Upgrade, back in the picker's card view (Chris 2026-11-13): one display case like a part's, gold-framed, the molten
@@ -2522,7 +2556,7 @@ function drawUpgrade() {
   ctx.strokeStyle = (frame >> 4) & 1 ? C.hot : C.gold; ctx.lineWidth = 3; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 16; ctx.beginPath(); ctx.roundRect(FX(x) - 7, FX(y + lift) - 7, FX(cw) + 14, FX(ch) + 14, 9); ctx.stroke();
   ctx.restore();
   ftext("THE MELTER PAID OUT", FX(W / 2), 22, "ink", C.hot, "c", { outline: C.dark });
-  ftext(usingTouch ? "TAP A PART IN THE BAR" : "LEFT / RIGHT: CHOOSE A PART   A: UPGRADE IT", FX(W / 2), FX(y + ch) + 26, "ink", C.gold, "c", { outline: C.dark });
+  ftext(usingTouch ? "TAP A PART IN THE BAR" : btn("LEFT / RIGHT: CHOOSE A PART   {A}: UPGRADE IT"), FX(W / 2), FX(y + ch) + 26, "ink", C.gold, "c", { outline: C.dark });
   // the part in the bar that gains the copy
   const [, , sw, shh] = R("slot"), sx = FX(L.slotX + swapFocus * L.slotStep), sy = FX(L.barY + L.slotY);
   ctx.save(); ctx.strokeStyle = (frame >> 3) & 1 ? "#ffd24a" : "#fff2c0"; ctx.lineWidth = 4; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 14; ctx.strokeRect(sx - 4, sy - 4, FX(sw) + 8, FX(shh) + 8); ctx.restore();
@@ -2617,7 +2651,7 @@ function drawShop() {
       // what fitting it will do to the slots, as a small lamp label at the foot
       cardTag(c, p, g, G, cx);
       if (!g.f) { c.fillStyle = "rgba(8,5,3,.38)"; c.fillRect(FX(g.x), FX(g.y), FX(G.cw), FX(G.ch)); } });
-    if (!(partSlots().length >= PART_SLOTS && meltPlate().tight)) ftext(usingTouch ? "TAP A PART" : partSlots().length >= PART_SLOTS ? "LEFT / RIGHT TO LOOK, DOWN TO MELT, A TO PICK" : "LEFT / RIGHT TO LOOK, A TO FIT", FX(W / 2), FX(G.y0 + G.ch) + 8, "ink", C.gold, "c", { outline: C.dark });
+    if (!(partSlots().length >= PART_SLOTS && meltPlate().tight)) ftext(usingTouch ? "TAP A PART" : partSlots().length >= PART_SLOTS ? btn("LEFT / RIGHT TO LOOK, DOWN TO MELT, {A} TO PICK") : btn("LEFT / RIGHT TO LOOK, {A} TO FIT"), FX(W / 2), FX(G.y0 + G.ch) + 8, "ink", C.gold, "c", { outline: C.dark });
     TXT = null; }
   ctx.drawImage(shopTop.cv, 0, 0, CVW, CVH); drawMeltPlate();
   shopChoices.forEach((p, k) => { const g = geo(k); if (!p.rare) return;   // rare parts: a gold frame round the case
@@ -2630,7 +2664,7 @@ function drawOver() {   // DEAD AIR: the run score big and lit, then how the run
   const body = [`Faded on night ${S.night} at ${S.score} of ${S.target}.`, S.best.word ? `Best word ${S.best.word} +${S.best.pts}.` : ""].flatMap(s => s ? wrap(s, "ink", cw) : []);
   const heroH = 12 + ih + 10 + 56 + 14 + 14, bodyH = heroH + 18 + body.length * lh + 4;
   dim(); blitOver();
-  const sh = sheet(w, bodyH, "DEAD AIR", C.inkRed, usingTouch ? "TAP TO TUNE IN AGAIN" : "PRESS A: TUNE IN AGAIN");
+  const sh = sheet(w, bodyH, "DEAD AIR", C.inkRed, usingTouch ? "TAP TO TUNE IN AGAIN" : btn("PRESS {A}: TUNE IN AGAIN"));
   const nb = S.rank === 1, rk = S.rank ? (nb ? "NEW HIGH SCORE!" : `NUMBER ${S.rank} ON YOUR BOARD`) : "";
   let ty = sh.top + scoreDisplay(sh.L0, sh.top, sh.R0 - sh.L0, "RUN SCORE", fmtNum(S.total), C.amber, rk, nb && (frame >> 3) & 1 ? C.hot : C.gold) + 18;
   body.forEach(s => { ftext(s, sh.cx, ty, "ink", C.ink, "c"); ty += lh; });
@@ -2639,6 +2673,13 @@ function drawOver() {   // DEAD AIR: the run score big and lit, then how the run
 
 /* ================= input ================= */
 let usingButtons = false, usingTouch = matchMedia("(pointer:coarse)").matches;
+// what the player is using, so every prompt names the right thing (Chris 2026-11-13): "pad" (a controller, the handheld, the phone
+// shell's buttons) says A B X Y START; "keys" (a keyboard) says Z X V C ESC (arrows move); touch says TAP. BTN(name) gives the label,
+// btn(text) swaps {A} {B} {X} {Y} {START} in a text for it.
+let INPUT = usingTouch ? "touch" : "keys";
+const KEYNAME = { A: "Z", B: "X", X: "V", Y: "C", START: "ESC" };
+const BTN = (b) => INPUT === "keys" ? KEYNAME[b] : b;
+const btn = (t) => String(t).replace(/\{(A|B|X|Y|START)\}/g, (m, b) => BTN(b));
 function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ? "up" : "down"; if (devKey(dk)) return; if (pauseKey(dk)) return; if (boardKey(dk)) return; if (howKey(dk)) return; dismissCard();
   usingButtons = true; Sound.ensure();
   if (S.phase === "report") { if (dy) reportScroll(dy); return; }
@@ -2665,6 +2706,7 @@ function pressY() { if (devKey("y")) return; if (PAUSE.on || HOW.on) return; Sou
 function pressStart() { if (devKey("start")) return; if (pauseKey("start")) return; if (boardKey("start")) return; if (howKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); if (S.phase === "play") pauseOpen(); }
 function pressSel() { if (devKey("select")) return; }   // Select does nothing by itself (held a moment: dev mode, once it's unlocked)
 window.addEventListener("keydown", (e) => {
+  if (!e.ctrlKey && !e.metaKey && !e.altKey) { INPUT = "keys"; usingTouch = false; }
   if (introPress()) { e.preventDefault(); return; }
   // keys (Chris: WASD and arrows, Space or Enter to pick; keep them few and clear): WASD/arrows move, Space or Enter picks the letter
   // under the cursor (on the last letter it sends), Backspace takes one back, R retunes, M turns the sound on or off
@@ -2743,13 +2785,14 @@ function pollPad(now) {
   if (Object.keys(st).some(edge) && !document.body.classList.contains("padmode")) { document.body.classList.add("padmode"); setTimeout(layout, 30); }
   const repeat = (k, fn) => { if (edge(k)) { fn(); rep[k] = now + 260; } else if (st[k] && now > (rep[k] || 0)) { fn(); rep[k] = now + 110; } };
   if (Object.keys(st).some(edge) && introPress()) { Object.assign(padPrev, st); return; }
+  if (Object.keys(st).some(edge)) { INPUT = "pad"; usingTouch = false; }
   if (edge("A")) pressA(); if (edge("B")) pressB(); if (edge("X")) pressX(); if (edge("Y")) pressY(); if (edge("ST")) pressStart(); if (edge("SEL")) selectDown(); if (!st.SEL && padPrev.SEL && !selectUp()) pressSel();
   repeat("L", () => move(-1, 0)); repeat("R", () => move(1, 0)); repeat("U", () => move(0, -1)); repeat("D", () => move(0, 1));
   Object.assign(padPrev, st);
 }
 // some phones only let sound start when the finger comes up (or on a click or key), so every one of those wakes the sound too
 ["pointerup", "touchend", "click", "keydown"].forEach(t => document.addEventListener(t, () => { if (S && S.phase !== "splash") Sound.ensure(); else if (t !== "keydown") Sound.ensure(); }, true));
-document.addEventListener("touchstart", () => { usingTouch = true; if (document.body.classList.contains("padmode")) { document.body.classList.remove("padmode"); setTimeout(layout, 30); } }, { passive: true });
+document.addEventListener("touchstart", () => { usingTouch = true; INPUT = "touch"; if (document.body.classList.contains("padmode")) { document.body.classList.remove("padmode"); setTimeout(layout, 30); } }, { passive: true });
 window.addEventListener("resize", layout); if (window.ResizeObserver) new ResizeObserver(layout).observe($("screenWrap"));
 
 /* ================= sound: Web Audio synth, 84 BPM night pulse ================= */
@@ -2807,6 +2850,9 @@ const Sound = (() => {
     full() { if (!ac) return; const t = ac.currentTime; [0, 4, 7, 12].forEach((d, k) => osc("square", m2f(81 + d), t + k * .045, .003, .06, .35)); noise(t, .5, .1, "highpass", 4000, .7, sfx); },
     part() { if (!ac) return; const t = ac.currentTime; osc("triangle", m2f(88), t, .003, .08, .18); osc("square", m2f(95), t + .06, .003, .05, .2); },
     buzz() { if (!ac) return; const t = ac.currentTime; osc("sawtooth", 120, t, .005, .05, .25, sfx); osc("square", 240, t, .002, .03, .08, sfx); noise(t, .12, .06, "highpass", 3000, .7, sfx); },
+    // a leftover lamp paying in on the night report: a switch click, a bright bell climbing with each lamp, a little shimmer
+    lampPay(i) { if (!ac) return; const t = ac.currentTime, m = 76 + [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24][Math.min(10, i)];
+      osc("square", 1900, t, .001, .02, .04, sfx); osc("triangle", m2f(m), t + .01, .003, .22, .2); osc("sine", m2f(m + 12), t + .01, .003, .16, .1); osc("square", m2f(m + 7), t + .07, .002, .06, .05); noise(t + .02, .12, .05, "highpass", 6000, .8, sfx); },
     lampOut() { if (!ac) return; const t = ac.currentTime; osc("triangle", 1500, t, .002, .06, .12, sfx, 300); noise(t, .05, .05, "highpass", 5000, .7, sfx); },
     tick() { if (!ac) return; const t = ac.currentTime; if (t - lastTick < .04) return; lastTick = t; osc("square", 2400, t, .001, .02, .015); },
     type() { if (!ac) return; const t = ac.currentTime; if (t - lastType < .03) return; lastType = t; noise(t, .025, .05, "bandpass", 3000 + Math.random() * 1500, 3); },
@@ -2995,11 +3041,12 @@ async function devCheck() {
 let appUpdate = 0, buildReady = 0;
 window.ssLog = (s) => log(s);
 if (/^#test-/.test(location.hash)) window.__lex = (js) => eval(js);   // screenshots of any screen from the test pages
-window.ssInApp = () => { document.body.classList.add("inapp"); usingTouch = false; usingButtons = true; setTimeout(layout, 30); };
+window.ssInApp = () => { document.body.classList.add("inapp"); usingTouch = false; INPUT = "pad"; usingButtons = true; setTimeout(layout, 30); };
 window.ssUpdateReady = (b) => { buildReady = b; if (S.phase === "title" || S.phase === "splash") reloadBuild(); else log("A new build is ready. It loads on the title screen."); };
 window.ssAppUpdate = (n) => { appUpdate = n; if (!TITLE_MENU.includes("UPDATE APP")) TITLE_MENU.push("UPDATE APP"); };
 let ssRep = {}, ssSel = false;
 window.ssKey = (k, down) => {
+  if (down) { INPUT = "pad"; usingTouch = false; }
   const DIR = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
   if (DIR[k]) { clearTimeout(ssRep[k]); clearInterval(ssRep[k]); if (!down) return; if (introPress()) return; move(...DIR[k]);
     ssRep[k] = setTimeout(() => { ssRep[k] = setInterval(() => move(...DIR[k]), 110); }, 260); return; }
@@ -3021,6 +3068,9 @@ async function boot() {
   A = LA ? LA.atlasJson : await (await fetch("art/pixel/atlas.json")).json();
   atlasImg = new Image(); atlasImg.src = LA ? LA.atlasPng : "art/pixel/atlas.png"; await atlasImg.decode();
   PAL = A.palette; const acc = new Set(A.accents.map(c => c.join(","))); ROOMPAL = PAL.filter(c => !acc.has(c.join(",")));
+  // the lettering's font first (cached pictures with words in them are drawn once), but never wait more than two seconds for it
+  if (TYPEFACE && document.fonts) { await Promise.race([Promise.all(Object.values(TF_SIZE).map(f => document.fonts.load(`${f()}px "${TYPEFACE}"`))), new Promise(r => setTimeout(r, 2000))]).catch(() => {});
+    TF_READY = document.fonts.check(`16px "${TYPEFACE}"`); if (!TF_READY) document.fonts.load(`16px "${TYPEFACE}"`).then(() => { TF_READY = document.fonts.check(`16px "${TYPEFACE}"`); if (TF_READY) { panelCache.clear(); shopTop.k = ""; titleBg.k = ""; } }).catch(() => {}); }
   makeColors(); buildLUT(); artReady = true;
   loadTitleGlass();
   // only our own test and Workshop links skip straight to the title (the page can be opened with other hashes, which must not skip the intro)
