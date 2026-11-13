@@ -402,6 +402,9 @@ the same batch.
   letter is sent in gold (flyer/ghost `gold`), the beacon flashes gold (`goldFlash`), 4 and 5 bring the beam and tube down gold too.
   Media in workshop/img/goldkey-r1/ (gold-N.mp4: gold key, then the same as the red key; gold-N.jpg; gold-N-close.jpg). Frame time at
   640x480, processor slowed 6x: every option within noise of option 0 (about 27-30 ms at rest, 28-35 with a word, both ways).
+- finish-r1 (open, 2026-11-13; Chris: an overlay to tie the art together, cheap): FINISH_STYLE 0..5 (#finish-N; 0 none is the
+  default), drawFinish() at the end of draw(): 1 vignette + warm soft-light, 2 + moving grain tiles, 3 haze (the frame shrunk to 1/10
+  and laid back with 'screen'), 4 scanlines + haze + vignette, 5 all light. Stills in workshop/img/finish-r1/.
 - score-r1 (decided: 1, rolling drums, now the game's only score display, 2026-11-13): drawScoreDrums, a brass-framed drum counter in
   the room's bottom-left corner above the bar. It counts with the tube (S.startTotal + S.shown while playing), so bar and counter run
   up together, then the frame flares (SC.kick). No points fly to it (Chris: enough score animation already; keep all the existing
