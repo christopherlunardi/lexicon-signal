@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 32;</script><script>
+<script>window.LEX_BUILD = 33;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -509,8 +509,9 @@ function log(s) { S.log.push({ s: s.toUpperCase(), n: 0 }); if (S.log.length > 1
    (night, word, points, red key, words and retunes left, seconds spent), failed tries, retunes, the parts offered and picked, and how
    each night and run ended. Kept on the device (lexsig.runs, the last 40 runs); on the claude.ai link it is also saved to the
    artifact's shared database (collection "plays", readable only by the owner) so it can be studied. Pause menu: SHARE PLAY LOG. ---- */
-const PLAYLOG = { run: null, db: null, last: 0 };
-try { if (window.claude && claude.use) claude.use("db").then(d => { PLAYLOG.db = d; }).catch(() => {}); } catch (e) {}
+const PLAYLOG = { run: null, db: null, uid: null, last: 0 };
+// each player writes only their own runs (plays/<their id>/runs/<run>); only the owner can read them all
+try { if (window.claude && claude.use) Promise.all([claude.use("db"), claude.use("user")]).then(async ([d, u]) => { if (d && u) { PLAYLOG.uid = await u.id(); PLAYLOG.db = d; } }).catch(() => {}); } catch (e) {}
 const playWhere = () => document.body.classList.contains("pwa") ? "webapp" : document.body.classList.contains("inapp") ? "android" : /github\.io$/.test(location.hostname) ? "web" : window.claude ? "link" : "other";
 function plStart() { if (HOW.on) return; PLAYLOG.run = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), at: Date.now(), build: window.LEX_BUILD || 0, where: playWhere(),
     screen: innerWidth + "x" + innerHeight, input: usingTouch ? "touch" : usingButtons ? "buttons" : "mouse", words: [], nights: [], fails: 0, retunes: 0, end: "" }; PLAYLOG.last = Date.now(); }
@@ -521,7 +522,7 @@ function plPick(id) { const r = PLAYLOG.run; if (!r) return; const nn = r.nights
 function plEnd(how) { const r = PLAYLOG.run; if (!r || r.end) return; r.end = how; r.total = S.total; r.reached = S.night; r.parts = S.parts.slice(); plSave(); PLAYLOG.run = null; }
 function plSave() { const r = PLAYLOG.run; if (!r) return; r.total = S.total;
   try { const a = JSON.parse(localStorage.getItem("lexsig.runs") || "[]").filter(x => x.id !== r.id); a.push(r); localStorage.setItem("lexsig.runs", JSON.stringify(a.slice(-40))); } catch (e) {}
-  if (PLAYLOG.db) PLAYLOG.db.collection("plays").doc(r.id).set(JSON.parse(JSON.stringify(r))).catch(() => {}); }
+  if (PLAYLOG.db && PLAYLOG.uid) PLAYLOG.db.collection("plays/" + PLAYLOG.uid + "/runs").doc(r.id).set(JSON.parse(JSON.stringify(r))).catch(() => {}); }
 function plShare() { let txt = "[]"; try { txt = localStorage.getItem("lexsig.runs") || "[]"; } catch (e) {}
   if (navigator.share) navigator.share({ title: "Lexicon Signal play log", text: txt }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(() => log("Play log copied.")).catch(() => {}); }
 function newRun() { S = fresh("play"); log("Tuned in."); plStart(); startNight(); }
