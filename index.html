@@ -1282,7 +1282,7 @@ function gkKey(o, P, w0, h0, ox, oy, ok, low, fl, lockT) {
   const a = lit > .5 ? (wave ? fl : 1) : Math.min(1, Math.min(1, (1 - low * .35 * (1 - lit)) * fl) + land), col = lit > .5 ? GK.hot : GK.on;
   const glyph = (ch, c, al) => { if (al <= .01) return; ctx.globalAlpha = al; if (GF.deep) ctx.drawImage(gvGlow(ch, GLO), mx - 14, my - 14); ctx.drawImage(gvLet(ch, c), mx, my); };
   const rows = (ch, c, r0, r1, al) => { if (r1 < r0) return; ctx.globalAlpha = al; ctx.drawImage(gvLet(ch, c), 0, r0 * 6, 54, (r1 - r0 + 1) * 6, mx, my + r0 * 6, 54, (r1 - r0 + 1) * 6); };
-  if (wild) { t.gkP += (frame - t.gkF) * (o.on ? 1 : .2); t.gkF = frame; }
+  if (wild) { t.gkP += (frame - t.gkF) * (o.on ? 3.2 : 1.8); t.gkF = frame; }   // a fast spin, so nobody mistakes a passing letter for the one it is (Chris)
   if (scr) { const H = dotSpr(GK.hot); ctx.globalAlpha = 1; for (let r = 0; r < 7; r++) for (let c = 1; c < 8; c++) if (hsh(c + r * 9 + (frame >> 1) * 3.1, t.seed * 17) < .42) ctx.drawImage(H, mx + c * 6, my + r * 6, 6, 6); }
   else if (!wild) glyph(o.ch, hot ? "#ffc4a0" : GK.hot, a);
   else if (GS === 1) {   // letter reel: rolls slowly at rest, spins while traced, then the letter comes up from below and locks with a flash
