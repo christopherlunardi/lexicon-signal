@@ -152,6 +152,14 @@ the same batch.
 - Targets 30 x 1.5^(n-1) rounded to 5 (30, 45, 70, 100, 150...). Balance is checked with a bot simulator (three skill levels on the
   real word list, letter draw and parts; kept in the session scratchpad as bal/sim.js and partval.js): with this curve a casual bot
   runs ~7 nights, a good one ~11, a strong one ~16. Rerun it after any change to scoring, parts or targets.
+- Arcade scoring (Chris 2026-11-13: the goal is a high score, the run goes on until you lose): the run score is all signal beamed
+  (S.total), shown in the dial's marquee and at game over; the best ten runs on this device are kept in localStorage lexsig.scores
+  (HIGH SCORES on the title menu, HIGH SCORE n under it, NEW HIGH SCORE / NUMBER n ON YOUR BOARD at game over).
+- Overdrive: finish a night at OVERDRIVE (1.5) x its target or more: a red flash over the room, OVERDRIVE on the dial, and the part
+  picker offers four instead of three. The tube's end lamp burns red while the traced word would do it. `#test-word-od` is 5 short.
+  The picker's cases grow to fit the longest description; keep part descriptions short.
+- Red Lamp checked (2026-11-13): stacking red keys grows only slowly (+12-16% a copy, five copies +55-71%); the Long Wave Coil and
+  Tube Amp stacks are the strong ones (three coils +232% for a good player).
 - The letters carry over from night to night (only a new run fills a fresh glass), so a big word can be saved for later.
 - Reading a part (INSPECT): tap its slot, or press down past the bottom row and left/right along the slots; a card above the bar
   gives its name, what a copy does, how many are fitted and what it adds to the traced word. Up/A/B or a tap elsewhere closes it.
@@ -340,6 +348,8 @@ the same batch.
   Next: build dot glass out as THE play area and drop the other styles' code.
 
 ## Art prompts (ChatGPT)
+- The Vowel Antenna icon was redrawn on its own (src/vowel_icon.png, k-centroid shrunk to vowel_icon_fixed.png, 35x62) and swapped
+  in after the palette is taken in build.py, so the interface colours don't shift. Do the same for any other single redrawn icon.
 - One layer at a time, the look target attached for style. Pixel-art wording: low-resolution late-1990s computer game look, crisp
   hard-edged square pixels, no anti-aliasing, limited palette, small ordered dithering. Lit flatly and evenly (the game adds light).
 - Solid flat pure magenta (#FF00FF) background, never "transparent" (it comes back as a painted checkerboard).

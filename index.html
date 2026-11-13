@@ -418,19 +418,20 @@ const VOWELS = new Set(["A","E","I","O","U"]), HARD = new Set(["Qu","X","Z","J"]
 const PARTS = [
   { id:"amp",     name:"Tube Amp",          desc:"+1 boost on every word." },
   { id:"battery", name:"Spare Battery",     desc:"+1 word every night." },
-  { id:"knob",    name:"Fine Tuning Knob",  desc:"+1 retune every night. Each retune you keep adds +1 boost." },
-  { id:"coil",    name:"Long Wave Coil",    desc:"Words of 5+ letters score x2. More copies: x3, x4." },
-  { id:"short",   name:"Shortwave Crystal", desc:"Words of 3 or 4 letters get +6 signal." },
-  { id:"echo",    name:"Echo Tube",         desc:"Your first word each night scores x2. More copies: more words." },
-  { id:"owl",     name:"Night Owl Clock",   desc:"Your last word each night scores x3. More copies: x4, x5." },
-  { id:"treble",  name:"Treble Slider",     desc:"+3 signal for each letter worth 3 or more." },
-  { id:"vowel",   name:"Vowel Antenna",     desc:"Vowels are worth +1 signal each." },
-  { id:"carrier", name:"Red Lamp",          desc:"One more red key on the glass." },
-  { id:"heat",    name:"Red Heat",          desc:"Red keys multiply one more: x3, x4.", icon:"fuse" },
+  { id:"knob",    name:"Fine Tuning Knob",  desc:"+1 retune a night. Each kept retune: +1 boost." },
+  { id:"coil",    name:"Long Wave Coil",    desc:"Words of 5+ letters x2 (x3, x4...)." },
+  { id:"short",   name:"Shortwave Crystal", desc:"Words of 3 or 4 letters +6 signal." },
+  { id:"echo",    name:"Echo Tube",         desc:"First word each night x2 (more words)." },
+  { id:"owl",     name:"Night Owl Clock",   desc:"Last word each night x3 (x4, x5...)." },
+  { id:"treble",  name:"Treble Slider",     desc:"+3 signal per letter worth 3+." },
+  { id:"vowel",   name:"Vowel Antenna",     desc:"Vowels +1 signal each." },
+  { id:"carrier", name:"Red Lamp",          desc:"+1 red key on the glass." },
+  { id:"heat",    name:"Red Heat",          desc:"Red keys multiply one more.", icon:"fuse" },
 ];
 const PART = Object.fromEntries(PARTS.map(p => [p.id, p]));
 const iconOf = (id) => "iconL_" + ((PART[id] && PART[id].icon) || id);
 const BASE_WORDS = 6;   // one per battery lamp
+const OVERDRIVE = 1.5;   // finish a night with this much of its target or more: overdrive (a red flash, and four parts to pick from)
 const targetFor = (n) => Math.round(30 * Math.pow(1.5, n - 1) / 5) * 5;   // 30, 45, 70, 100, 150, 230... (1.5x a night since the red key became standard, 2026-11-13)
 const freqFor = (n) => +(88.1 + ((n - 1) * 1.9) % 19.8).toFixed(1);
 let S = null, uid = 0;
@@ -499,7 +500,7 @@ function partHits(p) {
 function log(s) { S.log.push({ s: s.toUpperCase(), n: 0 }); if (S.log.length > 14) S.log.shift(); }
 function newRun() { S = fresh("play"); log("Tuned in."); startNight(); }
 function startNight() {
-  S.score = 0; S.shown = 0; S.firstWord = true; S.target = targetFor(S.night); S.words = maxWords(); S.retunes = maxRetunes(); S.path = [];
+  S.score = 0; S.shown = 0; S.over = false; S.firstWord = true; S.target = targetFor(S.night); S.words = maxWords(); S.retunes = maxRetunes(); S.path = [];
   if (S.grid.length === NN && S.night > 1) ensureHot(); else fillGrid(true);   // the glass keeps its letters from night to night; a new run starts fresh
   S.phase = "play"; INSPECT.on = false; dialFlash = null; nightCard = 170; log(`Night ${S.night}: beam ${S.target} signal to the tower in ${S.words} words.`);
 }
@@ -541,7 +542,9 @@ function arrive() {
   pops.push({ text: "+" + sc.pts, x: L.beacon.x, y: L.beacon.y - 14, t: 0, big }); if (big) shake = 5;
   beams.push({ t: 0, dur: 24, big, hits }); Sound.beacon(big); log(`${sc.word} +${sc.pts}${sc.mult > 1 ? " x" + sc.mult : ""}`);
   if (HOW.on) {}   // (the how-to-play demo never clears the night or ends the run)
-  else if (S.score >= S.target) { busy++; setTimeout(() => { busy--; nightClear(); }, 1700); }
+  else if (S.score >= S.target) { S.over = S.score >= S.target * OVERDRIVE;
+    if (S.over) { overT = 1; shake = 8; Sound.full(); Sound.beacon(true); dialFlash = { text: "OVERDRIVE", t: 140 }; log(`Overdrive! ${S.score} of ${S.target}.`); }
+    busy++; setTimeout(() => { busy--; nightClear(); }, S.over ? 2300 : 1700); }
   else if (S.words <= 0) { busy++; setTimeout(() => { busy--; gameOver(); }, 1400); }
   else log(`${S.target - S.score} to go, ${S.words} word${S.words === 1 ? "" : "s"} left.`);
 }
@@ -550,8 +553,8 @@ let shopChoices = [], shopFocus = 0;
 function nightClear() {
   if (HOW.on && !HOW.shop) return;
   S.phase = "shop"; Sound.clear(); log(`Night ${S.night} locked in.`);
-  const bag = PARTS.slice(); shopChoices = [];   // every part stacks, so any part can come up
-  while (shopChoices.length < 3 && bag.length) shopChoices.push(bag.splice((Math.random() * bag.length) | 0, 1)[0]); shopFocus = 0;
+  const bag = PARTS.slice(); shopChoices = [];   // every part stacks, so any part can come up; overdrive offers four
+  while (shopChoices.length < (S.over ? 4 : 3) && bag.length) shopChoices.push(bag.splice((Math.random() * bag.length) | 0, 1)[0]); shopFocus = 0;
 }
 // the fitted parts as slots: one per kind, in the order they were first fitted, with how many copies are stacked in it
 function partSlots() { const c = []; S.parts.forEach(id => { const e = c.find(e => e.id === id); if (e) e.n++; else c.push({ id, n: 1 }); }); return c; }
@@ -565,14 +568,20 @@ function choosePart(k) {
 function fitPart(p) { S.parts.push(p.id); Sound.pick(); log(`Fitted: ${p.name}.`); S.night += 1; knobA.L += 3; staticKick = .5; Sound.retune(); startNight(); }
 function swapConfirm(k) { const sl = partSlots()[k]; if (!sl || !swapNew) return; S.parts = S.parts.filter(id => id !== sl.id); log(`Took out: ${PART[sl.id].name}.`); const p = swapNew; swapNew = null; fitPart(p); }
 function swapCancel() { S.phase = "shop"; swapNew = null; Sound.click(); }
+// the run score is all the signal beamed in a run; the best ten runs on this device are kept (lexsig.scores)
+function loadScores() { try { const a = JSON.parse(localStorage.getItem("lexsig.scores") || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
+function saveRun() { const a = loadScores(), run = { s: S.total, n: S.night - 1, w: S.best.word || "", p: S.best.pts || 0, d: Date.now() };
+  a.push(run); a.sort((x, y) => y.s - x.s || y.n - x.n); const top = a.slice(0, 10); try { localStorage.setItem("lexsig.scores", JSON.stringify(top)); } catch (e) {}
+  const i = top.indexOf(run); return i < 0 ? 0 : i + 1; }
 function gameOver() {
-  S.phase = "over"; Sound.over(); staticKick = .9; log("Dead air.");
+  S.phase = "over"; Sound.over(); staticKick = .9; log("Dead air."); S.rank = S.total > 0 ? saveRun() : 0;
   try { const prev = JSON.parse(localStorage.getItem("lexsig-best") || "null"), cleared = S.night - 1;
     if (!prev || cleared > prev.nights || (cleared === prev.nights && S.total > prev.total)) localStorage.setItem("lexsig-best", JSON.stringify({ nights: cleared, total: S.total, word: S.best.word })); } catch (e) {}
 }
-function bestLine() { try { const b = JSON.parse(localStorage.getItem("lexsig-best") || "null"); return b ? `BEST: ${b.nights} NIGHTS, ${b.total} SIGNAL` : ""; } catch (e) { return ""; } }
+function bestLine() { const a = loadScores(); return a.length ? `HIGH SCORE ${a[0].s}` : ""; }
 
 /* ================= effects + update ================= */
+let overT = 0;   // overdrive flash, 1 down to 0
 let flyers = [], sparks = [], pops = [], beams = [], beaconFlash = 0, shake = 0, staticLvl = .05, staticKick = 0, marquee = 0;
 function burst(x, y, n, col) { for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, s = .8 + Math.random() * 2.6; sparks.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 1, life: 1, d: .025 + Math.random() * .03, col }); } }
 function update() {
@@ -612,6 +621,7 @@ function draw() {
   wctx.drawImage(barCv, 0, L.barY); drawBarLive();
   ctx.drawImage(world, 0, 0, W * FINE, H * FINE);
   ctx.save(); ctx.translate(sx * FINE, 0); drawRain(); drawDial(); drawLamps(); drawKeyLetters(); drawGlows(); drawFlyers(); ctx.restore();
+  if (overT > 0) { ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(255,40,24,${.42 * overT * (.6 + .4 * Math.sin(frame / 2))})`; ctx.fillRect(0, 0, CVW, CVH); ctx.restore(); overT = Math.max(0, overT - .012); }
   drawBarText(); if (nightCard > 0 && S.phase === "play" && !HOW.on) { drawNightCard(); nightCard--; }
   if (S.phase === "title" || S.phase === "shop" || S.phase === "swap" || S.phase === "over") {
     octx.clearRect(0, 0, W, H); octx.imageSmoothingEnabled = false;
@@ -619,6 +629,7 @@ function draw() {
   }
   if (HOW.on) { howStep(); drawHowCard(); }
   if (PAUSE.on) drawPause();
+  if (BOARD.on) drawBoard();
 }
 function drawBeacon() {
   const b = L.beacon, pulse = [0, 1, 2, 3, 3, 2, 1, 0][(frame >> 3) & 7];
@@ -693,7 +704,7 @@ function drawDial() {
     if (gain) ftextDot(gain, x0 + (cols - num.length - 1 - gain.length) * 18, y0, pv);
     ftextDot(num, x0 + (cols - num.length) * 18, y0, ok ? C.hot : S.path.length ? C.amber : C.dotDim);
   }
-  else if (!dialFlash) { const msg = S.phase === "title" ? `  ${tipNow()} *` : S.phase === "play" ? `  ${freqFor(S.night).toFixed(1)} FM * NIGHT ${S.night} * REACH ${S.target} *` : `  ${freqFor(S.night).toFixed(1)} FM *`;
+  else if (!dialFlash) { const msg = S.phase === "title" ? `  ${tipNow()} *` : S.phase === "play" ? `  ${freqFor(S.night).toFixed(1)} FM * NIGHT ${S.night} * REACH ${S.target} * SCORE ${S.total} *` : `  ${freqFor(S.night).toFixed(1)} FM *`;
     const full = msg.repeat(3), off = (marquee >> 3) % msg.length, sub = (marquee & 7) * 18 / 8; s = full.substr(off, cols + 1); ftextDot(s, x0 - sub, y0, C.amber); s = ""; dialVal = 0; }
   if (s && !(blink && dialFlash && dialFlash.t < 40 && (dialFlash.t >> 3) & 1)) ftextDot(s.slice(0, cols), x0, y0, col);
   ctx.restore();
@@ -1452,7 +1463,7 @@ function drawTube() {
   tubeLit = lit; const full = play && pr >= 1; if (full && !tubeFull) { tubeFlash = tubeFlash.map(() => 1); tubeKick = 1.5; Sound.full(); const t = L.tube; for (let x = 0; x < t.w; x += 24) burst(t.x + x, L.barY + t.y + t.h / 2, 2, C.gold); }
   tubeFull = full;
   // what the traced word would add, blinking
-  const ok = S.phase === "play" && S.path.length >= 3 && isValid(), pts = ok ? scoreOf(S.path).pts : 0, fills = ok && S.score + pts >= S.target;
+  const ok = S.phase === "play" && S.path.length >= 3 && isValid(), pts = ok ? scoreOf(S.path).pts : 0, fills = ok && S.score + pts >= S.target, odv = fills && S.score + pts >= S.target * OVERDRIVE;
   // a word that falls short never lights the last cell: only a word that really fills the tube reaches the end (and lights the end lamp)
   const add = !ok ? 0 : fills ? G.n : Math.min(G.n - 1, Math.floor((S.shown + pts) / S.target * G.n));
   const sheen = ((frame * 9) % (G.n * (G.cw + G.gap) + 400)) - 200, blink = .45 + .3 * Math.sin(frame / 4);
@@ -1475,9 +1486,9 @@ function drawTube() {
   { const t = L.tube, ex = FX(t.x + t.w) - 10, ey = FX(L.barY + t.y + t.h / 2), p = .65 + .35 * Math.sin(frame / 5);
     ctx.fillStyle = "#1a0d06"; ctx.beginPath(); ctx.arc(ex, ey, 15, 0, 6.283); ctx.fill();
     ctx.fillStyle = "#b8873a"; ctx.beginPath(); ctx.arc(ex, ey, 12.5, 0, 6.283); ctx.fill();
-    ctx.fillStyle = fills ? `rgba(255,${Math.round(220 + 30 * p)},${Math.round(150 + 90 * p)},1)` : "#3a1f10"; ctx.beginPath(); ctx.arc(ex, ey, 9, 0, 6.283); ctx.fill();
+    ctx.fillStyle = odv ? `rgba(255,${Math.round(60 + 60 * p)},${Math.round(40 + 30 * p)},1)` : fills ? `rgba(255,${Math.round(220 + 30 * p)},${Math.round(150 + 90 * p)},1)` : "#3a1f10"; ctx.beginPath(); ctx.arc(ex, ey, 9, 0, 6.283); ctx.fill();
     if (fills) { ctx.fillStyle = "rgba(255,255,245,.9)"; ctx.beginPath(); ctx.arc(ex - 3, ey - 3, 3, 0, 6.283); ctx.fill();
-      ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(ex, ey, 64, "255,200,110", .55 * p); ctx.restore(); } }
+      ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(ex, ey, odv ? 80 : 64, odv ? "255,70,40" : "255,200,110", .55 * p); ctx.restore(); } }
   // the signal travelling down from the tower: a bright head with a fading tail
   for (const bm of beams) { const q = tubeHead(), b = L.beacon, cx = (b.x + q.x) / 2, cy = Math.min(b.y, q.y) - 30;
     for (let j = 10; j >= 0; j--) { const u = Math.max(0, Math.min(1, (bm.t - j * .8) / bm.dur)), e = u * u, x = (1 - e) ** 2 * b.x + 2 * (1 - e) * e * cx + e * e * q.x, y = (1 - e) ** 2 * b.y + 2 * (1 - e) * e * cy + e * e * q.y;
@@ -1502,8 +1513,8 @@ let TS = 6; {   // default: radio close-up (Chris, 2026-11-12, still being tweak
 const LD = 14, LP = 6 * LD;   // logo letter cell and letter pitch, in fine pixels
 let titleT = 0, titleSkip = false, logoCv = null, logoSig = null, logoNeon = null;
 const titleFX = { lamps: 6, tube: null, bar: false };
-const TITLE_MENU = ["START", "HOW TO PLAY"]; let titleSel = 0, titleHits = [];
-function titleChoose(i) { const m = TITLE_MENU[i]; if (m === "HOW TO PLAY") howStart(); else if (m === "UPDATE APP") { try { LexNative.installApp(); } catch (e) {} } else start(); }
+const TITLE_MENU = ["START", "HOW TO PLAY", "HIGH SCORES"]; let titleSel = 0, titleHits = [];
+function titleChoose(i) { const m = TITLE_MENU[i]; if (m === "HIGH SCORES") { BOARD.on = true; Sound.click(); return; } if (m === "HOW TO PLAY") howStart(); else if (m === "UPDATE APP") { try { LexNative.installApp(); } catch (e) {} } else start(); }
 const titleGlass = { ready: false };
 /* Tips shown scrolling on the dial of the title screen, one at a time in random order. KEEP THIS LIST TRUE TO THE GAME: whenever a
    rule, number, control or part changes, fix the tips it touches, drop the ones that no longer hold and add tips for new things. */
@@ -1525,6 +1536,9 @@ const TIPS = [
   "PRESS Y OR TAP THE RIGHT KNOB TO RETUNE",
   "X SENDS THE WORD YOU HAVE SPELLED",
   "START PAUSES THE NIGHT",
+  "FINISH A NIGHT AT 1.5 TIMES ITS TARGET FOR OVERDRIVE: PICK FROM FOUR PARTS",
+  "THE TUBE'S END LAMP BURNS RED WHEN YOUR WORD WILL HIT OVERDRIVE",
+  "EVERY POINT COUNTS TOWARD YOUR RUN SCORE. HOW HIGH CAN YOU GO?",
   "TAP THE LEFT KNOB TO PAUSE",
   "THE LAMP AT THE END OF THE TUBE LIGHTS WHEN YOUR WORD WILL FILL IT",
   "EACH NEW LETTER MUST TOUCH THE LAST ONE, EVEN CORNER TO CORNER",
@@ -1819,7 +1833,7 @@ const HOW_CARDS = [
     setup() {}, steps: [[30, 4], [62, 1], [94, 2], [140, 15], [200, 3]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])) },
   { title: "SEND IT", keys: ["A", "X"], len: 330, text: "Press A on the last letter again (or X from anywhere), or tap it again, to send the word. Its letters fly to the tower and the signal comes back down into the tube.",
     setup() {}, steps: [...[[30, 8], [58, 9], [86, 10], [114, 11]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(11))]] },
-  { title: "FILL THE TUBE", keys: [], len: 340, text: "Fill the signal tube before the lamps go dark. Every word you send uses one lamp. Longer words and letters with more dots fill it faster. When the lamp at the end of the tube lights, the word you've spelled will fill it.",
+  { title: "FILL THE TUBE", keys: [], len: 340, text: "Fill the signal tube before the lamps go dark. Every word you send uses one lamp. Longer words and letters with more dots fill it faster. When the lamp at the end of the tube lights, the word you've spelled will fill it; when it burns red, it's overdrive: four parts to pick from.",
     setup() { S.score = S.shown = 18; S.words = 3; }, steps: [...[[30, 12], [58, 13], [86, 14], [114, 15]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(15))]] },
   { title: "STUCK? RETUNE", keys: ["Y"], len: 220, text: "Press Y, or tap the right knob, to swap every letter for new ones, once a night. The small light under that knob shows you still have it.",
     setup() {}, steps: [[80, () => retune()]] },
@@ -1839,6 +1853,21 @@ const COLOURS = [["NORMAL", ""], ["SOFT", "saturate(.82) brightness(.96) hue-rot
 let colourMode = 0; try { colourMode = Math.min(2, +localStorage.getItem("lexsig.colour") || 0); } catch (e) {}
 function applyColour() { cv.style.filter = COLOURS[colourMode][1]; }
 applyColour();
+// the high score board (title menu): the best ten runs on this device
+const BOARD = { on: false };
+function boardKey(k) { if (!BOARD.on) return false; if (k === "a" || k === "b" || k === "start") { BOARD.on = false; Sound.click(); } return true; }
+function drawBoard() {
+  const a = loadScores(), lh = Math.round(22 * TK), rows = a.length ? a : null, w = Math.min(W - 16, 380);
+  const hh = Math.round((26 + 40 + (rows ? rows.length : 1) * lh + 18 + lh + 22) / FINE), x = Math.round(W / 2 - w / 2), y = Math.max(8, Math.round((H - hh) / 2) - 20);
+  ctx.save(); ctx.fillStyle = "rgba(6,4,10,.6)"; ctx.fillRect(0, 0, CVW, CVH);
+  ctx.drawImage(panelCv("logbox", w, hh), FX(x), FX(y), FX(w), FX(hh));
+  const cx = FX(x + w / 2), lx = FX(x) + 30, rx = FX(x + w) - 30; let ty = FX(y) + 24;
+  ftext("HIGH SCORES", cx, ty, "key", C.inkRed, "c", { under: C.brassHi, uy: 3 }); ty += 44;
+  if (!rows) { ftext("NO RUNS YET. GO TUNE IN!", cx, ty, "ink", C.ink, "c"); ty += lh; }
+  else rows.forEach((r, i) => { ftext(`${i + 1}.`, lx, ty, "ink", i ? C.inkSoft : C.inkRed, "l"); ftext(String(r.s), lx + 44 * TK, ty, "ink", i ? C.ink : C.inkRed, "l");
+    ftext(`NIGHT ${r.n + 1}${r.w ? "  " + r.w.toUpperCase() : ""}`, rx, ty, "ink", C.inkSoft, "r"); ty += lh; });
+  ty += 18; if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO GO BACK" : "PRESS B TO GO BACK", cx, ty, "ink", C.inkSoft, "c");
+  ctx.restore(); }
 const PAUSE = { on: false, sel: 0, sure: null, t: 0, hits: [], note: "", noteT: 0 };
 function NATIVE() { return typeof LexNative !== "undefined" ? LexNative : null; }
 function pauseItems() {
@@ -1985,7 +2014,10 @@ function drawSwap() {
   ctx.save(); ctx.strokeStyle = (frame >> 3) & 1 ? "#ff6a50" : "#ffd27a"; ctx.lineWidth = 4; ctx.shadowColor = "#ff5a40"; ctx.shadowBlur = 14; ctx.strokeRect(sx - 4, sy - 4, FX(sw) + 8, FX(sh) + 8); ctx.restore();
   ftext("OUT", sx + FX(sw) / 2, sy - 22, "ink", C.redHot, "c", { outline: C.dark });
 }
-function shopGeom() { const n = shopChoices.length, cw = Math.min(170, Math.floor((W - 24 - (n - 1) * 10) / n)), ch = TK > 1 ? 200 : 174, total = n * cw + (n - 1) * 10; return { n, cw, ch, x0: Math.round(W / 2 - total / 2), y0: 36 }; }
+function shopGeom() { const n = shopChoices.length, cw = Math.min(170, Math.floor((W - 24 - (n - 1) * 10) / n)), lh = Math.round(20 * TK) / FINE,
+  // the cases grow to fit the longest description (and a two-line name) when four narrow cases share the screen
+  extra = Math.max(0, ...shopChoices.map(p => (wrap(p.desc, "ink", FX(cw) - 48).length - 2) * lh + (wrap(p.name, "ink", FX(cw - 20) - 30).length > 1 ? lh : 0))),
+  ch = Math.round((TK > 1 ? 200 : 174) + extra), total = n * cw + (n - 1) * 10; return { n, cw, ch, x0: Math.round(W / 2 - total / 2), y0: 36 }; }
 // the brass name plate, stretched to any width: its two ends and a repeated plain middle
 function plate3(c, x, y, w, hh) { const [, , pw, ph] = R("plate"), E = 16, M = 20, T = 12, mx = Math.round(pw / 2 - M / 2), my = T; hh = hh || ph;
   const row = (sy, dy, sh) => { spr(c, "plate", x, dy, 0, sy, E, sh); for (let xx = x + E; xx < x + w - E; xx += M) spr(c, "plate", xx, dy, mx, sy, Math.min(M, x + w - E - xx), sh); spr(c, "plate", x + w - E, dy, pw - E, sy, E, sh); };
@@ -2011,11 +2043,11 @@ function drawShop() {
   ctx.restore();
   // the icons, the writing and the lamp labels only change with the choice too: a second cached layer at fine size (shopTop),
   // drawn over the live glow; only the chosen case's blinking frame is drawn every frame
-  const tk = [bk, usingTouch, S.night, partSlots().map(s => s.id + s.n).join()].join("|");
+  const tk = [bk, usingTouch, S.night, S.over, partSlots().map(s => s.id + s.n).join()].join("|");
   if (shopTop.k !== tk) { shopTop.k = tk; shopTop.cv.width = CVW; shopTop.cv.height = CVH; const c = shopTop.cv.getContext("2d"); c.imageSmoothingEnabled = false; TXT = c;
     shopChoices.forEach((p, k) => { const g = geo(k), r = R(iconOf(p.id));
       c.drawImage(atlasImg, r[0], r[1], r[2], r[3], FX(g.x + G.cw / 2 - r[2] / 2), FX(g.y + 14 + (64 - r[3]) / 2), FX(r[2]), FX(r[3])); });
-    ftext(TK > 1 ? "FIT A RADIO PART" : `NIGHT ${S.night} LOCKED IN. FIT A RADIO PART`, FX(W / 2), 22, "ink", C.hot, "c", { outline: C.dark });
+    ftext(S.over ? (TK > 1 ? "OVERDRIVE: PICK ONE OF FOUR" : `OVERDRIVE ON NIGHT ${S.night}! PICK ONE OF FOUR PARTS`) : TK > 1 ? "FIT A RADIO PART" : `NIGHT ${S.night} LOCKED IN. FIT A RADIO PART`, FX(W / 2), 22, "ink", S.over ? C.redHot : C.hot, "c", { outline: C.dark });
     shopChoices.forEach((p, k) => { const g = geo(k), cx = FX(g.x + G.cw / 2), lh = Math.round(20 * TK), maxW = FX(G.cw) - 48;
       // name: stamped on the plate (smaller lettering if a long name needs it)
       const nl = nameLines(p), PH = plH(p), top = FX(g.py) + Math.round((FX(PH) - (nl.length - 1) * lh - 14 * TK) / 2) + 1;
@@ -2037,17 +2069,18 @@ function drawShop() {
 }
 function drawOver() {
   const w = Math.min(W - 48, 340), lh = Math.round(22 * TK);
-  const body = [`Faded on night ${S.night} at ${S.score} of ${S.target}.`, `Total signal ${S.total}.`, S.best.word ? `Best word ${S.best.word} +${S.best.pts}.` : ""].flatMap(s => s ? wrap(s, "ink", FX(w) - 60) : []);
-  const h = Math.round((70 + body.length * lh + 16 + lh + 26) / FINE), x = Math.round(W / 2 - w / 2), y = Math.max(12, Math.round((SCENE_H - h) / 2) - 6);
+  const body = [`Run score ${S.total}.`, `Faded on night ${S.night} at ${S.score} of ${S.target}.`, S.best.word ? `Best word ${S.best.word} +${S.best.pts}.` : ""].flatMap(s => s ? wrap(s, "ink", FX(w) - 60) : []);
+  const h = Math.round((70 + body.length * lh + lh + 16 + lh + 26) / FINE), x = Math.round(W / 2 - w / 2), y = Math.max(12, Math.round((SCENE_H - h) / 2) - 6);
   dim(); octx.drawImage(panelCv("logbox", w, h), x, y); blitOver();
   const cx = FX(W / 2); let ty = FX(y) + 26; ftext("DEAD AIR", cx, ty, "key", C.inkRed, "c", { under: C.brassHi, uy: 3 }); ty += 48;
-  body.forEach(s => { ftext(s, cx, ty, "ink", C.ink, "c"); ty += lh; }); ty += 16;
+  body.forEach(s => { ftext(s, cx, ty, "ink", C.ink, "c"); ty += lh; });
+  if (S.rank) ftext(S.rank === 1 ? "NEW HIGH SCORE!" : `NUMBER ${S.rank} ON YOUR BOARD`, cx, ty, "ink", C.inkRed, "c"); ty += lh + 16;
   if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO TUNE IN AGAIN" : "PRESS A TO TUNE IN AGAIN", cx, ty, "ink", C.inkRed, "c");
 }
 
 /* ================= input ================= */
 let usingButtons = false, usingTouch = matchMedia("(pointer:coarse)").matches;
-function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ? "up" : "down"; if (devKey(dk)) return; if (pauseKey(dk)) return; if (howKey(dk)) return; dismissCard();
+function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ? "up" : "down"; if (devKey(dk)) return; if (pauseKey(dk)) return; if (boardKey(dk)) return; if (howKey(dk)) return; dismissCard();
   usingButtons = true; Sound.ensure();
   if (S.phase === "title" && TS === 6 && (dy || dx)) { dy = dy || dx; if (titleBusy()) return; titleSel = (titleSel + dy + TITLE_MENU.length) % TITLE_MENU.length; Sound.click(); return; }
   if (S.phase === "shop") { shopFocus = (shopFocus + (dx || dy) + shopChoices.length) % shopChoices.length; Sound.click(); return; }
@@ -2061,11 +2094,11 @@ function titleBusy() { if (S.phase === "title" && !titleSkip && titleT < TITLE_L
 function start() { if (buildReady) return maybeReload(); Sound.ensure(); Sound.music(); newRun(); }   // (a new build waiting in the app loads first)
 // buttons (Chris 2026-11-12: a four-button game, Start pauses, Select doesn't mute): A pick / send, B back, X send the word, Y retune,
 // Start pause (and pick on menus), Select nothing (held: dev mode). Keyboard: Space/Enter A, Backspace B, R retune, Esc/P pause.
-function pressA() { if (devKey("a")) return; if (pauseKey("a")) return; if (howKey("a")) return; if (inspectKey("a")) return; Sound.ensure(); usingButtons = true; dismissCard(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
-function pressB() { if (devKey("b")) return; if (pauseKey("b")) return; if (howKey("b")) return; if (inspectKey("a")) return; if (S.phase === "swap") return swapCancel(); if (S.phase === "play") back(); }
+function pressA() { if (devKey("a")) return; if (pauseKey("a")) return; if (boardKey("a")) return; if (howKey("a")) return; if (inspectKey("a")) return; Sound.ensure(); usingButtons = true; dismissCard(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
+function pressB() { if (devKey("b")) return; if (pauseKey("b")) return; if (boardKey("b")) return; if (howKey("b")) return; if (inspectKey("a")) return; if (S.phase === "swap") return swapCancel(); if (S.phase === "play") back(); }
 function pressX() { if (devKey("x")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); dismissCard(); if (S.phase === "play" && S.path.length) send(); else pressA(); }
 function pressY() { if (devKey("y")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); dismissCard(); if (S.phase === "play") retune(); }
-function pressStart() { if (devKey("start")) return; if (pauseKey("start")) return; if (howKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); if (S.phase === "play") pauseOpen(); }
+function pressStart() { if (devKey("start")) return; if (pauseKey("start")) return; if (boardKey("start")) return; if (howKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); if (S.phase === "play") pauseOpen(); }
 function pressSel() { if (devKey("select")) return; }   // Select does nothing by itself (held a moment: dev mode, once it's unlocked)
 window.addEventListener("keydown", (e) => {
   if (introPress()) { e.preventDefault(); return; }
@@ -2086,6 +2119,7 @@ function keyAt(p, strict) { for (let i = 0; i < NN; i++) { const c = tileC(i), m
 let down = null, dragging = false;
 cv.addEventListener("pointerdown", (e) => {
   Sound.ensure(); usingButtons = false; e.preventDefault(); if (introPress()) return; const p = toWorld(e);
+  if (BOARD.on) { BOARD.on = false; Sound.click(); return; }
   if (PAUSE.on) { const fy = p.y * FINE, fx = p.x * FINE, hit = PAUSE.hits.find(r => fy >= r.y0 && fy <= r.y1 && fx >= r.x0 && fx <= r.x1);
     if (hit) { if (PAUSE.sel !== hit.i) PAUSE.sure = null; PAUSE.sel = hit.i; pauseKey("a"); } else pauseClose(); return; }
   if (HOW.on) { howKey(p.x < W / 2 ? "b" : "a"); return; }
@@ -2422,7 +2456,7 @@ async function boot() {
   // test hook: #test-shop opens the part picker after night 1 (for screenshots)
   if (location.hash === "#test-shop") { newRun(); S.parts.push("amp", "coil"); nightClear(); }
   if (location.hash === "#test-swap") { newRun(); S.parts.push("amp", "amp", "coil", "echo", "owl", "short"); nightClear(); const k = shopChoices.findIndex(c => !S.parts.includes(c.id)); if (k >= 0) choosePart(k); }
-  if (location.hash.startsWith("#test-word")) { newRun(); setTimeout(() => { "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); S.path = [0, 1, 2]; usingButtons = true; S.cursor = 3; if (location.hash.includes("fill")) S.score = S.shown = 17; if (location.hash.includes("near")) S.score = S.shown = S.target - 3; if (location.hash.includes("hot")) { S.parts = ["carrier"]; S.grid.forEach(t => t.hot = false); S.grid[H5(6)].hot = true; S.grid[H5(9)].hot = false; } if (location.hash.includes("parts")) { S.parts = ["battery", "battery", "knob", "echo", "amp"]; S.words = maxWords(); S.retunes = maxRetunes(); } nightCard = 0; }, 300); }
+  if (location.hash.startsWith("#test-word")) { newRun(); setTimeout(() => { "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); S.path = [0, 1, 2]; usingButtons = true; S.cursor = 3; if (location.hash.includes("fill")) S.score = S.shown = 17; if (location.hash.includes("near")) S.score = S.shown = S.target - 3; if (location.hash.includes("-od")) S.score = S.shown = Math.ceil(S.target * OVERDRIVE) - 5; if (location.hash.includes("hot")) { S.parts = ["carrier"]; S.grid.forEach(t => t.hot = false); S.grid[H5(6)].hot = true; S.grid[H5(9)].hot = false; } if (location.hash.includes("parts")) { S.parts = ["battery", "battery", "knob", "echo", "amp"]; S.words = maxWords(); S.retunes = maxRetunes(); } nightCard = 0; }, 300); }
 }
 boot();
 })();

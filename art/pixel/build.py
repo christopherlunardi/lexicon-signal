@@ -152,6 +152,12 @@ def main():
     # interface colours are picked from a palette of the art itself
     sample = np.concatenate([np.asarray(im)[..., :3][np.asarray(im)[..., 3] > 0].reshape(-1, 3) for im in imgs.values() if im.mode == "RGBA"])
     pal = pix.kmeans(sample[::9].astype(float), 56); pal = np.concatenate([pal, np.array(pix.ACCENTS, float)]); pal = np.clip(np.round(pal[np.argsort(pal.mean(1))]), 0, 255).astype(int)
+    # the Vowel Antenna was redrawn on its own (2026-11-13, Chris: the old one was crooked and too skinny): vowel_icon.png is the
+    # ChatGPT picture, vowel_icon_fixed.png its k-centroid downscale (kdown.py) to 35x62; magenta is keyed out here (after the palette is taken, so the interface colours stay as they were)
+    vi = np.asarray(Image.open(SRC + "vowel_icon_fixed.png").convert("RGBA")).copy(); mg = (vi[..., 0] > 170) & (vi[..., 1] < 110) & (vi[..., 2] > 170); vi[..., 3] = np.where(mg, 0, 255)
+    full = Image.fromarray(vi, "RGBA"); imgs["iconL_vowel"] = full; fa = np.asarray(full); hw, hh = max(1, fa.shape[1] // 2), max(1, fa.shape[0] // 2)
+    vpal = np.unique(fa[..., :3][fa[..., 3] > 0].reshape(-1, 3), axis=0).astype(float)
+    imgs["icon_vowel"] = Image.fromarray(pix.mode_shrink(fa[..., :3].astype(float), fa[..., 3] > 0, hw, hh, vpal), "RGBA")
     # pack
     order = sorted(imgs, key=lambda n: -imgs[n].height); AW = 1400; x = y = sh = 0; rects = {}
     for n in order:
