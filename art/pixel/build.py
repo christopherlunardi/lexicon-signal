@@ -185,7 +185,7 @@ def main():
     imgs["plate"] = Image.fromarray(pa, "RGBA"); imgs["plate_bare"] = imgs["plate"].copy()   # (bare: for short plates, which get one rivet each end)
     # (on the painted frames they sit right over the painted ones so none shows from under them; the plate's were painted out, so
     # its rivets sit a pixel inside the brass)
-    RIVETS = {"plate": [(7, 8), (95, 8), (7, 18), (95, 18)], "logbox": [(8, 7), (184, 7), (8, 71), (184, 71)],
+    RIVETS = {"plate": [(8, 8), (93, 8), (8, 17), (93, 17)], "logbox": [(8, 7), (184, 7), (8, 71), (184, 71)],
               "slot": [(5, 5), (52, 5), (5, 56), (52, 56)], "bar_left": [(11, 13), (11, 81)], "bar_right": [(26, 12), (26, 81)],
               "tplate": [(7, 7), (90, 7), (7, 25), (90, 25)], "tplate_lit": [(7, 7), (90, 7), (7, 25), (90, 25)]}
     # the Vowel Antenna was redrawn on its own (2026-11-13, Chris: the old one was crooked and too skinny): vowel_icon.png is the
