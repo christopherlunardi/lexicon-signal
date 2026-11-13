@@ -290,7 +290,8 @@ async function listSent() { if (!DB) return; try { const q = await DB.collection
 $('send').onclick = async () => { if (!img || !DB || !AS) return; $('send').disabled = true; status('Sending…');
   try { const blob = await png(); const up = await AS.upload(blob, { type: 'image/png' });
     await DB.collection('edits').add({ name, source, asset: up.id, url: up.url, w: W, h: H, note: $('note').value.trim(), at: Date.now(), done: false });
-    status('Sent. Tell Claude in chat and it goes into the game exactly as you painted it.', 'good'); $('note').value = ''; listSent(); }
+    status('Sent. Tell Claude in chat and it goes into the game exactly as you painted it. The next one is up.', 'good'); $('note').value = ''; listSent();
+    { const sel = $('pick'), i = sel.selectedIndex; if (i < sel.options.length - 1 && !/^Done/.test(sel.options[i + 1].parentNode.label || '')) { sel.selectedIndex = i + 1; sel.onchange(); } }   // straight on to the next piece to do }
   catch (e) { status('Could not send: ' + (e && (e.message || e.code) || 'unknown error') + '. Try again, or save the PNG and attach it in chat.', 'bad'); }
   $('send').disabled = false; };
 $('dl').onclick = async () => { if (!img || !DL) return; try { await DL.save({ filename: (name || 'pixels').replace(/[^\w\- ]+/g, '') + '.png', data: await png() }); } catch (e) { if (e && e.code !== 'declined') status('Could not save the file.', 'bad'); } };
