@@ -9,7 +9,7 @@ const ROOT = {}; for (const w of WORDS) { let n = ROOT; for (const c of w) n = n
 const WEIGHTS = { E:12, A:9, I:8, O:8, N:6, R:6, T:6, S:5, L:4, U:4, D:4, G:3, B:2, C:2, M:2, P:2, F:2, H:2, W:2, Y:2, V:1, K:1, J:1, X:1, Qu:1, Z:1 };
 const VALUES = { "?":0, A:1,E:1,I:1,O:1,U:1,N:1,R:1,S:1,T:1,L:1, D:2,G:2,H:2, B:3,C:3,M:3,P:3,F:3,W:3,Y:3, K:4,V:4, J:6,X:6, Qu:7,Z:7 };
 const VOWELS = new Set(["A","E","I","O","U"]);
-const PARTS = ["amp","battery","knob","coil","short","echo","owl","treble","vowel","carrier","heat"]; const RARE = ["gold"];
+const PARTS = ["amp","battery","knob","coil","short","echo","owl","treble","vowel","carrier","heat"]; const RARE = ["gold","tap"];
 const N = 5, NN = 25, BASE_WORDS = 6, OVERDRIVE = 1.5, SLOTS = 5, MELT_N = 5;
 const TG = (process.env.T || '40,1.8,1.5').split(',').map(Number);   // base, growth for the first nights, growth after night 5
 const targetFor = (n) => { let t = TG[0]; for (let k = 2; k <= n; k++) t *= k <= 5 ? TG[1] : TG[2]; return Math.round(t / 5) * 5; };
@@ -55,7 +55,8 @@ function scoreOf(S, p, word) { const tiles = p.map(i => S.grid[i]), len = word.l
   if (h("echo") && used === 0) mult *= 2 + h("echo");      // first word x3, x4...
   if (h("owl") && S.words === 1) mult *= 1 + 2 * h("owl"); // last word x3, x5, x7...
   if (reds) mult *= 2 + h("heat");
-  return Math.round(signal * boost * mult); }
+  const tap = has(S, "tap") && p.includes(12) ? (S.tap || 0) + len : 0;
+  return Math.round(signal * boost * mult) + tap; }
 function nightBonus(S) { const wl = Math.max(0, S.words), rl = Math.max(0, S.retunes), wv = process.env.OLDLAMP ? round5(S.target / 4) : S.nightBest, rv = round5(S.target / 6);
   return wl * wv + rl * rv + (wl && has(S, "owl") ? wv * (1 + 2 * has(S, "owl")) : 0); }
 
@@ -74,15 +75,15 @@ function playNight(S, bot, st) {
     if (S.retunes > 0 && (!best || best.pts < per * .55)) { S.retunes--; fillGrid(S); st.retunes++; continue; }
     if (!best) { S.words = 0; break; }
     // a finisher: if a word clears the night, send the one that clears it (the biggest; overdrive helps)
-    S.score += best.pts; S.total += best.pts; S.nightBest = Math.max(S.nightBest, best.pts); st.words.push(best.word.length); st.pts.push(best.pts); (st.byNight[S.night] = st.byNight[S.night] || []).push(best.pts / S.target);
+    if (has(S, "tap") && best.path.includes(12)) S.tap = (S.tap || 0) + best.word.length; S.score += best.pts; S.total += best.pts; S.nightBest = Math.max(S.nightBest, best.pts); st.words.push(best.word.length); st.pts.push(best.pts); (st.byNight[S.night] = st.byNight[S.night] || []).push(best.pts / S.target);
     const used = best.path; S.words--; collapse(S, used);
     if (S.score >= S.target) { S.over = S.score >= S.target * OVERDRIVE; const b = nightBonus(S); S.total += b; st.bonus += b; return true; }
   }
   return false; }
 function shop(S, pickFn) { const bag = PARTS.slice(), ch = []; while (ch.length < (S.over ? 4 : 3)) ch.push(bag.splice((rnd() * bag.length) | 0, 1)[0]);
-  if (!S.parts.includes("gold") && rnd() < (S.over ? .5 : 1 / 6)) ch[(rnd() * ch.length) | 0] = "gold";
+  const rare = RARE.filter(r => !S.parts.includes(r)); if (rare.length && rnd() < (S.over ? .5 : 1 / 6)) ch[(rnd() * ch.length) | 0] = rare[(rnd() * rare.length) | 0];
   const kinds = new Set(S.parts), ok = ch.filter(p => kinds.has(p) || kinds.size < SLOTS);
-  if (!ok.length) { S.melt++; if (S.melt >= MELT_N) { S.melt = 0; const st = [...kinds].filter(k => k !== "gold"); if (st.length) S.parts.push(pickFn(st, S)); } return null; }
+  if (!ok.length) { S.melt++; if (S.melt >= MELT_N) { S.melt = 0; const st = [...kinds].filter(k => !RARE.includes(k)); if (st.length) S.parts.push(pickFn(st, S)); } return null; }
   const p = pickFn(ok, S); S.parts.push(p); return p; }
 function run(bot, opts = {}) { const S = mk(opts.parts || []); const st = { nights: 0, words: [], pts: [], retunes: 0, bonus: 0, picks: [], over: 0, nightScores: [], byNight: {} };
   const pickFn = opts.pick || ((ch) => ch[(rnd() * ch.length) | 0]);

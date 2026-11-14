@@ -452,9 +452,13 @@ const PARTS = [
   { id:"heat",    name:"Red Heat",          desc:"The red key multiplies one more.", icon:"fuse" },
   // rare (gold): only one, now and then in the picker (more often after an overdrive)
   { id:"gold",    name:"Gold Key",          desc:"A gold key on the glass can be any letter.", rare:true },
+  // Center Tap (Chris 2026-11-14): the middle key of the glass holds a charge that lasts the whole run. A word through it scores the
+  // charge as flat points, then adds its own length to the charge. Icon: the old Static Filter porthole until its own picture is drawn.
+  { id:"tap",     name:"Center Tap",        desc:"The middle key charges up all run: each word through it adds its letters, then scores the charge.", rare:true, icon:"filter" },
 ];
 const PART = Object.fromEntries(PARTS.map(p => [p.id, p]));
-const HIT_NAME = { amp: "AMP", knob: "KNOB", treble: "TREBLE", vowel: "VOWELS", short: "CRYSTAL", coil: "COIL", echo: "ECHO", owl: "OWL", carrier: "RED LAMP", heat: "RED HEAT", gold: "GOLD" };
+const TAP_I = 12;   // the middle of the 5x5 glass
+const HIT_NAME = { tap: "TAP", amp: "AMP", knob: "KNOB", treble: "TREBLE", vowel: "VOWELS", short: "CRYSTAL", coil: "COIL", echo: "ECHO", owl: "OWL", carrier: "RED LAMP", heat: "RED HEAT", gold: "GOLD" };
 const iconOf = (id) => "iconL_" + ((PART[id] && PART[id].icon) || id);
 const BASE_WORDS = 6;   // one per battery lamp
 const OVERDRIVE = 1.5;   // finish a night with this much of its target or more: overdrive (a red flash, and four parts to pick from)
@@ -467,7 +471,7 @@ const has = (id) => S.parts.filter(p => p === id).length;
 const maxWords = () => BASE_WORDS + has("battery");
 const coilX = () => 1.5 + has("coil") / 2, owlX = () => 1 + 2 * has("owl");
 const maxRetunes = () => 1 + has("knob");
-function fresh(phase) { return { phase, melt: 0, night: 1, score: 0, shown: 0, total: 0, parts: [], words: BASE_WORDS, retunes: 1, firstWord: true, grid: [], path: [], cursor: 6, best: { word: "", pts: 0 }, target: 30, log: [] }; }
+function fresh(phase) { return { phase, tap: 0, melt: 0, night: 1, score: 0, shown: 0, total: 0, parts: [], words: BASE_WORDS, retunes: 1, firstWord: true, grid: [], path: [], cursor: 6, best: { word: "", pts: 0 }, target: 30, log: [] }; }
 function pickLetter() {
   let total = 0; const pool = [];
   for (const [k, w] of Object.entries(WEIGHTS)) { pool.push([k, w]); total += w; }
@@ -514,11 +518,13 @@ function scoreOf(p) {
   // (Chris 2026-11-13, from the balance sim) coil x2, x2.5, x3...; crystal x2, x3...; echo first word x3, x4...; owl last word x3, x5, x7...
   if (has("coil") && len >= 5) mult *= coilX(); if (has("short") && len <= 4) mult *= 1 + has("short"); if (has("echo") && used === 0) mult *= 2 + has("echo"); if (has("owl") && S.words === 1) mult *= owlX();
   if (reds) mult *= 2 + has("heat");
-  return { word, len, signal, boost, mult, pts: Math.round(signal * boost * mult) };
+  const tap = has("tap") && p.includes(TAP_I) ? (S.tap || 0) + len : 0;   // the Center Tap: charge up first, then score the charge, flat
+  return { word, len, signal, boost, mult, tap, pts: Math.round(signal * boost * mult) + tap };
 }
 // which fitted parts change this word, and how (shown on their slots: lit while tracing, a flash and a tag when the signal lands)
 function partHits(p) {
   const tiles = p.map(i => S.grid[i]), len = pathWord(p).length, hits = {}, used = maxWords() - S.words, n = (id) => has(id), reds = tiles.filter(t => t.hot).length;
+  if (n("tap") && p.includes(TAP_I)) hits.tap = "+" + ((S.tap || 0) + len);
   if (n("amp")) hits.amp = "+" + n("amp");
   if (n("knob") && S.retunes) hits.knob = "+" + S.retunes;
   const tr = tiles.filter(t => VALUES[t.ch] >= 3).length; if (n("treble") && tr) hits.treble = "+" + 3 * n("treble") * tr;
@@ -583,6 +589,7 @@ function send() {
   if (!isValid()) { const short = S.path.length < 3; dialFlash = { text: short ? "TOO SHORT" : "NO SIGNAL", bad: true, t: 70 }; if (PLAYLOG.run && !HOW.on) PLAYLOG.run.fails++; shake = 6; staticKick = .4; Sound.fail(); log(short ? "Too short." : `${pathWord()}: no signal.`); return; }
   const sc = scoreOf(S.path), used = [...S.path], hits = partHits(S.path); sc.red = used.some(i => S.grid[i].hot) ? 1 : 0; sc.gold = used.some(i => S.grid[i].wild) ? 1 : 0; plWord(sc);
   if (S.nw) S.nw.push({ w: sc.word, p: sc.pts, tags: [...(sc.red ? ["RED x" + (2 + has("heat"))] : []), ...Object.entries(hits).filter(([id]) => id !== "heat" && id !== "gold").map(([id, v]) => (HIT_NAME[id] || id.toUpperCase()) + " " + v.toUpperCase())] });
+  if (sc.tap) { S.tap = sc.tap; tapFlash = 40; log(`Center Tap charged to ${S.tap}.`); }
   if (S.words > BASE_WORDS) log("Spare battery spent."); S.words -= 1; S.firstWord = false; if (sc.pts > S.best.pts) S.best = { word: sc.word, pts: sc.pts };
   const big = sc.len >= 6 || sc.pts >= 60; busy++;
   const gch = GOLD_STYLE ? gkLetterOf(used) : null, gall = GOLD_STYLE === 5 && gch != null;   // (Workshop gold looks: the gold key leaves as the letter it stood for, in gold)
@@ -1134,7 +1141,7 @@ function pips(x, y, v, col) { ctx.fillStyle = col; for (let k = 0; k < Math.min(
 function vtext(s, x, y, font, col, blur, glowCol) { ctx.font = font; ctx.textAlign = "center"; ctx.textBaseline = "middle";
   if (blur) { ctx.shadowColor = glowCol || col; ctx.shadowBlur = blur; } ctx.fillStyle = col; ctx.fillText(s, x, y); ctx.shadowBlur = 0; }
 function drawKeyLetters() {
-  if (PA()) return drawPlayArea();
+  if (PA()) { drawPlayArea(); drawTapRing(); return; }
   const g = L.glass; ctx.save(); ctx.beginPath(); ctx.rect(FX(g.x), FX(g.y), FX(g.w), FX(g.h)); ctx.clip();
   const ok = S.phase === "play" && isValid(), sel = new Set(S.path), cand = candidate();
   ctx.imageSmoothingEnabled = true;
@@ -1706,6 +1713,16 @@ function paGlassVar({ G, tiles, ok, low }) {
 
 const PA_DRAW = [paValve, paScope, paPlates, paBoard, paDotGlass];
 const PA_CUR = [["#ffe9c4", "#ff8a20"], null, ["#ffe9c4", "#ff8a20"], ["#fff3d6", "#ffb040"], ["#ffe9c4", "#ff8a20"]];
+// the Center Tap on the glass: a gold ring round the middle key and its charge on a small dark chip at the ring's top right corner;
+// both flare when a word charges it
+let tapFlash = 0;
+function drawTapRing() { if (!has("tap") || !["play", "report", "shop", "swap", "upgrade", "melt"].includes(S.phase)) return; if (tapFlash > 0) tapFlash--;
+  const p = tileXY(TAP_I), x = FX(p.x) - 4, y = FX(p.y) - 4, w = FX(L.tw) + 8, h = FX(L.th) + 8, on = S.path.includes(TAP_I), f = tapFlash / 40;
+  ctx.save(); ctx.strokeStyle = on || f > 0 ? "#fff0a0" : "#e8b030"; ctx.lineWidth = 3; ctx.shadowColor = "#ffc030"; ctx.shadowBlur = 8 + 10 * f + (on ? 6 : 0) + 3 * Math.sin(frame / 14);
+  ctx.beginPath(); ctx.roundRect(x, y, w, h, 8); ctx.stroke(); ctx.shadowBlur = 0;
+  const txt = String(S.tap || 0), cw = Math.max(26, textW(txt, "ink") + 14), ch = Math.round(22 * TK), cx = x + w - cw + 10, cy = y - ch + 8;
+  ctx.fillStyle = "#1a0e04"; ctx.beginPath(); ctx.roundRect(cx, cy, cw, ch, 6); ctx.fill(); ctx.strokeStyle = "#e8b030"; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+  ftext(txt, cx + cw / 2, cy + Math.round((ch - 14 * TK) / 2), "ink", f > 0 ? "#fff6c8" : "#ffd24a", "c"); }
 function drawPlayArea() {
   const g = L.glass, G = { x: FX(g.x), y: FX(g.y), w: FX(g.w), h: FX(g.h) }, play = S.phase === "play", ok = play && isValid(), cand = candidate(), low = play ? clamp01(1 - S.words / maxWords()) : 0, last = play && S.words === 1;
   ctx.save(); ctx.beginPath(); ctx.rect(G.x, G.y, G.w, G.h); ctx.clip(); ctx.imageSmoothingEnabled = true; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineCap = ctx.lineJoin = "round";
@@ -2064,6 +2081,7 @@ const TIPS = [
   "RED HEAT MAKES THE RED KEY MULTIPLY ONE MORE",
   "GOLD PARTS ARE RARE: YOU ONLY GET ONE",
   "THE GOLD KEY CAN BE ANY LETTER YOU NEED",
+  "THE CENTER TAP KEEPS ITS CHARGE ALL RUN: FEED THE MIDDLE KEY LONG WORDS",
   "EVERY RADIO PART STACKS: EACH COPY ADDS THE SAME AGAIN",
   "PRESS DOWN PAST THE BOTTOM ROW TO READ YOUR PARTS",
   "TAP A PART'S SLOT TO READ IT",
@@ -3217,6 +3235,8 @@ async function boot() {
   if (/^#test-shop-tags/.test(location.hash)) { newRun(); S.parts.push("amp", "coil", "battery", "knob"); if (/full/.test(location.hash)) S.parts.push("echo"); S.over = true; nightClear(); S.phase = "shop"; shopChoices = [PART.coil, PART.gold, PART.owl, PART.amp]; }
   if (location.hash.startsWith("#test-shop-gold")) { newRun(); S.parts.push("amp", "coil"); nightClear(); S.phase = "shop"; shopChoices[1] = PART.gold; }
   if (location.hash === "#test-swap") { newRun(); S.parts.push("amp", "amp", "coil", "echo", "owl", "short"); nightClear(); const k = shopChoices.findIndex(c => !S.parts.includes(c.id)); if (k >= 0) choosePart(k); }
+  if (location.hash.startsWith("#test-shop-tap")) { newRun(); S.parts.push("amp", "coil"); nightClear(); S.phase = "shop"; shopChoices[1] = PART.tap; }
+  if (/^#test-word-tap/.test(location.hash)) setTimeout(() => { S.parts = ["amp", "tap", "coil"]; S.tap = 12; S.path = [6, 12, 18]; S.cursor = 18; }, 320);
   if (/^#test-word-rareslots/.test(location.hash)) setTimeout(() => { S.parts = ["amp", "coil", "gold", "knob"]; }, 320);
   if (location.hash.startsWith("#test-word")) { newRun(); setTimeout(() => { "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); S.path = [0, 1, 2]; usingButtons = true; S.cursor = 3; if (location.hash.includes("fill")) S.score = S.shown = 17; if (location.hash.includes("near")) S.score = S.shown = S.target - 3; if (location.hash.includes("-od")) S.score = S.shown = Math.ceil(S.target * OVERDRIVE) - 5; if (location.hash.includes("-gold")) { S.parts.push("gold"); S.grid[H5(13)].hot = false; S.grid[H5(13)].wild = true; S.grid[H5(13)].ch = "?"; if (location.hash.includes("-goldred")) { S.grid.forEach(t => t.hot = false); S.grid[H5(13)].hot = true; } if (GOLD_STYLE || location.hash.includes("-goldred")) S.path = []; } if (location.hash.includes("hot")) { S.parts = ["carrier"]; S.grid.forEach(t => t.hot = false); S.grid[H5(6)].hot = true; S.grid[H5(9)].hot = false; } if (location.hash.includes("parts")) { S.parts = ["battery", "battery", "knob", "echo", "amp"]; S.words = maxWords(); S.retunes = maxRetunes(); } if (/score-/.test(location.hash)) { S.total = S.startTotal = SC.shown = 1180; } nightCard = 0; }, 300); }
 }
