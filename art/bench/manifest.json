@@ -1,1 +1,10 @@
-[]
+[
+ {
+  "file": "img/bar_clasp.png",
+  "group": "To do: frames under the rivets",
+  "label": "The bar's clasp (the brass piece at the top middle)",
+  "w": 44,
+  "h": 18,
+  "key": "bar_clasp"
+ }
+]

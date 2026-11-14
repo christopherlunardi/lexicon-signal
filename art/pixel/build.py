@@ -323,6 +323,11 @@ def main():
     # one brass everywhere (Chris 2026-11-14): every brass piece on the shared ramp (frames.BRASS); the lit title plate keeps its glow
     for nm in ["bar_left", "bar_mid", "bar_right", "slot", "plate", "plate_bare", "tplate", "logbox", "bar_clasp", "rivet"]:
         if nm in imgs: imgs[nm] = frames.unify_brass(imgs[nm])
+    # the bar's top-middle clasp on the Pixel Bench (Chris 2026-11-14): what he paints (src/bench/bar_clasp.png) is used exactly as sent
+    if os.path.exists(SRC + "bench/bar_clasp.png"): imgs["bar_clasp"] = Image.open(SRC + "bench/bar_clasp.png").convert("RGBA")
+    else:
+        imgs["bar_clasp"].save(ROOT_ART + "bench/img/bar_clasp.png")
+        json.dump([{"file": "img/bar_clasp.png", "group": "To do: frames under the rivets", "label": "The bar's clasp (the brass piece at the top middle)", "w": imgs["bar_clasp"].width, "h": imgs["bar_clasp"].height, "key": "bar_clasp"}], open(ROOT_ART + "bench/manifest.json", "w"), indent=1)
     # pack
     order = sorted(imgs, key=lambda n: -imgs[n].height); AW = 1400; x = y = sh = 0; rects = {}
     for n in order:
