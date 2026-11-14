@@ -145,14 +145,16 @@ the same batch.
 ## Rules of play
 - Parts and the red key (Chris 2026-11-13): EVERY part stacks (each copy adds the same again) and the picker can offer any part.
   A red key is always on the glass (a word through it x2; two red keys in a word x3). The parts: Tube Amp +1 boost; Spare Battery
-  +1 word; Fine Tuning Knob +1 retune and +1 boost per retune still kept; Long Wave Coil 5+ letter words x(1+copies); Shortwave
-  Crystal 3-4 letter words +6 signal; Echo Tube the first (copies) words x2; Night Owl Clock last word x(2+copies); Treble Slider +3
+  +1 word; Fine Tuning Knob +1 retune and +1 boost per retune still kept; Long Wave Coil 5+ letter words x2, x2.5, x3... (coilX);
+  Shortwave Crystal 3-4 letter words x2, x3...; Echo Tube first word x3, x4...; Night Owl Clock last word x3, x5, x7... (owlX), and an
+  unused last word pays the leftover word bonus times that (all four retuned from the balance sim, Chris 2026-11-13); Treble Slider +3
   signal per letter worth 3+; Vowel Antenna vowels +1 signal each (it no longer adds vowels: that made scores worse); Red Lamp (id
   carrier) +1 red key; Red Heat (id heat, the fuse icon via `icon`) red keys multiply one more. Static Filter was dropped.
   Every slot shows a lamp per copy. Score = signal (letter values + 2 + adds) x boost (length - 2, at least 1, + adds) x multipliers.
-- Targets 30 x 1.5^(n-1) rounded to 5 (30, 45, 70, 100, 150...). Balance is checked with a bot simulator (three skill levels on the
-  real word list, letter draw and parts; kept in the session scratchpad as bal/sim.js and partval.js): with this curve a casual bot
-  runs ~7 nights, a good one ~11, a strong one ~16. Rerun it after any change to scoring, parts or targets.
+- Targets (Chris 2026-11-13, the early nights were far too easy): 40 on night 1, x1.8 a night to night 5, then x1.5 (40, 70, 130,
+  235, 420, 630, 945...), rounded to 5. Points are rounded (the coil can give halves). Balance is checked with the bot simulator in
+  tools/balance (README there; the game's rules copied into sim.js: keep them in step). With this curve, random picks: a casual bot
+  ends around night 7, a good one 8, an expert 10-11. Rerun it after any change to scoring, parts or targets.
 - The red key (2026-11-13): always exactly one; a word through it x(2 + Red Heat copies). Red Lamp (id carrier, its red lamp icon)
   now adds +5 signal per copy to a word through the red key. Rare parts (`rare:true`, gold frame and gold label RARE: ONCE ONLY,
   offered one night in six, one in two after an overdrive, never twice): the Gold Key (id gold) puts a gold wildcard key "?" on
@@ -246,8 +248,8 @@ the same batch.
   gives its name, what a copy does, how many are fitted and what it adds to the traced word. Up/A/B or a tap elsewhere closes it.
 - 5x5 keys in the radio glass (N, NN in the script; 4x4 until 2026-11-12, when the radio was redrawn as radio5 with a glass about
   25% bigger so the keys stay the same size; H5() maps an old 4x4 position onto the 5x5 grid); trace touching letters (8 directions), 3+ letters. Score = signal (letter values) x boost (length-2)
-  x part multipliers; every word carries +2 signal so short words count. 6 words a night (one per lamp), 1 retune; targets
-  30 x 1.4^(n-1) rounded to 5 (30, 40, 60, 80...); pick 1 of 3 parts. Night 1 was too hard at 40 in 5 words (Chris kept losing).
+  x part multipliers; every word carries +2 signal so short words count. 6 words a night (one per lamp), 1 retune; targets: see
+  Targets above; pick 1 of 3 parts. (Before the red key, night 1 at 40 in 5 words was too hard: Chris kept losing.)
 - The goal is said plainly: a brass plaque that drops in at the top of the room with a clunk ("NIGHT 1 / BEAM 30 SIGNAL IN 6 WORDS"),
   holds, then lifts away (any press sends it off; Chris disliked the old dark box over the glass), the top plate shows "N TO GO" with a fill bar, the log says what's left after each word, and the tower beacon burns brighter
   as the night's signal fills.
@@ -442,8 +444,9 @@ the same batch.
 - Button names follow the device (Chris 2026-11-13): INPUT is "pad" (controller, handheld app, the phone shell's buttons), "keys"
   (keyboard: Z pick, X back, V send, C retune, Esc pause, arrows move) or "touch"; BTN("A") and btn("PRESS {A} ...") name the right
   thing everywhere (prompts, tips, How to Play text and its key chips, which become keycaps on a keyboard). New prompts use btn().
-- finish-r1 (open, 2026-11-13; Chris: an overlay to tie the art together, cheap): FINISH_STYLE 0..5 (#finish-N; 0 none is the
-  default), drawFinish() at the end of draw(): 1 vignette + warm soft-light, 2 + moving grain tiles, 3 haze (the frame shrunk to 1/10
+- finish-r1 (decided: 6, the moving tube screen, the game's default now; Chris wanted the tube screen and asked for it to move, kept
+  cheap): FINISH_STYLE 0..6 (#finish-N picks one; 6 = one baked canvas of scanlines + vignette drawn creeping down with a faint
+  flicker, plus a soft band rolling down every ~9 s; about the cost of option 1). The others: drawFinish() at the end of draw(): 1 vignette + warm soft-light, 2 + moving grain tiles, 3 haze (the frame shrunk to 1/10
   and laid back with 'screen'), 4 scanlines + haze + vignette, 5 all light. Stills in workshop/img/finish-r1/.
 - score-r1 (decided: 1, rolling drums, now the game's only score display, 2026-11-13): drawScoreDrums, a brass-framed drum counter in
   the room's bottom-left corner above the bar. It counts with the tube (S.startTotal + S.shown while playing), so bar and counter run

@@ -141,7 +141,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "Which screen finish ties the art together best?",
      "found": "Now as videos (Chris: the finishes have to be seen moving): each one shows a word sent and the night clearing, full screen and a close-up at true size. 1 and 2 cost almost nothing (cached pictures laid over each frame); 3, 4 and 5 use the haze, a shrunk copy of the whole frame each frame, so they cost more and would need checking on the Retroid.",
      "options": [
@@ -264,8 +264,25 @@
         }
        ],
        "play": "play.html#test-word-parts-finish-5"
+      },
+      {
+       "id": "6",
+       "title": "Moving tube screen",
+       "note": "Chris's pick, made to move: scanlines that creep down, a soft light band that rolls slowly down the screen, a faint flicker, and the vignette. One baked picture plus a thin band each frame, about as cheap as option 1.",
+       "images": [
+        {
+         "src": "img/finish-r1/finish-6.mp4",
+         "label": "Play (video)"
+        },
+        {
+         "src": "img/finish-r1/finish-6-close.mp4",
+         "label": "Close-up at true size (video)"
+        }
+       ],
+       "play": "play.html#test-word-parts-finish-6"
       }
-     ]
+     ],
+     "chosen": "6"
     }
    ]
   },

@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 82;</script><script>
+<script>window.LEX_BUILD = 83;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -440,10 +440,10 @@ const PARTS = [
   { id:"amp",     name:"Tube Amp",          desc:"+1 boost on every word." },
   { id:"battery", name:"Spare Battery",     desc:"+1 word every night." },
   { id:"knob",    name:"Fine Tuning Knob",  desc:"+1 retune a night. Each kept retune: +1 boost." },
-  { id:"coil",    name:"Long Wave Coil",    desc:"Words of 5+ letters x2 (x3, x4...)." },
-  { id:"short",   name:"Shortwave Crystal", desc:"Words of 3 or 4 letters +6 signal." },
-  { id:"echo",    name:"Echo Tube",         desc:"First word each night x2 (more words)." },
-  { id:"owl",     name:"Night Owl Clock",   desc:"Last word each night x3 (x4...), even if left over." },
+  { id:"coil",    name:"Long Wave Coil",    desc:"Words of 5+ letters x2 (x2.5, x3...)." },
+  { id:"short",   name:"Shortwave Crystal", desc:"Words of 3 or 4 letters x2 (x3...)." },
+  { id:"echo",    name:"Echo Tube",         desc:"First word each night x3 (x4...)." },
+  { id:"owl",     name:"Night Owl Clock",   desc:"Last word each night x3 (x5...), even if left over." },
   { id:"treble",  name:"Treble Slider",     desc:"+3 signal per letter worth 3+." },
   { id:"vowel",   name:"Vowel Antenna",     desc:"Vowels +1 signal each." },
   { id:"carrier", name:"Red Lamp",          desc:"The red key adds +5 signal." },
@@ -456,11 +456,14 @@ const HIT_NAME = { amp: "AMP", knob: "KNOB", treble: "TREBLE", vowel: "VOWELS", 
 const iconOf = (id) => "iconL_" + ((PART[id] && PART[id].icon) || id);
 const BASE_WORDS = 6;   // one per battery lamp
 const OVERDRIVE = 1.5;   // finish a night with this much of its target or more: overdrive (a red flash, and four parts to pick from)
-const targetFor = (n) => Math.round(30 * Math.pow(1.5, n - 1) / 5) * 5;   // 30, 45, 70, 100, 150, 230... (1.5x a night since the red key became standard, 2026-11-13)
+// night targets (Chris 2026-11-13, after the balance sim in tools/balance: the early nights were far too easy): 40 on night 1,
+// x1.8 a night up to night 5, then x1.5 a night: 40, 70, 130, 235, 420, 630, 945...
+const targetFor = (n) => { let t = 40; for (let k = 2; k <= n; k++) t *= k <= 5 ? 1.8 : 1.5; return Math.round(t / 5) * 5; };
 const freqFor = (n) => +(88.1 + ((n - 1) * 1.9) % 19.8).toFixed(1);
 let S = null, uid = 0;
 const has = (id) => S.parts.filter(p => p === id).length;
 const maxWords = () => BASE_WORDS + has("battery");
+const coilX = () => 1.5 + has("coil") / 2, owlX = () => 1 + 2 * has("owl");
 const maxRetunes = () => 1 + has("knob");
 function fresh(phase) { return { phase, melt: 0, night: 1, score: 0, shown: 0, total: 0, parts: [], words: BASE_WORDS, retunes: 1, firstWord: true, grid: [], path: [], cursor: 6, best: { word: "", pts: 0 }, target: 30, log: [] }; }
 function pickLetter() {
@@ -504,12 +507,12 @@ function scoreOf(p) {
   const tiles = p.map(i => S.grid[i]), word = pathWord(p), len = word.length, used = maxWords() - S.words, reds = tiles.filter(t => t.hot).length;
   let signal = 2 + tiles.reduce((s, t) => s + VALUES[t.ch], 0);   // every word carries 2 signal, so short words still count
   signal += 3 * has("treble") * tiles.filter(t => VALUES[t.ch] >= 3).length + has("vowel") * tiles.filter(t => VOWELS.has(t.ch)).length;
-  if (len <= 4) signal += 6 * has("short");
   if (reds) signal += 5 * has("carrier");
   const boost = Math.max(1, len - 2) + has("amp") + (has("knob") ? S.retunes : 0); let mult = 1;
-  if (has("coil") && len >= 5) mult *= 1 + has("coil"); if (used < has("echo")) mult *= 2; if (has("owl") && S.words === 1) mult *= 2 + has("owl");
+  // (Chris 2026-11-13, from the balance sim) coil x2, x2.5, x3...; crystal x2, x3...; echo first word x3, x4...; owl last word x3, x5, x7...
+  if (has("coil") && len >= 5) mult *= coilX(); if (has("short") && len <= 4) mult *= 1 + has("short"); if (has("echo") && used === 0) mult *= 2 + has("echo"); if (has("owl") && S.words === 1) mult *= owlX();
   if (reds) mult *= 2 + has("heat");
-  return { word, len, signal, boost, mult, pts: signal * boost * mult };
+  return { word, len, signal, boost, mult, pts: Math.round(signal * boost * mult) };
 }
 // which fitted parts change this word, and how (shown on their slots: lit while tracing, a flash and a tag when the signal lands)
 function partHits(p) {
@@ -518,10 +521,10 @@ function partHits(p) {
   if (n("knob") && S.retunes) hits.knob = "+" + S.retunes;
   const tr = tiles.filter(t => VALUES[t.ch] >= 3).length; if (n("treble") && tr) hits.treble = "+" + 3 * n("treble") * tr;
   const vw = tiles.filter(t => VOWELS.has(t.ch)).length; if (n("vowel") && vw) hits.vowel = "+" + n("vowel") * vw;
-  if (n("short") && len <= 4) hits.short = "+" + 6 * n("short");
-  if (n("coil") && len >= 5) hits.coil = "x" + (1 + n("coil"));
-  if (used < n("echo")) hits.echo = "x2";
-  if (n("owl") && S.words === 1) hits.owl = "x" + (2 + n("owl"));
+  if (n("short") && len <= 4) hits.short = "x" + (1 + n("short"));
+  if (n("coil") && len >= 5) hits.coil = "x" + coilX();
+  if (n("echo") && used === 0) hits.echo = "x" + (2 + n("echo"));
+  if (n("owl") && S.words === 1) hits.owl = "x" + owlX();
   if (reds && n("carrier")) hits.carrier = "+" + 5 * n("carrier");
   if (reds && n("heat")) hits.heat = "x" + (2 + n("heat"));
   if (n("gold") && tiles.some(t => t.wild)) hits.gold = "?";
@@ -649,7 +652,7 @@ const REPORT = { t: 0 };
 // retune not used, rounded to 5. Night 1: 10 a word, 5 a retune; night 5: 40 and 25.
 const round5 = (v) => Math.max(5, Math.round(v / 5) * 5);
 function nightBonus() { const wl = HOW.on ? 0 : Math.max(0, S.words), rl = HOW.on ? 0 : Math.max(0, S.retunes), wv = round5(S.target / 4), rv = round5(S.target / 6);
-  const rows = [], om = 2 + has("owl");
+  const rows = [], om = owlX();
   if (wl) rows.push({ k: "WORDS LEFT", n: wl, v: wv });
   if (rl) rows.push({ k: rl === 1 ? "RETUNE LEFT" : "RETUNES LEFT", n: rl, v: rv });
   // the Night Owl Clock pays even when the night clears before its last word: the unused last word counts at the word bonus times
@@ -912,12 +915,16 @@ function draw() {
    grade); 2 film (1 + moving grain); 3 haze (a soft glow of the whole picture laid back over it); 4 soft tube screen (fine scanlines,
    a little haze and vignette); 5 all of it, light. Everything is cached pictures drawn once a frame; the haze draws the frame into a
    small canvas and back. #finish-N picks one. */
-let FINISH_STYLE = 0; { const m = location.hash.match(/finish-(\d)/); if (m) FINISH_STYLE = Math.min(5, +m[1]); }
+// 6 moving tube screen (Chris 2026-11-13 picked the tube screen and asked for it to move): scanlines that creep down, a soft bright
+// band that rolls slowly down the screen, a faint flicker, vignette and warmth. No haze, so it costs only a few cached fills a frame.
+let FINISH_STYLE = 6; { const m = location.hash.match(/finish-(\d)/); if (m) FINISH_STYLE = Math.min(6, +m[1]); }
 const FIN = { k: "", vig: null, scan: null, grain: [], haze: document.createElement("canvas") };
-function finBuild() { const k = CVW + "x" + CVH; if (FIN.k === k) return; FIN.k = k;
+function finBuild() { const k = CVW + "x" + CVH; if (FIN.k === k) return; FIN.k = k; FIN.crt = null;
   const v = FIN.vig = document.createElement("canvas"); v.width = CVW; v.height = CVH; const c = v.getContext("2d");
   const g = c.createRadialGradient(CVW / 2, CVH * .45, Math.min(CVW, CVH) * .25, CVW / 2, CVH * .5, Math.hypot(CVW, CVH) * .6);
   g.addColorStop(0, "rgba(20,8,2,0)"); g.addColorStop(.6, "rgba(20,8,2,.18)"); g.addColorStop(1, "rgba(10,4,1,.62)"); c.fillStyle = g; c.fillRect(0, 0, CVW, CVH);
+  const ro = FIN.roll = document.createElement("canvas"); ro.width = 1; ro.height = 64; const r2 = ro.getContext("2d"), rg = r2.createLinearGradient(0, 0, 0, 64);
+  rg.addColorStop(0, "rgba(255,220,170,0)"); rg.addColorStop(.5, "rgba(255,220,170,.06)"); rg.addColorStop(1, "rgba(255,220,170,0)"); r2.fillStyle = rg; r2.fillRect(0, 0, 1, 64);
   const sc = FIN.scan = document.createElement("canvas"); sc.width = 8; sc.height = 4; const s2 = sc.getContext("2d"); s2.fillStyle = "rgba(0,0,0,.22)"; s2.fillRect(0, 2, 8, 2);
   FIN.grain = [0, 1, 2, 3].map(() => { const n = document.createElement("canvas"); n.width = n.height = 128; const x = n.getContext("2d"), d = x.createImageData(128, 128);
     for (let i = 0; i < d.data.length; i += 4) { const r = Math.random() * 255; d.data[i] = d.data[i + 1] = d.data[i + 2] = r; d.data[i + 3] = 255; } x.putImageData(d, 0, 0); return n; }); }
@@ -925,11 +932,17 @@ function finHaze(a) { const hz = FIN.haze, hw = Math.max(1, Math.round(CVW / 10)
   const h = hz.getContext("2d"); h.imageSmoothingEnabled = true; h.globalCompositeOperation = "copy"; h.drawImage(cv, 0, 0, hw, hh);
   ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.globalCompositeOperation = "screen"; ctx.globalAlpha = a; ctx.imageSmoothingEnabled = true; ctx.drawImage(hz, 0, 0, cv.width, cv.height); ctx.restore(); }
 function drawFinish() {
-  const f = FINISH_STYLE; if (!f) return; finBuild(); const tune = { vig: [0, 1, 1, .5, .7, .8][f], warm: [0, .07, .07, 0, .03, .05][f], grain: [0, 0, .07, 0, 0, .04][f], haze: [0, 0, 0, .28, .16, .16][f], scan: [0, 0, 0, 0, 1, .5][f] };
+  const f = FINISH_STYLE; if (!f) return; finBuild(); const tune = { vig: [0, 1, 1, .5, .7, .8, .75][f], warm: [0, .07, .07, 0, .03, .05, .04][f], grain: [0, 0, .07, 0, 0, .04, 0][f], haze: [0, 0, 0, .28, .16, .16, 0][f], scan: [0, 0, 0, 0, 1, .5, .9][f], move: f === 6 };
   if (tune.haze) finHaze(tune.haze);
   ctx.save(); ctx.imageSmoothingEnabled = true;
-  if (tune.warm) { ctx.globalCompositeOperation = "soft-light"; ctx.fillStyle = `rgba(255,150,60,${tune.warm * 4})`; ctx.fillRect(0, 0, CVW, CVH); }
-  if (tune.scan) { ctx.globalCompositeOperation = "multiply"; ctx.globalAlpha = tune.scan; ctx.fillStyle = ctx.createPattern(FIN.scan, "repeat"); ctx.fillRect(0, 0, CVW, CVH); ctx.globalAlpha = 1; }
+  if (tune.warm && !tune.move) { ctx.globalCompositeOperation = "soft-light"; ctx.fillStyle = `rgba(255,150,60,${tune.warm * 4})`; ctx.fillRect(0, 0, CVW, CVH); }
+  if (tune.move) {   // one baked picture (scanlines + vignette) drawn creeping down, its strength flickering faintly, then the rolling band
+    if (!FIN.crt) { const c2 = FIN.crt = document.createElement("canvas"); c2.width = CVW; c2.height = CVH + 8; const x2 = c2.getContext("2d");
+      x2.fillStyle = "rgba(0,0,0,.2)"; for (let y = 2; y < CVH + 8; y += 4) x2.fillRect(0, y, CVW, 2); x2.globalAlpha = tune.vig; x2.drawImage(FIN.vig, 0, 4); }
+    const fl = .92 + .08 * Math.sin(frame * .9) * Math.sin(frame * .23), sy = ((frame >> 3) & 3) - 4; ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = fl; ctx.drawImage(FIN.crt, 0, sy); ctx.globalAlpha = 1;
+    const bh = CVH * .35, by = ((frame % 540) / 540) * (CVH + bh) - bh; ctx.globalCompositeOperation = "screen"; ctx.drawImage(FIN.roll, 0, by, CVW, bh); ctx.restore(); return; }
+  if (tune.scan) { ctx.globalCompositeOperation = "multiply"; ctx.globalAlpha = tune.scan; ctx.fillStyle = ctx.createPattern(FIN.scan, "repeat");
+    ctx.fillRect(0, 0, CVW, CVH); ctx.globalAlpha = 1; }
   if (tune.grain) { ctx.globalCompositeOperation = "overlay"; ctx.globalAlpha = tune.grain; const gi = FIN.grain[(frame >> 1) & 3], ox = (frame * 37) % 128, oy = (frame * 53) % 128;
     ctx.translate(-ox, -oy); ctx.fillStyle = ctx.createPattern(gi, "repeat"); ctx.fillRect(0, 0, CVW + 128, CVH + 128); ctx.setTransform(RS, 0, 0, RS, 0, 0); ctx.globalAlpha = 1; }
   if (tune.vig) { ctx.globalCompositeOperation = "source-over"; ctx.globalAlpha = tune.vig; ctx.drawImage(FIN.vig, 0, 0); }
@@ -1841,7 +1854,7 @@ function slotState(id, n) {
   if (id === "battery") { st.pips = n; st.lit = play ? Math.max(0, Math.min(n, S.words - BASE_WORDS)) : n; }
   if (id !== "battery" && id !== "knob") { st.pips = n; st.lit = n; }
   if (id === "knob") { st.pips = n; st.lit = play ? Math.max(0, Math.min(n, S.retunes - 1)) : n; }
-  if (id === "echo") { const used = maxWords() - S.words; st.armed = play && used < n; st.spent = play && used >= n; }
+  if (id === "echo") { const used = maxWords() - S.words; st.armed = play && used === 0; st.spent = play && used > 0; }
   if (id === "owl") st.armed = play && S.words === 1;
   if (id === "carrier" || id === "heat" || id === "gold") st.armed = play;
   if (PART[id] && PART[id].rare) st.pips = 0;
@@ -2013,9 +2026,10 @@ const TIPS = [
   "FIVE MELTS POUR A MOLTEN UPGRADE: ANY PART YOU HAVE GAINS A COPY",
   "A PART'S SLOT LIGHTS UP WHEN IT WILL BOOST YOUR WORD",
   "A SPARE BATTERY ADDS A LIGHT UNDER THE LAMPS: AN EXTRA WORD EVERY NIGHT",
-  "THE NIGHT OWL CLOCK TRIPLES YOUR LAST WORD OF THE NIGHT, MORE WITH COPIES",
+  "THE NIGHT OWL CLOCK TRIPLES YOUR LAST WORD OF THE NIGHT, AND EACH COPY ADDS TWO MORE",
   "CLEAR A NIGHT EARLY WITH THE NIGHT OWL CLOCK AND THE UNUSED LAST WORD STILL PAYS TRIPLE",
-  "THE ECHO TUBE DOUBLES YOUR FIRST WORD OF THE NIGHT",
+  "THE ECHO TUBE TRIPLES YOUR FIRST WORD OF THE NIGHT",
+  "THE SHORTWAVE CRYSTAL DOUBLES WORDS OF 3 OR 4 LETTERS",
   "THE RED KEY DOUBLES ANY WORD THAT USES IT",
   "A RED LAMP MAKES THE RED KEY ADD 5 SIGNAL",
   "RED HEAT MAKES THE RED KEY MULTIPLY ONE MORE",
@@ -2025,7 +2039,7 @@ const TIPS = [
   "TAP A PART'S SLOT, OR PRESS DOWN PAST THE BOTTOM ROW, TO READ IT",
   "THE VOWEL ANTENNA MAKES EVERY VOWEL WORTH ONE MORE",
   "THE TREBLE SLIDER ADDS 3 FOR EVERY LETTER WORTH 3 OR MORE",
-  "THE LONG WAVE COIL DOUBLES WORDS OF 5 LETTERS OR MORE",
+  "THE LONG WAVE COIL DOUBLES WORDS OF 5 LETTERS OR MORE, AND EACH COPY ADDS A HALF",
 ];
 let tipI = (Math.random() * TIPS.length) | 0;
 // every other message on the title dial is your high score (once you have one), the rest are tips

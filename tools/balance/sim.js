@@ -11,7 +11,8 @@ const VALUES = { "?":0, A:1,E:1,I:1,O:1,U:1,N:1,R:1,S:1,T:1,L:1, D:2,G:2,H:2, B:
 const VOWELS = new Set(["A","E","I","O","U"]);
 const PARTS = ["amp","battery","knob","coil","short","echo","owl","treble","vowel","carrier","heat"]; const RARE = ["gold"];
 const N = 5, NN = 25, BASE_WORDS = 6, OVERDRIVE = 1.5, SLOTS = 5, MELT_N = 5;
-const targetFor = (n) => Math.round(30 * Math.pow(1.5, n - 1) / 5) * 5;
+const TG = (process.env.T || '40,1.8,1.5').split(',').map(Number);   // base, growth for the first nights, growth after night 5
+const targetFor = (n) => { let t = TG[0]; for (let k = 2; k <= n; k++) t *= k <= 5 ? TG[1] : TG[2]; return Math.round(t / 5) * 5; };
 const round5 = (v) => Math.max(5, Math.round(v / 5) * 5);
 const WT = Object.entries(WEIGHTS), WTOT = WT.reduce((a, [, w]) => a + w, 0);
 let rnd = Math.random; const V = Object.fromEntries((process.env.V || '').split(',').filter(Boolean).map(k => [k, 1]));
@@ -47,16 +48,16 @@ function findAll(S) { const out = new Map(), path = [], seen = new Uint8Array(NN
 function scoreOf(S, p, word) { const tiles = p.map(i => S.grid[i]), len = word.length, used = maxWords(S) - S.words, reds = tiles.filter(t => t.hot).length, h = (id) => has(S, id);
   let signal = 2 + tiles.reduce((s, t) => s + VALUES[t.ch], 0);
   signal += 3 * h("treble") * tiles.filter(t => VALUES[t.ch] >= 3).length + h("vowel") * tiles.filter(t => VOWELS.has(t.ch)).length;
-  if (len <= 4 && !V.short) signal += 6 * h("short"); if (reds) signal += 5 * h("carrier");
+  if (reds) signal += 5 * h("carrier");
   const boost = Math.max(1, len - 2) + h("amp") + (h("knob") ? S.retunes : 0); let mult = 1;
-  if (h("coil") && len >= 5) mult *= V.coil ? 1.5 + h("coil") / 2 : 1 + h("coil");
-  if (V.echo) { if (used === 0 && h("echo")) mult *= 2 + h("echo"); } else if (used < h("echo")) mult *= 2;
-  if (h("owl") && S.words === 1) mult *= V.owl ? 1 + 2 * h("owl") : 2 + h("owl");
-  if (V.short && len <= 4 && h("short")) mult *= 1 + h("short");
+  if (h("coil") && len >= 5) mult *= 1.5 + h("coil") / 2;   // x2, x2.5, x3...
+  if (h("short") && len <= 4) mult *= 1 + h("short");     // x2, x3...
+  if (h("echo") && used === 0) mult *= 2 + h("echo");      // first word x3, x4...
+  if (h("owl") && S.words === 1) mult *= 1 + 2 * h("owl"); // last word x3, x5, x7...
   if (reds) mult *= 2 + h("heat");
-  return signal * boost * mult; }
+  return Math.round(signal * boost * mult); }
 function nightBonus(S) { const wl = Math.max(0, S.words), rl = Math.max(0, S.retunes), wv = round5(S.target / 4), rv = round5(S.target / 6);
-  return wl * wv + rl * rv + (wl && has(S, "owl") ? wv * (2 + has(S, "owl")) : 0); }
+  return wl * wv + rl * rv + (wl && has(S, "owl") ? wv * (1 + 2 * has(S, "owl")) : 0); }
 
 // bots. skill: "expert" knows every word and always sees the best; "player" knows common words (zipf >= z) and spots each one with
 // a chance that falls with length, then sends the best of what it spotted.
