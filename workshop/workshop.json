@@ -1403,6 +1403,132 @@
      "chosen": "5"
     }
    ]
+  },
+  {
+   "id": "rare",
+   "title": "Gold parts",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "How should a gold, one-time part look different from the regular parts, on its picker card and in its slot?",
+     "found": "Chris wants more one-time gold parts, and the gold key's card and slot barely look different from the others now. Each option shows the picker (the Gold Key is the middle card) and the bar with the Gold Key fitted in the third slot. The cards' label also changes from RARE: ONCE ONLY to GOLD PART: ONE ONLY. All are drawn once and cached, except the glint, which only draws while it sweeps.",
+     "options": [
+      {
+       "id": "0",
+       "title": "As it is now",
+       "note": "A thin yellow line round the card and a soft glow; the slot looks like any other.",
+       "images": [
+        {
+         "src": "img/rare-r1/rare-0-shop.jpg",
+         "label": "Part picker"
+        },
+        {
+         "src": "img/rare-r1/rare-0-slots.jpg",
+         "label": "In its slot"
+        }
+       ],
+       "play": "play.html#test-shop-gold-rare-0"
+      },
+      {
+       "id": "1",
+       "title": "Gilded",
+       "note": "The case frame, its name plate and the part's slot frame are recolored from brass to bright gold, pixel by pixel (the art's own shading kept), with a soft gold glow behind the slot.",
+       "images": [
+        {
+         "src": "img/rare-r1/rare-1-shop.jpg",
+         "label": "Part picker"
+        },
+        {
+         "src": "img/rare-r1/rare-1-slots.jpg",
+         "label": "In its slot"
+        }
+       ],
+       "play": "play.html#test-shop-gold-rare-1"
+      },
+      {
+       "id": "2",
+       "title": "Gilded + glint",
+       "note": "Gilded, and every few seconds a band of light sweeps along the gold frame of the card and the slot. Watch the videos.",
+       "images": [
+        {
+         "src": "img/rare-r1/rare-2-shop.mp4",
+         "label": "Part picker (video)"
+        },
+        {
+         "src": "img/rare-r1/rare-2-slots.mp4",
+         "label": "In its slot (video)"
+        },
+        {
+         "src": "img/rare-r1/rare-2-shop.jpg",
+         "label": "Part picker"
+        },
+        {
+         "src": "img/rare-r1/rare-2-slots.jpg",
+         "label": "In its slot"
+        }
+       ],
+       "play": "play.html#test-shop-gold-rare-2"
+      },
+      {
+       "id": "3",
+       "title": "Jewel box",
+       "note": "Gilded, with a crimson velvet lining inside the case and the slot, like a jewelry box. Reads as special even at a glance on the bar.",
+       "images": [
+        {
+         "src": "img/rare-r1/rare-3-shop.jpg",
+         "label": "Part picker"
+        },
+        {
+         "src": "img/rare-r1/rare-3-slots.jpg",
+         "label": "In its slot"
+        }
+       ],
+       "play": "play.html#test-shop-gold-rare-3"
+      },
+      {
+       "id": "4",
+       "title": "Gold seal",
+       "note": "The case and slot stay brass, but a round gold medallion with an engraved star sits on their top-right corner: a stamp that says this one is different.",
+       "images": [
+        {
+         "src": "img/rare-r1/rare-4-shop.jpg",
+         "label": "Part picker"
+        },
+        {
+         "src": "img/rare-r1/rare-4-slots.jpg",
+         "label": "In its slot"
+        }
+       ],
+       "play": "play.html#test-shop-gold-rare-4"
+      },
+      {
+       "id": "5",
+       "title": "All in",
+       "note": "Gilded + glint + the gold seal together.",
+       "images": [
+        {
+         "src": "img/rare-r1/rare-5-shop.mp4",
+         "label": "Part picker (video)"
+        },
+        {
+         "src": "img/rare-r1/rare-5-slots.mp4",
+         "label": "In its slot (video)"
+        },
+        {
+         "src": "img/rare-r1/rare-5-shop.jpg",
+         "label": "Part picker"
+        },
+        {
+         "src": "img/rare-r1/rare-5-slots.jpg",
+         "label": "In its slot"
+        }
+       ],
+       "play": "play.html#test-shop-gold-rare-5"
+      }
+     ]
+    }
+   ]
   }
  ]
 }

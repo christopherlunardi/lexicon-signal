@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 86;</script><script>
+<script>window.LEX_BUILD = 87;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -1901,6 +1901,14 @@ function drawKnobFocus() {
   ftext(left > 0 ? btn(`PRESS {A}: ${left} LEFT TONIGHT`) : "NONE LEFT TONIGHT", cx, ty, "ink", C.inkSoft, "c"); }
 function slotBox(k) { const [, , sw, sh] = R("slot"); return { x: L.slotX + k * L.slotStep, y: L.barY + L.slotY, w: sw, h: sh }; }
 function drawSlotStates() {
+  if (RARE_STYLE) partSlots().forEach((c, k) => { if (!PART[c.id] || !PART[c.id].rare) return; const b = slotBox(k);   // a gold part's slot: gilded / velvet / seal
+    ctx.save(); ctx.imageSmoothingEnabled = false;
+    if (rareHas("velvet")) { const v = velvet(b.w - 14, 49); ctx.drawImage(v, FX(b.x + 7), FX(b.y + 7), FX(b.w - 14), FX(49)); }
+    if (rareHas("gild")) { const gs = giltSprite("slot"); if (rareHas("velvet")) { ctx.drawImage(gs, 0, 0, gs.width, 7, FX(b.x), FX(b.y), FX(b.w), FX(7)); ctx.drawImage(gs, 0, 56, gs.width, gs.height - 56, FX(b.x), FX(b.y + 56), FX(b.w), FX(gs.height - 56));
+        ctx.drawImage(gs, 0, 7, 7, 49, FX(b.x), FX(b.y + 7), FX(7), FX(49)); ctx.drawImage(gs, gs.width - 7, 7, 7, 49, FX(b.x + b.w - 7), FX(b.y + 7), FX(7), FX(49)); }
+      else ctx.drawImage(gs, FX(b.x), FX(b.y), FX(b.w), FX(b.h)); }
+    ctx.restore(); if (rareHas("gild")) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(FX(b.x + b.w / 2), FX(b.y + b.h / 2), FX(b.w * .9), "255,200,70", .12 + .04 * Math.sin(frame / 11)); ctx.restore(); }
+    if (rareHas("glint")) drawGlint(b.x, b.y, b.w, b.h, 6, 60); if (rareHas("seal")) drawSeal(b.x + b.w - 16, b.y - 4); });
   partSlots().forEach((c, k) => { const st = slotState(c.id, c.n), b = slotBox(k), f = slotFlash[c.id] || 0;
     const x = FX(b.x) + 10, y = FX(b.y) + 10, w = FX(b.w) - 20, hh = FX(b.h) - 20, r = R(iconOf(c.id));
     // every fitted copy is a lamp along the bottom (batteries and knobs put theirs out as they're spent); the icon sits above them
@@ -2647,7 +2655,7 @@ let TAG_STYLE = 3; { const m = location.hash.match(/tag-(\d)/); if (m) TAG_STYLE
 const TAG_ZONE = 64;   // fine pixels kept for the label at the foot of a part case (its rule, the label and the bottom border)
 function cardTag(c, p, g, G, cx) {
   const have = partSlots().find(s => s.id === p.id), full = !p.rare && !have && partSlots().length >= PART_SLOTS;
-  const note = p.rare ? "RARE: ONCE ONLY" : have ? `STACKS X${have.n + 1}` : full ? "SWAP A PART" : "NEW";
+  const note = p.rare ? (RARE_STYLE ? "GOLD PART: ONE ONLY" : "RARE: ONCE ONLY") : have ? `STACKS X${have.n + 1}` : full ? "SWAP A PART" : "NEW";
   const col = p.rare ? "#ffd24a" : have ? C.gold : full ? C.redHot : C.amber, bot = FX(g.y + G.ch) - 30, x0 = FX(g.x), x1 = FX(g.x + G.cw);
   if (TAG_STYLE === 0) { const ny = FX(g.y + G.ch) - 34, nw = textW(note, "ink") + 30;
     c.fillStyle = "rgba(10,6,4,.9)"; c.beginPath(); c.roundRect(cx - nw / 2, ny - 8, nw, 30, 6); c.fill(); c.strokeStyle = p.rare ? "#ffd24a" : have ? C.gold : full ? C.redHot : C.dotDim; c.lineWidth = 2; c.stroke();
@@ -2669,6 +2677,52 @@ function cardTag(c, p, g, G, cx) {
     c.fillStyle = p.rare ? "#3a2604" : "#140a05"; c.beginPath(); c.roundRect(cx - w / 2, y, w, hh, hh / 2); c.fill();
     c.strokeStyle = col; c.lineWidth = 3; c.stroke(); ftext(note, cx, y + 8, "ink", col, "c"); return; }
 }
+/* ================= gold parts, how they show (Workshop topic "rare", round 1) =================
+   Chris 2026-11-14: more one-time gold parts are coming, and a gold part has to read as a different kind of part, on its picker card
+   and in its slot. RARE_STYLE 0 = as before (a thin yellow line and a glow), 1 gilded (the case frame, name plate and slot frame
+   recolored to bright gold), 2 gilded + a glint that sweeps along the gold now and then, 3 jewel box (gilded + a crimson velvet
+   lining), 4 gold seal (a round gold medallion with a star on the corner of the brass case and slot), 5 gilded + glint + seal.
+   #rare-N picks one (#test-shop-gold-rare-N, #test-word-rareslots-rare-N). */
+let RARE_STYLE = 0; { const m = location.hash.match(/rare-(\d)/); if (m) RARE_STYLE = Math.min(5, +m[1]); }
+const rareHas = (k) => ({ gild: [0, 1, 1, 1, 0, 1], glint: [0, 0, 1, 0, 0, 1], velvet: [0, 0, 0, 1, 0, 0], seal: [0, 0, 0, 0, 1, 1] })[k][RARE_STYLE];
+const GILD = [[0, [62, 28, 0]], [.32, [158, 92, 6]], [.58, [246, 174, 26]], [.82, [255, 210, 84]], [1, [255, 236, 168]]];
+// recolor brass to gold, pixel by pixel (light keeps its place, only the hue and the shine change); the darkest pixels (outlines,
+// the dark glass) stay as they are, and so does anything see-through
+function gildRegion(c, x, y, w, h) { const id = c.getImageData(x, y, w, h), d = id.data;
+  for (let i = 0; i < d.length; i += 4) { if (d[i + 3] < 200) continue; const l = (.3 * d[i] + .59 * d[i + 1] + .11 * d[i + 2]) / 255; if (l < .1) continue;
+    const t = Math.min(.8, l * 1.2); let k = 1; while (k < GILD.length - 1 && GILD[k][0] < t) k++; const [t0, a] = GILD[k - 1], [t1, b] = GILD[k], f = (t - t0) / (t1 - t0 || 1);
+    d[i] = a[0] + (b[0] - a[0]) * f; d[i + 1] = a[1] + (b[1] - a[1]) * f; d[i + 2] = a[2] + (b[2] - a[2]) * f; }
+  c.putImageData(id, x, y); }
+const giltCache = {};
+function giltSprite(n) { if (!giltCache[n]) { const r = R(n), cv = document.createElement("canvas"); cv.width = r[2]; cv.height = r[3]; const x = cv.getContext("2d");
+  x.drawImage(atlasImg, r[0], r[1], r[2], r[3], 0, 0, r[2], r[3]); gildRegion(x, 0, 0, r[2], r[3]); giltCache[n] = cv; } return giltCache[n]; }
+// crimson velvet, one world pixel at a time: a little noise in the pile and a soft light down the middle (cached by size)
+const velvetCache = {};
+function velvet(w, h) { const k = w + "x" + h; if (velvetCache[k]) return velvetCache[k]; const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
+  const x = cv.getContext("2d"), id = x.createImageData(w, h), d = id.data; let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const i = (yy * w + xx) * 4, mid = 1 - Math.abs(xx / (w - 1) - .5) * 1.4, v = .55 + .3 * mid + .15 * rnd() - .12 * (yy / h);
+    d[i] = 128 * v; d[i + 1] = 10 * v; d[i + 2] = 30 * v; d[i + 3] = 255; }
+  x.putImageData(id, 0, 0); return (velvetCache[k] = cv); }
+// velvet over the dark glass inside a frame (only the plain dark pixels inside the border are replaced)
+function velvetRegion(c, x, y, w, h) { const v = velvet(w, h).getContext("2d").getImageData(0, 0, w, h).data, id = c.getImageData(x, y, w, h), d = id.data;
+  for (let i = 0; i < d.length; i += 4) { const l = (.3 * d[i] + .59 * d[i + 1] + .11 * d[i + 2]) / 255; if (d[i + 3] > 200 && l < .1 && Math.abs(d[i] - d[i + 1]) < 9) { d[i] = v[i]; d[i + 1] = v[i + 1]; d[i + 2] = v[i + 2]; } }
+  c.putImageData(id, x, y); }
+// the gold seal: a round medallion drawn pixel by pixel (crisp, the game's own pixels), a dark rim, light from the top left, an
+// engraved five-point star
+let sealCv = null;
+function seal() { if (sealCv) return sealCv; const r = 11.5, n = 25, cv = document.createElement("canvas"); cv.width = cv.height = n; const x = cv.getContext("2d"), id = x.createImageData(n, n), d = id.data;
+  const star = (px, py) => { const a = Math.atan2(py, px) + Math.PI / 2, rr = Math.hypot(px, py), k = ((a % (2 * Math.PI / 5)) + 2 * Math.PI / 5) % (2 * Math.PI / 5) - Math.PI / 5; return rr < 6.8 * (.42 + .58 * Math.pow(Math.abs(k) / (Math.PI / 5), 1.6)) ; };
+  for (let yy = 0; yy < n; yy++) for (let xx = 0; xx < n; xx++) { const px = xx - 12, py = yy - 12, dd = Math.hypot(px, py), i = (yy * n + xx) * 4; if (dd > r) continue;
+    let c; if (dd > r - 1.2) c = [58, 30, 4]; else if (dd > r - 2.4) c = [196, 140, 30]; else { const l = .62 + .3 * (-(px + py) / 14); c = star(px, py) ? [150, 96, 18] : [Math.min(255, 250 * l + 20), Math.min(255, 200 * l + 10), 70 * l]; }
+    d[i] = c[0]; d[i + 1] = c[1]; d[i + 2] = c[2]; d[i + 3] = 255; }
+  x.putImageData(id, 0, 0); return (sealCv = cv); }
+function drawSeal(x, y) { ctx.save(); ctx.imageSmoothingEnabled = false; ctx.drawImage(seal(), FX(x), FX(y), FX(25), FX(25)); ctx.restore(); }
+// the glint: every few seconds a soft white band sweeps diagonally along a gold frame (only the frame ring, not what's inside)
+function drawGlint(x, y, w, h, b, phase) { const T = 170, t = (frame + phase) % T; if (t > 34) return; const u = t / 34, X = FX(x), Y = FX(y), Wd = FX(w), Hd = FX(h), B = FX(b);
+  ctx.save(); ctx.beginPath(); ctx.rect(X, Y, Wd, Hd); ctx.rect(X + B, Y + B, Wd - 2 * B, Hd - 2 * B); ctx.clip("evenodd");
+  const cx = X - Hd + (Wd + 2 * Hd) * u, g = ctx.createLinearGradient(cx - 40, Y, cx + 40, Y + Hd * .4);
+  g.addColorStop(0, "rgba(255,250,220,0)"); g.addColorStop(.5, "rgba(255,250,220,.85)"); g.addColorStop(1, "rgba(255,250,220,0)");
+  ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = g; ctx.fillRect(X, Y, Wd, Hd); ctx.restore(); }
 const shopBase = { k: "", cv: document.createElement("canvas") }, shopTop = { k: "", cv: document.createElement("canvas") };
 function drawShop() {
   const G = shopGeom(), [, , , ph] = R("plate");
@@ -2676,10 +2730,12 @@ function drawShop() {
   const nameLines = (p) => wrap(p.name, "ink", FX(G.cw - 20) - 30), plH = (p) => nameLines(p).length > 1 ? ph + Math.ceil(20 * TK / FINE) + 2 : ph;
   // the shade and the three cases change only when the choice or the screen does: built once into shopBase, then one blit a frame
   // (the cases are 9-sliced from small tiles, hundreds of draws: redrawn every frame they made the picker crawl on the handheld)
-  const bk = [W, H, L.barY, shopFocus, TK, shopChoices.map(p => p.id).join()].join("|");
+  const bk = [W, H, L.barY, shopFocus, TK, RARE_STYLE, shopChoices.map(p => p.id).join()].join("|");
   if (shopBase.k !== bk) { shopBase.k = bk; shopBase.cv.width = W; shopBase.cv.height = H; const c = shopBase.cv.getContext("2d"); c.imageSmoothingEnabled = false;
     c.save(); c.globalAlpha = .5; c.fillStyle = C.shade; c.fillRect(0, 0, W, L.barY); c.restore();
-    shopChoices.forEach((p, k) => { const g = geo(k); nine(c, "slot", g.x, g.y, G.cw, G.ch, 18); plate3(c, g.x + 10, g.py, G.cw - 20, plH(p)); }); }
+    shopChoices.forEach((p, k) => { const g = geo(k); nine(c, "slot", g.x, g.y, G.cw, G.ch, 18);
+      plate3(c, g.x + 10, g.py, G.cw - 20, plH(p)); if (p.rare && rareHas("gild")) gildRegion(c, g.x, g.y, G.cw, G.ch);
+      if (p.rare && rareHas("velvet")) velvetRegion(c, g.x + 6, g.y + 6, G.cw - 12, G.ch - 12); }); }
   ctx.drawImage(shopBase.cv, 0, 0, W * FINE, H * FINE);
   // light behind each part, then the part itself in world pixels on top of the glow
   ctx.save(); ctx.globalCompositeOperation = "lighter";
@@ -2706,8 +2762,9 @@ function drawShop() {
     if (!(partSlots().length >= PART_SLOTS && meltPlate().tight)) ftext(usingTouch ? "TAP A PART" : partSlots().length >= PART_SLOTS ? btn("LEFT / RIGHT TO LOOK, DOWN TO MELT, {A} TO PICK") : btn("LEFT / RIGHT TO LOOK, {A} TO FIT"), FX(W / 2), FX(G.y0 + G.ch) + 8, "ink", C.gold, "c", { outline: C.dark });
     TXT = null; }
   ctx.drawImage(shopTop.cv, 0, 0, CVW, CVH); drawMeltPlate();
-  shopChoices.forEach((p, k) => { const g = geo(k); if (!p.rare) return;   // rare parts: a gold frame round the case
-    ctx.save(); ctx.strokeStyle = "#ffd24a"; ctx.lineWidth = 4; ctx.beginPath(); ctx.roundRect(FX(g.x) - 2, FX(g.y) - 2, FX(G.cw) + 4, FX(G.ch) + 4, 6); ctx.stroke(); ctx.restore(); });
+  shopChoices.forEach((p, k) => { const g = geo(k); if (!p.rare) return;   // rare parts: a gold line round the case (style 0), or the gold looks
+    if (!RARE_STYLE) { ctx.save(); ctx.strokeStyle = "#ffd24a"; ctx.lineWidth = 4; ctx.beginPath(); ctx.roundRect(FX(g.x) - 2, FX(g.y) - 2, FX(G.cw) + 4, FX(G.ch) + 4, 6); ctx.stroke(); ctx.restore(); return; }
+    if (rareHas("glint")) drawGlint(g.x, g.y, G.cw, G.ch, 7, 0); if (rareHas("seal")) drawSeal(g.x + G.cw - 18, g.y - 8); });
   shopChoices.forEach((p, k) => { const g = geo(k); if (!g.f) return;
     ctx.save(); ctx.strokeStyle = (frame >> 4) & 1 ? C.hot : C.gold; ctx.lineWidth = 3; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 16; ctx.beginPath(); ctx.roundRect(FX(g.x) - 5, FX(g.y) - 5, FX(G.cw) + 10, FX(G.ch) + 10, 8); ctx.stroke(); ctx.restore(); });
 }
@@ -3145,8 +3202,9 @@ async function boot() {
   if (location.hash === "#test-upgrade") { newRun(); S.parts.push("amp", "coil", "battery", "knob", "echo"); nightClear(); S.phase = "upgrade"; MELT.ut = 0; swapFocus = 1; }
   if (/^#test-melt/.test(location.hash)) { newRun(); S.parts.push("amp", "coil", "battery", "knob", "echo"); S.melt = /full/.test(location.hash) ? 4 : 1; nightClear(); S.phase = "shop"; }
   if (/^#test-shop-tags/.test(location.hash)) { newRun(); S.parts.push("amp", "coil", "battery", "knob"); if (/full/.test(location.hash)) S.parts.push("echo"); S.over = true; nightClear(); S.phase = "shop"; shopChoices = [PART.coil, PART.gold, PART.owl, PART.amp]; }
-  if (location.hash === "#test-shop-gold") { newRun(); S.parts.push("amp", "coil"); nightClear(); S.phase = "shop"; shopChoices[1] = PART.gold; }
+  if (location.hash.startsWith("#test-shop-gold")) { newRun(); S.parts.push("amp", "coil"); nightClear(); S.phase = "shop"; shopChoices[1] = PART.gold; }
   if (location.hash === "#test-swap") { newRun(); S.parts.push("amp", "amp", "coil", "echo", "owl", "short"); nightClear(); const k = shopChoices.findIndex(c => !S.parts.includes(c.id)); if (k >= 0) choosePart(k); }
+  if (/^#test-word-rareslots/.test(location.hash)) setTimeout(() => { S.parts = ["amp", "coil", "gold", "knob"]; }, 320);
   if (location.hash.startsWith("#test-word")) { newRun(); setTimeout(() => { "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); S.path = [0, 1, 2]; usingButtons = true; S.cursor = 3; if (location.hash.includes("fill")) S.score = S.shown = 17; if (location.hash.includes("near")) S.score = S.shown = S.target - 3; if (location.hash.includes("-od")) S.score = S.shown = Math.ceil(S.target * OVERDRIVE) - 5; if (location.hash.includes("-gold")) { S.parts.push("gold"); S.grid[H5(13)].hot = false; S.grid[H5(13)].wild = true; S.grid[H5(13)].ch = "?"; if (location.hash.includes("-goldred")) { S.grid.forEach(t => t.hot = false); S.grid[H5(13)].hot = true; } if (GOLD_STYLE || location.hash.includes("-goldred")) S.path = []; } if (location.hash.includes("hot")) { S.parts = ["carrier"]; S.grid.forEach(t => t.hot = false); S.grid[H5(6)].hot = true; S.grid[H5(9)].hot = false; } if (location.hash.includes("parts")) { S.parts = ["battery", "battery", "knob", "echo", "amp"]; S.words = maxWords(); S.retunes = maxRetunes(); } if (/score-/.test(location.hash)) { S.total = S.startTotal = SC.shown = 1180; } nightCard = 0; }, 300); }
 }
 boot();
