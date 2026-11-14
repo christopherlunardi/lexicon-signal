@@ -332,6 +332,8 @@ def main():
     # one brass everywhere (Chris 2026-11-14): every brass piece on the shared ramp (frames.BRASS); the lit title plate keeps its glow
     for nm in ["bar_left", "bar_mid", "bar_right", "slot", "plate", "plate_bare", "tplate", "logbox", "bar_clasp", "rivet"]:
         if nm in imgs: imgs[nm] = frames.unify_brass(imgs[nm])
+    # the bar's clasp (Chris 2026-11-14): PixelLab's winged brass piece (src/clasp_wings.png, trimmed to the wings' shape)
+    if os.path.exists(SRC + "clasp_wings.png"): imgs["bar_clasp"] = Image.open(SRC + "clasp_wings.png").convert("RGBA")
     # the bar's top-middle clasp on the Pixel Bench (Chris 2026-11-14): what he paints (src/bench/bar_clasp.png) is used exactly as sent
     if os.path.exists(SRC + "bench/bar_clasp.png"): imgs["bar_clasp"] = Image.open(SRC + "bench/bar_clasp.png").convert("RGBA")
     else:
