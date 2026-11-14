@@ -472,7 +472,9 @@ the same batch.
   Done: the brass plate (src/plate_brass.png: PixelLab's plate, src/pending/plate_pixellab.png, cropped, rim rows evened out, face
   made solid brass so plates read as metal and the paper stays for the log and panels; our rivets, two at each end inside the rim,
   one each end on short plates). Everything else comes from PixelLab; only the two screen bezels are drawn in code.
-  Done: the part slot / case frame (src/slot_pixellab.png, brass only with empty corner pads, fitted to 59x64 with corners kept), the
+  Done: the part slot / case frame (src/slot_pixellab.png, brass only with empty corner pads, fitted to 59x64 with corners kept; its pale
+  brass toned down to the log box's gold, then Chris repainted the corners on the Pixel Bench: src/bench/slot2.png is what the game uses;
+  two PixelLab redos were rejected, the original was better), the
   rivet (Chris's bench paint, src/bench/rivet.png, used everywhere, the bar's corners included over PixelLab's), the run score on
   the brass plate. Rivets touch their frame's inner edge evenly (plate 7,7/94,7/7,18/94,18; logbox 6,6/185,6/6,74/185,74; slot
   5,5/53,5/5,58/53,58; title plates y 8 and 24; short plates x+4 and x+w-12). One brass: build.py runs frames.unify_brass on every
