@@ -267,7 +267,7 @@ def main():
         so.alpha_composite(sp.crop((cx_, 0, cx_ + 1, m_)).resize((SW - 2 * m_, m_), Image.NEAREST), (m_, 0)); so.alpha_composite(sp.crop((cx_, sh_ - m_, cx_ + 1, sh_)).resize((SW - 2 * m_, m_), Image.NEAREST), (m_, SH - m_))
         so.alpha_composite(sp.crop((0, cy_, m_, cy_ + 1)).resize((m_, SH - 2 * m_), Image.NEAREST), (0, m_)); so.alpha_composite(sp.crop((sw_ - m_, cy_, sw_, cy_ + 1)).resize((m_, SH - 2 * m_), Image.NEAREST), (SW - m_, m_))
         so.alpha_composite(sp.crop((cx_, cy_, cx_ + 1, cy_ + 1)).resize((SW - 2 * m_, SH - 2 * m_), Image.NEAREST), (m_, m_))
-        imgs["slot"] = so; RIVETS["slot"] = [(5, 5), (53, 5), (5, 58), (53, 58)]
+        imgs["slot"] = so; RIVETS["slot"] = [(6, 6), (52, 6), (6, 57), (52, 57)]
     if os.path.exists(SRC + "logbox_pixellab.png"):
         imgs["logbox"] = frames.logbox(SRC + "logbox_pixellab.png"); RIVETS["logbox"] = [(6, 6), (185, 6), (6, 74), (185, 74)]
     # main screen: the ring's inner edge is exactly the glass the game draws in (glass0..glass1); the dial screen above it gets the
