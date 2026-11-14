@@ -2057,7 +2057,7 @@ const TIPS = [
   "EVERY RADIO PART STACKS: EACH COPY ADDS THE SAME AGAIN",
   "TAP A PART'S SLOT, OR PRESS DOWN PAST THE BOTTOM ROW, TO READ IT",
   "PRESS {Y} TO RETUNE: EVERY LETTER SWAPS FOR NEW ONES",
-  "PRESS RIGHT PAST THE LAST COLUMN TO REACH THE RETUNE KNOB",
+  "FROM THE BOTTOM ROWS, PRESS RIGHT PAST THE LAST COLUMN TO REACH THE RETUNE KNOB",
   "THE VOWEL ANTENNA MAKES EVERY VOWEL WORTH ONE MORE",
   "THE TREBLE SLIDER ADDS 3 FOR EVERY LETTER WORTH 3 OR MORE",
   "THE LONG WAVE COIL DOUBLES WORDS OF 5 LETTERS OR MORE, AND EACH COPY ADDS A HALF",
@@ -2372,7 +2372,7 @@ const HOW_CARDS = [
     setup() {}, steps: [...[[30, 8], [58, 9], [86, 10], [114, 11]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(11))]] },
   { title: "FILL THE TUBE", keys: [], len: 380, text: "Fill the signal tube before the lamps go dark. Every word you send uses one lamp. Longer words and letters with more dots fill it faster. When the lamp at the end of the tube lights, the word you've spelled will fill it; when it burns red, it's overdrive: four parts to pick from. Lamps still lit when it fills pay a bonus.",
     setup() { S.score = S.shown = 18; S.words = 3; }, steps: [...[[30, 12], [58, 13], [86, 14], [114, 15]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(15))]] },
-  { title: "STUCK? RETUNE", keys: ["Y"], len: 270, text: "Press {Y}, tap the right knob, or move right past the last column onto the knob and press {A}, to swap every letter for new ones, once a night. The small light under that knob shows you still have it. Keep it and it pays a bonus when the night clears.",
+  { title: "STUCK? RETUNE", keys: ["Y"], len: 270, text: "Press {Y}, tap the right knob, or move right past the bottom rows onto the knob and press {A}, to swap every letter for new ones, once a night. The small light under that knob shows you still have it. Keep it and it pays a bonus when the night clears.",
     setup() {}, steps: [[80, () => retune()]] },
   { title: "RADIO PARTS", keys: [], len: 260, text: "Clear a night to fit one of three radio parts. They sit in the slots below and light up when they help. Tap a slot, or press down past the bottom row, to read what a part does. That's the basics!",
     setup() { S.parts = ["battery", "echo"]; S.words = maxWords(); HOW.shop = true; nightClear(); HOW.shop = false; }, steps: [[70, () => { shopFocus = 1; Sound.click(); }], [140, () => { shopFocus = 2; Sound.click(); }], [210, () => { shopFocus = 0; Sound.click(); }]] },
@@ -2747,7 +2747,8 @@ function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ?
   if (S.phase !== "play") return;
   if (inspectKey(dk)) return;
   if (knobKey(dk)) return;
-  if (dx > 0 && S.cursor % N === N - 1) { KNOB.on = true; Sound.click(); return; }
+  // only from the bottom two rows (the knob sits down there); the higher rows still wrap round to the left side (Chris 2026-11-14)
+  if (dx > 0 && S.cursor % N === N - 1 && ((S.cursor / N) | 0) >= N - 2) { KNOB.on = true; Sound.click(); return; }
   if (dy > 0 && ((S.cursor / N) | 0) === N - 1 && partSlots().length) { INSPECT.on = true; INSPECT.k = Math.min(INSPECT.k, partSlots().length - 1); Sound.click(); return; }
   const x = S.cursor % N + dx, y = ((S.cursor / N) | 0) + dy; S.cursor = ((y + N) % N) * N + ((x + N) % N); knobA.L += .35 * (dx + dy); Sound.tickMove();
 }

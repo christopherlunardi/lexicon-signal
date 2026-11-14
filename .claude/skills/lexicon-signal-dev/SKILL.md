@@ -278,7 +278,7 @@ the same batch.
 - Fonts: Chris doesn't want outside display fonts on the game screen (2026-11-12: "big blocky text... doesn't match anything").
   The pause menu is a logbox parchment panel in the game's own "key" lettering; the start prompt is back to the dial's "dot"
   lettering. The smooth fonts (HOWF) stay only on the How to Play cards, which he liked.
-- The retune knob as a place (Chris 2026-11-14): with buttons, right past the last column of keys lands on the right knob (KNOB,
+- The retune knob as a place (Chris 2026-11-14): with buttons, right past the last column of the bottom two rows lands on the right knob (higher rows still wrap) (KNOB,
   drawKnobFocus: a ring and a card, RETUNE / SWAP EVERY LETTER FOR NEW ONES / PRESS A: N LEFT TONIGHT); A retunes, left or B goes
   back. Night 1's log adds "Stuck? Press Y to retune" (tap the right knob on touch). Wording: no "tune in" anywhere (Chris didn't
   like it): PRESS A TO PLAY / PLAY AGAIN, the log starts "On the air.", the phone's A button says PICK.
