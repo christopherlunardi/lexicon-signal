@@ -460,7 +460,7 @@ the same batch.
   and laid back with 'screen'), 4 scanlines + haze + vignette, 5 all light. Stills in workshop/img/finish-r1/.
 - Center Tap (gold part, id tap, Chris 2026-11-14): the middle key (TAP_I 12) holds a charge for the whole run (S.tap). A word through
   it first adds its length to the charge, then scores the whole charge as flat points (scoreOf .tap). drawTapRing: a gold ring round the
-  middle key and the charge on a dark chip at its top right. Icon: the old Static Filter porthole (icon "filter") until its own
+  middle key and the charge on a dark chip at its top right. Icon: its own
   picture: src/tap_icon.png (ChatGPT) k-centroid shrunk to its 152 px native grid, cropped, shrunk to 46x60 = tap_icon_fixed.png.
   Sim: the strongest single part (+1.8 nights).
 - rare-r1 (decided: 3, the jewel box, the game's look for every gold part now, 2026-11-14; Chris: more one-time gold parts are coming and they must read as a different kind on the card and in
