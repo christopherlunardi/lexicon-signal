@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 83;</script><script>
+<script>window.LEX_BUILD = 84;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -3098,8 +3098,10 @@ function loop(now) {
   PERF.dt = PERF.dt * .95 + Math.min(250, now - (PERF.last || now)) * .05; PERF.last = now; pollPad(now); requestAnimationFrame(loop); }
 async function boot() {
   const LA = window.LEX_ASSETS;   // the Android app's one-file build carries its art inside the page (it plays offline, from a file)
-  A = LA ? LA.atlasJson : await (await fetch("art/pixel/atlas.json")).json();
-  atlasImg = new Image(); atlasImg.src = LA ? LA.atlasPng : "art/pixel/atlas.png"; await atlasImg.decode();
+  // the json is always checked with the server (never an old cached copy) and names the picture's version, so the two always match:
+  // a phone once opened with a stale atlas cached and showed missing, dark art (Chris 2026-11-13)
+  A = LA ? LA.atlasJson : await (await fetch("art/pixel/atlas.json", { cache: "no-cache" })).json();
+  atlasImg = new Image(); atlasImg.src = LA ? LA.atlasPng : "art/pixel/atlas.png" + (A.v ? "?v=" + A.v : ""); await atlasImg.decode();
   PAL = A.palette; const acc = new Set(A.accents.map(c => c.join(","))); ROOMPAL = PAL.filter(c => !acc.has(c.join(",")));
   // the lettering's font first (cached pictures with words in them are drawn once), but never wait more than two seconds for it
   if (TYPEFACE && document.fonts) { await Promise.race([Promise.all(Object.values(TF_SIZE).map(f => document.fonts.load(`${f()}px "${TYPEFACE}"`))), new Promise(r => setTimeout(r, 2000))]).catch(() => {});

@@ -8,7 +8,7 @@ with tall pixels, so its rows are evened out to square pixels first.)
 Crops and points below are written in the ORIGINAL source's pixels (easy to measure on the big image) and converted to the fixed
 image's pixels. Outputs: atlas.png + atlas.json (palette for interface colours, sprite rectangles, marked points).
 Run from the repo root: python3 -I art/pixel/build.py"""
-import json, os, sys
+import json, os, sys, hashlib
 import numpy as np
 from scipy import ndimage
 from PIL import Image, ImageDraw
@@ -261,7 +261,8 @@ def main():
         while bri(l - 1, Y) > 200: l -= 1
         while bri(r + 1, Y) > 200: r += 1
         dial_rows.append([Y, l, r])
-    json.dump({"palette": pal.tolist(), "accents": [list(c) for c in pix.ACCENTS], "rects": rects, "points": pts, "dialRows": dial_rows, "fonts": {}}, open(OUT + "atlas.json", "w"))
+    json.dump({"palette": pal.tolist(), "accents": [list(c) for c in pix.ACCENTS], "rects": rects, "points": pts, "dialRows": dial_rows, "fonts": {},
+               "v": hashlib.sha1(open(OUT + "atlas.png", "rb").read()).hexdigest()[:10]}, open(OUT + "atlas.json", "w"))   # the picture's version: the game asks for atlas.png?v=<this>, so a phone can't pair a new json with an old cached picture
     for n in ["radio", "window", "wall_tile", "sb_mid", "bar_left", "bar_mid", "logbox", "plate", "battery", "slot", "iconL_amp", "icon_amp"]: print(n, rects[n][2:])
     print("radio points", pts["radio"]); print("window", pts["window"], "battery", pts["battery"])
 
