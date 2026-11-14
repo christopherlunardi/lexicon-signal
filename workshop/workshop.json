@@ -911,7 +911,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "How should the title menu look under the radio?",
      "found": "Five ways, four of them with each option in its own container on dark floorboards (no bare black). Pictures for a computer and a phone; play links open the title with that look (left/right or up/down to choose, A to pick).",
      "options": [
@@ -995,7 +995,8 @@
        ],
        "play": "play.html#title-6-menu-5"
       }
-     ]
+     ],
+     "chosen": "2"
     }
    ]
   },
@@ -1100,7 +1101,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "Which title screen should the game open on?",
      "found": "Six ways in. The bar is now away on the title screen and rises into place with a clunk when you start. Options 1-5 use a placeholder logo made from the game's own letters (the real one drops into the same spot later); 6 spells the title in the radio's keys. Watch the clips, or play each one: press A once to skip the entrance, again to start. You can mix pieces.",
      "options": [
@@ -1200,7 +1201,8 @@
        ],
        "play": "play.html#title-6"
       }
-     ]
+     ],
+     "chosen": "6"
     }
    ]
   },
