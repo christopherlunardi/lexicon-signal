@@ -453,8 +453,8 @@ const PARTS = [
   // rare (gold): only one, now and then in the picker (more often after an overdrive)
   { id:"gold",    name:"Gold Key",          desc:"A gold key on the glass can be any letter.", rare:true },
   // Center Tap (Chris 2026-11-14): the middle key of the glass holds a charge that lasts the whole run. A word through it scores the
-  // charge as flat points, then adds its own length to the charge. Icon: the old Static Filter porthole until its own picture is drawn.
-  { id:"tap",     name:"Center Tap",        desc:"The middle key charges up all run: each word through it adds its letters, then scores the charge.", rare:true, icon:"filter" },
+  // charge as flat points, then adds its own length to the charge. Icon: its own picture (src/tap_icon.png).
+  { id:"tap",     name:"Center Tap",        desc:"Words through the middle key add their letters to its charge, then score it.", rare:true },
 ];
 const PART = Object.fromEntries(PARTS.map(p => [p.id, p]));
 const TAP_I = 12;   // the middle of the 5x5 glass

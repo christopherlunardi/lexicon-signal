@@ -210,6 +210,12 @@ def main():
     imgs["iconL_gold"] = gold; fa = np.asarray(gold); hw, hh = max(1, fa.shape[1] // 2), max(1, fa.shape[0] // 2)
     gpal = np.unique(fa[..., :3][fa[..., 3] > 0].reshape(-1, 3), axis=0).astype(float)
     imgs["icon_gold"] = Image.fromarray(pix.mode_shrink(fa[..., :3].astype(float), fa[..., 3] > 0, hw, hh, gpal), "RGBA")
+    # the Center Tap (gold part, 2026-11-14): src/tap_icon.png (ChatGPT) shrunk by k-centroid to its native grid (152 px square),
+    # cropped to the object and shrunk again to 46x60 (kdown.py) as src/tap_icon_fixed.png; magenta keyed out like the Gold Key
+    ti = np.asarray(Image.open(SRC + "tap_icon_fixed.png").convert("RGBA")).copy(); mg = (ti[..., 0] > 170) & (ti[..., 1] < 110) & (ti[..., 2] > 170); ti[..., 3] = np.where(mg, 0, 255)
+    imgs["iconL_tap"] = Image.fromarray(ti, "RGBA"); fa = ti; hw, hh = max(1, fa.shape[1] // 2), max(1, fa.shape[0] // 2)
+    tpal = np.unique(fa[..., :3][fa[..., 3] > 0].reshape(-1, 3), axis=0).astype(float)
+    imgs["icon_tap"] = Image.fromarray(pix.mode_shrink(fa[..., :3].astype(float), fa[..., 3] > 0, hw, hh, tpal), "RGBA")
     # the title screen's console (2026-11-13, Chris's art src/title_console.png): a wooden console panel and two brass button plates
     # (unlit, lit), k-centroid shrunk to *_fixed.png; magenta keyed out. Taken after the palette so the interface colours don't move.
     for nm, fn in (("tpanel", "title_panel_fixed.png"), ("tplate", "title_plate_fixed.png"), ("tplate_lit", "title_plate_lit_fixed.png")):

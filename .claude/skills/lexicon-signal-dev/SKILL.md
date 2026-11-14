@@ -461,7 +461,8 @@ the same batch.
 - Center Tap (gold part, id tap, Chris 2026-11-14): the middle key (TAP_I 12) holds a charge for the whole run (S.tap). A word through
   it first adds its length to the charge, then scores the whole charge as flat points (scoreOf .tap). drawTapRing: a gold ring round the
   middle key and the charge on a dark chip at its top right. Icon: the old Static Filter porthole (icon "filter") until its own
-  picture (src/tap_icon_fixed.png, to be wired in build.py like the Gold Key) is drawn. Sim: the strongest single part (+1.8 nights).
+  picture: src/tap_icon.png (ChatGPT) k-centroid shrunk to its 152 px native grid, cropped, shrunk to 46x60 = tap_icon_fixed.png.
+  Sim: the strongest single part (+1.8 nights).
 - rare-r1 (decided: 3, the jewel box, the game's look for every gold part now, 2026-11-14; Chris: more one-time gold parts are coming and they must read as a different kind on the card and in
   the slot): RARE_STYLE 0 as before, 1 gilded (gildRegion recolors brass to gold), 2 + glint, 3 jewel box (gilded + velvet), 4 gold
   seal (pixel medallion, top-right), 5 gilded + glint + seal. #rare-N; #test-shop-gold-rare-N, #test-word-rareslots-rare-N.
