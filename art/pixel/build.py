@@ -309,6 +309,9 @@ def main():
         # bottom bands (rim + brass, 13 rows each) are made from one clean column everywhere past the corners, so they run even
         ba = np.asarray(bp).copy(); col = ba[:, bw // 2].copy(); E = 13
         for x in range(17, bw - 17): ba[:E, x] = col[:E]; ba[bh - E:, x] = col[bh - E:]
+        # and the same down the two sides (Chris 2026-11-14: patchy, blended brass at the bar's ends): one clean row everywhere past the corners
+        row = ba[bh // 2].copy()
+        for y in range(17, bh - 17): ba[y, :E] = row[:E]; ba[y, bw - E:] = row[bw - E:]
         bp = Image.fromarray(ba, "RGBA")
         BAR_RIVETS = [(13, 10), (bw - 13, 10), (13, 80), (bw - 13, 80)]   # where PixelLab painted its own; ours go over them
         ba = np.asarray(bp).copy()
@@ -329,6 +332,11 @@ def main():
     # one brass everywhere (Chris 2026-11-14): every brass piece on the shared ramp (frames.BRASS); the lit title plate keeps its glow
     for nm in ["bar_left", "bar_mid", "bar_right", "slot", "plate", "plate_bare", "tplate", "logbox", "bar_clasp", "rivet"]:
         if nm in imgs: imgs[nm] = frames.unify_brass(imgs[nm])
+    # the bar's top-middle clasp on the Pixel Bench (Chris 2026-11-14): what he paints (src/bench/bar_clasp.png) is used exactly as sent
+    if os.path.exists(SRC + "bench/bar_clasp.png"): imgs["bar_clasp"] = Image.open(SRC + "bench/bar_clasp.png").convert("RGBA")
+    else:
+        imgs["bar_clasp"].save(ROOT_ART + "bench/img/bar_clasp.png")
+        json.dump([{"file": "img/bar_clasp.png", "group": "To do: frames under the rivets", "label": "The bar's clasp (the brass piece at the top middle)", "w": imgs["bar_clasp"].width, "h": imgs["bar_clasp"].height, "key": "bar_clasp"}], open(ROOT_ART + "bench/manifest.json", "w"), indent=1)
     # pack
     order = sorted(imgs, key=lambda n: -imgs[n].height); AW = 1400; x = y = sh = 0; rects = {}
     for n in order:
