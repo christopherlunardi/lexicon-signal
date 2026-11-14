@@ -228,6 +228,15 @@ def main():
     for nm, fn in (("iconL_melter", "melter_icon_fixed.png"), ("iconL_molten", "molten_icon_fixed.png"), ("cab_top", "cab_top_fixed.png"), ("cab_row", "cab_row_fixed.png"), ("big_melter", "melter_big_fixed.png"), ("big_molten", "molten_big_fixed.png")):
         ti = np.asarray(Image.open(SRC + fn).convert("RGBA")).copy(); r_, g_, b_ = ti[..., 0].astype(int), ti[..., 1].astype(int), ti[..., 2].astype(int)
         mg = (b_ > 120) & (r_ > 120) & (g_ < r_ - 60) & (g_ < b_ - 60); ti[..., 3] = np.where(mg, 0, 255); imgs[nm] = Image.fromarray(ti, "RGBA")
+    # plain wood where the title buttons sit (Chris 2026-11-14: no outlined panel round them): the panel's ring and the face around it,
+    # between the two pilasters, are filled with the panel's own inside wood (its rows stacked, shifted along so the grain doesn't repeat); nothing else changes
+    ct = np.asarray(imgs["cab_top"]).copy(); IX0, IX1, IY0, IY1 = 52, 504, 40, 62; FX0, FX1, FY0, FY1 = 38, 518, 31, 75
+    def refl(v, a, b): n = b - a; k = (v - a) % (2 * n); return a + (k if k < n else 2 * n - 1 - k)
+    src_ = ct.copy()
+    for yy in range(FY0, FY1):
+        n_ = IY1 - IY0; sy = IY0 + (yy - FY0) % n_; sh_ = 173 * ((yy - FY0) // n_)
+        for xx in range(FX0, FX1): ct[yy, xx] = src_[sy, refl(xx + sh_, IX0, IX1)]
+    imgs["cab_top"] = Image.fromarray(ct, "RGBA")
     # The Pixel Bench (Chris 2026-11-13, art/bench/: his pixel touch-up page): the framed pieces as they are under the rivets go
     # to art/bench/img/ for him to paint on, and a piece he sends back (saved as src/bench/NAME.png, exactly as painted) replaces
     # the cut one here, before the rivets go on.

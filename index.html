@@ -2029,7 +2029,7 @@ let TS = 6; {   // default: radio close-up (Chris, 2026-11-12, still being tweak
 const LD = 14, LP = 6 * LD;   // logo letter cell and letter pitch, in fine pixels
 let titleT = 0, titleSkip = false, logoCv = null, logoSig = null, logoNeon = null;
 const titleFX = { lamps: 6, tube: null, bar: false };
-const TITLE_MENU = ["START", "HOW TO PLAY", "HIGH SCORES"]; let titleSel = 0, titleHits = [];
+const TITLE_MENU = ["START", "HOW TO PLAY", "HIGH SCORES"]; let titleSel = 0, titleHits = [], titleSelL = -1, titleSelF = 0;
 function titleChoose(i) { const m = TITLE_MENU[i]; if (m === "HIGH SCORES") { BOARD.on = true; Sound.click(); return; } if (m === "HOW TO PLAY") howStart(); else if (m === "UPDATE APP") { try { LexNative.installApp(); } catch (e) {} } else start(); }
 const titleGlass = { ready: false };
 /* Tips shown scrolling on the dial of the title screen, one at a time in random order. KEEP THIS LIST TRUE TO THE GAME: whenever a
@@ -2317,11 +2317,24 @@ let MENU_STYLE = 6; { const m = location.hash.match(/menu-(\d)/); if (m) MENU_ST
 function slice3Cv(name, w, end) { return panelCvKey("s3:" + name + ":" + w, () => { const r = R(name), c = document.createElement("canvas"); c.width = w; c.height = r[3]; const x = c.getContext("2d"); x.imageSmoothingEnabled = false;
   const mid = r[2] - 2 * end; x.drawImage(atlasImg, r[0], r[1], end, r[3], 0, 0, end, r[3]); for (let xx = end; xx < w - end; xx += mid) { const ww = Math.min(mid, w - end - xx); x.drawImage(atlasImg, r[0] + end, r[1], ww, r[3], xx, 0, ww, r[3]); }
   x.drawImage(atlasImg, r[0] + r[2] - end, r[1], end, r[3], w - end, 0, end, r[3]); return c; }); }
+// the brass push-button plate (Chris 2026-11-14: the title buttons and the melt plate use the bar's brass plate). The chosen one is
+// lit: warmed from within, and a sheen of light sweeps across it in hard pixel stripes, starting the moment it is picked
+const litPl = { cv: document.createElement("canvas") };
+function pushPlateCv(w, on, since) { const base = slice3Cv("plate", w, 18);
+  if (!on) return panelCvKey("pdim:" + w, () => { const c = document.createElement("canvas"); c.width = w; c.height = base.height; const x = c.getContext("2d");
+    x.drawImage(base, 0, 0); x.globalCompositeOperation = "source-atop"; x.fillStyle = "rgba(24,8,2,.34)"; x.fillRect(0, 0, w, base.height); return c; });
+  const c = litPl.cv, h = base.height; if (c.width !== w || c.height !== h) { c.width = w; c.height = h; } const x = c.getContext("2d");
+  x.globalCompositeOperation = "source-over"; x.clearRect(0, 0, w, h); x.drawImage(base, 0, 0); x.globalCompositeOperation = "source-atop";
+  x.fillStyle = `rgba(255,200,100,${.2 + .06 * Math.sin(frame / 10)})`; x.fillRect(0, 0, w, h);
+  const per = 170, run = 46, t = since % per, pos = -h + (w + 2 * h) * Math.min(1, t / run);
+  if (t < run) for (let yy = 0; yy < h; yy++) { const sx = Math.round(pos - yy * .6);
+    x.fillStyle = "rgba(255,248,220,.6)"; x.fillRect(sx, yy, 5, 1); x.fillStyle = "rgba(255,236,170,.3)"; x.fillRect(sx + 7, yy, 3, 1); }
+  return c; }
 function panelCvKey(k, make) { let c = panelCache.get(k); if (!c) { if (panelCache.size > 80) panelCache.clear(); c = make(); panelCache.set(k, c); } return c; }
 // 6. Console (Chris's art, 2026-11-13): the wooden console the radio stands on, with a brass push-button plate per option; the chosen
 // one is pressed in and lit from within
 function drawConsoleMenu(a, top, hh, best, zx, zy, Z) {
-  if (!TCAB) return; const M = TITLE_MENU, n = M.length, kh = glyphCv("key", "S", C.ink).height, ph = R("tplate")[3];
+  if (!TCAB) return; if (titleSel !== titleSelL) { titleSelL = titleSel; titleSelF = frame; } const M = TITLE_MENU, n = M.length, kh = glyphCv("key", "S", C.ink).height, ph = R("plate")[3];
   // the plates fill the cabinet's name panel: as wide as their words need, shrinking their padding (never the art) to fit
   const px0 = zx(TCAB.x), py0 = zy(TCAB.y), pw = TCAB.w * Z, phh = TCAB.h * Z; let pad = 40, gapF = 20, ws;
   for (; pad >= 16; pad -= 4) { ws = M.map(m => Math.round(textW(m, "key") / FINE) + pad); if (ws.reduce((s, w) => s + w * FINE, 0) + gapF * (n - 1) <= pw - 24) break; }
@@ -2329,8 +2342,8 @@ function drawConsoleMenu(a, top, hh, best, zx, zy, Z) {
   ctx.save(); ctx.globalAlpha = a;
   M.forEach((m, i) => { const w = ws[i], on = i === titleSel, mx = x + FX(w) / 2;
     if (on) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(mx, y + FX(ph) / 2, FX(w) * .7, "255,190,80", .32 * (.8 + .2 * Math.sin(frame / 10))); ctx.restore(); }
-    ctx.drawImage(slice3Cv(on ? "tplate_lit" : "tplate", w, 18), x, y + (on ? 2 : 0), FX(w), FX(ph));
-    ftext(m, mx, y + (on ? 2 : 0) + Math.round((FX(ph) - kh) / 2) - 2, "key", on ? "#3a1806" : C.ink, "c", { under: on ? "rgba(255,240,180,.55)" : C.brassHi, uy: 2 });
+    ctx.drawImage(pushPlateCv(w, on, frame - titleSelF), x, y + (on ? 2 : 0), FX(w), FX(ph));
+    ftext(m, mx, y + (on ? 2 : 0) + Math.round((FX(ph) - kh) / 2) - 1, "key", on ? "#2a1004" : C.ink, "c", { under: on ? "rgba(255,244,200,.7)" : C.brassHi, uy: 2 });
     titleHits.push({ x0: x, x1: x + FX(w), y0: y - 10, y1: y + FX(ph) + 10, i }); x += FX(w) + gapF; });
   ctx.restore();
 }   // (the high score scrolls on the radio's dial instead: over the drawers it looked out of place)
@@ -2579,14 +2592,14 @@ function drawTitleOld() {
   if (TK === 1) ftext(btn("{A} ADD / SEND   {B} BACK   {Y} RETUNE   {START} PAUSE"), cx, FX(y + h) + 14, "ink", C.gold, "c", { outline: C.dark });
 }
 // the small MELT THEM plate under the part cases (world pixels)
-function meltPlate() { const G = shopGeom(), w = Math.min(W - 24, 260), hh = R("tplate")[3], y = Math.min(G.y0 + G.ch + 22, SCENE_H - hh - 4); return { x: Math.round(W / 2 - w / 2), y, w, h: hh, tight: y < G.y0 + G.ch + 22 }; }   // always above the bar
+function meltPlate() { const G = shopGeom(), w = Math.min(W - 24, 260), hh = R("plate")[3], y = Math.min(G.y0 + G.ch + 22, SCENE_H - hh - 4); return { x: Math.round(W / 2 - w / 2), y, w, h: hh, tight: y < G.y0 + G.ch + 22 }; }   // always above the bar
 function meltLamps(cx, cy, r, step, lit, flash) { for (let k = 0; k < MELT_N; k++) { const x = cx + (k - (MELT_N - 1) / 2) * step, on = k < lit;
     ctx.fillStyle = "#140a05"; ctx.beginPath(); ctx.arc(x, cy, r + 3, 0, 6.283); ctx.fill(); ctx.fillStyle = on ? (k === lit - 1 && flash ? "#fff6d8" : "#ff8a24") : "#3a1f10"; ctx.beginPath(); ctx.arc(x, cy, r, 0, 6.283); ctx.fill();
     if (on) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(x, cy, r * 4, "255,140,40", .4); ctx.restore(); } } }
 function drawMeltPlate() { if (!meltOpen()) return; const m = meltPlate(), on = shopFocus === shopChoices.length, r = R("iconL_melter"), ih = m.h - 8, s = ih / r[3];
   ctx.save();
   if (on) { ctx.globalCompositeOperation = "lighter"; bloom(FX(m.x + m.w / 2), FX(m.y + m.h / 2), FX(m.w) * .6, "255,170,70", .3); ctx.globalCompositeOperation = "source-over"; }
-  ctx.drawImage(slice3Cv(on ? "tplate_lit" : "tplate", m.w, 18), FX(m.x), FX(m.y), FX(m.w), FX(m.h));
+  ctx.drawImage(pushPlateCv(m.w, on, frame), FX(m.x), FX(m.y), FX(m.w), FX(m.h));
   const lampsW = 4 * 15 + 12, tx = FX(m.x + 14), room = FX(m.x + m.w - 14) - lampsW - tx;
   ftext("MELT THEM", tx + room / 2, FX(m.y) + Math.round((FX(m.h) - 14 * TK) / 2) - 2, "ink", on ? "#3a1806" : C.ink, "c", { under: C.brassHi, uy: 2 });
   meltLamps(FX(m.x + m.w - 14) - lampsW / 2 - 6, FX(m.y + m.h / 2), 5, 15, S.melt, false); ctx.restore(); }
