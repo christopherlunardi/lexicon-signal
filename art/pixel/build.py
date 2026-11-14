@@ -278,8 +278,17 @@ def main():
         ba = np.asarray(bp).copy(); col = ba[:, bw // 2].copy(); E = 13
         for x in range(17, bw - 17): ba[:E, x] = col[:E]; ba[bh - E:, x] = col[bh - E:]
         bp = Image.fromarray(ba, "RGBA")
+        BAR_RIVETS = [(13, 10), (bw - 13, 10), (13, 80), (bw - 13, 80)]   # where PixelLab painted its own; ours go over them
+        ba = np.asarray(bp).copy()
+        for cx_, cy_ in BAR_RIVETS:   # a dark round seat that hides PixelLab's rivet; the game's rivet is stamped on it below
+            for yy in range(cy_ - 4, cy_ + 5):
+                for xx in range(cx_ - 4, cx_ + 5):
+                    if (xx - cx_) ** 2 + (yy - cy_) ** 2 <= 20: ba[yy, xx, :3] = (42, 12, 2)
+        bp = Image.fromarray(ba, "RGBA"); BAR_RIVET_IMG = bp
         imgs["bar_left"] = bp.crop((0, 0, 39, bh)); imgs["bar_right"] = bp.crop((bw - 39, 0, bw, bh)); imgs["bar_mid"] = bp.crop((bw // 2 - 40, 0, bw // 2 + 41, bh))
         RIVETS.pop("bar_left", None); RIVETS.pop("bar_right", None)
+    if "BAR_RIVETS" in locals():   # the bar's corner rivets: the game's rivet over PixelLab's (left end: the left pair, right end: the right pair)
+        bw_ = BAR_RIVET_IMG.size[0]; RIVETS["bar_left"] = [(x_, y_) for x_, y_ in BAR_RIVETS if x_ < 39]; RIVETS["bar_right"] = [(x_ - (bw_ - 39), y_) for x_, y_ in BAR_RIVETS if x_ >= bw_ - 39]
     for nm, cs in RIVETS.items():
         im_ = imgs[nm].copy()
         for cx, cy in cs: im_.alpha_composite(rivet, (cx - 3, cy - 3))
