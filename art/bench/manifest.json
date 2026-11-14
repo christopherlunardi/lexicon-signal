@@ -1,1 +1,8 @@
-[]
+[
+ {
+  "file": "img/rivet.png",
+  "group": "To do: the rivet used everywhere",
+  "label": "The rivet (7x7, used on every frame and plate)",
+  "name": "rivet"
+ }
+]

@@ -166,6 +166,9 @@ def main():
     for j, row in enumerate(RIV):
         for i, c in enumerate(row):
             if c in RC: rivet.putpixel((i, j), RC[c])
+    # the rivet on the Pixel Bench (Chris 2026-11-14): his painted one (src/bench/rivet.png, exactly as painted) replaces it
+    os.makedirs(ROOT_ART + "bench/img", exist_ok=True); rivet.save(ROOT_ART + "bench/img/rivet.png")
+    if os.path.exists(SRC + "bench/rivet.png"): rivet = Image.open(SRC + "bench/rivet.png").convert("RGBA")
     # the plate's old rivets are painted out with its plain face first (they were smeared and uneven)
     pa = np.asarray(imgs["plate"]).copy(); pw_ = pa.shape[1]
     for c0, c1 in [(3, 10), (pw_ - 11, pw_ - 4)]:
@@ -196,7 +199,6 @@ def main():
     imgs["icon_vowel"] = Image.fromarray(pix.mode_shrink(fa[..., :3].astype(float), fa[..., 3] > 0, hw, hh, vpal), "RGBA")
     # the Gold Key (rare part, 2026-11-13): src/gold_icon_fixed.png when it's drawn; until then a stand-in made here: a gold key cap
     # with a dark question mark, so the game has something to show
-    import os
     if os.path.exists(SRC + "gold_icon_fixed.png"):
         gi = np.asarray(Image.open(SRC + "gold_icon_fixed.png").convert("RGBA")).copy(); mg = (gi[..., 0] > 170) & (gi[..., 1] < 110) & (gi[..., 2] > 170); gi[..., 3] = np.where(mg, 0, 255)
         gold = Image.fromarray(gi, "RGBA")
@@ -242,6 +244,8 @@ def main():
         man.append({"file": "img/" + nm + ".png", "group": "Done: in the game" if os.path.exists(fix) else "To do: frames under the rivets", "label": lab + (" (rivets go at " + ", ".join(f"{x},{y}" for x, y in RIVETS.get(nm, [])) + ")" if nm in RIVETS else ""), "w": im_.width, "h": im_.height, "key": nm})
     # one piece at a time (Chris 2026-11-13): the bench shows only the next one to do; when he sends it, the next goes up
     todo = [m for m in man if not m["group"].startswith("Done")]
+    if not os.path.exists(SRC + "bench/rivet.png"):   # the rivet goes up first (Chris 2026-11-14)
+        todo = [{"file": "img/rivet.png", "group": "To do: the rivet used everywhere", "label": "The rivet (7x7, used on every frame and plate)", "name": "rivet"}] + todo
     json.dump(todo[:1], open(ROOT_ART + "bench/manifest.json", "w"), indent=1)
     # The log box (Chris 2026-11-14): PixelLab's brass-only panel (src/logbox_pixellab.png: no wood rim, symmetrical, empty corner
     # pads for our rivets) with a pixel parchment texture, made by frames.py. It also frames every big parchment panel.
