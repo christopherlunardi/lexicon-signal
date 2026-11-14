@@ -243,6 +243,13 @@ def main():
     # one piece at a time (Chris 2026-11-13): the bench shows only the next one to do; when he sends it, the next goes up
     todo = [m for m in man if not m["group"].startswith("Done")]
     json.dump(todo[:1], open(ROOT_ART + "bench/manifest.json", "w"), indent=1)
+    # The log box (Chris 2026-11-14): PixelLab's brass-only panel (src/logbox_pixellab.png: no wood rim, symmetrical, empty corner
+    # pads for our rivets) with a pixel parchment texture, made by frames.py. It also frames every big parchment panel.
+    # The radio's screen bezel is redrawn clean in code (frames.bezel), the rest of the radio untouched.
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import frames
+    if os.path.exists(SRC + "logbox_pixellab.png"):
+        imgs["logbox"] = frames.logbox(SRC + "logbox_pixellab.png"); RIVETS["logbox"] = [(7, 7), (185, 7), (7, 74), (185, 74)]
+    imgs["radio"] = Image.fromarray(frames.bezel(np.asarray(imgs["radio"].convert("RGBA")).copy(), 118, 47, 362, 215), "RGBA")
     # The bar, redrawn as real pixel art (Chris 2026-11-14): src/bar_panel_pixellab.png is PixelLab's create_ui_asset panel (341x192,
     # palette locked to 21 colours taken from the old bar, the old bar as its style reference), src/bar_panel.png the bar cropped
     # out of it (329x93). Cut here into the same three pieces the game builds the bar from: a left end, a middle that repeats and a

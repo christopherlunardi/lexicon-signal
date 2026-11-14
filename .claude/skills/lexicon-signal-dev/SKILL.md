@@ -464,6 +464,9 @@ the same batch.
   stretch test at the game's sizes; only fit it after he approves. Plain shapes are drawn in code instead; the font stays Silkscreen.
   Done: the bottom bar (src/bar_panel_pixellab.png, cropped to src/bar_panel.png 329x93; build.py cuts bar_left / bar_mid /
   bar_right from it, with its own rivets, over Chris's bench paint of the old bar).
+  Done: the log box (src/logbox_pixellab.png: brass only, symmetrical, empty corner pads for our rivets; frames.logbox recolors its
+  parchment to the old tones and adds a pixel parchment tile + stepped aged edge; it also frames every big parchment panel) and the
+  radio's screen bezel (frames.bezel redraws the brass ring round the glass in code and cleans the glass just inside it).
 - Center Tap (gold part, id tap, Chris 2026-11-14): the middle key (TAP_I 12) holds a charge for the whole run (S.tap). A word through
   it first adds its length to the charge, then scores the whole charge as flat points (scoreOf .tap). drawTapRing: a gold ring round the
   middle key and the charge on a dark chip at its top right. Icon: its own
