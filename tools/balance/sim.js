@@ -74,7 +74,7 @@ function playNight(S, bot, st) {
     if (S.retunes > 0 && (!best || best.pts < per * .55)) { S.retunes--; fillGrid(S); st.retunes++; continue; }
     if (!best) { S.words = 0; break; }
     // a finisher: if a word clears the night, send the one that clears it (the biggest; overdrive helps)
-    S.score += best.pts; S.total += best.pts; st.words.push(best.word.length); st.pts.push(best.pts);
+    S.score += best.pts; S.total += best.pts; st.words.push(best.word.length); st.pts.push(best.pts); (st.byNight[S.night] = st.byNight[S.night] || []).push(best.pts / S.target);
     const used = best.path; S.words--; collapse(S, used);
     if (S.score >= S.target) { S.over = S.score >= S.target * OVERDRIVE; const b = nightBonus(S); S.total += b; st.bonus += b; return true; }
   }
@@ -84,7 +84,7 @@ function shop(S, pickFn) { const bag = PARTS.slice(), ch = []; while (ch.length 
   const kinds = new Set(S.parts), ok = ch.filter(p => kinds.has(p) || kinds.size < SLOTS);
   if (!ok.length) { S.melt++; if (S.melt >= MELT_N) { S.melt = 0; const st = [...kinds].filter(k => k !== "gold"); if (st.length) S.parts.push(pickFn(st, S)); } return null; }
   const p = pickFn(ok, S); S.parts.push(p); return p; }
-function run(bot, opts = {}) { const S = mk(opts.parts || []); const st = { nights: 0, words: [], pts: [], retunes: 0, bonus: 0, picks: [], over: 0, nightScores: [] };
+function run(bot, opts = {}) { const S = mk(opts.parts || []); const st = { nights: 0, words: [], pts: [], retunes: 0, bonus: 0, picks: [], over: 0, nightScores: [], byNight: {} };
   const pickFn = opts.pick || ((ch) => ch[(rnd() * ch.length) | 0]);
   while (S.night <= (opts.maxNight || 40)) { S.over = false; const ok = playNight(S, bot, st); st.nightScores.push(S.score / S.target);
     if (!ok) break; st.nights = S.night; if (S.over) st.over++;
