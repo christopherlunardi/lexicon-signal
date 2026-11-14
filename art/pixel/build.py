@@ -275,6 +275,11 @@ def main():
         sa_[hi_, :3] = B_[4]; sa_[mid_, :3] = B_[3]
         so = Image.fromarray(sa_, "RGBA")
         imgs["slot"] = so; RIVETS["slot"] = [(5, 5), (53, 5), (5, 58), (53, 58)]
+        # the toned frame goes on the Pixel Bench for Chris to redo its corners (2026-11-14); what he sends back is src/bench/slot2.png
+        if os.path.exists(SRC + "bench/slot2.png"): imgs["slot"] = Image.open(SRC + "bench/slot2.png").convert("RGBA")
+        else:
+            so.save(ROOT_ART + "bench/img/slot2.png")
+            json.dump([{"file": "img/slot2.png", "group": "To do: frames under the rivets", "label": "Part window, toned brass: the corners (rivets go at 5,5, 53,5, 5,58, 53,58)", "w": so.width, "h": so.height, "key": "slot2"}], open(ROOT_ART + "bench/manifest.json", "w"), indent=1)
     if os.path.exists(SRC + "logbox_pixellab.png"):
         imgs["logbox"] = frames.logbox(SRC + "logbox_pixellab.png"); RIVETS["logbox"] = [(6, 6), (185, 6), (6, 74), (185, 74)]
     # main screen: the ring's inner edge is exactly the glass the game draws in (glass0..glass1); the dial screen above it gets the

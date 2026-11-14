@@ -1,1 +1,10 @@
-[]
+[
+ {
+  "file": "img/slot2.png",
+  "group": "To do: frames under the rivets",
+  "label": "Part window, toned brass: the corners (rivets go at 5,5, 53,5, 5,58, 53,58)",
+  "w": 59,
+  "h": 64,
+  "key": "slot2"
+ }
+]
