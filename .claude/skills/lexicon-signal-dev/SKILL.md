@@ -278,6 +278,9 @@ the same batch.
 - Fonts: Chris doesn't want outside display fonts on the game screen (2026-11-12: "big blocky text... doesn't match anything").
   The pause menu is a logbox parchment panel in the game's own "key" lettering; the start prompt is back to the dial's "dot"
   lettering. The smooth fonts (HOWF) stay only on the How to Play cards, which he liked.
+- Words on the phone (Chris 2026-11-14): when the handheld shell (on-screen controller) is showing, every prompt and tip uses the
+  controller's words (PRESS A, never TAP), though taps still work: SHELL (checked in layout), TAPW() = talk about tapping (touch and
+  no shell, e.g. the installed web app on a phone). Tips are filtered (tipFits): CLICK tips only on a computer, TAP tips only with TAPW().
 - The retune knob as a place (Chris 2026-11-14): with buttons, right past the last column of the bottom two rows lands on the right knob (higher rows still wrap) (KNOB,
   drawKnobFocus: a ring and a card, RETUNE / SWAP EVERY LETTER FOR NEW ONES / PRESS A: N LEFT TONIGHT); A retunes, left or B goes
   back. Night 1's log adds "Stuck? Press Y to retune" (tap the right knob on touch). Wording: no "tune in" anywhere (Chris didn't

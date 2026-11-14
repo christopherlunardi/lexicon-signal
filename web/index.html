@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 88;</script><script>
+<script>window.LEX_BUILD = 89;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -324,7 +324,7 @@ function wrap(s, kind, maxW) { const out = []; let ln = ""; for (const w of Stri
 
 /* ================= layout ================= */
 const L = {};
-function layout() {
+function layout() { shellCheck();
   if (!artReady) return;   // never build the room before the art has fully loaded (a fresh load used to build it from a blank image)
   const wrapEl = $("screenWrap"); const ww = wrapEl.clientWidth || 640, wh = wrapEl.clientHeight || 360;
   const tall = ww / wh < 1.7, nH = tall ? 495 : 425, nW = Math.max(532, Math.min(950, Math.round(nH * ww / wh / 2) * 2));
@@ -556,7 +556,7 @@ function newRun() { S = fresh("play"); log("On the air."); plStart(); startNight
 function startNight() {
   S.score = 0; S.shown = 0; S.over = false; S.nw = []; S.startTotal = S.total; S.firstWord = true; S.target = targetFor(S.night); S.words = maxWords(); S.retunes = maxRetunes(); S.path = [];
   if (S.grid.length === NN && S.night > 1) ensureHot(); else fillGrid(true);   // the glass keeps its letters from night to night; a new run starts fresh
-  S.phase = "play"; INSPECT.on = false; KNOB.on = false; dialFlash = null; nightCard = 170; log(`Night ${S.night}: beam ${S.target} signal to the tower in ${S.words} words.`); if (S.night === 1 && !HOW.on) log(usingTouch ? "Stuck? Tap the right knob to retune: all new letters." : btn("Stuck? Press {Y} to retune: all new letters."));
+  S.phase = "play"; INSPECT.on = false; KNOB.on = false; dialFlash = null; nightCard = 170; log(`Night ${S.night}: beam ${S.target} signal to the tower in ${S.words} words.`); if (S.night === 1 && !HOW.on) log(TAPW() ? "Stuck? Tap the right knob to retune: all new letters." : btn("Stuck? Press {Y} to retune: all new letters."));
 }
 
 /* ================= actions ================= */
@@ -770,7 +770,7 @@ function drawReport() {
   const wy = ly + 8, best = rows.reduce((b, r) => (!b || r.p > b.p ? r : b), null);
   if (t >= 22) { const ws = `${cnt} WORD${cnt === 1 ? "" : "S"}`; RT.val(ws, in0, my(wy), "l", C.ink);
     if (best && t >= T.rd) RT.lab(`BEST ${best.w.toUpperCase()} +${best.p}`, in0 + RT.valW(ws) + 20, my(wy), "l", C.inkSoft);
-    if (nW) { const lab = (REPORT.open ? "HIDE" : "SHOW") + (usingTouch ? "" : ` (${BTN("Y")})`), chW = textW(lab, "ink") + 16, chX = in1 - chW, cy = my(wy) - Math.round(ih / 2);
+    if (nW) { const lab = (REPORT.open ? "HIDE" : "SHOW") + (TAPW() ? "" : ` (${BTN("Y")})`), chW = textW(lab, "ink") + 16, chX = in1 - chW, cy = my(wy) - Math.round(ih / 2);
       ctx.fillStyle = REPORT.open ? "rgba(150,40,26,.18)" : "rgba(110,60,20,.18)"; ctx.beginPath(); ctx.roundRect(chX, cy - 5, chW, ih + 10, 6); ctx.fill();
       ctx.strokeStyle = "rgba(110,60,20,.45)"; ctx.lineWidth = 2; ctx.stroke(); ftext(lab, chX + 8, cy, "ink", REPORT.open ? C.inkRed : C.ink, "l"); }
     REPORT.hit = { x0: lx, x1: lx + lw, y0: wy, y1: wy + lh }; }
@@ -838,7 +838,7 @@ function drawReport() {
     ctx.save(); ctx.translate(px2, py); ctx.scale(z, z); ftext("+" + fmtNum(S.total - S.startTotal), 0, -14, "key", C.hot, "c", { outline: C.dark }); ctx.restore(); }
   // nameplates on the top and bottom edges
   edgePlate(title, "key", cx, FX(y), C.ink);
-  const ready = t >= T.ready, pr = ready ? (usingTouch ? "TAP TO PICK A PART" : btn("PRESS {A}: PICK A PART")) : "TALLYING...";
+  const ready = t >= T.ready, pr = ready ? (TAPW() ? "TAP TO PICK A PART" : btn("PRESS {A}: PICK A PART")) : "TALLYING...";
   edgePlate(pr, "ink", cx, FX(y + hh), ready && (frame >> 5) & 1 ? C.inkRed : C.ink);
   drawScoreDrums(true);   // the run score, on top of the dimmed room
 }
@@ -891,7 +891,7 @@ function draw() {
     if (was < 1 && barShow === 1 && want === 1) { Sound.thud(3); shake = Math.max(shake, 4); }
     const u = 1 - barShow, e = u * u; L.barY = SCENE_H + Math.round(e * (BAR_H + 4)); } ctx.setTransform(RS, 0, 0, RS, 0, 0); wctx.imageSmoothingEnabled = false; ctx.imageSmoothingEnabled = false;
   if (S.phase === "splash") { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, CVW, CVH);
-    if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO START" : "PRESS ANY BUTTON", CVW / 2, CVH / 2 - 8, "dot", C.amber, "c"); return; }
+    if ((frame >> 5) & 1) ftext(TAPW() ? "TAP TO START" : "PRESS ANY BUTTON", CVW / 2, CVH / 2 - 8, "dot", C.amber, "c"); return; }
   const sx = shake > 0 ? Math.round((Math.random() - .5) * Math.min(2, shake)) : 0;
   wctx.fillStyle = "#000"; wctx.fillRect(0, 0, W, H); wctx.drawImage(roomCv, sx, 0);
   wctx.save(); wctx.translate(sx, 0); drawBeacon(); drawRadioLive(); drawGrid(); drawSparks(); wctx.restore();
@@ -2061,18 +2061,21 @@ const TIPS = [
   "GOLD PARTS ARE RARE: YOU ONLY GET ONE",
   "THE GOLD KEY CAN BE ANY LETTER YOU NEED",
   "EVERY RADIO PART STACKS: EACH COPY ADDS THE SAME AGAIN",
-  "TAP A PART'S SLOT, OR PRESS DOWN PAST THE BOTTOM ROW, TO READ IT",
+  "PRESS DOWN PAST THE BOTTOM ROW TO READ YOUR PARTS",
+  "TAP A PART'S SLOT TO READ IT",
   "PRESS {Y} TO RETUNE: EVERY LETTER SWAPS FOR NEW ONES",
   "FROM THE BOTTOM ROWS, PRESS RIGHT PAST THE LAST COLUMN TO REACH THE RETUNE KNOB",
   "THE VOWEL ANTENNA MAKES EVERY VOWEL WORTH ONE MORE",
   "THE TREBLE SLIDER ADDS 3 FOR EVERY LETTER WORTH 3 OR MORE",
   "THE LONG WAVE COIL DOUBLES WORDS OF 5 LETTERS OR MORE, AND EACH COPY ADDS A HALF",
 ];
-let tipI = (Math.random() * TIPS.length) | 0;
+let tipI = TIPS.findIndex(t => !/\b(CLICK|TAP)\b/.test(t));
 // every other message on the title dial is your high score (once you have one), the rest are tips
 let tipBest = false;
 const tipNow = () => tipBest && bestLine() ? bestLine() + "  *  BEAT IT" : btn(TIPS[tipI]);
-function nextTip() { tipBest = !tipBest; let k; do k = (Math.random() * TIPS.length) | 0; while (k === tipI && TIPS.length > 1); tipI = k; }
+// a tip has to fit what you're playing with: CLICK tips only on a computer, TAP tips only when tapping is how you play (Chris 2026-11-14)
+const tipFits = (t) => /\bCLICK/.test(t) ? INPUT === "keys" && !usingTouch : /\bTAP\b/.test(t) ? TAPW() : true;
+function nextTip() { tipBest = !tipBest; let k, g = 0; do k = (Math.random() * TIPS.length) | 0; while ((k === tipI || !tipFits(TIPS[k])) && g++ < 60); tipI = k; }
 // random flicker for the title glass letters: each letter keeps its own clock for when it next stutters, and how
 let glassFl = null, titleTipX = null;
 async function loadTitleGlass() { try { const LA = window.LEX_ASSETS, j = LA ? LA.glassJson : await (await fetch("art/title/glass.json")).json(); const ld = (s) => { const i = new Image(); i.src = s; return i.decode().then(() => i); };
@@ -2123,7 +2126,7 @@ function logoGlow(cx, top, a, rgb) { if (!logoCv) buildLogo(); ctx.save(); ctx.g
   for (let x = -lw / 2 + LP / 2; x < lw / 2; x += LP) bloom(cx + x, top + 55, 110, rgb || "255,170,70", a * .35); bloom(cx, top + logoCv.height + 40, 160, "255,170,70", a * .3); ctx.restore(); }
 function pressLines(cx, y, a) {
   if (a <= 0) return; ctx.save(); ctx.globalAlpha = a;
-  if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO PLAY" : btn("PRESS {A} TO PLAY"), cx, y, "ink", C.gold, "c", { outline: C.dark });
+  if ((frame >> 5) & 1) ftext(TAPW() ? "TAP TO PLAY" : btn("PRESS {A} TO PLAY"), cx, y, "ink", C.gold, "c", { outline: C.dark });
   const b = bestLine(); if (b) ftext(b, cx, y + Math.round(26 * TK), "ink", C.amber, "c", { outline: C.dark }); ctx.restore();
 }
 function shade(a) { ctx.fillStyle = `rgba(6,3,2,${a})`; ctx.fillRect(0, 0, CVW, FX(L.barY)); }
@@ -2177,7 +2180,7 @@ function drawTitle() {
       const end = drawLogo(cx, top2, { sig: ease((T - 70) / 25), waves: 0, sigCol: C.inkRed }); ctx.restore();
       const body = wrap("Spell words in the radio glass. Each word beams signal to the tower. Reach the night's target before the lamps go dark.", "ink", FX(w) - 60);
       const n = Math.max(0, Math.floor((T - 95) * 2)); let left = n, ty = end + 14; body.forEach(s => { if (left > 0) ftext(s.slice(0, left), cx, ty, "ink", C.ink, "c"); left -= s.length; ty += Math.round(22 * TK); });
-      if (T > 130 && (frame >> 5) & 1) ftext(usingTouch ? "TAP TO PLAY" : btn("PRESS {A} TO PLAY"), cx, ty + 10, "ink", C.inkRed, "c"); }
+      if (T > 130 && (frame >> 5) & 1) ftext(TAPW() ? "TAP TO PLAY" : btn("PRESS {A} TO PLAY"), cx, ty + 10, "ink", C.inkRed, "c"); }
   }
 }
 // radio close-up: the room seen closer (every art pixel 3 fine pixels, a clean 1.5x), the radio centered and filling the screen. The
@@ -2402,7 +2405,7 @@ function boardKey(k) { if (!BOARD.on) return false; if (k === "a" || k === "b" |
 function drawBoard() {   // the best ten runs on this device, on a parchment sheet with its nameplate
   const a = loadScores(), ih = Math.round(14 * TK), lh = Math.round(24 * TK), rows = a.length ? a : null, w = Math.min(W - 16, 400);
   ctx.save(); ctx.fillStyle = "rgba(6,4,10,.6)"; ctx.fillRect(0, 0, CVW, CVH);
-  const sh = sheet(w, 8 + (rows ? rows.length : 1) * lh + 8, "HIGH SCORES", C.inkRed, usingTouch ? "TAP TO GO BACK" : btn("PRESS {B}: GO BACK"), H), L0 = sh.L0, R0 = sh.R0;
+  const sh = sheet(w, 8 + (rows ? rows.length : 1) * lh + 8, "HIGH SCORES", C.inkRed, TAPW() ? "TAP TO GO BACK" : btn("PRESS {B}: GO BACK"), H), L0 = sh.L0, R0 = sh.R0;
   let ty = sh.top + 8;
   if (!rows) { ftext("NO RUNS YET. GO PLAY ONE!", sh.cx, ty + Math.round((lh - ih) / 2), "ink", C.ink, "c"); }
   else rows.forEach((r, i) => { const yy = ty + i * lh, tt = yy + Math.round((lh - ih) / 2); if (i & 1) { ctx.fillStyle = "rgba(110,60,20,.10)"; ctx.fillRect(L0, yy, R0 - L0, lh); }
@@ -2538,8 +2541,8 @@ function drawHowCard() {
   if (dx > kx + 6 * u) for (let i = 0; i < n; i++) { ctx.fillStyle = i === HOW.card ? C.inkRed : C.inkSoft; const px = dx + i * dot * 1.8 + (i > HOW.card ? dot * 1.4 : 0); ctx.beginPath(); ctx.roundRect(px, ty0 - dot / 2, i === HOW.card ? dot * 2.4 : dot, dot, dot / 2); ctx.fill(); }
   ctx.font = bf; ctx.fillStyle = C.ink; ctx.textBaseline = "top"; let y = cy0 - slide + PAD + th + 4 * u; lines.forEach(s => { ctx.fillText(s, X, y); y += lh; });
   const last = HOW.card === n - 1; ctx.font = `${Math.round(size * .82 * u)}px ${HOWF.body}`; y += 4 * u;
-  ctx.fillStyle = C.inkSoft; ctx.fillText(usingTouch ? (HOW.card ? "← tap left: back" : "← tap left: title") : (HOW.card ? "B  back" : "B  title"), X, y);
-  ctx.textAlign = "right"; ctx.fillStyle = C.inkRed; ctx.fillText((usingTouch ? "tap right: " : "A  ") + (last ? "done" : "next") + ((frame >> 4) & 1 ? " →" : "  →"), cx0 + cw - PAD - 6, y);
+  ctx.fillStyle = C.inkSoft; ctx.fillText(TAPW() ? (HOW.card ? "← tap left: back" : "← tap left: title") : (HOW.card ? "B  back" : "B  title"), X, y);
+  ctx.textAlign = "right"; ctx.fillStyle = C.inkRed; ctx.fillText((TAPW() ? "tap right: " : "A  ") + (last ? "done" : "next") + ((frame >> 4) & 1 ? " →" : "  →"), cx0 + cw - PAD - 6, y);
   ctx.restore();
 }
 function drawTitleOld() {
@@ -2548,7 +2551,7 @@ function drawTitleOld() {
   dim(); octx.drawImage(panelCv("logbox", w, h), x, y); blitOver();
   const cx = FX(W / 2); let ty = FX(y) + 26; ftext("LEXICON SIGNAL", cx, ty, "key", C.ink, "c", { under: C.brassHi, uy: 3 }); ty += 48;
   body.forEach(s => { ftext(s, cx, ty, "ink", C.ink, "c"); ty += lh; }); ty += 16;
-  if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO PLAY" : btn("PRESS {A} TO PLAY"), cx, ty, "ink", C.inkRed, "c"); ty += lh;
+  if ((frame >> 5) & 1) ftext(TAPW() ? "TAP TO PLAY" : btn("PRESS {A} TO PLAY"), cx, ty, "ink", C.inkRed, "c"); ty += lh;
   ftext(bestLine(), cx, ty, "ink", C.inkSoft, "c");
   if (TK === 1) ftext(btn("{A} ADD / SEND   {B} BACK   {Y} RETUNE   {START} PAUSE"), cx, FX(y + h) + 14, "ink", C.gold, "c", { outline: C.dark });
 }
@@ -2586,7 +2589,7 @@ function drawMelt() {
     ctx.globalCompositeOperation = "lighter"; bloom(ix + ir[2] * s2 / 2, iy + ir[3] * s2 / 2, FX(60), "255,190,80", .5 * k); ctx.globalCompositeOperation = "source-over";
     ctx.drawImage(atlasImg, ir[0], ir[1], ir[2], ir[3], ix, iy, ir[2] * s2, ir[3] * s2); }
   if (t > done + 20) { ftext(MELT.full ? "FULL! PICK A PART TO UPGRADE" : `MELTER ${S.melt} OF ${MELT_N}`, CVW / 2, msgY, "ink", C.gold, "c", { outline: C.dark });
-    if ((frame >> 5) & 1) ftext(usingTouch ? "TAP TO GO ON" : btn("PRESS {A} TO GO ON"), CVW / 2, promptY, "ink", C.amber, "c", { outline: C.dark }); }
+    if ((frame >> 5) & 1) ftext(TAPW() ? "TAP TO GO ON" : btn("PRESS {A} TO GO ON"), CVW / 2, promptY, "ink", C.amber, "c", { outline: C.dark }); }
   ctx.restore(); }
 // the Molten Upgrade: pick one of your parts to gain a copy (like the swap screen, but adding)
 // the Molten Upgrade, back in the picker's card view (Chris 2026-11-13): one display case like a part's, gold-framed, the molten
@@ -2612,7 +2615,7 @@ function drawUpgrade() {
   ctx.strokeStyle = (frame >> 4) & 1 ? C.hot : C.gold; ctx.lineWidth = 3; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 16; ctx.beginPath(); ctx.roundRect(FX(x) - 7, FX(y + lift) - 7, FX(cw) + 14, FX(ch) + 14, 9); ctx.stroke();
   ctx.restore();
   ftext("THE MELTER PAID OUT", FX(W / 2), 22, "ink", C.hot, "c", { outline: C.dark });
-  ftext(usingTouch ? "TAP A PART IN THE BAR" : btn("LEFT / RIGHT: CHOOSE A PART   {A}: UPGRADE IT"), FX(W / 2), FX(y + ch) + 26, "ink", C.gold, "c", { outline: C.dark });
+  ftext(TAPW() ? "TAP A PART IN THE BAR" : btn("LEFT / RIGHT: CHOOSE A PART   {A}: UPGRADE IT"), FX(W / 2), FX(y + ch) + 26, "ink", C.gold, "c", { outline: C.dark });
   // the part in the bar that gains the copy
   const [, , sw, shh] = R("slot"), sx = FX(L.slotX + swapFocus * L.slotStep), sy = FX(L.barY + L.slotY);
   ctx.save(); ctx.strokeStyle = (frame >> 3) & 1 ? "#ffd24a" : "#fff2c0"; ctx.lineWidth = 4; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 14; ctx.strokeRect(sx - 4, sy - 4, FX(sw) + 8, FX(shh) + 8); ctx.restore();
@@ -2625,7 +2628,7 @@ function drawSwap() {
   ftext("SLOTS FULL", tx, ty, "key", C.ink, "c", { under: C.brassHi, uy: 3 }); ty += 50;
   wrap(`To fit the ${swapNew.name}, take one part out.`, "ink", FX(w - r[2] - 40) - 40).forEach(s => { ftext(s, tx, ty, "ink", C.ink, "c"); ty += lh; });
   const out = partSlots()[swapFocus]; if (out) ftext(`OUT: ${PART[out.id].name}${out.n > 1 ? " X" + out.n : ""}`.toUpperCase(), tx, ty + 6, "ink", C.inkRed, "c");
-  ftext(usingTouch ? "TAP A PART BELOW. TAP HERE TO GO BACK." : "LEFT / RIGHT TO CHOOSE, A TAKE OUT, B BACK", FX(W / 2), FX(y + h) + 16, "ink", C.gold, "c", { outline: C.dark });
+  ftext(TAPW() ? "TAP A PART BELOW. TAP HERE TO GO BACK." : "LEFT / RIGHT TO CHOOSE, A TAKE OUT, B BACK", FX(W / 2), FX(y + h) + 16, "ink", C.gold, "c", { outline: C.dark });
   // the slot that would go: a blinking frame and "OUT" above it
   const [, , sw, sh] = R("slot"), sx = FX(L.slotX + swapFocus * L.slotStep), sy = FX(L.barY + L.slotY);
   ctx.save(); ctx.strokeStyle = (frame >> 3) & 1 ? "#ff6a50" : "#ffd27a"; ctx.lineWidth = 4; ctx.shadowColor = "#ff5a40"; ctx.shadowBlur = 14; ctx.strokeRect(sx - 4, sy - 4, FX(sw) + 8, FX(sh) + 8); ctx.restore();
@@ -2746,7 +2749,7 @@ function drawShop() {
   ctx.restore();
   // the icons, the writing and the lamp labels only change with the choice too: a second cached layer at fine size (shopTop),
   // drawn over the live glow; only the chosen case's blinking frame is drawn every frame
-  const tk = [bk, usingTouch, S.night, S.over, partSlots().length >= PART_SLOTS, partSlots().map(s => s.id + s.n).join()].join("|");
+  const tk = [bk, TAPW(), S.night, S.over, partSlots().length >= PART_SLOTS, partSlots().map(s => s.id + s.n).join()].join("|");
   if (shopTop.k !== tk) { shopTop.k = tk; shopTop.cv.width = CVW; shopTop.cv.height = CVH; const c = shopTop.cv.getContext("2d"); c.imageSmoothingEnabled = false; TXT = c;
     shopChoices.forEach((p, k) => { const g = geo(k), r = R(iconOf(p.id));
       c.drawImage(atlasImg, r[0], r[1], r[2], r[3], FX(g.x + G.cw / 2 - r[2] / 2), FX(g.y + 14 + (64 - r[3]) / 2), FX(r[2]), FX(r[3])); });
@@ -2760,7 +2763,7 @@ function drawShop() {
       // what fitting it will do to the slots, as a small lamp label at the foot
       cardTag(c, p, g, G, cx);
       if (!g.f) { c.fillStyle = "rgba(8,5,3,.38)"; c.fillRect(FX(g.x), FX(g.y), FX(G.cw), FX(G.ch)); } });
-    if (!(partSlots().length >= PART_SLOTS && meltPlate().tight)) ftext(usingTouch ? "TAP A PART" : partSlots().length >= PART_SLOTS ? btn("LEFT / RIGHT TO LOOK, DOWN TO MELT, {A} TO PICK") : btn("LEFT / RIGHT TO LOOK, {A} TO FIT"), FX(W / 2), FX(G.y0 + G.ch) + 8, "ink", C.gold, "c", { outline: C.dark });
+    if (!(partSlots().length >= PART_SLOTS && meltPlate().tight)) ftext(TAPW() ? "TAP A PART" : partSlots().length >= PART_SLOTS ? btn("LEFT / RIGHT TO LOOK, DOWN TO MELT, {A} TO PICK") : btn("LEFT / RIGHT TO LOOK, {A} TO FIT"), FX(W / 2), FX(G.y0 + G.ch) + 8, "ink", C.gold, "c", { outline: C.dark });
     TXT = null; }
   ctx.drawImage(shopTop.cv, 0, 0, CVW, CVH); drawMeltPlate();
   shopChoices.forEach((p, k) => { const g = geo(k); if (!p.rare) return;   // rare parts: a gold line round the case (style 0), or the gold looks
@@ -2774,7 +2777,7 @@ function drawOver() {   // DEAD AIR: the run score big and lit, then how the run
   const body = [`Faded on night ${S.night} at ${S.score} of ${S.target}.`, S.best.word ? `Best word ${S.best.word} +${S.best.pts}.` : ""].flatMap(s => s ? wrap(s, "ink", cw) : []);
   const heroH = 12 + ih + 10 + 56 + 14 + 14, bodyH = heroH + 18 + body.length * lh + 4;
   dim(); blitOver();
-  const sh = sheet(w, bodyH, "DEAD AIR", C.inkRed, usingTouch ? "TAP TO PLAY AGAIN" : btn("PRESS {A}: PLAY AGAIN"));
+  const sh = sheet(w, bodyH, "DEAD AIR", C.inkRed, TAPW() ? "TAP TO PLAY AGAIN" : btn("PRESS {A}: PLAY AGAIN"));
   const nb = S.rank === 1, rk = S.rank ? (nb ? "NEW HIGH SCORE!" : `NUMBER ${S.rank} ON YOUR BOARD`) : "";
   let ty = sh.top + scoreDisplay(sh.L0, sh.top, sh.R0 - sh.L0, "RUN SCORE", fmtNum(S.total), C.amber, rk, nb && (frame >> 3) & 1 ? C.hot : C.gold) + 18;
   body.forEach(s => { ftext(s, sh.cx, ty, "ink", C.ink, "c"); ty += lh; });
@@ -2787,6 +2790,11 @@ let usingButtons = false, usingTouch = matchMedia("(pointer:coarse)").matches;
 // shell's buttons) says A B X Y START; "keys" (a keyboard) says Z X V C ESC (arrows move); touch says TAP. BTN(name) gives the label,
 // btn(text) swaps {A} {B} {X} {Y} {START} in a text for it.
 let INPUT = usingTouch ? "touch" : "keys";
+// the phone's handheld shell (Chris 2026-11-14): when the on-screen controller is showing, the game is played like a controller, so
+// every prompt and tip uses the controller's words (PRESS A, not TAP), even though taps still work. TAPW() = talk about tapping.
+let SHELL = false;
+const shellCheck = () => { const pd = document.querySelector(".pad"); SHELL = !!pd && getComputedStyle(pd).display !== "none"; };
+const TAPW = () => usingTouch && !SHELL;
 const KEYNAME = { A: "Z", B: "X", X: "V", Y: "C", START: "ESC" };
 const BTN = (b) => INPUT === "keys" ? KEYNAME[b] : b;
 const btn = (t) => String(t).replace(/\{(A|B|X|Y|START)\}/g, (m, b) => BTN(b));
