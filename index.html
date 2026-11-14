@@ -2993,9 +2993,9 @@ const Sound = (() => {
   // rain on the window: a soft wash of filtered noise, a fine hiss on top, and now and then a drip on the sill
   function startRain() { const t = ac.currentTime;
     const mk = (type, f, q, g) => { const s = ac.createBufferSource(); s.buffer = nb; s.loop = true; s.playbackRate.value = .5 + Math.random() * .1; const fl = ac.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q; const gg = ac.createGain(); gg.gain.setValueAtTime(.0001, t); gg.gain.exponentialRampToValueAtTime(g, t + 3); s.connect(fl); fl.connect(gg); gg.connect(master); s.start(t); return gg; };
-    const wash = mk("lowpass", 1100, .5, .07), hiss = mk("bandpass", 6500, .4, .018);
-    const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = .07; lg.gain.value = .02; lfo.connect(lg); lg.connect(wash.gain); lfo.start();
-    setInterval(() => { if (!ac || Math.random() < .4) return; const t2 = ac.currentTime + Math.random() * .8, f = 1400 + Math.random() * 1600; osc("sine", f, t2, .002, .012 + Math.random() * .015, .06, sfx, f * .55); }, 700); }
+    const wash = mk("lowpass", 1100, .5, .025), hiss = mk("bandpass", 6500, .4, .0065);   // (a third of what it was: Chris 2026-11-14, too loud)
+    const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = .07; lg.gain.value = .007; lfo.connect(lg); lg.connect(wash.gain); lfo.start();
+    setInterval(() => { if (!ac || Math.random() < .4) return; const t2 = ac.currentTime + Math.random() * .8, f = 1400 + Math.random() * 1600; osc("sine", f, t2, .002, .005 + Math.random() * .006, .06, sfx, f * .55); }, 700); }
   const chordNow = () => CH[(((beatN / 4) | 0) / 2 | 0) % 4];
   return { ensure, ac: () => ac, out: () => master, muted: () => muted,
     music() { if (!ac) return; this.rain(); if (playing) return; playing = true; nextBeat = ac.currentTime + .1; setInterval(schedule, 60); },

@@ -1539,31 +1539,31 @@
      "id": "r1",
      "status": "open",
      "question": "Which music should play under the game while you spell (the main play screen)?",
-     "found": "Chris wants chill 1930s-40s jazz, low and smooth, like a band playing in the next room. All four are made by the game itself as it runs (synthesized, no recordings, so the game stays small and the music never repeats exactly), heard through a wall: the highs rolled off and a little room echo, with the room's rain under it as in the game. Each clip is 75 seconds. They're turned up here so you can hear them; in the game they'd sit low under the rain. Pick one (or mix: say what you like from each) and I'll tune it in a second round.",
+     "found": "Chris wants chill 1930s-40s jazz, low and smooth, like a band playing in the next room. All four are made by the game itself as it runs (synthesized, no recordings, so the game stays small and the music never repeats exactly), heard through a wall: the highs rolled off and a little room echo, with the room's rain under it, turned down to about a third of its old level (Chris found it too loud over the music; the game's rain gets the same cut when the music goes in). Each clip is 75 seconds. They're turned up here so you can hear them; in the game they'd sit low under the rain. Pick one (or mix: say what you like from each) and I'll tune it in a second round.",
      "options": [
       {
        "id": "1",
        "title": "Piano trio, late ballad",
        "note": "Piano, brushes and an upright bass at 70 BPM, a slow minor tune with the piano taking the melody now and then.",
-       "audio": "img/music-r1/trio.mp3"
+       "audio": "img/music-r1/trio-2.mp3"
       },
       {
        "id": "2",
        "title": "Small band with a muted horn",
        "note": "A gentle swing at 96 BPM: walking bass, brushes and ride, piano chords, and a cup-muted trumpet playing short phrases every few bars.",
-       "audio": "img/music-r1/horn.mp3"
+       "audio": "img/music-r1/horn-2.mp3"
       },
       {
        "id": "3",
        "title": "Old 78 record through the wall",
        "note": "84 BPM (your tempo): the band with a clarinet, as an old record would sound from the next room: narrow, warm, crackling, the pitch wavering slightly.",
-       "audio": "img/music-r1/record.mp3"
+       "audio": "img/music-r1/record-2.mp3"
       },
       {
        "id": "4",
        "title": "Vibraphone after hours",
        "note": "Very slow (62 BPM) and dreamy: a vibraphone with its tremolo over soft bass, the lightest brushes, a few piano chords.",
-       "audio": "img/music-r1/vibes.mp3"
+       "audio": "img/music-r1/vibes-2.mp3"
       }
      ]
     }
