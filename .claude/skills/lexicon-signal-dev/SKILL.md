@@ -261,7 +261,7 @@ the same batch.
   or the button cursor) previews dimly: its letter after the word and "+gain" before the number. Every key shows its value as dots.
 - Input (Chris 2026-11-12: a four-button game, Start is a real pause, Select doesn't mute): A add letter, A on the last letter sends,
   X sends from anywhere, B back, Y retune (also R, or tapping the right tuning knob), Start pause (Esc/P). The phone shell has all
-  four face buttons in a diamond (X SEND top, Y RETUNE left, A TUNE right, B BACK bottom; .btns --dia/--fb) and the SELECT and PAUSE
+  four face buttons in a diamond (X SEND top, Y RETUNE left, A PICK right, B BACK bottom; .btns --dia/--fb) and the SELECT and PAUSE
   pills. Select alone does nothing (held 1.5 s: dev panel). The pause menu (pauseItems) is RESUME, SOUND, NEW RUN,
   QUIT TO TITLE, and in the app CHECK FOR UPDATE / LOAD NEW BUILD, UPDATE APP (when launcher.json is newer) and EXIT GAME; anything
   that throws the run away asks twice. The Android launcher maps BUTTON_X to "x" and BUTTON_Y to "y".
@@ -278,6 +278,10 @@ the same batch.
 - Fonts: Chris doesn't want outside display fonts on the game screen (2026-11-12: "big blocky text... doesn't match anything").
   The pause menu is a logbox parchment panel in the game's own "key" lettering; the start prompt is back to the dial's "dot"
   lettering. The smooth fonts (HOWF) stay only on the How to Play cards, which he liked.
+- The retune knob as a place (Chris 2026-11-14): with buttons, right past the last column of keys lands on the right knob (KNOB,
+  drawKnobFocus: a ring and a card, RETUNE / SWAP EVERY LETTER FOR NEW ONES / PRESS A: N LEFT TONIGHT); A retunes, left or B goes
+  back. Night 1's log adds "Stuck? Press Y to retune" (tap the right knob on touch). Wording: no "tune in" anywhere (Chris didn't
+  like it): PRESS A TO PLAY / PLAY AGAIN, the log starts "On the air.", the phone's A button says PICK.
 - Tube end lamp (Chris 2026-11-12): a round lamp at the right end of the signal tube lights and pulses only while the traced word would
   fill the tube (S.score + pts >= S.target); a word that falls short never lights the last preview cell. How to Play's FILL THE TUBE
   card and the tips say so. Test with #test-word-near (score 3 short) and #test-word-fill.
