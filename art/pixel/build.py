@@ -300,6 +300,9 @@ def main():
         # bottom bands (rim + brass, 13 rows each) are made from one clean column everywhere past the corners, so they run even
         ba = np.asarray(bp).copy(); col = ba[:, bw // 2].copy(); E = 13
         for x in range(17, bw - 17): ba[:E, x] = col[:E]; ba[bh - E:, x] = col[bh - E:]
+        # and the same down the two sides (Chris 2026-11-14: patchy, blended brass at the bar's ends): one clean row everywhere past the corners
+        row = ba[bh // 2].copy()
+        for y in range(17, bh - 17): ba[y, :E] = row[:E]; ba[y, bw - E:] = row[bw - E:]
         bp = Image.fromarray(ba, "RGBA")
         BAR_RIVETS = [(13, 10), (bw - 13, 10), (13, 80), (bw - 13, 80)]   # where PixelLab painted its own; ours go over them
         ba = np.asarray(bp).copy()
