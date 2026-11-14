@@ -247,10 +247,17 @@ def main():
     # pads for our rivets) with a pixel parchment texture, made by frames.py. It also frames every big parchment panel.
     # The radio's screen bezel is redrawn clean in code (frames.bezel), the rest of the radio untouched.
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import frames
+    # the brass plate (goal / night plates, name plates, title and prompt plates...): PixelLab's plain brass rim round a parchment
+    # face (src/plate_pixellab.png), no rivets (Chris 2026-11-14: it sits inside the bar's border)
+    if os.path.exists(SRC + "plate_pixellab.png"):
+        pp = Image.open(SRC + "plate_pixellab.png").convert("RGBA"); pa_ = np.asarray(pp); ys_, xs_ = np.nonzero(pa_[..., 3] > 0)
+        imgs["plate"] = pp.crop((xs_.min(), ys_.min(), xs_.max() + 1, ys_.max() + 1)); imgs["plate_bare"] = imgs["plate"].copy(); RIVETS.pop("plate", None)
     if os.path.exists(SRC + "logbox_pixellab.png"):
         imgs["logbox"] = frames.logbox(SRC + "logbox_pixellab.png"); RIVETS["logbox"] = [(7, 7), (185, 7), (7, 74), (185, 74)]
     # main screen: the ring's inner edge is exactly the glass the game draws in (glass0..glass1); the dial screen above it gets the
     # same ring, a little wider than the old painted one, its inside all glass; the game fills and clips to its rounded rows
+    # (the glass is 3 px taller than the painted one so the ring covers the old ring's bottom edge too; the game sizes its keys to it)
+    pts["radio"]["glass1"] = [pts["radio"]["glass1"][0], pts["radio"]["glass1"][1] + 3]
     ra = np.asarray(imgs["radio"].convert("RGBA")).copy(); g0, g1 = pts["radio"]["glass0"], pts["radio"]["glass1"]
     frames.bezel(ra, g0[0] - 8, g0[1] - 8, g1[0] - 1 + 8, g1[1] - 1 + 8)
     DIAL_ROWS = frames.bezel(ra, 108, 9, 372, 42, t=7, r=14, fill=True); imgs["radio"] = Image.fromarray(ra, "RGBA")
