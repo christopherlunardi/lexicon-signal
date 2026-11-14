@@ -249,6 +249,11 @@ def main():
     # right end. Its rivets are its own, so none are stamped on it.
     if os.path.exists(SRC + "bar_panel.png"):
         bp = Image.open(SRC + "bar_panel.png").convert("RGBA"); bw, bh = bp.size
+        # PixelLab's brass line has bright and dark patches along it, which repeat as stripes when the middle repeats: the top and
+        # bottom bands (rim + brass, 13 rows each) are made from one clean column everywhere past the corners, so they run even
+        ba = np.asarray(bp).copy(); col = ba[:, bw // 2].copy(); E = 13
+        for x in range(17, bw - 17): ba[:E, x] = col[:E]; ba[bh - E:, x] = col[bh - E:]
+        bp = Image.fromarray(ba, "RGBA")
         imgs["bar_left"] = bp.crop((0, 0, 39, bh)); imgs["bar_right"] = bp.crop((bw - 39, 0, bw, bh)); imgs["bar_mid"] = bp.crop((bw // 2 - 40, 0, bw // 2 + 41, bh))
         RIVETS.pop("bar_left", None); RIVETS.pop("bar_right", None)
     for nm, cs in RIVETS.items():
