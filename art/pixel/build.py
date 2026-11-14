@@ -243,6 +243,14 @@ def main():
     # one piece at a time (Chris 2026-11-13): the bench shows only the next one to do; when he sends it, the next goes up
     todo = [m for m in man if not m["group"].startswith("Done")]
     json.dump(todo[:1], open(ROOT_ART + "bench/manifest.json", "w"), indent=1)
+    # The bar, redrawn as real pixel art (Chris 2026-11-14): src/bar_panel_pixellab.png is PixelLab's create_ui_asset panel (341x192,
+    # palette locked to 21 colours taken from the old bar, the old bar as its style reference), src/bar_panel.png the bar cropped
+    # out of it (329x93). Cut here into the same three pieces the game builds the bar from: a left end, a middle that repeats and a
+    # right end. Its rivets are its own, so none are stamped on it.
+    if os.path.exists(SRC + "bar_panel.png"):
+        bp = Image.open(SRC + "bar_panel.png").convert("RGBA"); bw, bh = bp.size
+        imgs["bar_left"] = bp.crop((0, 0, 39, bh)); imgs["bar_right"] = bp.crop((bw - 39, 0, bw, bh)); imgs["bar_mid"] = bp.crop((bw // 2 - 40, 0, bw // 2 + 41, bh))
+        RIVETS.pop("bar_left", None); RIVETS.pop("bar_right", None)
     for nm, cs in RIVETS.items():
         im_ = imgs[nm].copy()
         for cx, cy in cs: im_.alpha_composite(rivet, (cx - 3, cy - 3))

@@ -458,6 +458,12 @@ the same batch.
   cheap): FINISH_STYLE 0..6 (#finish-N picks one; 6 = one baked canvas of scanlines + vignette drawn creeping down with a faint
   flicker, plus a soft band rolling down every ~9 s; about the cost of option 1). The others: drawFinish() at the end of draw(): 1 vignette + warm soft-light, 2 + moving grain tiles, 3 haze (the frame shrunk to 1/10
   and laid back with 'screen'), 4 scanlines + haze + vignette, 5 all light. Stills in workshop/img/finish-r1/.
+- PixelLab UI redo (Chris 2026-11-14, Tier 1: 2,000 generations a month): UI pieces are being redone one at a time as real pixel
+  art with create_ui_asset (10 generations at <= 341x192), palette locked to colours taken from the piece being replaced, the old
+  piece (snapped to that palette, small) as style_image_base64, and `pieces` to give the panel its shape. Show Chris old vs new and a
+  stretch test at the game's sizes; only fit it after he approves. Plain shapes are drawn in code instead; the font stays Silkscreen.
+  Done: the bottom bar (src/bar_panel_pixellab.png, cropped to src/bar_panel.png 329x93; build.py cuts bar_left / bar_mid /
+  bar_right from it, with its own rivets, over Chris's bench paint of the old bar).
 - Center Tap (gold part, id tap, Chris 2026-11-14): the middle key (TAP_I 12) holds a charge for the whole run (S.tap). A word through
   it first adds its length to the charge, then scores the whole charge as flat points (scoreOf .tap). drawTapRing: a gold ring round the
   middle key and the charge on a dark chip at its top right. Icon: its own
