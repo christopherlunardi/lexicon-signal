@@ -653,13 +653,15 @@ const REPORT = { t: 0 };
 // what's left when a night clears pays a bonus: a quarter of the night's target for each word (lamp) still lit, a sixth for each
 // retune not used, rounded to 5. Night 1: 10 a word, 5 a retune; night 5: 40 and 25.
 const round5 = (v) => Math.max(5, Math.round(v / 5) * 5);
-function nightBonus() { const wl = HOW.on ? 0 : Math.max(0, S.words), rl = HOW.on ? 0 : Math.max(0, S.retunes), wv = round5(S.target / 4), rv = round5(S.target / 6);
+// each lamp still lit pays the night's best word again (Chris 2026-11-14: with a fixed bonus, stopping just short to squeeze in one more
+// word paid better than finishing; now spending a lamp always costs at least what the word adds). An unused retune pays a sixth of the target.
+function nightBonus() { const wl = HOW.on ? 0 : Math.max(0, S.words), rl = HOW.on ? 0 : Math.max(0, S.retunes), wv = Math.max(0, ...(S.nw || []).map(w => w.p)), rv = round5(S.target / 6);
   const rows = [], om = owlX();
-  if (wl) rows.push({ k: "WORDS LEFT", n: wl, v: wv });
+  if (wl && wv) rows.push({ k: "WORDS LEFT", n: wl, v: wv, note: `BEST WORD ${wv} EACH` });
   if (rl) rows.push({ k: rl === 1 ? "RETUNE LEFT" : "RETUNES LEFT", n: rl, v: rv });
   // the Night Owl Clock pays even when the night clears before its last word: the unused last word counts at the word bonus times
   // the clock. It's word business, not a lamp, so the report shows it in the words section, always in view (Chris 2026-11-13)
-  const owl = wl && has("owl") ? { base: wv, m: om, v: wv * om } : null;
+  const owl = wl && wv && has("owl") ? { base: wv, m: om, v: wv * om } : null;
   return { rows, owl, sum: rows.reduce((a, r) => a + r.n * r.v, 0) + (owl ? owl.v : 0) }; }
 const fmtNum = (n) => String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 // the safe area inside a framed panel, in world px from its edge: text never goes nearer the frame than this.
@@ -810,7 +812,7 @@ function drawReport() {
       ctx.fillStyle = on ? "#ffb040" : `rgba(255,240,200,${flare})`; ctx.beginPath(); ctx.arc(lxp, lyp, lr, 0, 7); ctx.fill(); ctx.fillStyle = "rgba(255,248,220,.85)"; ctx.beginPath(); ctx.arc(lxp - lr * .3, lyp - lr * .35, lr * .35, 0, 7); ctx.fill(); }
     else { ctx.fillStyle = "#3a2410"; ctx.beginPath(); ctx.arc(lxp, lyp, lr, 0, 7); ctx.fill(); } };
   (S.bonus ? S.bonus.rows : []).forEach((r, ri) => { const y0 = sgY0 + (ri + 1) * lh, yy = my(y0); if (t < T.tot) return;
-    RT.lab(r.k, in0, yy, "l", C.ink); RT.lab(`${r.v} EACH`, in1, yy, "r", C.inkSoft);
+    RT.lab(r.k, in0, yy, "l", C.ink); RT.lab(r.note || `${r.v} EACH`, in1, yy, "r", C.inkSoft);
     const step = lr * 2 + 12, lx0 = mid - Math.round((r.n - 1) * step / 2);
     for (let k = 0; k < r.n; k++, li++) { const d = T.ld[li], on = t < d, age = t - d, px2 = lx0 + k * step;
       lamp(px2, yy, on, on ? 0 : Math.max(0, 1 - age / 14));
@@ -2036,7 +2038,7 @@ const TIPS = [
   "THE TUBE'S END LAMP BURNS RED WHEN YOUR WORD WILL HIT OVERDRIVE",
   "EVERY POINT COUNTS TOWARD YOUR RUN SCORE. HOW HIGH CAN YOU GO?",
   "YOUR RUN SCORE SITS IN THE BOTTOM LEFT CORNER",
-  "LAMPS STILL LIT WHEN A NIGHT CLEARS PAY A BONUS",
+  "EVERY LAMP STILL LIT WHEN A NIGHT CLEARS PAYS YOUR BEST WORD AGAIN",
   "AN UNUSED RETUNE PAYS A BONUS AT THE END OF THE NIGHT",
   "AFTER EACH NIGHT A REPORT SHOWS EVERY WORD AND WHAT BOOSTED IT",
   "TAP THE LEFT KNOB TO PAUSE",
@@ -2054,7 +2056,7 @@ const TIPS = [
   "A PART'S SLOT LIGHTS UP WHEN IT WILL BOOST YOUR WORD",
   "A SPARE BATTERY ADDS A LIGHT UNDER THE LAMPS: AN EXTRA WORD EVERY NIGHT",
   "THE NIGHT OWL CLOCK TRIPLES YOUR LAST WORD OF THE NIGHT, AND EACH COPY ADDS TWO MORE",
-  "CLEAR A NIGHT EARLY WITH THE NIGHT OWL CLOCK AND THE UNUSED LAST WORD STILL PAYS TRIPLE",
+  "CLEAR A NIGHT EARLY WITH THE NIGHT OWL CLOCK AND YOUR BEST WORD PAYS TRIPLE AGAIN",
   "THE ECHO TUBE TRIPLES YOUR FIRST WORD OF THE NIGHT",
   "THE SHORTWAVE CRYSTAL DOUBLES WORDS OF 3 OR 4 LETTERS",
   "THE RED KEY DOUBLES ANY WORD THAT USES IT",
@@ -2381,7 +2383,7 @@ const HOW_CARDS = [
     setup() {}, steps: [[30, 4], [62, 1], [94, 2], [140, 15], [200, 3]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])) },
   { title: "SEND IT", keys: ["A", "X"], len: 330, text: "Press {A} on the last letter again (or {X} from anywhere), or tap it again, to send the word. Its letters fly to the tower and the signal comes back down into the tube.",
     setup() {}, steps: [...[[30, 8], [58, 9], [86, 10], [114, 11]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(11))]] },
-  { title: "FILL THE TUBE", keys: [], len: 380, text: "Fill the signal tube before the lamps go dark. Every word you send uses one lamp. Longer words and letters with more dots fill it faster. When the lamp at the end of the tube lights, the word you've spelled will fill it; when it burns red, it's overdrive: four parts to pick from. Lamps still lit when it fills pay a bonus.",
+  { title: "FILL THE TUBE", keys: [], len: 380, text: "Fill the signal tube before the lamps go dark. Every word you send uses one lamp. Longer words and letters with more dots fill it faster. When the lamp at the end of the tube lights, the word you've spelled will fill it; when it burns red, it's overdrive: four parts to pick from. Every lamp still lit when it fills pays your best word again, so finishing in fewer words pays.",
     setup() { S.score = S.shown = 18; S.words = 3; }, steps: [...[[30, 12], [58, 13], [86, 14], [114, 15]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(15))]] },
   { title: "STUCK? RETUNE", keys: ["Y"], len: 270, text: "Press {Y}, tap the right knob, or move right past the bottom rows onto the knob and press {A}, to swap every letter for new ones, once a night. The small light under that knob shows you still have it. Keep it and it pays a bonus when the night clears.",
     setup() {}, steps: [[80, () => retune()]] },
