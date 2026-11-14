@@ -2413,13 +2413,13 @@ const HOW_CARDS = [
     setup() {}, steps: [[30, 0], [62, 5], [94, 2], [126, 3]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])) },
   { title: "LETTERS MUST TOUCH", keys: [], len: 290, text: "Each new letter has to touch the last one. A letter that doesn't touch won't join the word: pick one that does.",
     setup() {}, steps: [[30, 4], [62, 1], [94, 2], [140, 15], [200, 3]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])) },
-  { title: "SEND IT", keys: ["A", "X"], len: 330, text: "Press {A} on the last letter again (or {X} from anywhere), or tap it again, to send the word. Its letters fly to the tower and the signal comes back down into the tube.",
+  { title: "SEND IT", keys: ["A", "X"], len: 330, text: "Press {A} on the last letter again, or {X} from anywhere[[, or tap the last letter again|]], to send the word. Its letters fly to the tower and the signal comes back down into the tube.",
     setup() {}, steps: [...[[30, 8], [58, 9], [86, 10], [114, 11]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(11))]] },
   { title: "FILL THE TUBE", keys: [], len: 380, text: "Fill the signal tube before the lamps go dark. Every word you send uses one lamp. Longer words and letters with more dots fill it faster. When the lamp at the end of the tube lights, the word you've spelled will fill it; when it burns red, it's overdrive: four parts to pick from. Every lamp still lit when it fills pays your best word again, so finishing in fewer words pays.",
     setup() { S.score = S.shown = 18; S.words = 3; }, steps: [...[[30, 12], [58, 13], [86, 14], [114, 15]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(15))]] },
-  { title: "STUCK? RETUNE", keys: ["Y"], len: 270, text: "Press {Y}, tap the right knob, or move right past the bottom rows onto the knob and press {A}, to swap every letter for new ones, once a night. The small light under that knob shows you still have it. Keep it and it pays a bonus when the night clears.",
+  { title: "STUCK? RETUNE", keys: ["Y"], len: 270, text: "Press {Y}[[, tap the right knob,| or]] move right past the bottom rows onto the knob and press {A}, to swap every letter for new ones, once a night. The small light under that knob shows you still have it. Keep it and it pays a bonus when the night clears.",
     setup() {}, steps: [[80, () => retune()]] },
-  { title: "RADIO PARTS", keys: [], len: 260, text: "Clear a night to fit one of three radio parts. They sit in the slots below and light up when they help. Tap a slot, or press down past the bottom row, to read what a part does. That's the basics!",
+  { title: "RADIO PARTS", keys: [], len: 260, text: "Clear a night to fit one of three radio parts. They sit in the slots below and light up when they help. [[Tap a slot, or press|Press]] down past the bottom row to read what a part does. That's the basics!",
     setup() { S.parts = ["battery", "echo"]; S.words = maxWords(); HOW.shop = true; nightClear(); HOW.shop = false; }, steps: [[70, () => { shopFocus = 1; Sound.click(); }], [140, () => { shopFocus = 2; Sound.click(); }], [210, () => { shopFocus = 0; Sound.click(); }]] },
 ];
 HOW_CARDS.forEach(c => { c.steps = c.steps.map(([t, f]) => [t, typeof f === "number" ? () => tapTile(f) : f]); });
@@ -2517,15 +2517,15 @@ function howStep() { const c = HOW_CARDS[HOW.card]; for (const [t, f] of c.steps
 // size on the page, so a phone reads as well as a monitor.
 const HOWF = { title: '"Alfa Slab One", Georgia, serif', body: '"Special Elite", "Courier New", monospace', chip: '"Alfa Slab One", Georgia, serif' };
 function wrapPx(s, font, maxW) { ctx.font = font; const out = []; let ln = ""; for (const w of s.split(" ")) { const t = ln ? ln + " " + w : w; if (ctx.measureText(t).width > maxW && ln) { out.push(ln); ln = w; } else ln = t; } if (ln) out.push(ln); return out; }
-function keyChip(x, y, k, u) {   // a button as it looks on the handheld (A and B round, the d-pad a cross, START a pill), its label centered; returns its width
-  ctx.save(); let w;
+function keyChipW(k) { return INPUT === "keys" ? Math.max(30, textW(k === "DPAD" ? "ARROWS" : BTN(k), "ink") + 18) : k === "DPAD" ? 34 : k === "START" ? 70 : 32; }
+function keyChip(x, y, k) {   // a button as it looks on the handheld (A and B round, the d-pad a cross, START a pill), its label in the game lettering; returns its width
+  ctx.save(); const w = keyChipW(k), gh = glyphCv("ink", "N", "#000").height, lab = (t, cx) => ftext(t, cx, y - Math.round(gh / 2), "ink", "#f7ecde", "c");
   if (INPUT === "keys") {   // on a keyboard: keycaps (the arrows for the d-pad, Z X V C ESC for the buttons)
-    const lab = k === "DPAD" ? "ARROWS" : BTN(k), f = `${Math.round(13 * u)}px ${HOWF.chip}`; ctx.font = f; w = Math.max(28 * u, ctx.measureText(lab).width + 16 * u);
-    ctx.fillStyle = "#3a2a24"; ctx.beginPath(); ctx.roundRect(x, y - 13 * u, w, 26 * u, 5 * u); ctx.fill(); ctx.fillStyle = "#5a463c"; ctx.beginPath(); ctx.roundRect(x + 2 * u, y - 11 * u, w - 4 * u, 20 * u, 4 * u); ctx.fill();
-    ctx.fillStyle = "#f7ecde"; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(lab, x + w / 2, y - 1 * u); ctx.restore(); return w; }
-  if (k === "DPAD") { const a = 11 * u, b = 32 * u; ctx.fillStyle = "#3a2a24"; ctx.fillRect(x, y - a / 2, b, a); ctx.fillRect(x + (b - a) / 2, y - b / 2, a, b); w = b; }
-  else if (k === "START") { w = 64 * u; ctx.fillStyle = "#6b5a52"; ctx.beginPath(); ctx.roundRect(x, y - 10 * u, w, 20 * u, 10 * u); ctx.fill(); ctx.fillStyle = "#f3e6d0"; ctx.font = `${Math.round(11 * u)}px ${HOWF.chip}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText("START", x + w / 2, y + 1); }
-  else { const r = 14 * u; w = r * 2; ctx.fillStyle = k === "A" ? "#a8402c" : "#7a3a2a"; ctx.beginPath(); ctx.arc(x + r, y, r, 0, 6.283); ctx.fill(); ctx.fillStyle = "#f7ecde"; ctx.font = `${Math.round(15 * u)}px ${HOWF.chip}`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(k, x + r, y + 1 * u); }
+    ctx.fillStyle = "#3a2a24"; ctx.beginPath(); ctx.roundRect(x, y - 14, w, 28, 5); ctx.fill(); ctx.fillStyle = "#5a463c"; ctx.beginPath(); ctx.roundRect(x + 2, y - 12, w - 4, 22, 4); ctx.fill();
+    lab(k === "DPAD" ? "ARROWS" : BTN(k), x + w / 2); ctx.restore(); return w; }
+  if (k === "DPAD") { const a = 12, b = 34; ctx.fillStyle = "#3a2a24"; ctx.fillRect(x, y - a / 2, b, a); ctx.fillRect(x + (b - a) / 2, y - b / 2, a, b); }
+  else if (k === "START") { ctx.fillStyle = "#6b5a52"; ctx.beginPath(); ctx.roundRect(x, y - 11, w, 22, 11); ctx.fill(); lab("START", x + w / 2); }
+  else { const r = 16; ctx.fillStyle = k === "A" ? "#a8402c" : "#7a3a2a"; ctx.beginPath(); ctx.arc(x + r, y, r, 0, 6.283); ctx.fill(); lab(k, x + r); }
   ctx.restore(); return w; }
 // The card never shrinks or covers the game (Chris): it pops up in a spot that doesn't matter for what's being shown (the wall
 // round the window, or over the log), sized to fit there, and the part of the screen it's about is ringed with light and pointed to.
@@ -2560,27 +2560,30 @@ function drawHowCard() {
     ctx.setLineDash([14 * u, 8 * u]); ctx.lineDashOffset = -frame * .8 * u; ctx.beginPath(); ctx.roundRect(FX(x - o), FX(y - o), FX(w + 2 * o), FX(hh + 2 * o), 12 * u); ctx.stroke(); }
   ctx.setLineDash([]);
   ctx.restore();
-  // the card: fit the text into the spot (smaller type if it must, never below a readable size)
-  let [bx, by, bw, bmax, low] = howBox(at); const PAD = 12 * u, maxH = FX(bmax);
-  let size = 15, lines, tf, bf, lh, th, need, chipW = c.keys.length * 40;
-  for (; size >= 10; size -= .5) { tf = `${Math.round(size * 1.35 * u)}px ${HOWF.title}`; bf = `${Math.round(size * u)}px ${HOWF.body}`; lh = Math.round(size * 1.32 * u); th = Math.round(size * 1.8 * u);
-    ctx.font = tf; const titleOk = ctx.measureText(c.title).width + chipW * u * size / 15 <= FX(bw) - 2 * PAD - 8;
-    lines = wrapPx(btn(c.text), bf, FX(bw) - 2 * PAD - 8); need = PAD + th + 4 * u + lines.length * lh + 6 * u + size * 1.1 * u + PAD; if (need <= maxH && titleOk) break; }
+  // the card, in the game's own lettering like every other panel (Chris 2026-11-14): the title stamped, the text typed in ink
+  let [bx, by, bw, bmax, low] = howBox(at); const PAD = 12 * u, maxH = FX(bmax), IN = 28, INY = 24;
+  const body = howText(c.text), gh = glyphCv("ink", "N", C.ink).height, lh = Math.round(22 * TK), maxW = FX(bw) - 2 * IN;
+  const chipW = c.keys.reduce((s_, k) => s_ + keyChipW(k) + 8, 0);
+  const tk = textW(c.title, "key") + chipW + 70 <= maxW ? "key" : "ink3", th = glyphCv(tk, "N", C.ink).height + 12;
+  const lines = wrap(body, "ink", maxW), need = INY + th + 6 + lines.length * lh + 10 + gh + INY;
   const ch = Math.min(maxH, Math.round(need)), cw = FX(bw), cx0 = FX(bx), cy0 = low ? FX(by) + maxH - ch : FX(by);
   const e = Math.min(1, howAnim.t / 10), slide = Math.round((1 - e * e) * 30 * u);
   ctx.save(); ctx.globalAlpha = e;
   const ww = Math.round(cw / FINE), hh2 = Math.round(ch / FINE); ctx.drawImage(panelCv("logbox", ww, hh2), cx0, cy0 - slide, ww * FINE, hh2 * FINE);
-  const X = cx0 + PAD + 6, ty0 = cy0 - slide + PAD + th / 2;
-  ctx.textBaseline = "middle"; ctx.textAlign = "left"; ctx.font = tf; ctx.fillStyle = "rgba(255,240,200,.6)"; ctx.fillText(c.title, X, ty0 + 2); ctx.fillStyle = C.ink; ctx.fillText(c.title, X, ty0);
-  let kx = X + ctx.measureText(c.title).width + 10 * u; for (const k of c.keys) kx += keyChip(kx, ty0, k, u * size / 15) + 6 * u;
-  const n = HOW_CARDS.length, dot = 6 * u, dx = cx0 + cw - PAD - 6 - (n - 1) * dot * 1.8 - dot * 1.4;
-  if (dx > kx + 6 * u) for (let i = 0; i < n; i++) { ctx.fillStyle = i === HOW.card ? C.inkRed : C.inkSoft; const px = dx + i * dot * 1.8 + (i > HOW.card ? dot * 1.4 : 0); ctx.beginPath(); ctx.roundRect(px, ty0 - dot / 2, i === HOW.card ? dot * 2.4 : dot, dot, dot / 2); ctx.fill(); }
-  ctx.font = bf; ctx.fillStyle = C.ink; ctx.textBaseline = "top"; let y = cy0 - slide + PAD + th + 4 * u; lines.forEach(s => { ctx.fillText(s, X, y); y += lh; });
-  const last = HOW.card === n - 1; ctx.font = `${Math.round(size * .82 * u)}px ${HOWF.body}`; y += 4 * u;
-  ctx.fillStyle = C.inkSoft; ctx.fillText(TAPW() ? (HOW.card ? "← tap left: back" : "← tap left: title") : (HOW.card ? "B  back" : "B  title"), X, y);
-  ctx.textAlign = "right"; ctx.fillStyle = C.inkRed; ctx.fillText((TAPW() ? "tap right: " : "A  ") + (last ? "done" : "next") + ((frame >> 4) & 1 ? " →" : "  →"), cx0 + cw - PAD - 6, y);
+  const X = cx0 + IN, Y0 = cy0 - slide + INY;
+  ftext(c.title, X, Y0, tk, C.ink, "l", { under: C.brassHi, uy: tk === "key" ? 3 : 2 });
+  let kx = X + textW(c.title, tk) + 14; const kcy = Y0 + Math.round(glyphCv(tk, "N", C.ink).height / 2);
+  for (const k of c.keys) kx += keyChip(kx, kcy, k) + 8;
+  const n = HOW_CARDS.length, dot = 8, dx = cx0 + cw - IN - (n - 1) * dot * 1.8 - dot * 1.4;
+  if (dx > kx + 8) for (let i = 0; i < n; i++) { ctx.fillStyle = i === HOW.card ? C.inkRed : C.inkSoft; const px = dx + i * dot * 1.8 + (i > HOW.card ? dot * 1.4 : 0); ctx.beginPath(); ctx.roundRect(px, kcy - dot / 2, i === HOW.card ? dot * 2.4 : dot, dot, dot / 2); ctx.fill(); }
+  let y = Y0 + th + 6; lines.forEach(s_ => { ftext(s_, X, y, "ink", C.ink, "l"); y += lh; });
+  const last = HOW.card === n - 1; y += 10;
+  ftext(TAPW() ? (HOW.card ? "TAP LEFT: BACK" : "TAP LEFT: TITLE") : btn(HOW.card ? "{B} BACK" : "{B} TITLE"), X, y, "ink", C.inkSoft, "l");
+  ftext((TAPW() ? "TAP RIGHT: " : btn("{A} ")) + (last ? "DONE" : "NEXT") + ((frame >> 4) & 1 ? " >" : "  >"), cx0 + cw - IN, y, "ink", C.inkRed, "r");
   ctx.restore();
 }
+// a card's text for this player: [[touch words|button words]] picks the touch wording only when they're tapping, and {A} etc become the right buttons
+function howText(t) { return btn(t.replace(/\[\[([^|\]]*)\|?([^\]]*)\]\]/g, (m, tw, bw) => TAPW() ? tw : bw)).replace(/ +/g, " ").replace(/ ,/g, ","); }
 function drawTitleOld() {
   const w = Math.min(W - 48, 360), lh = Math.round(22 * TK), body = wrap("Spell words in the radio glass. Each word beams signal to the tower. Reach the night's target before the six lamps go dark.", "ink", FX(w) - 60);
   const h = Math.round((70 + body.length * lh + 16 + lh * 2 + 30) / FINE), x = Math.round(W / 2 - w / 2), y = Math.max(12, Math.round((SCENE_H - h) / 2) - 6);
