@@ -70,3 +70,21 @@ def bezel(a, x0, y0, x1, y1, t=8, r=14, fill=False):
             if db <= r and dl <= r: lit = dl < db
             a[y, x, :3] = (LIT if lit else SHAD)[ramp[int(d)]]; a[y, x, 3] = 255
     return [[y, l, r_] for y, (l, r_) in sorted(rows.items())]
+
+# ---- one brass for everything (Chris 2026-11-14: the brass varied from piece to piece) -----------------------------------
+# Every brass pixel (warm yellow / orange, saturated, not too dark) is swapped for the step of this one ramp that matches its
+# brightness, so the bar, plates, frames, case, bezels, clasp and rivet all share the same brass. Wood, parchment, glass and the
+# dark outlines are left alone.
+BRASS = [H('#6e3304'), H('#9a5306'), H('#c07410'), H('#dc9520'), H('#efb52a'), H('#f8d24a'), H('#fff0a0')]
+def unify_brass(im):
+    a = np.asarray(im.convert("RGBA")).astype(float); rgb = a[..., :3] / 255; mx = rgb.max(-1); mn = rgb.min(-1)
+    sat = np.where(mx > 0, (mx - mn) / np.maximum(mx, 1e-6), 0); r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    hue = np.where(mx == r, ((g - b) / np.maximum(mx - mn, 1e-6)) % 6, 0) * 60
+    lum = rgb @ [.3, .59, .11]
+    brass = (a[..., 3] > 0) & (sat > .68) & (hue > 22) & (hue < 62) & (lum > .28)
+    edges = [.36, .46, .56, .66, .76, .86]
+    k = np.digitize(lum, edges); out = a.copy(); ramp = np.array(BRASS, float)
+    out[brass, :3] = ramp[k[brass]]
+    return Image.fromarray(out.astype(np.uint8), "RGBA")
+
+LIT = [OUT, BRASS[2], BRASS[5], BRASS[6], BRASS[4], BRASS[3], BRASS[1], OUT]; SHAD = [OUT, BRASS[0], BRASS[1], BRASS[3], BRASS[4], BRASS[3], BRASS[0], OUT]

@@ -190,7 +190,7 @@ def main():
     # its rivets sit a pixel inside the brass)
     RIVETS = {"plate": [(8, 8), (93, 8), (8, 17), (93, 17)], "logbox": [(8, 7), (184, 7), (8, 71), (184, 71)],
               "slot": [(6, 6), (52, 6), (6, 56), (52, 56)], "bar_left": [(11, 13), (11, 81)], "bar_right": [(26, 12), (26, 81)],
-              "tplate": [(9, 9), (88, 9), (9, 24), (88, 24)], "tplate_lit": [(9, 9), (88, 9), (9, 24), (88, 24)]}
+              "tplate": [(9, 8), (88, 8), (9, 24), (88, 24)], "tplate_lit": [(9, 8), (88, 8), (9, 24), (88, 24)]}
     # the Vowel Antenna was redrawn on its own (2026-11-13, Chris: the old one was crooked and too skinny): vowel_icon.png is the
     # ChatGPT picture, vowel_icon_fixed.png its k-centroid downscale (kdown.py) to 35x62; magenta is keyed out here (after the palette is taken, so the interface colours stay as they were)
     vi = np.asarray(Image.open(SRC + "vowel_icon_fixed.png").convert("RGBA")).copy(); mg = (vi[..., 0] > 170) & (vi[..., 1] < 110) & (vi[..., 2] > 170); vi[..., 3] = np.where(mg, 0, 255)
@@ -256,9 +256,20 @@ def main():
     # (src/plate_brass.png: PixelLab's plate, src/pending/plate_pixellab.png, cropped, its rim rows evened out and its parchment face
     # made solid brass, Chris: plates are brass, the paper is for the log and panels)
     if os.path.exists(SRC + "plate_brass.png"):
-        imgs["plate"] = Image.open(SRC + "plate_brass.png").convert("RGBA"); imgs["plate_bare"] = imgs["plate"].copy(); RIVETS["plate"] = [(8, 8), (94, 8), (8, 18), (94, 18)]   # (inside the rim, two at each end)
+        imgs["plate"] = Image.open(SRC + "plate_brass.png").convert("RGBA"); imgs["plate_bare"] = imgs["plate"].copy(); RIVETS["plate"] = [(7, 7), (94, 7), (7, 18), (94, 18)]   # (inside the rim, two at each end)
+    # the part slot / part case frame (Chris 2026-11-14): PixelLab's brass case (src/slot_pixellab.png, brass only, empty corner pads)
+    # fitted to the slot's 59x64: corners kept, the even middle stretched from one row / column
+    if os.path.exists(SRC + "slot_pixellab.png"):
+        sp = Image.open(SRC + "slot_pixellab.png").convert("RGBA"); sa = np.asarray(sp); ys_, xs_ = np.nonzero(sa[..., 3] > 0)
+        sp = sp.crop((xs_.min(), ys_.min(), xs_.max() + 1, ys_.max() + 1)); sw_, sh_ = sp.size; SW, SH, m_ = 59, 64, 12; so = Image.new("RGBA", (SW, SH))
+        for (a0, b0), (d0, e0) in [((0, 0), (0, 0)), ((sw_ - m_, 0), (SW - m_, 0)), ((0, sh_ - m_), (0, SH - m_)), ((sw_ - m_, sh_ - m_), (SW - m_, SH - m_))]: so.alpha_composite(sp.crop((a0, b0, a0 + m_, b0 + m_)), (d0, e0))
+        cx_, cy_ = sw_ // 2, sh_ // 2
+        so.alpha_composite(sp.crop((cx_, 0, cx_ + 1, m_)).resize((SW - 2 * m_, m_), Image.NEAREST), (m_, 0)); so.alpha_composite(sp.crop((cx_, sh_ - m_, cx_ + 1, sh_)).resize((SW - 2 * m_, m_), Image.NEAREST), (m_, SH - m_))
+        so.alpha_composite(sp.crop((0, cy_, m_, cy_ + 1)).resize((m_, SH - 2 * m_), Image.NEAREST), (0, m_)); so.alpha_composite(sp.crop((sw_ - m_, cy_, sw_, cy_ + 1)).resize((m_, SH - 2 * m_), Image.NEAREST), (SW - m_, m_))
+        so.alpha_composite(sp.crop((cx_, cy_, cx_ + 1, cy_ + 1)).resize((SW - 2 * m_, SH - 2 * m_), Image.NEAREST), (m_, m_))
+        imgs["slot"] = so; RIVETS["slot"] = [(5, 5), (53, 5), (5, 58), (53, 58)]
     if os.path.exists(SRC + "logbox_pixellab.png"):
-        imgs["logbox"] = frames.logbox(SRC + "logbox_pixellab.png"); RIVETS["logbox"] = [(7, 7), (185, 7), (7, 74), (185, 74)]
+        imgs["logbox"] = frames.logbox(SRC + "logbox_pixellab.png"); RIVETS["logbox"] = [(6, 6), (185, 6), (6, 74), (185, 74)]
     # main screen: the ring's inner edge is exactly the glass the game draws in (glass0..glass1); the dial screen above it gets the
     # same ring, a little wider than the old painted one, its inside all glass; the game fills and clips to its rounded rows
     # (the glass is 3 px taller than the painted one so the ring covers the old ring's bottom edge too; the game sizes its keys to it)
@@ -294,6 +305,9 @@ def main():
         for cx, cy in cs: im_.alpha_composite(rivet, (cx - 3, cy - 3))
         imgs[nm] = im_
     imgs["rivet"] = rivet
+    # one brass everywhere (Chris 2026-11-14): every brass piece on the shared ramp (frames.BRASS); the lit title plate keeps its glow
+    for nm in ["bar_left", "bar_mid", "bar_right", "slot", "plate", "plate_bare", "tplate", "logbox", "bar_clasp", "rivet"]:
+        if nm in imgs: imgs[nm] = frames.unify_brass(imgs[nm])
     # pack
     order = sorted(imgs, key=lambda n: -imgs[n].height); AW = 1400; x = y = sh = 0; rects = {}
     for n in order:

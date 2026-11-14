@@ -472,6 +472,12 @@ the same batch.
   Done: the brass plate (src/plate_brass.png: PixelLab's plate, src/pending/plate_pixellab.png, cropped, rim rows evened out, face
   made solid brass so plates read as metal and the paper stays for the log and panels; our rivets, two at each end inside the rim,
   one each end on short plates). Everything else comes from PixelLab; only the two screen bezels are drawn in code.
+  Done: the part slot / case frame (src/slot_pixellab.png, brass only with empty corner pads, fitted to 59x64 with corners kept), the
+  rivet (Chris's bench paint, src/bench/rivet.png, used everywhere, the bar's corners included over PixelLab's), the run score on
+  the brass plate. Rivets touch their frame's inner edge evenly (plate 7,7/94,7/7,18/94,18; logbox 6,6/185,6/6,74/185,74; slot
+  5,5/53,5/5,58/53,58; title plates y 8 and 24; short plates x+4 and x+w-12). One brass: build.py runs frames.unify_brass on every
+  brass piece (one shared 7-step ramp, BRASS; parchment, wood and glass untouched) and the bezels use the same ramp. New brass art
+  gets the same treatment.
 - Center Tap (gold part, id tap, Chris 2026-11-14): the middle key (TAP_I 12) holds a charge for the whole run (S.tap). A word through
   it first adds its length to the charge, then scores the whole charge as flat points (scoreOf .tap). drawTapRing: a gold ring round the
   middle key and the charge on a dark chip at its top right. Icon: its own
