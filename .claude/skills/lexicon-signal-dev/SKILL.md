@@ -466,7 +466,9 @@ the same batch.
   bar_right from it, with its own rivets, over Chris's bench paint of the old bar).
   Done: the log box (src/logbox_pixellab.png: brass only, symmetrical, empty corner pads for our rivets; frames.logbox recolors its
   parchment to the old tones and adds a pixel parchment tile + stepped aged edge; it also frames every big parchment panel) and the
-  radio's screen bezel (frames.bezel redraws the brass ring round the glass in code and cleans the glass just inside it).
+  radio's screen bezels: frames.bezel redraws the brass ring round the main glass (its inner edge is exactly glass0..glass1; the game
+  clips the glass to GLASS_R = 6 rounded corners everywhere, title included) and the dial screen (wider, 108..372 x 9..42, 7 thick,
+  inside all glass; dial0/dial1 and dialRows come from it).
 - Center Tap (gold part, id tap, Chris 2026-11-14): the middle key (TAP_I 12) holds a charge for the whole run (S.tap). A word through
   it first adds its length to the charge, then scores the whole charge as flat points (scoreOf .tap). drawTapRing: a gold ring round the
   middle key and the charge on a dark chip at its top right. Icon: its own

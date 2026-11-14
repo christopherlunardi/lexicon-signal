@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 95;</script><script>
+<script>window.LEX_BUILD = 96;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -455,7 +455,8 @@ const PARTS = [
   { id:"tap",     name:"Center Tap",        desc:"Words through the middle key add their letters to its charge, then score it.", rare:true },
 ];
 const PART = Object.fromEntries(PARTS.map(p => [p.id, p]));
-const TAP_I = 12;   // the middle of the 5x5 glass
+const TAP_I = 12;
+const GLASS_R = 6;   // the main glass is rounded into its brass bezel (build.py frames.bezel: ring radius 14, 8 thick)   // the middle of the 5x5 glass
 const HIT_NAME = { tap: "TAP", amp: "AMP", knob: "KNOB", treble: "TREBLE", vowel: "VOWELS", short: "CRYSTAL", coil: "COIL", echo: "ECHO", owl: "OWL", carrier: "RED LAMP", heat: "RED HEAT", gold: "GOLD" };
 const iconOf = (id) => "iconL_" + ((PART[id] && PART[id].icon) || id);
 const BASE_WORDS = 6;   // one per battery lamp
@@ -1010,7 +1011,7 @@ function drawRadioLive() {
 }
 function drawGrid() {
   if (PA()) return;   // the round-2 looks draw the whole glass on the fine layer (drawPlayArea)
-  const g = L.glass; wctx.save(); wctx.beginPath(); wctx.rect(g.x, g.y, g.w, g.h); wctx.clip();
+  const g = L.glass; wctx.save(); wctx.beginPath(); wctx.roundRect(g.x, g.y, g.w, g.h, GLASS_R); wctx.clip();
   const n = Math.floor(staticLvl * 340); for (let k = 0; k < n; k++) dot(wctx, g.x + Math.random() * g.w, g.y + Math.random() * g.h, Math.random() < .5 ? C.snow : C.snowDim);
   const ok = S.phase === "play" && isValid(), sel = new Set(S.path);
   for (let i = 0; i < NN; i++) { const t = S.grid[i]; if (!t || KS !== 0) continue; const p = tileXY(i), x = p.x, y = Math.round(p.y + t.yOff), on = sel.has(i);
@@ -1140,7 +1141,7 @@ function vtext(s, x, y, font, col, blur, glowCol) { ctx.font = font; ctx.textAli
   if (blur) { ctx.shadowColor = glowCol || col; ctx.shadowBlur = blur; } ctx.fillStyle = col; ctx.fillText(s, x, y); ctx.shadowBlur = 0; }
 function drawKeyLetters() {
   if (PA()) { drawPlayArea(); drawTapRing(); return; }
-  const g = L.glass; ctx.save(); ctx.beginPath(); ctx.rect(FX(g.x), FX(g.y), FX(g.w), FX(g.h)); ctx.clip();
+  const g = L.glass; ctx.save(); ctx.beginPath(); ctx.roundRect(FX(g.x), FX(g.y), FX(g.w), FX(g.h), FX(GLASS_R)); ctx.clip();
   const ok = S.phase === "play" && isValid(), sel = new Set(S.path), cand = candidate();
   ctx.imageSmoothingEnabled = true;
   // the traced path, drawn first so keys sit on it (smooth styles)
@@ -1723,7 +1724,7 @@ function drawTapRing() { if (!has("tap") || !["play", "report", "shop", "swap", 
   ftext(txt, cx + cw / 2, cy + Math.round((ch - 14 * TK) / 2), "ink", f > 0 ? "#fff6c8" : "#ffd24a", "c"); }
 function drawPlayArea() {
   const g = L.glass, G = { x: FX(g.x), y: FX(g.y), w: FX(g.w), h: FX(g.h) }, play = S.phase === "play", ok = play && isValid(), cand = candidate(), low = play ? clamp01(1 - S.words / maxWords()) : 0, last = play && S.words === 1;
-  ctx.save(); ctx.beginPath(); ctx.rect(G.x, G.y, G.w, G.h); ctx.clip(); ctx.imageSmoothingEnabled = true; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineCap = ctx.lineJoin = "round";
+  ctx.save(); ctx.beginPath(); ctx.roundRect(G.x, G.y, G.w, G.h, FX(GLASS_R)); ctx.clip(); ctx.imageSmoothingEnabled = true; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineCap = ctx.lineJoin = "round";
   const tiles = []; for (let i = 0; i < NN; i++) { const t = S.grid[i]; if (!t || t.ch === " ") continue; const p = tileXY(i), x = FX(p.x), y = FX(p.y + t.yOff), w = FX(L.tw), hh = FX(L.th), k = S.path.indexOf(i);
     tiles.push({ t, i, x, y, w, hh, cx: x + w / 2, cy: y + hh / 2, on: k >= 0, k, hv: i === cand, v: VALUES[t.ch], dots: Math.min(4, Math.ceil(VALUES[t.ch] / 2)), ch: t.ch }); }
   PA_DRAW[KS - 6]({ G, tiles, ok, low, last, play });
@@ -1735,7 +1736,7 @@ function drawPlayArea() {
   ctx.fillStyle = gr; ctx.fillRect(G.x, G.y, G.w, G.h);
   gr = ctx.createLinearGradient(0, G.y, 0, G.y + 16); gr.addColorStop(0, "rgba(0,0,0,.6)"); gr.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = gr; ctx.fillRect(G.x, G.y, G.w, 16);
   gr = ctx.createLinearGradient(G.x, 0, G.x + 12, 0); gr.addColorStop(0, "rgba(0,0,0,.45)"); gr.addColorStop(1, "rgba(0,0,0,0)"); ctx.fillStyle = gr; ctx.fillRect(G.x, G.y, 12, G.h); }
-  if (last) { ctx.strokeStyle = `rgba(255,60,40,${.35 + .25 * Math.sin(frame * .12)})`; ctx.shadowColor = "#ff3a2e"; ctx.shadowBlur = 26; ctx.lineWidth = 6; ctx.strokeRect(G.x - 3, G.y - 3, G.w + 6, G.h + 6); ctx.shadowBlur = 0; }
+  if (last) { ctx.strokeStyle = `rgba(255,60,40,${.35 + .25 * Math.sin(frame * .12)})`; ctx.shadowColor = "#ff3a2e"; ctx.shadowBlur = 26; ctx.lineWidth = 6; ctx.beginPath(); ctx.roundRect(G.x - 3, G.y - 3, G.w + 6, G.h + 6, FX(GLASS_R) + 3); ctx.stroke(); ctx.shadowBlur = 0; }
   ctx.restore(); ctx.imageSmoothingEnabled = false; ctx.textAlign = "left"; ctx.textBaseline = "alphabetic"; ctx.globalAlpha = 1;
 }
 const PA_RGB = ["255,130,40", "120,255,170", "255,120,40", "255,180,80", "255,150,50"], PA_BASE = [.07, .04, .03, .02, .13];   // dot glass glows brighter (Chris: letters not bright enough in play)
@@ -2268,13 +2269,13 @@ function drawTitleRadio(T) {
     if (MENU_STYLE === 6) titleCabinet(c, rw, rh, (CVH - (oy - L.radioY * Z)) / Z);
     c.setTransform(1, 0, 0, 1, 0, 0);
     // the glass: dark, with the unlit painted picture in it (letters light over it below)
-    c.fillStyle = "#0c0705"; c.fillRect(gx, gy, gw, gh);
-    if (titleGlass.ready) { const tg = titleGlass, sx = titleFit(gw, gh, tg); c.imageSmoothingEnabled = true; c.save(); c.beginPath(); c.rect(gx, gy, gw, gh); c.clip(); c.drawImage(tg.dim, gx + (gw - tg.w * sx) / 2, gy + (gh - tg.h * sx) / 2, tg.w * sx, tg.h * sx); titleGapDraw(c, tg, gx, gy, gw, gh, sx, Z); c.restore(); } }
+    c.fillStyle = "#0c0705"; c.beginPath(); c.roundRect(gx, gy, gw, gh, GLASS_R * Z); c.fill();
+    if (titleGlass.ready) { const tg = titleGlass, sx = titleFit(gw, gh, tg); c.imageSmoothingEnabled = true; c.save(); c.beginPath(); c.roundRect(gx, gy, gw, gh, GLASS_R * Z); c.clip(); c.drawImage(tg.dim, gx + (gw - tg.w * sx) / 2, gy + (gh - tg.h * sx) / 2, tg.w * sx, tg.h * sx); titleGapDraw(c, tg, gx, gy, gw, gh, sx, Z); c.restore(); } }
   ctx.drawImage(titleBg.cv, 0, 0, CVW, CVH);
   // the title glass is Chris's painted picture, in two versions: everything unlit, and lit. Each letter's box of the lit one fades in
   // over the unlit one, so letters switch on one at a time with a stutter, breathe, and now and then one drops out for a moment.
   if (titleGlass.ready) {
-    const tg = titleGlass, sx = titleFit(gw, gh, tg), sy = sx, ox2 = gx + (gw - tg.w * sx) / 2, oy2 = gy + (gh - tg.h * sy) / 2; ctx.save(); ctx.beginPath(); ctx.rect(gx, gy, gw, gh); ctx.clip(); ctx.imageSmoothingEnabled = true;   // (the painted 4x4 glass, kept in proportion in the bigger glass for now)
+    const tg = titleGlass, sx = titleFit(gw, gh, tg), sy = sx, ox2 = gx + (gw - tg.w * sx) / 2, oy2 = gy + (gh - tg.h * sy) / 2; ctx.save(); ctx.beginPath(); ctx.roundRect(gx, gy, gw, gh, GLASS_R * Z); ctx.clip(); ctx.imageSmoothingEnabled = true;   // (the painted 4x4 glass, kept in proportion in the bigger glass for now)
     if (!glassFl || T < 2) { let t = 36; glassFl = tg.boxes.map(() => { t += 3 + Math.random() * 8; const st = []; for (let i = 0, n = 4 + Math.random() * 10; i < n; i++) st.push(Math.random() < .5 ? .1 + Math.random() * .3 : .7 + Math.random() * .3);
       return { on: Math.round(t), start: st, next: 0, seq: null, i: 0 }; }); }
     tg.boxes.forEach((b, k) => { const f = glassFl[k], on = T - f.on; if (on === 0) Sound.blip(1 + k % 12);

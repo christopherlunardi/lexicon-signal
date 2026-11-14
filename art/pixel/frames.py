@@ -48,20 +48,25 @@ def rr_dist(x, y, x0, y0, x1, y1, r):
     cx = min(max(x, x0 + r), x1 - r); cy = min(max(y, y0 + r), y1 - r)
     if (x < x0 + r or x > x1 - r) and (y < y0 + r or y > y1 - r): return r - math.hypot(x - cx, y - cy)
     return min(x - x0, x1 - x, y - y0, y1 - y)
-def bezel(a, x0, y0, x1, y1, t=8, r=14):
-    """Redraw the brass ring round the radio's glass (x0..x1, y0..y1 inclusive, in radio pixels), lit from the upper left, and clean
-    the glass just inside it to plain glass."""
+def bezel(a, x0, y0, x1, y1, t=8, r=14, fill=False):
+    """Redraw a brass ring round a radio window (x0..x1, y0..y1 inclusive, in radio pixels), lit from the upper left. The glass just
+    inside it is cleaned to plain glass (all of it with fill=True). Returns the window's inner rows [y, left, right] (the glass the
+    game draws in, rounded at the corners with radius r - t)."""
     from collections import Counter
-    glass = Counter(map(tuple, a[(y0 + y1) // 2 - 30:(y0 + y1) // 2 + 30, x0 + 40:x1 - 40, :3].reshape(-1, 3))).most_common(1)[0][0]
+    glass = Counter(map(tuple, a[160:200, 180:300, :3].reshape(-1, 3))).most_common(1)[0][0]
+    ramp = [round(k * 7 / (t - 1)) for k in range(t)]
+    rows = {}
     for y in range(y0, y1 + 1):
         for x in range(x0, x1 + 1):
             d = rr_dist(x + .5, y + .5, x0, y0, x1 + 1, y1 + 1, r)
             if d < 0: continue
-            if t <= d < t + 7: a[y, x, :3] = glass; continue
-            if d >= t: continue
+            if d >= t:
+                rows.setdefault(y, [x, x]); rows[y][1] = x
+                if fill or d < t + 7: a[y, x, :3] = glass
+                continue
             dl, dt, dr, db = x - x0, y - y0, x1 - x, y1 - y; m_ = min(dl, dt, dr, db)
             lit = (dl == m_ or dt == m_) and not ((dr == m_ and dr < dt) or (db == m_ and db < dl))
             if dt <= r and dr <= r: lit = dt < dr
             if db <= r and dl <= r: lit = dl < db
-            a[y, x, :3] = (LIT if lit else SHAD)[min(int(d), 7)]; a[y, x, 3] = 255
-    return a
+            a[y, x, :3] = (LIT if lit else SHAD)[ramp[int(d)]]; a[y, x, 3] = 255
+    return [[y, l, r_] for y, (l, r_) in sorted(rows.items())]

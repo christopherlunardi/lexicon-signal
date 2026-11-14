@@ -249,7 +249,12 @@ def main():
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import frames
     if os.path.exists(SRC + "logbox_pixellab.png"):
         imgs["logbox"] = frames.logbox(SRC + "logbox_pixellab.png"); RIVETS["logbox"] = [(7, 7), (185, 7), (7, 74), (185, 74)]
-    imgs["radio"] = Image.fromarray(frames.bezel(np.asarray(imgs["radio"].convert("RGBA")).copy(), 118, 47, 362, 215), "RGBA")
+    # main screen: the ring's inner edge is exactly the glass the game draws in (glass0..glass1); the dial screen above it gets the
+    # same ring, a little wider than the old painted one, its inside all glass; the game fills and clips to its rounded rows
+    ra = np.asarray(imgs["radio"].convert("RGBA")).copy(); g0, g1 = pts["radio"]["glass0"], pts["radio"]["glass1"]
+    frames.bezel(ra, g0[0] - 8, g0[1] - 8, g1[0] - 1 + 8, g1[1] - 1 + 8)
+    DIAL_ROWS = frames.bezel(ra, 108, 9, 372, 42, t=7, r=14, fill=True); imgs["radio"] = Image.fromarray(ra, "RGBA")
+    pts["radio"]["dial0"] = [min(r_[1] for r_ in DIAL_ROWS), DIAL_ROWS[0][0]]; pts["radio"]["dial1"] = [max(r_[2] for r_ in DIAL_ROWS) + 1, DIAL_ROWS[-1][0] + 1]
     # The bar, redrawn as real pixel art (Chris 2026-11-14): src/bar_panel_pixellab.png is PixelLab's create_ui_asset panel (341x192,
     # palette locked to 21 colours taken from the old bar, the old bar as its style reference), src/bar_panel.png the bar cropped
     # out of it (329x93). Cut here into the same three pieces the game builds the bar from: a left end, a middle that repeats and a
@@ -279,14 +284,7 @@ def main():
     sheet.save(OUT + "atlas.png", optimize=True)
     # the dial window's painted shape, row by row (rounded ends): the game fills exactly these pixels so the lit display never
     # pokes past the frame. Each row is the light run through the window's middle, inside the dark outline.
-    rad = imgs["radio"].convert("RGB"); bri = lambda X, Y: sum(rad.getpixel((X, Y)))
-    (dx0, dy0), (dx1, dy1) = pts["radio"]["dial0"], pts["radio"]["dial1"]; mx = (dx0 + dx1) // 2; dial_rows = []
-    for Y in range(dy0, dy1):
-        if bri(mx, Y) < 200: continue
-        l = r = mx
-        while bri(l - 1, Y) > 200: l -= 1
-        while bri(r + 1, Y) > 200: r += 1
-        dial_rows.append([Y, l, r])
+    dial_rows = DIAL_ROWS
     json.dump({"palette": pal.tolist(), "accents": [list(c) for c in pix.ACCENTS], "rects": rects, "points": pts, "dialRows": dial_rows, "fonts": {},
                "v": hashlib.sha1(open(OUT + "atlas.png", "rb").read()).hexdigest()[:10]}, open(OUT + "atlas.json", "w"))   # the picture's version: the game asks for atlas.png?v=<this>, so a phone can't pair a new json with an old cached picture
     for n in ["radio", "window", "wall_tile", "sb_mid", "bar_left", "bar_mid", "logbox", "plate", "battery", "slot", "iconL_amp", "icon_amp"]: print(n, rects[n][2:])
