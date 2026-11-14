@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 87;</script><script>
+<script>window.LEX_BUILD = 88;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -2635,7 +2635,7 @@ function shopGeom() { const n = shopChoices.length, cw = Math.min(170, Math.floo
   // the cases grow to fit their contents. Layout rule (Chris 2026-11-13: a label must never overlap writing): top to bottom, the icon
   // (82), the name plate, the description, then a reserved label zone of TAG_ZONE fine pixels above the bottom border that nothing
   // else may enter; every case is as tall as the tallest one needs
-  ph = R("plate")[3], need = Math.max(...shopChoices.map(p => { const two = wrap(p.name, "ink", FX(cw - 20) - 30).length > 1, PH = two ? ph + Math.ceil(20 * TK / FINE) + 2 : ph;
+  ph = R("plate")[3], need = Math.max(...shopChoices.map(p => { const two = wrap(p.name, "ink", FX(cw - 20) - 48).length > 1, PH = two ? ph + Math.ceil(20 * TK / FINE) + 2 : ph;
     return 82 + PH + (16 + wrap(p.desc, "ink", FX(cw) - 48).length * lh * FINE + 8 + TAG_ZONE) / FINE; })),
   ch = Math.round(Math.max(TK > 1 ? 200 : 174, need)), total = n * cw + (n - 1) * 10; return { n, cw, ch, x0: Math.round(W / 2 - total / 2), y0: 36 }; }
 // the brass name plate, stretched to any width: its two ends and a repeated plain middle
@@ -2683,7 +2683,8 @@ function cardTag(c, p, g, G, cx) {
    recolored to bright gold), 2 gilded + a glint that sweeps along the gold now and then, 3 jewel box (gilded + a crimson velvet
    lining), 4 gold seal (a round gold medallion with a star on the corner of the brass case and slot), 5 gilded + glint + seal.
    #rare-N picks one (#test-shop-gold-rare-N, #test-word-rareslots-rare-N). */
-let RARE_STYLE = 0; { const m = location.hash.match(/rare-(\d)/); if (m) RARE_STYLE = Math.min(5, +m[1]); }
+let RARE_STYLE = 3; {   // Chris picked 3, the jewel box (2026-11-14)
+   const m = location.hash.match(/rare-(\d)/); if (m) RARE_STYLE = Math.min(5, +m[1]); }
 const rareHas = (k) => ({ gild: [0, 1, 1, 1, 0, 1], glint: [0, 0, 1, 0, 0, 1], velvet: [0, 0, 0, 1, 0, 0], seal: [0, 0, 0, 0, 1, 1] })[k][RARE_STYLE];
 const GILD = [[0, [62, 28, 0]], [.32, [158, 92, 6]], [.58, [246, 174, 26]], [.82, [255, 210, 84]], [1, [255, 236, 168]]];
 // recolor brass to gold, pixel by pixel (light keeps its place, only the hue and the shine change); the darkest pixels (outlines,
@@ -2727,7 +2728,7 @@ const shopBase = { k: "", cv: document.createElement("canvas") }, shopTop = { k:
 function drawShop() {
   const G = shopGeom(), [, , , ph] = R("plate");
   const geo = (k) => { const f = k === shopFocus, x = G.x0 + k * (G.cw + 10), y = G.y0 - (f ? 5 : 0); return { f, x, y, py: y + 82 }; };
-  const nameLines = (p) => wrap(p.name, "ink", FX(G.cw - 20) - 30), plH = (p) => nameLines(p).length > 1 ? ph + Math.ceil(20 * TK / FINE) + 2 : ph;
+  const nameLines = (p) => wrap(p.name, "ink", FX(G.cw - 20) - 48), plH = (p) => nameLines(p).length > 1 ? ph + Math.ceil(20 * TK / FINE) + 2 : ph;
   // the shade and the three cases change only when the choice or the screen does: built once into shopBase, then one blit a frame
   // (the cases are 9-sliced from small tiles, hundreds of draws: redrawn every frame they made the picker crawl on the handheld)
   const bk = [W, H, L.barY, shopFocus, TK, RARE_STYLE, shopChoices.map(p => p.id).join()].join("|");

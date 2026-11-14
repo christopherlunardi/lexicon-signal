@@ -1410,7 +1410,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "How should a gold, one-time part look different from the regular parts, on its picker card and in its slot?",
      "found": "Chris wants more one-time gold parts, and the gold key's card and slot barely look different from the others now. Each option shows the picker (the Gold Key is the middle card) and the bar with the Gold Key fitted in the third slot. The cards' label also changes from RARE: ONCE ONLY to GOLD PART: ONE ONLY. All are drawn once and cached, except the glint, which only draws while it sweeps.",
      "options": [
@@ -1526,7 +1526,8 @@
        ],
        "play": "play.html#test-shop-gold-rare-5"
       }
-     ]
+     ],
+     "chosen": "3"
     }
    ]
   }
