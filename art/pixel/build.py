@@ -267,6 +267,13 @@ def main():
         so.alpha_composite(sp.crop((cx_, 0, cx_ + 1, m_)).resize((SW - 2 * m_, m_), Image.NEAREST), (m_, 0)); so.alpha_composite(sp.crop((cx_, sh_ - m_, cx_ + 1, sh_)).resize((SW - 2 * m_, m_), Image.NEAREST), (m_, SH - m_))
         so.alpha_composite(sp.crop((0, cy_, m_, cy_ + 1)).resize((m_, SH - 2 * m_), Image.NEAREST), (0, m_)); so.alpha_composite(sp.crop((sw_ - m_, cy_, sw_, cy_ + 1)).resize((m_, SH - 2 * m_), Image.NEAREST), (SW - m_, m_))
         so.alpha_composite(sp.crop((cx_, cy_, cx_ + 1, cy_ + 1)).resize((SW - 2 * m_, SH - 2 * m_), Image.NEAREST), (m_, m_))
+        # calmer brass (Chris 2026-11-14: too bright, the top especially): on the shared ramp first, then the two palest steps
+        # come down two and the gold one step, so the frame reads as warm mid brass with a modest highlight
+        so = frames.unify_brass(so); sa_ = np.asarray(so).copy(); B_ = frames.BRASS
+        lu_ = sa_[..., :3].astype(float) @ [.3, .59, .11] / 255; warm_ = (sa_[..., 3] > 0) & (sa_[..., 0] >= sa_[..., 1]) & (sa_[..., 1] >= sa_[..., 2])
+        hi_ = warm_ & (lu_ > .8); mid_ = warm_ & (lu_ > .66) & ~hi_
+        sa_[hi_, :3] = B_[4]; sa_[mid_, :3] = B_[3]
+        so = Image.fromarray(sa_, "RGBA")
         imgs["slot"] = so; RIVETS["slot"] = [(5, 5), (53, 5), (5, 58), (53, 58)]
     if os.path.exists(SRC + "logbox_pixellab.png"):
         imgs["logbox"] = frames.logbox(SRC + "logbox_pixellab.png"); RIVETS["logbox"] = [(6, 6), (185, 6), (6, 74), (185, 74)]
