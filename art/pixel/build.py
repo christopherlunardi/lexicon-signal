@@ -249,9 +249,10 @@ def main():
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__))); import frames
     # the brass plate (goal / night plates, name plates, title and prompt plates...): PixelLab's plain brass rim round a parchment
     # face (src/plate_pixellab.png), no rivets (Chris 2026-11-14: it sits inside the bar's border)
-    if os.path.exists(SRC + "plate_pixellab.png"):
-        pp = Image.open(SRC + "plate_pixellab.png").convert("RGBA"); pa_ = np.asarray(pp); ys_, xs_ = np.nonzero(pa_[..., 3] > 0)
-        imgs["plate"] = pp.crop((xs_.min(), ys_.min(), xs_.max() + 1, ys_.max() + 1)); imgs["plate_bare"] = imgs["plate"].copy(); RIVETS.pop("plate", None)
+    # (src/plate_brass.png: PixelLab's plate, src/pending/plate_pixellab.png, cropped, its rim rows evened out and its parchment face
+    # made solid brass, Chris: plates are brass, the paper is for the log and panels)
+    if os.path.exists(SRC + "plate_brass.png"):
+        imgs["plate"] = Image.open(SRC + "plate_brass.png").convert("RGBA"); imgs["plate_bare"] = imgs["plate"].copy(); RIVETS["plate"] = [(8, 8), (94, 8), (8, 18), (94, 18)]   # (inside the rim, two at each end)
     if os.path.exists(SRC + "logbox_pixellab.png"):
         imgs["logbox"] = frames.logbox(SRC + "logbox_pixellab.png"); RIVETS["logbox"] = [(7, 7), (185, 7), (7, 74), (185, 74)]
     # main screen: the ring's inner edge is exactly the glass the game draws in (glass0..glass1); the dial screen above it gets the

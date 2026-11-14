@@ -469,6 +469,9 @@ the same batch.
   radio's screen bezels: frames.bezel redraws the brass ring round the main glass (its inner edge is exactly glass0..glass1; the game
   clips the glass to GLASS_R = 6 rounded corners everywhere, title included) and the dial screen (wider, 108..372 x 9..42, 7 thick,
   inside all glass; dial0/dial1 and dialRows come from it).
+  Done: the brass plate (src/plate_brass.png: PixelLab's plate, src/pending/plate_pixellab.png, cropped, rim rows evened out, face
+  made solid brass so plates read as metal and the paper stays for the log and panels; our rivets, two at each end inside the rim,
+  one each end on short plates). Everything else comes from PixelLab; only the two screen bezels are drawn in code.
 - Center Tap (gold part, id tap, Chris 2026-11-14): the middle key (TAP_I 12) holds a charge for the whole run (S.tap). A word through
   it first adds its length to the charge, then scores the whole charge as flat points (scoreOf .tap). drawTapRing: a gold ring round the
   middle key and the charge on a dark chip at its top right. Icon: its own
