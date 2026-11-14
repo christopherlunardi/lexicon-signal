@@ -336,7 +336,7 @@ def main():
     if os.path.exists(SRC + "clasp_wings.png"): imgs["bar_clasp"] = Image.open(SRC + "clasp_wings.png").convert("RGBA")
     # the bar's top-middle clasp on the Pixel Bench (Chris 2026-11-14): what he paints (src/bench/bar_clasp.png) is used exactly as sent
     if os.path.exists(SRC + "bench/bar_clasp.png"): imgs["bar_clasp"] = Image.open(SRC + "bench/bar_clasp.png").convert("RGBA")
-    else:
+    elif not os.path.exists(SRC + "clasp_wings.png"):
         imgs["bar_clasp"].save(ROOT_ART + "bench/img/bar_clasp.png")
         json.dump([{"file": "img/bar_clasp.png", "group": "To do: frames under the rivets", "label": "The bar's clasp (the brass piece at the top middle)", "w": imgs["bar_clasp"].width, "h": imgs["bar_clasp"].height, "key": "bar_clasp"}], open(ROOT_ART + "bench/manifest.json", "w"), indent=1)
     # pack
