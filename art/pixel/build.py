@@ -335,6 +335,12 @@ def main():
     # one brass everywhere (Chris 2026-11-14): every brass piece on the shared ramp (frames.BRASS); the lit title plate keeps its glow
     for nm in ["bar_left", "bar_mid", "bar_right", "slot", "plate", "plate_bare", "tplate", "logbox", "bar_clasp", "rivet"]:
         if nm in imgs: imgs[nm] = frames.unify_brass(imgs[nm])
+    # the radio's lamp (Chris 2026-11-14): one lamp goes on the Pixel Bench for Chris to paint; what he sends back is src/bench/lamp.png
+    if not os.path.exists(SRC + "bench/lamp.png"):
+        lx_, ly_ = pts["radio"]["lamp2"]; lc_ = np.asarray(imgs["radio"].crop((lx_ - 12, ly_ - 12, lx_ + 13, ly_ + 13))).copy()
+        yy_, xx_ = np.mgrid[0:25, 0:25]; lc_[(yy_ - 12) ** 2 + (xx_ - 12) ** 2 > 12.6 ** 2, 3] = 0
+        Image.fromarray(lc_, "RGBA").save(ROOT_ART + "bench/img/lamp.png")
+        json.dump([{"file": "img/lamp.png", "group": "To do: frames under the rivets", "label": "One lamp for under the radio's glass (unlit; the game draws its glow on top). It will be used six times on plain wood", "w": 25, "h": 25, "key": "lamp"}], open(ROOT_ART + "bench/manifest.json", "w"), indent=1)
     # the bar's clasp (Chris 2026-11-14): PixelLab's winged brass piece (src/clasp_wings.png, trimmed to the wings' shape)
     if os.path.exists(SRC + "clasp_wings.png"): imgs["bar_clasp"] = Image.open(SRC + "clasp_wings.png").convert("RGBA")
     # the bar's top-middle clasp on the Pixel Bench (Chris 2026-11-14): what he paints (src/bench/bar_clasp.png) is used exactly as sent
