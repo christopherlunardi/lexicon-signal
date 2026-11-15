@@ -3,12 +3,13 @@
   scowl-70.txt  SCOWL / ESDB size 70 (American, British and Canadian spellings, no abbreviations), for modern everyday words;
                 its copyright notice is tools/wordlists/SCOWL-Copyright.txt and must stay with it
   places.txt    place names (cities, states, countries) from the same ESDB data, size 60 and below (Chris 2026-11-14)
+  names.txt     nationalities, languages, holidays, religions, planets and star signs (no first or last names)
   extra.txt     our own words (optional): newer slang, internet and crude words the lists don't have, words separated by spaces or lines, # comments
 Only plain a-z words of 3 to 12 letters are kept. usage: python3 -I tools/words.py"""
 import pathlib, re
 ROOT = pathlib.Path(__file__).resolve().parents[1]; D = ROOT / "tools/wordlists"
 words, counts = set(), {}
-for name in ["enable.txt", "scowl-70.txt", "places.txt", "extra.txt"]:
+for name in ["enable.txt", "scowl-70.txt", "places.txt", "names.txt", "extra.txt"]:
     f = D / name
     if not f.exists(): continue
     got = {w for l in f.read_text().splitlines() for w in l.split("#")[0].lower().split() if re.fullmatch(r"[a-z]{3,12}", w)}
