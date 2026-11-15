@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 118;</script><script>
+<script>window.LEX_BUILD = 119;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -1114,18 +1114,23 @@ function drawRain() {
   const [bx, by, bw, bh] = panes[panes.length - 1], top = panes[0][1], H2 = by + bh - top;
   if (!rainS) { rainS = []; for (let i = 0; i < 70; i++) rainS.push({ x: Math.random(), y: Math.random(), v: .018 + Math.random() * .014, l: 8 + Math.random() * 14, a: .12 + Math.random() * .2 });
     rainD = []; for (let i = 0; i < 9; i++) rainD.push({ x: Math.random(), y: Math.random(), r: 1.5 + Math.random() * 2.2, v: 0, hold: Math.random() * 200 }); }
-  const rx = FX(L.radioX + 8);   // on narrow screens the radio covers part of the window: no rain on the radio
-  ctx.save(); ctx.beginPath(); panes.forEach(([x, y, w, hh]) => ctx.rect(x, y, Math.max(0, Math.min(w, rx - x)), hh)); ctx.clip();
-  ctx.lineWidth = 1.5; ctx.lineCap = "round";
-  for (const s of rainS) { s.y += s.v; s.x += s.v * .22; if (s.y > 1.05) { s.y = -.05; s.x = Math.random() * 1.1 - .1; } if (s.x > 1.05) s.x -= 1.1;
-    const x = bx + s.x * bw, y = top + s.y * H2; ctx.strokeStyle = `rgba(170,225,210,${s.a})`; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - s.l * .22, y - s.l); ctx.stroke(); }
+  for (const s of rainS) { s.y += s.v; s.x += s.v * .22; if (s.y > 1.05) { s.y = -.05; s.x = Math.random() * 1.1 - .1; } if (s.x > 1.05) s.x -= 1.1; }
   for (const d of rainD) { if (d.hold > 0) d.hold--; else { d.v = Math.min(.012, d.v + .0006); d.y += d.v; if (Math.random() < .02) { d.hold = 20 + Math.random() * 120; d.v = 0; } }
-    if (d.y > 1.02) { d.y = -.02; d.x = Math.random(); d.r = 1.5 + Math.random() * 2.2; d.hold = Math.random() * 120; }
-    const x = bx + d.x * bw, y = top + d.y * H2;
-    ctx.fillStyle = "rgba(150,210,195,.10)"; ctx.fillRect(x - d.r * .4, y - 26, d.r * .8, 26);   // its wet trail
-    ctx.fillStyle = "rgba(185,235,220,.32)"; ctx.beginPath(); ctx.arc(x, y, d.r, 0, 6.283); ctx.fill();
-    ctx.fillStyle = "rgba(255,255,255,.55)"; ctx.fillRect(x - d.r * .45, y - d.r * .5, 1.5, 1.5); }
-  ctx.restore();
+    if (d.y > 1.02) { d.y = -.02; d.x = Math.random(); d.r = 1.5 + Math.random() * 2.2; d.hold = Math.random() * 120; } }
+  const rx = FX(L.radioX + 8);   // on narrow screens the radio covers part of the window: no rain on the radio
+  // the rain shows full on clear glass (the tall panes and the plain glass at each end of the stained strip, Chris 2026-11-14) and
+  // only faintly over the stained glass itself
+  const clear = (P("window_clear") || []).map(([x0, y0, x1, y1]) => [FX(L.winX + x0), FX(L.winY + y0), FX(x1 - x0), FX(y1 - y0)]);
+  const stained = clear.length ? [[clear[0][0] + clear[0][2], panes[0][1], clear[1][0] - clear[0][0] - clear[0][2], panes[0][3]]] : [];
+  const pass = (rects, alpha) => { if (!rects.length) return; ctx.save(); ctx.globalAlpha = alpha; ctx.beginPath(); rects.forEach(([x, y, w, hh]) => ctx.rect(x, y, Math.max(0, Math.min(w, rx - x)), hh)); ctx.clip();
+    ctx.lineWidth = 1.5; ctx.lineCap = "round";
+    for (const s of rainS) { const x = bx + s.x * bw, y = top + s.y * H2; ctx.strokeStyle = `rgba(170,225,210,${s.a})`; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x - s.l * .22, y - s.l); ctx.stroke(); }
+    for (const d of rainD) { const x = bx + d.x * bw, y = top + d.y * H2;
+      ctx.fillStyle = "rgba(150,210,195,.10)"; ctx.fillRect(x - d.r * .4, y - 26, d.r * .8, 26);   // its wet trail
+      ctx.fillStyle = "rgba(185,235,220,.32)"; ctx.beginPath(); ctx.arc(x, y, d.r, 0, 6.283); ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,.55)"; ctx.fillRect(x - d.r * .45, y - d.r * .5, 1.5, 1.5); }
+    ctx.restore(); };
+  pass(clear.length ? [...clear, ...panes.slice(1)] : panes, 1); pass(stained, .22);
 }
 function drawLamp(x, y, r, low) {   // a lit dome lamp centered at (x, y) fine pixels: hot middle, amber body, darker rim, a glint up-left
   const g = ctx.createRadialGradient(x - r * .25, y - r * .25, r * .1, x, y, r); g.addColorStop(0, low ? "#ffd0b8" : "#fffbe0"); g.addColorStop(.45, low ? "#ff5a3c" : "#ffd65a"); g.addColorStop(1, low ? "#a0201a" : "#c88a1e");

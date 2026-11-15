@@ -145,6 +145,7 @@ def main():
     pts["window_lights"] = lights
     sh = WIN_PANES[1][1] - WIN_PANES[0][3]; P2 = [WIN_PANES[0], (WIN_PANES[1][0], WIN_PANES[1][1], WIN_PANES[1][2], SASH_Y), (WIN_PANES[1][0], SASH_Y + sh, WIN_PANES[1][2], WIN_PANES[1][3])]
     pts["window_panes"] = [[x0 - ox, y0 - oy, x1 - ox, y1 - oy] for x0, y0, x1, y1 in P2]
+    pts["window_clear"] = [[16, 16, 28, 49], [102, 16, 114, 49]]   # the plain glass at each end of the stained strip (Chris 2026-11-14: rain shows there)
     pts["window_sky"] = [int(gx.min()), int(gy.min()), int(gx.max()) + 1, int(gy.max()) + 1]
     # part icons: full size for the part picker, exactly half (2x2 cells, majority colour) for the bar's slots
     ic, fx, fy = fixed("icons"); ia = np.asarray(ic); al = ia[..., 3] > 0; H, W = al.shape
@@ -355,7 +356,8 @@ def main():
         for k_ in range(6):   # evenly spaced now that they're all one lamp; the lamp's middle is at the mark plus half a pixel each way
             pts["radio"]["lamp%d" % k_] = [166 + round(k_ * 149 / 5), 232]; lx_, ly_ = pts["radio"]["lamp%d" % k_]; rim_.alpha_composite(lamp_, (lx_ - 13, ly_ - 13))
         imgs["radio"] = rim_
-    if not os.path.exists(SRC + "bench/stained.png"):   # (the stained glass waits on the bench; listed here, after the bench's own list)
+    if True:   # (the stained glass stays on the bench, his latest version, while Chris keeps touching it up; listed after the bench's own list)
+        if os.path.exists(SRC + "bench/stained.png"): Image.open(SRC + "bench/stained.png").save(ROOT_ART + "bench/img/stained.png")
         json.dump([{"file": "img/stained.png", "group": "To do: frames under the rivets", "label": "The window's stained glass (everything inside the wood, 98 x 33)", "w": 98, "h": 33, "key": "stained"}], open(ROOT_ART + "bench/manifest.json", "w"), indent=1)
     # the bar's clasp (Chris 2026-11-14): PixelLab's winged brass piece (src/clasp_wings.png, trimmed to the wings' shape)
     if os.path.exists(SRC + "clasp_wings.png"): imgs["bar_clasp"] = Image.open(SRC + "clasp_wings.png").convert("RGBA")
