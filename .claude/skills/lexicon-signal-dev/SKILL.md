@@ -253,6 +253,9 @@ the same batch.
   25% bigger so the keys stay the same size; H5() maps an old 4x4 position onto the 5x5 grid); trace touching letters (8 directions), 3+ letters. Score = signal (letter values) x boost (length-2)
   x part multipliers; every word carries +2 signal so short words count. 6 words a night (one per lamp), 1 retune; targets: see
   Targets above; pick 1 of 3 parts. (Before the red key, night 1 at 40 in 5 words was too hard: Chris kept losing.)
+- Night intro (Chris 2026-11-14, Workshop intro-r1, picked 1): each night opens with a big brass plaque over the dimmed room (NIGHT N, the
+  signal to beam in big red figures, words and retunes, about how much a word needs) that waits for A or a tap (nightHold, drawIntro,
+  INTRO; #intro-N, #test-intro-N). Test hashes skip it unless they say intro-. The old plaque below is INTRO 0.
 - The goal is said plainly: a brass plaque that drops in at the top of the room with a clunk ("NIGHT 1 / BEAM 30 SIGNAL IN 6 WORDS"),
   holds, then lifts away (any press sends it off; Chris disliked the old dark box over the glass), the top plate shows "N TO GO" with a fill bar, the log says what's left after each word, and the tower beacon burns brighter
   as the night's signal fills.

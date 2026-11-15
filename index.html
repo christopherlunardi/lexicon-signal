@@ -1847,7 +1847,8 @@ function drawNightCard() {
 // Night intro (workshop, Chris 2026-11-14: "not enough clarity of how many points you need each night"): a card that says the night's
 // goal plainly and waits for a press. #intro-N picks the look: 0 the old plaque that lifts away by itself, 1 a big brass plaque over the
 // dimmed room, 2 a parchment ledger, 3 the radio's own glass lit with the goal, 4 a full-screen card like an old film's title.
-let INTRO = 0; { const m = location.hash.match(/intro-(\d)/); if (m) INTRO = Math.min(4, +m[1]); }
+let INTRO = 1; {   // Chris picked 1, the big brass plaque (2026-11-14)
+  const m = location.hash.match(/intro-(\d)/); if (m) INTRO = Math.min(4, +m[1]); }
 const NUMW = ["ZERO", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE", "TEN", "ELEVEN", "TWELVE", "THIRTEEN", "FOURTEEN", "FIFTEEN", "SIXTEEN", "SEVENTEEN", "EIGHTEEN", "NINETEEN", "TWENTY"];
 function introFacts() { const per = Math.ceil(S.target / Math.max(1, S.words)), bat = has("battery"), kn = has("knob");
   return { per, words: `${S.words} WORD${S.words === 1 ? "" : "S"}`, ret: `${S.retunes} RETUNE${S.retunes === 1 ? "" : "S"}`,

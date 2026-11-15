@@ -1578,7 +1578,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "How should each night start, so it's clear how much signal you need?",
      "found": "Chris: not enough clarity on how many points each night needs; a night intro you press past. Options 1-4 hold until you press A (or tap); the bar's top plate keeps showing what's left once you're playing. Every option shows the same facts: the night, the signal to beam, your words and retunes (parts that add to them are counted in), and the average a word needs. Shown on night 3 with a Spare Battery fitted. 'Play in game' opens that night with the card up.",
      "options": [
@@ -1662,7 +1662,8 @@
        ],
        "play": "play.html#test-intro-4"
       }
-     ]
+     ],
+     "chosen": "1"
     }
    ]
   }
