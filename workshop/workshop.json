@@ -1571,6 +1571,100 @@
      "chosen": null
     }
    ]
+  },
+  {
+   "id": "intro",
+   "title": "Night intro",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "How should each night start, so it's clear how much signal you need?",
+     "found": "Chris: not enough clarity on how many points each night needs; a night intro you press past. Options 1-4 hold until you press A (or tap); the bar's top plate keeps showing what's left once you're playing. Every option shows the same facts: the night, the signal to beam, your words and retunes (parts that add to them are counted in), and the average a word needs. Shown on night 3 with a Spare Battery fitted. 'Play in game' opens that night with the card up.",
+     "options": [
+      {
+       "id": "0",
+       "title": "As it is now",
+       "note": "The brass plaque drops in at the top, holds about three seconds and lifts away by itself; any press sends it off sooner.",
+       "images": [
+        {
+         "src": "img/intro-r1/intro-0-desk.jpg",
+         "label": "Computer"
+        },
+        {
+         "src": "img/intro-r1/intro-0-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-intro-0"
+      },
+      {
+       "id": "1",
+       "title": "Big brass plaque",
+       "note": "A large brass plaque over the dimmed room: NIGHT 3, the signal to beam in big red stamped figures, the words and retunes you have, and about how much each word needs to average. It waits for A.",
+       "images": [
+        {
+         "src": "img/intro-r1/intro-1-desk.jpg",
+         "label": "Computer"
+        },
+        {
+         "src": "img/intro-r1/intro-1-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-intro-1"
+      },
+      {
+       "id": "2",
+       "title": "Night ledger",
+       "note": "A parchment card like the log: the night's terms on ruled lines (signal to beam, words, retunes, about a word), with what your parts add noted on their line. It waits for A.",
+       "images": [
+        {
+         "src": "img/intro-r1/intro-2-desk.jpg",
+         "label": "Computer"
+        },
+        {
+         "src": "img/intro-r1/intro-2-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-intro-2"
+      },
+      {
+       "id": "3",
+       "title": "On the radio's glass",
+       "note": "The letters go dark and the glass itself lights up with the goal in the dial's dot lettering, the big number in the middle; the room stays lit. It waits for A.",
+       "images": [
+        {
+         "src": "img/intro-r1/intro-3-desk.jpg",
+         "label": "Computer"
+        },
+        {
+         "src": "img/intro-r1/intro-3-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-intro-3"
+      },
+      {
+       "id": "4",
+       "title": "Full-screen title card",
+       "note": "The whole screen goes dark like an old film's title card: NIGHT THREE, a red beacon dot, the target big in cream, then you have 7 words and 1 retune, about 19 a word. It waits for A.",
+       "images": [
+        {
+         "src": "img/intro-r1/intro-4-desk.jpg",
+         "label": "Computer"
+        },
+        {
+         "src": "img/intro-r1/intro-4-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-intro-4"
+      }
+     ]
+    }
+   ]
   }
  ]
 }

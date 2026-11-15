@@ -565,16 +565,16 @@ function newRun() { S = fresh("play"); log("On the air."); plStart(); startNight
 function startNight() {
   S.score = 0; S.shown = 0; S.over = false; S.nw = []; S.startTotal = S.total; S.firstWord = true; S.target = targetFor(S.night); S.words = maxWords(); S.retunes = maxRetunes(); S.path = [];
   if (S.grid.length === NN && S.night > 1) ensureHot(); else fillGrid(true);   // the glass keeps its letters from night to night; a new run starts fresh
-  S.phase = "play"; INSPECT.on = false; KNOB.on = false; dialFlash = null; nightCard = 170; log(`Night ${S.night}: beam ${S.target} signal to the tower in ${S.words} words.`); if (S.night === 1 && !HOW.on) log(TAPW() ? "Stuck? Tap the right knob to retune: all new letters." : btn("Stuck? Press {Y} to retune: all new letters."));
+  S.phase = "play"; INSPECT.on = false; KNOB.on = false; dialFlash = null; nightCard = 170; if (INTRO && !HOW.on && (!location.hash.startsWith("#test-") || location.hash.includes("intro-"))) { nightHold = true; introT = 0; nightCard = 16; } log(`Night ${S.night}: beam ${S.target} signal to the tower in ${S.words} words.`); if (S.night === 1 && !HOW.on) log(TAPW() ? "Stuck? Tap the right knob to retune: all new letters." : btn("Stuck? Press {Y} to retune: all new letters."));
 }
 
 /* ================= actions ================= */
-let nightCard = 0, busy = 0, dialFlash = null, knobA = { L: 0, R: 0 }, pathSound = 0, pending = null;
-const canAct = () => S.phase === "play" && !busy && !moving();
-function dismissCard() { if (nightCard > 20) nightCard = 20; }
+let nightCard = 0, nightHold = false, introT = 0, busy = 0, dialFlash = null, knobA = { L: 0, R: 0 }, pathSound = 0, pending = null;
+const canAct = () => S.phase === "play" && !busy && !moving() && !nightHold;
+function dismissCard() { if (nightHold) { nightHold = false; nightCard = 16; Sound.click(); return true; } if (nightCard > 20) nightCard = 20; return false; }
 function setPath(p) { const was = isValid(); if (p.length > S.path.length) addT = 0; S.path = p; if (p.length > pathSound) Sound.blip(p.length); pathSound = p.length; if (isValid() && !was) Sound.lock(); dialFlash = null; }
 function tapTile(i) {
-  dismissCard(); if (!canAct()) return; S.cursor = i; const p = S.path, last = p[p.length - 1];
+  if (dismissCard()) return; if (!canAct()) return; S.cursor = i; const p = S.path, last = p[p.length - 1];
   if (!p.length) return setPath([i]);
   if (i === last) return send();
   if (p.length >= 2 && i === p[p.length - 2]) return setPath(p.slice(0, -1));
@@ -912,7 +912,7 @@ function draw() {
   ctx.save(); ctx.translate(sx * FINE, 0); drawRain(); drawDial(); drawLamps(); drawKeyLetters(); drawGlows(); drawFlyers(); ctx.restore();
   if (overT > 0) { ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(255,40,24,${.42 * overT * (.6 + .4 * Math.sin(frame / 2))})`; ctx.fillRect(0, 0, CVW, CVH); ctx.restore(); overT = Math.max(0, overT - .012); }
   drawScoreDrums();
-  drawBarText(); if (nightCard > 0 && S.phase === "play" && !HOW.on) { drawNightCard(); nightCard--; }
+  drawBarText(); if (nightCard > 0 && S.phase === "play" && !HOW.on) { if (INTRO) { drawIntro(); introT++; if (!nightHold) nightCard--; } else { drawNightCard(); nightCard--; } }
   if (S.phase === "title" || S.phase === "shop" || S.phase === "swap" || S.phase === "over" || S.phase === "melt" || S.phase === "upgrade" || S.phase === "report") {
     octx.clearRect(0, 0, W, H); octx.imageSmoothingEnabled = false;
     if (S.phase === "title") drawTitle(); else if (S.phase === "shop") drawShop(); else if (S.phase === "swap") drawSwap(); else if (S.phase === "melt") drawMelt(); else if (S.phase === "report") drawReport(); else if (S.phase === "upgrade") drawUpgrade(); else drawOver();
@@ -1843,6 +1843,68 @@ function drawNightCard() {
   const cx = FX(W / 2), ty = FX(y) + 14;
   ftext(`NIGHT ${S.night}`, cx, ty, "key", C.ink, "c", { under: C.brassHi, uy: 3 });
   ftext(l2, cx, ty + kh + 8, "ink", C.inkRed, "c", { under: C.brassHi, uy: 2 });
+}
+// Night intro (workshop, Chris 2026-11-14: "not enough clarity of how many points you need each night"): a card that says the night's
+// goal plainly and waits for a press. #intro-N picks the look: 0 the old plaque that lifts away by itself, 1 a big brass plaque over the
+// dimmed room, 2 a parchment ledger, 3 the radio's own glass lit with the goal, 4 a full-screen card like an old film's title.
+let INTRO = 0; { const m = location.hash.match(/intro-(\d)/); if (m) INTRO = Math.min(4, +m[1]); }
+const NUMW = ["ZERO", "ONE", "TWO", "THREE", "FOUR", "FIVE", "SIX", "SEVEN", "EIGHT", "NINE", "TEN", "ELEVEN", "TWELVE", "THIRTEEN", "FOURTEEN", "FIFTEEN", "SIXTEEN", "SEVENTEEN", "EIGHTEEN", "NINETEEN", "TWENTY"];
+function introFacts() { const per = Math.ceil(S.target / Math.max(1, S.words)), bat = has("battery"), kn = has("knob");
+  return { per, words: `${S.words} WORD${S.words === 1 ? "" : "S"}`, ret: `${S.retunes} RETUNE${S.retunes === 1 ? "" : "S"}`,
+    extra: bat || kn ? [bat ? `${bat} FROM BATTER${bat === 1 ? "Y" : "IES"}` : "", kn ? `${kn} FROM THE KNOB${kn === 1 ? "" : "S"}` : ""].filter(Boolean).join(", ") : "",
+    prompt: TAPW() ? "TAP TO START" : btn("PRESS {A} TO START") }; }
+function bigText(s, cx, y, kind, col, k, opt) { const c0 = document.createElement("canvas"); const w = textW(s, kind) + 8, h = glyphCv(kind, "N", col).height + 8; c0.width = w; c0.height = h;
+  const x0 = c0.getContext("2d"); x0.imageSmoothingEnabled = false; TXT = x0; ftext(s, 4, 2, kind, col, "l", opt); TXT = null; ctx.imageSmoothingEnabled = false; ctx.drawImage(c0, Math.round(cx - w * k / 2), y, w * k, h * k); return h * k; }
+function drawIntro() {
+  const F = introFacts(), inA = Math.min(1, introT / 12), outA = nightHold ? 1 : nightCard / 16, a = Math.min(inA, outA), e = 1 - (1 - a) * (1 - a), blink = (frame >> 4) & 1;
+  const CX = CVW / 2, kh = glyphCv("key", "N", C.ink).height, ih = glyphCv("ink", "N", C.ink).height, lh = Math.round(22 * TK);
+  ctx.save();
+  if (INTRO !== 3) { ctx.fillStyle = `rgba(6,3,2,${(INTRO === 4 ? .94 : .6) * e})`; ctx.fillRect(0, 0, CVW, CVH); }
+  ctx.globalAlpha = e;
+  if (INTRO === 1) {   // a big brass plaque, the goal stamped large
+    const w = Math.min(W - 24, 250), hh = Math.ceil((30 + kh + 10 + ih + 8 + (kh + 8) * 2 + 2 + lh * 2 + 4 + ih + 26) / FINE), x = Math.round(W / 2 - w / 2), y = Math.round((L.barY - hh) / 2 - (1 - e) * 30);
+    ctx.fillStyle = "rgba(8,4,2,.45)"; ctx.fillRect(FX(x + 4), FX(y + 5), FX(w), FX(hh)); ctx.drawImage(panelCv("plate", w, hh), FX(x), FX(y), FX(w), FX(hh));
+    let yy = FX(y) + 30; ftext(`NIGHT ${S.night}`, CX, yy, "key", C.ink, "c", { under: C.brassHi, uy: 3 }); yy += kh + 10;
+    ftext("BEAM", CX, yy, "ink", C.ink, "c", { under: C.brassHi, uy: 2 }); yy += ih + 8;
+    yy += bigText(String(S.target), CX, yy, "key", C.inkRed, 2, { under: C.brassHi, uy: 3 }) + 2;
+    ftext("SIGNAL TO THE TOWER", CX, yy, "ink", C.ink, "c", { under: C.brassHi, uy: 2 }); yy += lh + 4;
+    ftext(`IN ${F.words}  ·  ${F.ret}`, CX, yy, "ink", C.ink, "c", { under: C.brassHi, uy: 2 }); yy += lh;
+    ftext(`ABOUT ${F.per} A WORD`, CX, yy, "ink", C.inkSoft, "c", { under: C.brassHi, uy: 2 });
+    if (blink) ftext(F.prompt, CX, FX(y + hh) + 22, "key", C.gold, "c", { outline: C.dark });
+  } else if (INTRO === 2) {   // a parchment ledger: the night's terms, one per ruled line
+    const w = Math.min(W - 24, 230), hh = Math.ceil((36 + kh + 18 + (kh + 14) + 3 * (glyphCv("ink3", "N", C.ink).height + 14) + 30) / FINE), x = Math.round(W / 2 - w / 2), y = Math.round((L.barY - hh) / 2 - (1 - e) * 24);
+    ctx.drawImage(panelCv("logbox", w, hh), FX(x), FX(y), FX(w), FX(hh));
+    const X0 = FX(x) + 40, X1 = FX(x + w) - 40; let yy = FX(y) + 36;
+    ftext(`NIGHT ${S.night}`, CX, yy, "key", C.ink, "c", { under: C.brassHi, uy: 3 }); yy += kh + 18;
+    const row = (l, v, col, kind) => { const vh = glyphCv(kind, "N", col).height; ftext(l, X0, yy + vh - ih, "ink", C.ink, "l"); ftext(v, X1, yy, kind, col, "r");
+      ctx.fillStyle = C.inkSoft; for (let dx = X0 + textW(l, "ink") + 10; dx < X1 - textW(v, kind) - 10; dx += 10) ctx.fillRect(dx, yy + vh - 3, 3, 3); yy += vh + 14; };
+    const bat = has("battery"), kn = has("knob");
+    row("SIGNAL TO BEAM", String(S.target), C.inkRed, "key"); row(bat ? `WORDS (+${bat} BATTERY)` : "WORDS", String(S.words), C.ink, "ink3"); row(kn ? `RETUNES (+${kn} KNOB)` : "RETUNES", String(S.retunes), C.ink, "ink3"); row("ABOUT A WORD", String(F.per), C.inkSoft, "ink3");
+    if (blink) ftext(F.prompt, CX, FX(y + hh) + 22, "key", C.gold, "c", { outline: C.dark });
+  } else if (INTRO === 3) {   // the radio's glass goes dark and lights up with the goal in its own dots
+    const g = L.glass; ctx.save(); ctx.beginPath(); ctx.roundRect(FX(g.x), FX(g.y), FX(g.w), FX(g.h), FX(GLASS_R)); ctx.clip();
+    ctx.fillStyle = `rgba(14,8,5,${.95 * e})`; ctx.fillRect(FX(g.x), FX(g.y), FX(g.w), FX(g.h));
+    const gx = FX(g.x + g.w / 2), bh = glyphCv("big", "N", C.amber).height, dh = glyphCv("dot", "N", C.amber).height; let yy = FX(g.y) + 16;
+    ftext(`NIGHT ${S.night}`, gx, yy, "dot", C.amber, "c"); yy += dh + 10;
+    ftext(String(S.target), gx, yy, "big", C.gold, "c"); yy += bh + 10;
+    ftext("SIGNAL", gx, yy, "dot", C.amber, "c"); yy += dh + 10;
+    ftext(`${S.words} WORDS ${S.retunes} RETUNE${S.retunes === 1 ? "" : "S"}`, gx, yy, "dot", C.dotDim, "c"); yy += dh + 6;
+    ftext(`ABOUT ${F.per} A WORD`, gx, yy, "dot", C.dotDim, "c"); yy += dh + 14;
+    if (blink) ftext(TAPW() ? "TAP TO START" : btn("{A} TO START"), gx, yy, "dot", C.amber, "c");
+    ctx.restore();
+  } else if (INTRO === 4) {   // the whole screen goes dark like a film's title card
+    let yy = Math.round(CVH * .2) - Math.round((1 - e) * 20);
+    ftext(`NIGHT ${NUMW[S.night] || S.night}`, CX, yy, "key", C.gold, "c"); yy += kh + 30;
+    ctx.fillStyle = C.gold; ctx.fillRect(CX - 60, yy - 16, 120, 2); ctx.beginPath(); ctx.arc(CX, yy - 15, 4, 0, 6.283); ctx.fillStyle = blink ? "#ff3a2e" : "#a02018"; ctx.fill();
+    ftext("BEAM", CX, yy, "ink", C.hot, "c"); yy += ih + 10;
+    yy += bigText(String(S.target), CX, yy, "key", C.hot, 3, {}) + 6;
+    ftext("SIGNAL TO THE TOWER", CX, yy, "ink", C.hot, "c"); yy += lh + 22;
+    ftext(`YOU HAVE ${F.words} AND ${F.ret}`, CX, yy, "ink", C.gold, "c"); yy += lh;
+    if (F.extra) { ftext("(" + F.extra + ")", CX, yy, "ink", C.dotDim, "c"); yy += lh; }
+    ftext(`THAT'S ABOUT ${F.per} A WORD`, CX, yy, "ink", C.dotDim, "c"); yy += lh + 34;
+    if (blink) ftext(F.prompt, CX, yy, "key", C.amber, "c");
+  }
+  ctx.restore();
 }
 function drawBarText() {
   const by = L.barY; drawTube();
@@ -2837,7 +2899,7 @@ const TAPW = () => usingTouch && !SHELL;
 const KEYNAME = { A: "Z", B: "X", X: "V", Y: "C", START: "ESC" };
 const BTN = (b) => INPUT === "keys" ? KEYNAME[b] : b;
 const btn = (t) => String(t).replace(/\{(A|B|X|Y|START)\}/g, (m, b) => BTN(b));
-function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ? "up" : "down"; if (devKey(dk)) return; if (pauseKey(dk)) return; if (boardKey(dk)) return; if (howKey(dk)) return; dismissCard();
+function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ? "up" : "down"; if (devKey(dk)) return; if (pauseKey(dk)) return; if (boardKey(dk)) return; if (howKey(dk)) return; if (nightHold) return; dismissCard();
   usingButtons = true; Sound.ensure();
   if (S.phase === "report") { if (dy) reportScroll(dy); return; }
   if (S.phase === "title" && TS === 6 && (dy || dx)) { dy = dy || dx; if (titleBusy()) return; titleSel = (titleSel + dy + TITLE_MENU.length) % TITLE_MENU.length; Sound.click(); return; }
@@ -2859,10 +2921,10 @@ function titleBusy() { if (S.phase === "title" && !titleSkip && titleT < TITLE_L
 function start() { if (buildReady) return maybeReload(); Sound.ensure(); Sound.music(); newRun(); }   // (a new build waiting in the app loads first)
 // buttons (Chris 2026-11-12: a four-button game, Start pauses, Select doesn't mute): A pick / send, B back, X send the word, Y retune,
 // Start pause (and pick on menus), Select nothing (held: dev mode). Keyboard: Z/Space/Enter A, X/Backspace B, C/R retune (Y), V send (X), Esc/P pause.
-function pressA() { if (devKey("a")) return; if (pauseKey("a")) return; if (boardKey("a")) return; if (howKey("a")) return; if (inspectKey("a")) return; if (knobKey("a")) return; Sound.ensure(); usingButtons = true; dismissCard(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
-function pressB() { if (devKey("b")) return; if (pauseKey("b")) return; if (boardKey("b")) return; if (howKey("b")) return; if (inspectKey("a")) return; if (knobKey("b")) return; if (S.phase === "melt") return meltDone(); if (S.phase === "swap") return swapCancel(); if (S.phase === "play") back(); }
-function pressX() { if (devKey("x")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); dismissCard(); if (S.phase === "play" && S.path.length) send(); else pressA(); }
-function pressY() { if (devKey("y")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); dismissCard(); if (S.phase === "play") retune(); else if (S.phase === "report") reportToggle(); }
+function pressA() { if (devKey("a")) return; if (pauseKey("a")) return; if (boardKey("a")) return; if (howKey("a")) return; if (inspectKey("a")) return; if (knobKey("a")) return; Sound.ensure(); usingButtons = true; if (dismissCard()) return; if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
+function pressB() { if (devKey("b")) return; if (pauseKey("b")) return; if (boardKey("b")) return; if (howKey("b")) return; if (inspectKey("a")) return; if (knobKey("b")) return; if (nightHold) return void dismissCard(); if (S.phase === "melt") return meltDone(); if (S.phase === "swap") return swapCancel(); if (S.phase === "play") back(); }
+function pressX() { if (devKey("x")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play" && S.path.length) send(); else pressA(); }
+function pressY() { if (devKey("y")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play") retune(); else if (S.phase === "report") reportToggle(); }
 function pressStart() { if (devKey("start")) return; if (pauseKey("start")) return; if (boardKey("start")) return; if (howKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); if (S.phase === "play") pauseOpen(); }
 function pressSel() { if (devKey("select")) return; }   // Select does nothing by itself (held a moment: dev mode, once it's unlocked)
 window.addEventListener("keydown", (e) => {
@@ -3250,6 +3312,7 @@ async function boot() {
   if (location.hash === "#test-upgrade") { newRun(); S.parts.push("amp", "coil", "battery", "knob", "echo"); nightClear(); S.phase = "upgrade"; MELT.ut = 0; swapFocus = 1; }
   if (/^#test-melt/.test(location.hash)) { newRun(); S.parts.push("amp", "coil", "battery", "knob", "echo"); S.melt = /full/.test(location.hash) ? 4 : 1; nightClear(); S.phase = "shop"; }
   if (/^#test-shop-tags/.test(location.hash)) { newRun(); S.parts.push("amp", "coil", "battery", "knob"); if (/full/.test(location.hash)) S.parts.push("echo"); S.over = true; nightClear(); S.phase = "shop"; shopChoices = [PART.coil, PART.gold, PART.owl, PART.amp]; }
+  if (location.hash.startsWith("#test-intro")) { newRun(); S.night = 3; S.parts.push("battery", "amp"); S.total = 140; startNight(); }   // the night intro on night 3 with a battery (#test-intro-N)
   if (location.hash.startsWith("#test-shop-gold")) { newRun(); S.parts.push("amp", "coil"); nightClear(); S.phase = "shop"; shopChoices[1] = PART.gold; }
   if (location.hash === "#test-swap") { newRun(); S.parts.push("amp", "amp", "coil", "echo", "owl", "short"); nightClear(); const k = shopChoices.findIndex(c => !S.parts.includes(c.id)); if (k >= 0) choosePart(k); }
   if (location.hash.startsWith("#test-shop-tap")) { newRun(); S.parts.push("amp", "coil"); nightClear(); S.phase = "shop"; shopChoices[1] = PART.tap; }
