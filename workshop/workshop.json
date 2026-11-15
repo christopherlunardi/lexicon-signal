@@ -147,7 +147,7 @@
     },
     {
      "id": "r2",
-     "status": "open",
+     "status": "decided",
      "question": "How should the top plate show your signal against the night's target?",
      "found": "Round 1: the mark on the tube is in. This round is only the top plate. Same night as before: night 4, target 205, 70 in ('Nearly there': 185 in). Every option also has the tube mark.",
      "options": [
@@ -271,7 +271,8 @@
        ],
        "play": "play.html#test-togo-5-trace"
       }
-     ]
+     ],
+     "chosen": "3"
     }
    ]
   },

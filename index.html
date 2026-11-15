@@ -1005,7 +1005,8 @@ let PACE = 2; { const m = location.hash.match(/pace-(\d)/); if (m) PACE = Math.m
 /* ---- Workshop "to go" round 2 (Chris 2026-11-15: the plate is the place; show what you have against the target, nicely).
    #togo-N: 0 as now (135 TO GO); 1 stamped 70 / 205; 2 the score big, "/ 205" small; 3 a lit window in the plate with 70 / 205;
    4 the same window in the dial's dot lettering; 5 70 / 205 on the top plate and 135 TO GO on the lower one. ---- */
-let TOGO = 0; { const m = location.hash.match(/togo-(\d)/); if (m) TOGO = Math.min(5, +m[1]); }
+let TOGO = 3; {   // Chris picked 3, the lit window: score / target (2026-11-15)
+ const m = location.hash.match(/togo-(\d)/); if (m) TOGO = Math.min(5, +m[1]); }
 const toGo = () => Math.max(0, S.target - S.shown);
 const togoOn = () => S.phase === "play" && !HOW.on && toGo() > 0;
 const paceNeed = () => { const need = S.target - S.shown; return S.phase === "play" && need > 0 && S.words > 0 ? Math.ceil(need / S.words) : 0; };
@@ -2200,6 +2201,8 @@ const TIPS = [
   "EVERY LAMP STILL LIT WHEN A NIGHT CLEARS PAYS YOUR BEST WORD AGAIN",
   "AN UNUSED RETUNE PAYS A BONUS AT THE END OF THE NIGHT, AND MORE IN LATER NIGHTS",
   "FALL JUST SHORT OF A NIGHT? TRADE ONE COPY OF A STACKED PART TO PUSH ON",
+  "THE BRASS MARK ON THE TUBE SHOWS WHERE YOUR NEXT WORD SHOULD REACH TO KEEP PACE",
+  "THE TOP PLATE SHOWS YOUR SIGNAL AGAINST THE NIGHT'S TARGET",
   "A TRADE NEEDS THREE-QUARTERS OF THE NIGHT'S TARGET AND A PART WITH TWO OR MORE COPIES",
   "AFTER EACH NIGHT A REPORT SHOWS EVERY WORD AND WHAT BOOSTED IT",
   "TAP THE LEFT KNOB TO PAUSE",
