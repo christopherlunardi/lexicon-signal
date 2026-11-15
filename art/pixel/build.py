@@ -340,6 +340,16 @@ def main():
     if not os.path.exists(SRC + "bench/lamp.png"):
         lp_ = Image.open(SRC + "lamp_pixellab.png").convert("RGBA"); lp_.save(ROOT_ART + "bench/img/lamp.png")
         json.dump([{"file": "img/lamp.png", "group": "To do: frames under the rivets", "label": "The radio's lamp (PixelLab's clean one), unlit: the game draws its glow on top. Used six times on plain wood", "w": lp_.width, "h": lp_.height, "key": "lamp"}], open(ROOT_ART + "bench/manifest.json", "w"), indent=1)
+    # the strip under the radio's glass (Chris 2026-11-14): plain wood (the radio's own wood from either side of the lamps, its columns
+    # laid side by side, every other block mirrored so the grain doesn't repeat) with Chris's lamp (src/bench/lamp.png) at each lamp mark
+    if os.path.exists(SRC + "bench/lamp.png"):
+        ra_ = np.asarray(imgs["radio"]).copy(); src_ = ra_.copy(); Y0_, Y1_, X0_, X1_ = 219, 248, 150, 334
+        cols_ = list(range(110, 148)) + list(range(377, 339, -1)) + list(range(147, 109, -1)) + list(range(340, 378))
+        for i_, xx_ in enumerate(range(X0_, X1_)): ra_[Y0_:Y1_, xx_] = src_[Y0_:Y1_, cols_[i_ % len(cols_)]]
+        lamp_ = Image.open(SRC + "bench/lamp.png").convert("RGBA"); rim_ = Image.fromarray(ra_, "RGBA")
+        for k_ in range(6):   # evenly spaced now that they're all one lamp; the lamp's middle is at the mark plus half a pixel each way
+            pts["radio"]["lamp%d" % k_] = [166 + round(k_ * 149 / 5), 232]; lx_, ly_ = pts["radio"]["lamp%d" % k_]; rim_.alpha_composite(lamp_, (lx_ - 13, ly_ - 13))
+        imgs["radio"] = rim_
     # the bar's clasp (Chris 2026-11-14): PixelLab's winged brass piece (src/clasp_wings.png, trimmed to the wings' shape)
     if os.path.exists(SRC + "clasp_wings.png"): imgs["bar_clasp"] = Image.open(SRC + "clasp_wings.png").convert("RGBA")
     # the bar's top-middle clasp on the Pixel Bench (Chris 2026-11-14): what he paints (src/bench/bar_clasp.png) is used exactly as sent

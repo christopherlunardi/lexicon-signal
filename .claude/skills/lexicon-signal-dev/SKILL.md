@@ -58,6 +58,10 @@ the same batch.
   `#test-word-parts` fits two batteries, a knob, an echo tube and an amp.
 - The room is built the full screen height (the sideboard's drawer rows carry on down, fading into shadow). On the title screen the
   bar is away; it rises into place with a thud when a run starts (`barShow` moves `L.barY`).
+- The six lamps under the glass (Chris 2026-11-14): the strip is plain wood now (build.py fills it from the radio's own wood) with
+  Chris's one lamp (src/bench/lamp.png, PixelLab's clean lamp he touched up) stamped six times, evenly spaced (lamp0..5 points are
+  rewritten there); the game lights them at the mark + half a pixel each way.
+- Cast shadow under the bar and the run score (POP 1, Workshop pop-r1): drawn under every light.
 - Lit lamps are drawn on the fine layer (`drawLamp`) at the socket's true middle (`L.lamps`: half a pixel right of the marked
   point, the fifth one more), radius 7 world px, so they sit dead center (2026-11-12, Chris saw them off-center).
 - The window (2026-11-12): Chris picked design 7 of 9 (stained glass sun across the top, tall pane below), 141 wide x 233 tall.

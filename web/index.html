@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 108;</script><script>
+<script>window.LEX_BUILD = 109;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -349,7 +349,7 @@ function computeLayout() {
   L.meter = { x: L.radioX + rp.meter[0], y: L.radioY + rp.meter[1], r: rp.meterR[0] - rp.meter[0] };
   // the true middle of each lamp socket (measured on the art: half a pixel right of the marked point, and the fifth socket one more)
   L.extraLamps = [];
-  L.lamps = [0, 1, 2, 3, 4, 5].map(k => ({ x: L.radioX + rp["lamp" + k][0] + .5 + (k === 4 ? 1 : 0), y: L.radioY + rp["lamp" + k][1] }));
+  L.lamps = [0, 1, 2, 3, 4, 5].map(k => ({ x: L.radioX + rp["lamp" + k][0] + .5, y: L.radioY + rp["lamp" + k][1] + .5 }));   // (Chris's lamp, stamped six times, its middle half a pixel past the mark each way)
   L.knobL = { x: L.radioX + rp.knobL[0], y: L.radioY + rp.knobL[1] }; L.knobR = { x: L.radioX + rp.knobR[0], y: L.radioY + rp.knobR[1] };
   L.sbX = L.radioX - 29; L.sbY = L.radioY + R("radio")[3] - 10;
   // the bar, inside its gold border with one even gap: log | two plates | the part slots. Wide screens: one row, all centered on the
@@ -979,8 +979,8 @@ function scoreShow() { return !HOW.on && barShow > .9 && ["play", "shop", "swap"
 let POP = 1; {   // Chris picked 1, the cast shadow (2026-11-14)
   const m = location.hash.match(/pop-(\d)/); if (m) POP = Math.min(5, +m[1]); }
 function scoreRect() { const { w, h, x, y } = scoreDrumBox(), maxW = Math.max(250, Math.min(440, FX(L.radioX + 70) - 16)), s = Math.min(1, maxW / w); return { x, y: y + h - h * s, w: w * s, h: h * s }; }
-function popBarShadow() { const y = L.barY, g = wctx.createLinearGradient(0, y - 12, 0, y); g.addColorStop(0, "rgba(6,3,2,0)"); g.addColorStop(1, "rgba(6,3,2,.6)"); wctx.fillStyle = g; wctx.fillRect(0, y - 12, W, 12); }
-function popScoreShadow() { if (!scoreShow()) return; const r = scoreRect(); ctx.save(); ctx.shadowColor = "rgba(4,2,1,.8)"; ctx.shadowBlur = 14; ctx.shadowOffsetX = 3; ctx.shadowOffsetY = 5; ctx.fillStyle = "#120804"; ctx.fillRect(r.x + 6, r.y + 6, r.w - 12, r.h - 10); ctx.restore(); }
+function popBarShadow() { const y = L.barY, g = wctx.createLinearGradient(0, y - 14, 0, y); g.addColorStop(0, "rgba(4,2,1,0)"); g.addColorStop(.6, "rgba(4,2,1,.5)"); g.addColorStop(1, "rgba(4,2,1,.85)"); wctx.fillStyle = g; wctx.fillRect(0, y - 14, W, 14); wctx.fillStyle = "rgba(4,2,1,.45)"; wctx.fillRect(0, y - 3, W, 3); }
+function popScoreShadow() { if (!scoreShow()) return; const r = scoreRect(); ctx.save(); ctx.shadowColor = "rgba(2,1,0,1)"; ctx.shadowBlur = 16; ctx.shadowOffsetX = 4; ctx.shadowOffsetY = 7; ctx.fillStyle = "#120804"; ctx.fillRect(r.x + 6, r.y + 6, r.w - 12, r.h - 10); ctx.restore(); }
 function popRims() { const by = FX(L.barY), g = ctx.createLinearGradient(0, 0, CVW, 0); g.addColorStop(0, "rgba(255,214,140,0)"); g.addColorStop(.25, "rgba(255,214,140,.85)"); g.addColorStop(.75, "rgba(255,214,140,.85)"); g.addColorStop(1, "rgba(255,214,140,0)");
   ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = g; ctx.fillRect(0, by, CVW, 3); ctx.fillStyle = "rgba(255,200,120,.16)"; ctx.fillRect(0, by - 6, CVW, 6);
   if (scoreShow()) { const r = scoreRect(), g2 = ctx.createLinearGradient(r.x, 0, r.x + r.w, 0); g2.addColorStop(0, "rgba(255,214,140,.15)"); g2.addColorStop(.5, "rgba(255,214,140,.9)"); g2.addColorStop(1, "rgba(255,214,140,.15)"); ctx.fillStyle = g2; ctx.fillRect(r.x + 8, r.y, r.w - 16, 3); }
