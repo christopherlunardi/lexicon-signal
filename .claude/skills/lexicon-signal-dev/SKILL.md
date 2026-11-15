@@ -168,8 +168,9 @@ the same batch.
 - Pace mark (Workshop pace-r1, Chris picked 2, 2026-11-15): a brass mark on the tube where this word should reach to keep pace
   (paceNeed = what's left / words left), the cells up to it outlined; it lights when the traced word gets there. PACE 2 (#pace-N
   shows the other looks). The night intro plaque says ABOUT N A WORD.
-- Workshop redkey-r1 (open, 2026-11-15): six ways to make the red key stand out more, keeping the scan (REDPOP, #redpop-N; drawn
-  in paGlassVar, the glass the game uses, and the glow pass; #test-togo-3-idle-redpop-N puts the red key on the second row's G).
+- Red key (Workshop redkey-r1, Chris picked 1, 2026-11-15): its red glow is bigger and breathes slowly (REDPOP 1), and the red scan
+  runs quicker (frame * .42). #redpop-N shows the other looks (drawn in paGlassVar, the glass the game uses, and the glow pass;
+  #test-togo-3-idle-redpop-N puts the red key on the second row's G). Videos for a Workshop round: a -step hash + LEXSTEP, ffmpeg.
 - Shine (Chris 2026-11-15): prominent brass plates outside play get the title buttons' hard-striped light sweep every SHINE_PER
   frames (shinyPlateCv): the night intro plaque and every big title plate on a sheet (edgePlate with key lettering: DEAD AIR, the
   night report, PAUSED, HIGH SCORES...). Any new plate of that kind uses shinyPlateCv too.

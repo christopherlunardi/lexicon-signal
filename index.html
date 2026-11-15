@@ -1459,7 +1459,8 @@ let HOT_STYLE = 5; {   // Chris picked red scan (carrier-r1)
 /* ---- Workshop "redkey" r1 (Chris 2026-11-15: the red key a bit more prominent, keeping its look). #redpop-N: 0 as now; 1 a
    stronger red glow that breathes; 2 the key's frame glows red; 3 the key's dark dots warm to a deep red; 4 a brighter scan with a
    trail; 5 a red ring pulses out from the key now and then; 6 the glow and the red frame together. ---- */
-let REDPOP = 0; { const m = location.hash.match(/redpop-(\d)/); if (m) REDPOP = Math.min(6, +m[1]); }
+let REDPOP = 1; {   // Chris picked 1, the breathing glow, with a quicker scan (2026-11-15)
+ const m = location.hash.match(/redpop-(\d)/); if (m) REDPOP = Math.min(6, +m[1]); }
 function paDotGlass({ G, tiles, ok, low }) {
   if (GF.any) return paGlassVar({ G, tiles, ok, low });
   if (ok && !dotOkWas) dotOkAt = frame; dotOkWas = ok;
@@ -1470,7 +1471,7 @@ function paDotGlass({ G, tiles, ok, low }) {
     for (let r = 0; r < 7; r++) for (let c = 0; c < 9; c++) ctx.drawImage(OFF, x + 4 + c * 6, y + 4 + r * 6, 6, 6); ctx.globalAlpha = 1; }
   for (const o of tiles) { const { t, x, y, w, hh } = o, lit = t.lit, mx = x + Math.round((w - 54) / 2), my = y + Math.round((hh - 42) / 2), b = bits(o.ch === "Qu" ? "Q" : o.ch), qu = o.ch === "Qu", lc = qu ? 1 : 2;
     const scr = t.land > .4, dim = 1 - low * .35 * (1 - lit), wave = o.on && ok, hot = !!t.hot, HS = HOT_STYLE, br = .75 + .25 * Math.sin(frame / 9 + o.i);
-    const scan = hot && HS === 5 ? ((frame * .3 + o.i * 3) % 10) - 1.5 : -9;
+    const scan = hot && HS === 5 ? ((frame * .42 + o.i * 3) % 10) - 1.5 : -9;
     // (picked letters stay steady until the traced word is a real word; then they flicker too)
     // flicker: now and then a module's letter stutters for a few frames (each module on its own random clock), and its dots shimmer faintly
     if (t.flN == null || t.flN < frame - 600) t.flN = frame + 60 + Math.random() * 500;
@@ -1702,7 +1703,7 @@ function gkKey(o, P, w0, h0, ox, oy, ok, low, fl, lockT) {
     glyph(now, col, a); if (age < 10) { ctx.globalAlpha = 1 - age / 10; ctx.drawImage(gvLet(now, "#ffffff"), mx, my); }
     if (!o.on) { const u = ((frame + Math.floor(t.seed * 140)) % 140) / 44; if (u < 1) gkFx.push([0, o.cx, o.cy, 1 + .45 * u, .5 * (1 - u)]); } }
   if (GS === 5 && wave && lockT < 20) { const e = lockT / 20; gkFx.push([0, o.cx, o.cy, 1 + .55 * (1 - (1 - e) ** 2), .8 * (1 - e)]); }
-  if (HOT_STYLE === 5 && (hot || (gkNow.gild && gkNow.red && o.on))) { const scan = ((frame * .3 + (wild || hot ? o.i * 3 : 100 - o.k * 1.5)) % 10) - 1.5, R = gvAll("#ff4630");   // the red key's scan line
+  if (HOT_STYLE === 5 && (hot || (gkNow.gild && gkNow.red && o.on))) { const scan = ((frame * .42 + (wild || hot ? o.i * 3 : 100 - o.k * 1.5)) % 10) - 1.5, R = gvAll("#ff4630");   // the red key's scan line
     for (let r = Math.max(0, Math.ceil(scan - 1)); r < 7 && r < scan + 1; r++) { ctx.globalAlpha = .8 * (1 - Math.abs(r - scan)); ctx.drawImage(R, 0, r * 6, 54, 6, mx, my + r * 6, 54, 6); } }
   if (wave && lit > .5) { const ws = frame - dotOkAt - (o.k || 0) * 4, wipe = ws < 0 ? -9 : ws < 22 ? ws * .75 - 2 : ((ws - 22) % 150) * .5 - 2, wa = ws < 22 ? .6 : .2;   // the light wipe over a real word, in gold
     if (wipe > -3 && wipe < 16) { const H = dotSpr(GK.hot), b = bits(now === "Qu" ? "Q" : now), qu = now === "Qu";
@@ -1764,7 +1765,7 @@ function paGlassVar({ G, tiles, ok, low }) {
       if (warm[1] > 0) { ctx.globalAlpha = warm[1]; ctx.drawImage(gvLet(o.ch, P.hot), mx, my); } }
     if (hot && HOT_STYLE === 5 && REDPOP === 4) { const scan = ((frame * .42 + o.i * 3) % 10) - 1.5, R = gvAll("#ff4630"), RH = gvAll("#ffb09a");   // brighter scan with a fading trail
       for (let r = 0; r < 7; r++) { const d = scan - r; if (d < -1 || d >= 3.5) continue; ctx.globalAlpha = d < 0 ? 1 + d : d < 1 ? 1 : (3.5 - d) / 2.5 * .7; ctx.drawImage(d < 1 ? RH : R, 0, r * 6, 54, 6, mx, my + r * 6, 54, 6); } }
-    else if (hot && HOT_STYLE === 5) { const scan = ((frame * .3 + o.i * 3) % 10) - 1.5, R = gvAll("#ff4630");   // the Carrier key's red scan, row by row
+    else if (hot && HOT_STYLE === 5) { const scan = ((frame * .42 + o.i * 3) % 10) - 1.5, R = gvAll("#ff4630");   // the Carrier key's red scan, row by row
       for (let r = Math.max(0, Math.ceil(scan - 1)); r < 7 && r < scan + 1; r++) { ctx.globalAlpha = .8 * (1 - Math.abs(r - scan)); ctx.drawImage(R, 0, r * 6, 54, 6, mx, my + r * 6, 54, 6); } }
     if (wave && !GF.lock && lit > .5) {   // the light wipe over a real word: a bright band, corner to corner, key after key; a faint one now and then after
       const ws = frame - dotOkAt - (o.k || 0) * 4, wipe = ws < 0 ? -9 : ws < 22 ? ws * .75 - 2 : ((ws - 22) % 150) * .5 - 2, wa = ws < 22 ? .6 : .2;

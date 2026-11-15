@@ -6,7 +6,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "How should the red key stand out a bit more, keeping its look?",
      "found": "Every option keeps today's red scan line and adds one thing. The red key is the G in the second row. Each option opens on a 5-second video.",
      "options": [
@@ -178,7 +178,8 @@
        ],
        "play": "play.html#test-togo-3-idle-redpop-6"
       }
-     ]
+     ],
+     "chosen": "1"
     }
    ]
   },
