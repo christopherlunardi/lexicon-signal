@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 128;</script><script>
+<script>window.LEX_BUILD = 129;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -1454,6 +1454,10 @@ let dotOkAt = 0, dotOkWas = false;
 const HOT_NAMES = ["", "Red letter", "Red backlight", "Ember fill", "Pilot lamp", "Red scan"];
 let HOT_STYLE = 5; {   // Chris picked red scan (carrier-r1)
   const m = location.hash.match(/hot-(\d)/); if (m) HOT_STYLE = Math.max(1, Math.min(5, +m[1])); }
+/* ---- Workshop "redkey" r1 (Chris 2026-11-15: the red key a bit more prominent, keeping its look). #redpop-N: 0 as now; 1 a
+   stronger red glow that breathes; 2 the key's frame glows red; 3 the key's dark dots warm to a deep red; 4 a brighter scan with a
+   trail; 5 a red ring pulses out from the key now and then; 6 the glow and the red frame together. ---- */
+let REDPOP = 0; { const m = location.hash.match(/redpop-(\d)/); if (m) REDPOP = Math.min(6, +m[1]); }
 function paDotGlass({ G, tiles, ok, low }) {
   if (GF.any) return paGlassVar({ G, tiles, ok, low });
   if (ok && !dotOkWas) dotOkAt = frame; dotOkWas = ok;
@@ -1734,6 +1738,9 @@ function paGlassVar({ G, tiles, ok, low }) {
     const warm = GF.warm ? gvWarm(t) : GV_REST, scr = !GF.warm && land > .4;
     let la = Math.min(1, (1 - low * .35 * (1 - lit)) * fl) * warm[0]; if (GF.lock && !o.on) la *= 1 - .42 * lockK;   // word lock: the rest of the glass dips while a real word is traced
     ctx.globalAlpha = 1; ctx.drawImage(gvBase(P, GS, o.dots, w0, h0), x - 4, y - 4);
+    if (hot && lit <= .03) { const pr = .5 + .5 * Math.sin(frame / 14 + o.i);   // (Workshop redkey: the red key at rest)
+      if (REDPOP === 3) { ctx.globalAlpha = .6 + .25 * pr; ctx.drawImage(gvAll("#6a140a"), mx, my); }
+      if (REDPOP === 2 || REDPOP === 6) { ctx.save(); ctx.globalAlpha = .7 + .3 * pr; ctx.strokeStyle = "#ff4a32"; ctx.shadowColor = "#ff2a18"; ctx.shadowBlur = 14; ctx.lineWidth = 3; rr(ctx, x + 1, y + 1, w0 - 2, h0 - 2, 7); ctx.stroke(); ctx.restore(); } }
     if (lit > .03) {   // picked: the field fills from the bottom, the housing lights
       const r0 = Math.max(0, Math.floor(6.6 - 8.4 * lit) + 1);
       if (r0 < 7) { ctx.drawImage(gvAll(hot ? "#5a120a" : P.bg), 0, r0 * 6, 54, 42 - r0 * 6, mx, my + r0 * 6, 54, 42 - r0 * 6);
@@ -1753,7 +1760,9 @@ function paGlassVar({ G, tiles, ok, low }) {
       if (GF.deep) { ctx.globalAlpha = a; ctx.drawImage(gvGlow(o.ch, "rgba(255,120,24,.6)"), mx - 14, my - 14); }
       ctx.globalAlpha = a; ctx.drawImage(gvLet(o.ch, t.wild ? "#ffcf3a" : P.on), mx, my);
       if (warm[1] > 0) { ctx.globalAlpha = warm[1]; ctx.drawImage(gvLet(o.ch, P.hot), mx, my); } }
-    if (hot && HOT_STYLE === 5) { const scan = ((frame * .3 + o.i * 3) % 10) - 1.5, R = gvAll("#ff4630");   // the Carrier key's red scan, row by row
+    if (hot && HOT_STYLE === 5 && REDPOP === 4) { const scan = ((frame * .42 + o.i * 3) % 10) - 1.5, R = gvAll("#ff4630"), RH = gvAll("#ffb09a");   // brighter scan with a fading trail
+      for (let r = 0; r < 7; r++) { const d = scan - r; if (d < -1 || d >= 3.5) continue; ctx.globalAlpha = d < 0 ? 1 + d : d < 1 ? 1 : (3.5 - d) / 2.5 * .7; ctx.drawImage(d < 1 ? RH : R, 0, r * 6, 54, 6, mx, my + r * 6, 54, 6); } }
+    else if (hot && HOT_STYLE === 5) { const scan = ((frame * .3 + o.i * 3) % 10) - 1.5, R = gvAll("#ff4630");   // the Carrier key's red scan, row by row
       for (let r = Math.max(0, Math.ceil(scan - 1)); r < 7 && r < scan + 1; r++) { ctx.globalAlpha = .8 * (1 - Math.abs(r - scan)); ctx.drawImage(R, 0, r * 6, 54, 6, mx, my + r * 6, 54, 6); } }
     if (wave && !GF.lock && lit > .5) {   // the light wipe over a real word: a bright band, corner to corner, key after key; a faint one now and then after
       const ws = frame - dotOkAt - (o.k || 0) * 4, wipe = ws < 0 ? -9 : ws < 22 ? ws * .75 - 2 : ((ws - 22) % 150) * .5 - 2, wa = ws < 22 ? .6 : .2;
@@ -1805,7 +1814,9 @@ function paGlows(okNow) {
   S.grid.forEach((t, i) => { if (!t || t.ch === " ") return; const c = tileC(i), lit = t.lit || 0, hot = okNow && lit > .5;
     if (t.wild && KS === 10) { if (GOLD_STYLE) gkGlow(t, c); else bloom(FX(c.x), FX(c.y + t.yOff), 52, "255,210,70", .3 * (.8 + .2 * Math.sin(frame / 7))); }
     else if (gkNow.gild && lit > .5) bloom(FX(c.x), FX(c.y + t.yOff), 58, GK.rgb, .24);
-    if (t.hot && KS === 10 && !(GOLD_STYLE && t.wild)) bloom(FX(c.x), FX(c.y + t.yOff), [0, 46, 56, 50, 30, 44][HOT_STYLE], "255,60,40", [0, .32, .3, .26, .14, .22][HOT_STYLE] * (.8 + .2 * Math.sin(frame / 9 + i)));
+    if (t.hot && KS === 10 && !(GOLD_STYLE && t.wild)) { const big = REDPOP === 1 || REDPOP === 6, br2 = .8 + .2 * Math.sin(frame / 9 + i);
+      bloom(FX(c.x), FX(c.y + t.yOff), [0, 46, 56, 50, 30, 44][HOT_STYLE] * (big ? 1.7 : 1), "255,60,40", [0, .32, .3, .26, .14, .22][HOT_STYLE] * (big ? 2.6 * (.65 + .35 * Math.sin(frame / 22 + i)) : br2));
+      if (REDPOP === 5) { const u = ((frame + i * 37) % 150) / 50; if (u < 1) { const kw = FX(L.tw) * (1 + .5 * u), kh2 = FX(L.th) * (1 + .5 * u); ctx.save(); ctx.globalAlpha = .7 * (1 - u); ctx.strokeStyle = "#ff5038"; ctx.shadowColor = "#ff3020"; ctx.shadowBlur = 10; ctx.lineWidth = 3; rr(ctx, FX(c.x) - kw / 2, FX(c.y + t.yOff) - kh2 / 2, kw, kh2, 8); ctx.stroke(); ctx.restore(); } } }
     const gk = GF.any ? gvGlowK(t, lit > .5) : GV_ONE;
     bloom(FX(c.x), FX(c.y + t.yOff), 40 + 20 * lit, hot ? "255,225,160" : GF.side ? "255,128,34" : rgb, PA_BASE[KS - 6] * gk[0] + (KS === 9 ? .42 : .3) * lit + .22 * (t.land || 0) * gk[1]); });
   if (sendT < 18) bloom(FX(g.x + g.w / 2), FX(g.y + g.h / 2), FX(g.w) * .9, KS === 7 ? "255,216,128" : "255,190,110", .32 * (1 - sendT / 18));   // the glass flares as a word leaves
@@ -3428,7 +3439,7 @@ async function boot() {
   if (location.hash.startsWith("#test-intro")) { newRun(); S.night = 3; S.parts.push("battery", "amp"); S.total = 140; startNight(); }   // the night intro on night 3 with a battery (#test-intro-N)
   if (location.hash.startsWith("#test-shop-gold")) { newRun(); S.parts.push("amp", "coil"); nightClear(); S.phase = "shop"; shopChoices[1] = PART.gold; }
   if (location.hash.startsWith("#test-trade")) { newRun(); S.night = 4; S.parts.push("amp", "amp", "coil", "battery", "battery", "echo"); startNight(); nightHold = 0; S.score = S.shown = Math.round(S.target * .8); S.words = 0; nightLost(); }
-  if (/^#test-(pace|togo)/.test(location.hash)) { newRun(); S.night = 4; S.parts.push("amp", "coil"); startNight(); setTimeout(() => { nightHold = 0; S.score = S.shown = /near/.test(location.hash) ? 185 : 70; S.words = 3; S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); usingButtons = true; if (!/idle/.test(location.hash)) { S.path = [0, 1, 2]; S.cursor = S.path[S.path.length - 1]; } }, 400); }
+  if (/^#test-(pace|togo)/.test(location.hash)) { newRun(); S.night = 4; S.parts.push("amp", "coil"); startNight(); setTimeout(() => { nightHold = 0; S.score = S.shown = /near/.test(location.hash) ? 185 : 70; S.words = 3; S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); usingButtons = !/redpop/.test(location.hash); if (/redpop/.test(location.hash)) { S.grid.forEach(t => t.hot = false); S.grid[H5(6)].hot = true; S.cursor = -1; } if (!/idle/.test(location.hash)) { S.path = [0, 1, 2]; S.cursor = S.path[S.path.length - 1]; } }, 400); }
   if (location.hash === "#test-swap") { newRun(); S.parts.push("amp", "amp", "coil", "echo", "owl", "short"); nightClear(); const k = shopChoices.findIndex(c => !S.parts.includes(c.id)); if (k >= 0) choosePart(k); }
   if (location.hash.startsWith("#test-shop-tap")) { newRun(); S.parts.push("amp", "coil"); nightClear(); S.phase = "shop"; shopChoices[1] = PART.tap; }
   if (/^#test-word-tap/.test(location.hash)) setTimeout(() => { S.parts = ["amp", "tap", "coil"]; S.tap = 12; S.path = [6, 12, 18]; S.cursor = 18; }, 320);
