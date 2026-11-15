@@ -1,1 +1,10 @@
-[]
+[
+ {
+  "file": "img/stained.png",
+  "group": "To do: frames under the rivets",
+  "label": "The window's stained glass (everything inside the wood, 98 x 33): your latest",
+  "w": 98,
+  "h": 33,
+  "key": "stained"
+ }
+]
