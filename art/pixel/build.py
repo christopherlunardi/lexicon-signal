@@ -116,6 +116,11 @@ def main():
     ty0, ty1 = WIN_PANES[0][3], WIN_PANES[1][1]; my = SASH_Y
     wa[my - oy:my - oy + (ty1 - ty0), :] = np.where(wa[ty0 - oy:ty1 - oy, :, 3:4] > 0, wa[ty0 - oy:ty1 - oy, :], wa[my - oy:my - oy + (ty1 - ty0), :])
     imgs["window"] = Image.fromarray(wa, "RGBA")
+    # the stained glass strip on the Pixel Bench (Chris 2026-11-14: keep the design, touch it up himself). It is everything inside
+    # the wood: 98 x 33 at (16, 16) in the window. What he sends back is src/bench/stained.png, used exactly as painted.
+    if os.path.exists(SRC + "bench/stained.png"): imgs["window"].paste(Image.open(SRC + "bench/stained.png").convert("RGBA"), (16, 16))
+    else:
+        imgs["window"].crop((16, 16, 114, 49)).save(ROOT_ART + "bench/img/stained.png")
     # the window glass: which window pixels are the night view (they give their own light, so room light skips them)
     win = np.asarray(imgs["window"]).astype(int); rgb = win[..., :3]
     # the glass is every pane inside the frame: the area the blue night covers, minus whole rows/columns that are wood (the transom bar);
@@ -350,6 +355,8 @@ def main():
         for k_ in range(6):   # evenly spaced now that they're all one lamp; the lamp's middle is at the mark plus half a pixel each way
             pts["radio"]["lamp%d" % k_] = [166 + round(k_ * 149 / 5), 232]; lx_, ly_ = pts["radio"]["lamp%d" % k_]; rim_.alpha_composite(lamp_, (lx_ - 13, ly_ - 13))
         imgs["radio"] = rim_
+    if not os.path.exists(SRC + "bench/stained.png"):   # (the stained glass waits on the bench; listed here, after the bench's own list)
+        json.dump([{"file": "img/stained.png", "group": "To do: frames under the rivets", "label": "The window's stained glass (everything inside the wood, 98 x 33)", "w": 98, "h": 33, "key": "stained"}], open(ROOT_ART + "bench/manifest.json", "w"), indent=1)
     # the bar's clasp (Chris 2026-11-14): PixelLab's winged brass piece (src/clasp_wings.png, trimmed to the wings' shape)
     if os.path.exists(SRC + "clasp_wings.png"): imgs["bar_clasp"] = Image.open(SRC + "clasp_wings.png").convert("RGBA")
     # the bar's top-middle clasp on the Pixel Bench (Chris 2026-11-14): what he paints (src/bench/bar_clasp.png) is used exactly as sent
