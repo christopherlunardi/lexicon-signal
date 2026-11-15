@@ -87,5 +87,5 @@ def unify_brass(im):
     out[brass, :3] = ramp[k[brass]]
     return Image.fromarray(out.astype(np.uint8), "RGBA")
 
-LIT = [OUT, BRASS[1], BRASS[4], BRASS[4], BRASS[3], BRASS[2], BRASS[1], OUT];   # (the screens' bezels: warmer, oranger steps only; the pale yellows read gray-olive once the room's light dims them, Chris 2026-11-14)
+LIT = [OUT, BRASS[2], BRASS[4], BRASS[5], BRASS[4], BRASS[3], BRASS[1], OUT];   # (the screens' bezels; the game lights them a little more than the wood so these don't go gray, Chris 2026-11-14)
 SHAD = [OUT, BRASS[0], BRASS[1], BRASS[2], BRASS[3], BRASS[2], BRASS[0], OUT]
