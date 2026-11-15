@@ -3,8 +3,8 @@
   "file": "img/lamp.png",
   "group": "To do: frames under the rivets",
   "label": "One lamp for under the radio's glass (unlit; the game draws its glow on top). It will be used six times on plain wood",
-  "w": 25,
-  "h": 25,
+  "w": 35,
+  "h": 35,
   "key": "lamp"
  }
 ]

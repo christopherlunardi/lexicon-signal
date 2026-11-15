@@ -81,7 +81,7 @@ textarea { width: 100%; box-sizing: border-box; min-height: 56px; resize: vertic
     <div class="lab">Box</div>
     <div class="sizes"><button id="boxfill" title="Filled or outline">Outline</button></div>
     <div class="lab">Selection</div>
-    <div class="sizes"><button id="flipx" title="Mirror what's selected left to right, in place (F)">Mirror ↔</button><button id="flipy" title="Flip what's selected upside down, in place (Shift+F)">Flip ↕</button></div>
+    <div class="sizes"><button id="flipx" title="Mirror what's selected left to right, in place (F)">Mirror ↔</button><button id="flipy" title="Flip what's selected upside down, in place (Shift+F)">Flip ↕</button><button id="copyb" title="Copy what's selected (Ctrl+C; Ctrl+X cuts it)">Copy</button><button id="pasteb" title="Paste what you copied as a new selection you can drag (Ctrl+V)">Paste</button></div>
   </div>
 
   <div class="stage" id="stage"><canvas id="view" width="256" height="224"></canvas></div>
@@ -135,7 +135,7 @@ $('boxfill').onclick = () => { boxFill = !boxFill; $('boxfill').textContent = bo
 
 // ---- the picture ----
 function load(src, label, srcName) { const im = new Image(); im.onload = () => { W = im.width; H = im.height; const c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d'); x.drawImage(im, 0, 0);
-    img = x.getImageData(0, 0, W, H); orig = new ImageData(new Uint8ClampedArray(img.data), W, H); undo = []; redo = []; name = label; source = srcName; selMask = null; polyPts = null;
+    img = x.getImageData(0, 0, W, H); orig = new ImageData(new Uint8ClampedArray(img.data), W, H); undo = []; redo = []; name = label; source = srcName; selMask = null; polyPts = null; floatL = null; nudge = null;
     zoom = Math.max(6, Math.min(W < 64 ? 40 : 16, Math.floor(Math.min((stage.clientWidth - 48) / W, (stage.clientHeight - 48) / H)) || 6)); fitPalette(); render(); stage.scrollLeft = (view.width - stage.clientWidth) / 2 + 24; stage.scrollTop = (view.height - stage.clientHeight) / 2 + 24; status(''); }; /* big enough to see every pixel; scroll, the wheel or two fingers to move and zoom */ im.src = src; }
 const off = document.createElement('canvas'), ox = off.getContext('2d');
 function render() { if (!img) return; view.width = W * zoom; view.height = H * zoom; $('zl').textContent = zoom + 'x';
@@ -169,6 +169,7 @@ view.addEventListener('pointerdown', e => { if (!img || pinch) return; view.setP
     if (!polyPts) { selMask = null; polyPts = []; } const l = polyPts[polyPts.length - 1]; if (!l || l[0] !== x || l[1] !== y) polyPts.push([Math.max(0, Math.min(W - 1, x)), Math.max(0, Math.min(H - 1, y))]); render(); return; }
   if (tool === 'rsel') { selMask = null; drag = { rsel: true, x0: x, y0: y }; return; }
   if (tool === 'move') { if (!selMask || !inside(x, y) || !selMask[y * W + x]) { status(selMask ? 'Grab it from inside the selection.' : 'Select something first: Polygon select (P) or Box select (M).'); return; }
+    if (floatL && floatL.live) { drag = { mv: floatL, sx: x - floatL.dx, sy: y - floatL.dy }; return; }
     nudge = null; const L = liftSel(e.altKey); drag = { mv: L, sx: x, sy: y }; return; }
   if (tool === 'pick') { if (inside(x, y)) { const k = (y * W + x) * 4; if (img.data[k + 3] > 0) { setColor([img.data[k], img.data[k + 1], img.data[k + 2]]); setTool('pen'); } } return; }
   if (!inside(x, y)) return; snapshot();
@@ -188,7 +189,7 @@ view.addEventListener('pointerup', () => { endDrag(); touching = false; $('float
 view.addEventListener('pointerleave', () => { $('pos').textContent = '—'; if (!drag) { hover = null; render(); } });
 /* on a phone your finger covers the pixel, so a round close-up floats above it while you touch */
 function placeFloat(e) { const f = $('float'); if (!touching) return; f.style.left = Math.max(8, Math.min(innerWidth - 140, e.clientX - 66)) + 'px'; f.style.top = Math.max(8, e.clientY - 170) + 'px'; }
-function doUndo() { if (!undo.length) return; selMask = null; nudge = null; polyPts = null; redo.push(new Uint8ClampedArray(img.data)); img.data.set(undo.pop()); fitPalette(); render(); }
+function doUndo() { if (!undo.length) return; selMask = null; nudge = null; polyPts = null; floatL = null; redo.push(new Uint8ClampedArray(img.data)); img.data.set(undo.pop()); fitPalette(); render(); }
 function doRedo() { if (!redo.length) return; undo.push(new Uint8ClampedArray(img.data)); img.data.set(redo.pop()); fitPalette(); render(); }
 $('undo').onclick = doUndo; $('redo').onclick = doRedo;
 $('fresh').onclick = () => { const sel = $('pick'); if (sel && sel.onchange) sel.onchange(); }; // the picked picture again, clean
@@ -219,6 +220,8 @@ document.addEventListener('keydown', e => { if (e.target.tagName === 'TEXTAREA')
   if (e.key === 'Escape') { if (polyPts) { polyPts = null; render(); } else if (selMask) dropSel(); return; }
   if ((e.key === 'Delete' || e.key === 'Backspace') && selMask) { e.preventDefault(); snapshot(); for (let i = 0; i < W * H; i++) if (selMask[i]) img.data[i * 4 + 3] = 0, img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = 0; dropSel(); return; }
   const AR = { arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] }[k];
+  if ((e.ctrlKey || e.metaKey) && (k === 'c' || k === 'x')) { e.preventDefault(); copySel(k === 'x'); return; }
+  if ((e.ctrlKey || e.metaKey) && k === 'v') { e.preventDefault(); pasteClip(); return; }
   if (AR && selMask) { e.preventDefault(); if (!nudge) nudge = liftSel(e.altKey); placeSel(nudge, nudge.dx + AR[0], nudge.dy + AR[1]); render(); return; }
   if ((e.ctrlKey || e.metaKey) && k === 'a') { e.preventDefault(); selMask = new Uint8Array(W * H).fill(1); setTool('move'); return; }
   if ((e.ctrlKey || e.metaKey) && k === 'd') { e.preventDefault(); dropSel(); return; }
@@ -258,10 +261,30 @@ function flipSel(vert) { if (!selMask) { status('Select something first: Polygon
   let x0 = W, y0 = H, x1 = -1, y1 = -1; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (selMask[y * W + x]) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
   if (x1 < 0) return; snapshot(); const src = new Uint8ClampedArray(img.data), m = new Uint8Array(W * H);
   for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) { if (!selMask[y * W + x]) continue; const X = vert ? x : x0 + x1 - x, Y = vert ? y0 + y1 - y : y; m[Y * W + X] = 1; const s = (y * W + x) * 4, d = (Y * W + X) * 4; for (let k = 0; k < 4; k++) img.data[d + k] = src[s + k]; }
-  selMask = m; nudge = null; render(); status(vert ? 'Flipped upside down. Ctrl+Z undoes it.' : 'Mirrored left to right. Ctrl+Z undoes it.'); }
+  selMask = m; nudge = null; floatL = null; render(); status(vert ? 'Flipped upside down. Ctrl+Z undoes it.' : 'Mirrored left to right. Ctrl+Z undoes it.'); }
 $('flipx').onclick = () => flipSel(false); $('flipy').onclick = () => flipSel(true);
 let nudge = null; // arrow-key moves of one selection share a single undo step until it's dropped
-function dropSel() { selMask = null; nudge = null; fitPalette(); render(); }
+function dropSel() { selMask = null; nudge = null; if (floatL) floatL.live = false; floatL = null; fitPalette(); render(); }
+// copy and paste (Chris 2026-11-14): Ctrl+C / Ctrl+X take what's selected (either select tool), Ctrl+V puts it back as a floating
+// selection, where it came from (or under the pointer if that's off this picture), to drag or nudge into place; Enter drops it.
+// It works across pictures too. The pasted pixels float over the picture until dropped, so dragging them never cuts a hole.
+let clip = null, floatL = null;
+function copySel(cut) { if (!selMask) { status('Select something first: Polygon select (P) or Box select (M).'); return; }
+  let x0 = W, y0 = H, x1 = -1, y1 = -1; for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) if (selMask[y * W + x]) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+  if (x1 < 0) return; const w = x1 - x0 + 1, h = y1 - y0 + 1, px = new Uint8ClampedArray(w * h * 4), m = new Uint8Array(w * h);
+  for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = (y0 + y) * W + x0 + x; if (!selMask[i]) continue; m[y * w + x] = 1; for (let k = 0; k < 4; k++) px[(y * w + x) * 4 + k] = img.data[i * 4 + k]; }
+  clip = { w, h, px, m, x0, y0 };
+  if (cut) { snapshot(); for (let i = 0; i < W * H; i++) if (selMask[i]) img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = img.data[i * 4 + 3] = 0; dropSel(); status('Cut. Ctrl+V pastes it back.'); }
+  else status('Copied. Ctrl+V (or Paste) pastes it as a new selection to drag.'); }
+function pasteClip() { if (!clip) { status('Nothing copied yet: select something and press Copy (Ctrl+C).'); return; }
+  if (selMask) dropSel(); snapshot();
+  let ox = clip.x0, oy = clip.y0; if (ox + clip.w > W || oy + clip.h > H) { ox = hover ? hover[0] : 0; oy = hover ? hover[1] : 0; }
+  ox = Math.max(0, Math.min(W - 1, ox)); oy = Math.max(0, Math.min(H - 1, oy));
+  const buf = new Uint8ClampedArray(W * H * 4), mask = new Uint8Array(W * H);
+  for (let y = 0; y < clip.h; y++) for (let x = 0; x < clip.w; x++) { if (!clip.m[y * clip.w + x]) continue; const X = ox + x, Y = oy + y; if (!inside(X, Y)) continue; mask[Y * W + X] = 1; for (let k = 0; k < 4; k++) buf[(Y * W + X) * 4 + k] = clip.px[(y * clip.w + x) * 4 + k]; }
+  const L = { buf, base: new Uint8ClampedArray(img.data), mask, dx: 0, dy: 0, live: true }; placeSel(L, 0, 0); floatL = L; nudge = L; setTool('move');
+  status('Pasted. Drag it (or nudge with the arrow keys) into place, then Enter to drop it.'); render(); }
+$('copyb').onclick = () => copySel(false); $('pasteb').onclick = () => pasteClip();
 view.addEventListener('dblclick', () => { if (tool === 'lasso' && polyPts) { polyPts.pop(); closePoly(); } });
 
 // ---- colours: the picture's own (most used first), and recent ----
