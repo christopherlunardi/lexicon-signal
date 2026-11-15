@@ -910,9 +910,9 @@ function draw() {
   if (POP === 1 || POP === 5) popBarShadow();
   wctx.drawImage(barCv, 0, L.barY); drawBarLive();
   ctx.drawImage(world, 0, 0, W * FINE, H * FINE);
+  if (POP === 1 || POP === 5) popScoreShadow();   // (under every light: lamps, glows and letters all draw after it)
   ctx.save(); ctx.translate(sx * FINE, 0); drawRain(); drawDial(); drawLamps(); drawKeyLetters(); drawGlows(); drawFlyers(); ctx.restore();
   if (overT > 0) { ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(255,40,24,${.42 * overT * (.6 + .4 * Math.sin(frame / 2))})`; ctx.fillRect(0, 0, CVW, CVH); ctx.restore(); overT = Math.max(0, overT - .012); }
-  if (POP === 1 || POP === 5) popScoreShadow();
   drawScoreDrums(); if (POP === 2 || POP === 5) popRims(); if (POP === 3) popKeylines();
   drawBarText(); if (nightCard > 0 && S.phase === "play" && !HOW.on) { if (INTRO) { drawIntro(); introT++; if (!nightHold) nightCard--; } else { drawNightCard(); nightCard--; } }
   if (S.phase === "title" || S.phase === "shop" || S.phase === "swap" || S.phase === "over" || S.phase === "melt" || S.phase === "upgrade" || S.phase === "report") {
@@ -978,10 +978,11 @@ function scoreShow() { return !HOW.on && barShow > .9 && ["play", "shop", "swap"
    shadow cast on the room above the bar and under the run score; 2 a warm rim of lamplight along their top edges; 3 a thin dark
    keyline round them; 4 the room a little less colorful (same brightness) so the warm brass reads stronger; 5 shadow and rim.
    All cheap: a few fills a frame, and 4 is one grayed copy of the room made once. */
-let POP = 0; { const m = location.hash.match(/pop-(\d)/); if (m) POP = Math.min(5, +m[1]); }
+let POP = 1; {   // Chris picked 1, the cast shadow (2026-11-14)
+  const m = location.hash.match(/pop-(\d)/); if (m) POP = Math.min(5, +m[1]); }
 function scoreRect() { const { w, h, x, y } = scoreDrumBox(), maxW = Math.max(250, Math.min(440, FX(L.radioX + 70) - 16)), s = Math.min(1, maxW / w); return { x, y: y + h - h * s, w: w * s, h: h * s }; }
-function popBarShadow() { const y = L.barY, g = wctx.createLinearGradient(0, y - 22, 0, y); g.addColorStop(0, "rgba(6,3,2,0)"); g.addColorStop(1, "rgba(6,3,2,.72)"); wctx.fillStyle = g; wctx.fillRect(0, y - 22, W, 22); }
-function popScoreShadow() { if (!scoreShow()) return; const r = scoreRect(); ctx.save(); ctx.shadowColor = "rgba(4,2,1,.9)"; ctx.shadowBlur = 24; ctx.shadowOffsetX = 4; ctx.shadowOffsetY = 8; ctx.fillStyle = "#120804"; ctx.fillRect(r.x + 6, r.y + 6, r.w - 12, r.h - 10); ctx.restore(); }
+function popBarShadow() { const y = L.barY, g = wctx.createLinearGradient(0, y - 12, 0, y); g.addColorStop(0, "rgba(6,3,2,0)"); g.addColorStop(1, "rgba(6,3,2,.6)"); wctx.fillStyle = g; wctx.fillRect(0, y - 12, W, 12); }
+function popScoreShadow() { if (!scoreShow()) return; const r = scoreRect(); ctx.save(); ctx.shadowColor = "rgba(4,2,1,.8)"; ctx.shadowBlur = 14; ctx.shadowOffsetX = 3; ctx.shadowOffsetY = 5; ctx.fillStyle = "#120804"; ctx.fillRect(r.x + 6, r.y + 6, r.w - 12, r.h - 10); ctx.restore(); }
 function popRims() { const by = FX(L.barY), g = ctx.createLinearGradient(0, 0, CVW, 0); g.addColorStop(0, "rgba(255,214,140,0)"); g.addColorStop(.25, "rgba(255,214,140,.85)"); g.addColorStop(.75, "rgba(255,214,140,.85)"); g.addColorStop(1, "rgba(255,214,140,0)");
   ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = g; ctx.fillRect(0, by, CVW, 3); ctx.fillStyle = "rgba(255,200,120,.16)"; ctx.fillRect(0, by - 6, CVW, 6);
   if (scoreShow()) { const r = scoreRect(), g2 = ctx.createLinearGradient(r.x, 0, r.x + r.w, 0); g2.addColorStop(0, "rgba(255,214,140,.15)"); g2.addColorStop(.5, "rgba(255,214,140,.9)"); g2.addColorStop(1, "rgba(255,214,140,.15)"); ctx.fillStyle = g2; ctx.fillRect(r.x + 8, r.y, r.w - 16, 3); }

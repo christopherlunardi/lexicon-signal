@@ -336,13 +336,10 @@ def main():
     for nm in ["bar_left", "bar_mid", "bar_right", "slot", "plate", "plate_bare", "tplate", "logbox", "bar_clasp", "rivet"]:
         if nm in imgs: imgs[nm] = frames.unify_brass(imgs[nm])
     # the radio's lamp (Chris 2026-11-14): one lamp goes on the Pixel Bench for Chris to paint; what he sends back is src/bench/lamp.png
+    # (PixelLab's clean lamp, Chris's pick 2026-11-14, src/lamp_pixellab.png, goes on the bench for his touch-up first)
     if not os.path.exists(SRC + "bench/lamp.png"):
-        lx_, ly_ = pts["radio"]["lamp1"]; lc_ = np.asarray(imgs["radio"].crop((lx_ - 17, ly_ - 16, lx_ + 18, ly_ + 19))).copy()   # (the lamp's true middle is half a pixel right of the mark)
-        # the wood round it cleared: outside the lamp's dark outline (a circle round its true middle)
-        yy_, xx_ = np.mgrid[0:35, 0:35]; seen_ = (yy_ - 17.4) ** 2 + (xx_ - 17.5) ** 2 > 14.2 ** 2
-        lc_[seen_, 3] = 0
-        Image.fromarray(lc_, "RGBA").save(ROOT_ART + "bench/img/lamp.png")
-        json.dump([{"file": "img/lamp.png", "group": "To do: frames under the rivets", "label": "One lamp for under the radio's glass (unlit; the game draws its glow on top). It will be used six times on plain wood", "w": 35, "h": 35, "key": "lamp"}], open(ROOT_ART + "bench/manifest.json", "w"), indent=1)
+        lp_ = Image.open(SRC + "lamp_pixellab.png").convert("RGBA"); lp_.save(ROOT_ART + "bench/img/lamp.png")
+        json.dump([{"file": "img/lamp.png", "group": "To do: frames under the rivets", "label": "The radio's lamp (PixelLab's clean one), unlit: the game draws its glow on top. Used six times on plain wood", "w": lp_.width, "h": lp_.height, "key": "lamp"}], open(ROOT_ART + "bench/manifest.json", "w"), indent=1)
     # the bar's clasp (Chris 2026-11-14): PixelLab's winged brass piece (src/clasp_wings.png, trimmed to the wings' shape)
     if os.path.exists(SRC + "clasp_wings.png"): imgs["bar_clasp"] = Image.open(SRC + "clasp_wings.png").convert("RGBA")
     # the bar's top-middle clasp on the Pixel Bench (Chris 2026-11-14): what he paints (src/bench/bar_clasp.png) is used exactly as sent

@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 107;</script><script>
+<script>window.LEX_BUILD = 108;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -903,13 +903,15 @@ function draw() {
   if (S.phase === "splash") { ctx.fillStyle = "#000"; ctx.fillRect(0, 0, CVW, CVH);
     if ((frame >> 5) & 1) ftext(TAPW() ? "TAP TO START" : "PRESS ANY BUTTON", CVW / 2, CVH / 2 - 8, "dot", C.amber, "c"); return; }
   const sx = shake > 0 ? Math.round((Math.random() - .5) * Math.min(2, shake)) : 0;
-  wctx.fillStyle = "#000"; wctx.fillRect(0, 0, W, H); wctx.drawImage(roomCv, sx, 0);
+  wctx.fillStyle = "#000"; wctx.fillRect(0, 0, W, H); wctx.drawImage(POP === 4 ? roomDull() : roomCv, sx, 0);
   wctx.save(); wctx.translate(sx, 0); drawBeacon(); drawRadioLive(); drawGrid(); drawSparks(); wctx.restore();
+  if (POP === 1 || POP === 5) popBarShadow();
   wctx.drawImage(barCv, 0, L.barY); drawBarLive();
   ctx.drawImage(world, 0, 0, W * FINE, H * FINE);
+  if (POP === 1 || POP === 5) popScoreShadow();   // (under every light: lamps, glows and letters all draw after it)
   ctx.save(); ctx.translate(sx * FINE, 0); drawRain(); drawDial(); drawLamps(); drawKeyLetters(); drawGlows(); drawFlyers(); ctx.restore();
   if (overT > 0) { ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(255,40,24,${.42 * overT * (.6 + .4 * Math.sin(frame / 2))})`; ctx.fillRect(0, 0, CVW, CVH); ctx.restore(); overT = Math.max(0, overT - .012); }
-  drawScoreDrums();
+  drawScoreDrums(); if (POP === 2 || POP === 5) popRims(); if (POP === 3) popKeylines();
   drawBarText(); if (nightCard > 0 && S.phase === "play" && !HOW.on) { if (INTRO) { drawIntro(); introT++; if (!nightHold) nightCard--; } else { drawNightCard(); nightCard--; } }
   if (S.phase === "title" || S.phase === "shop" || S.phase === "swap" || S.phase === "over" || S.phase === "melt" || S.phase === "upgrade" || S.phase === "report") {
     octx.clearRect(0, 0, W, H); octx.imageSmoothingEnabled = false;
@@ -969,6 +971,26 @@ function scoreUpdate() { if (SC.kick > 0) SC.kick = Math.max(0, SC.kick - .035);
   // in play it follows the tube's count; on the night report it rolls up on its own once the night score lands in it
   if (v > SC.shown) { const nv = S.phase === "report" ? Math.min(v, SC.shown + Math.max(1, Math.ceil((v - SC.shown) / 14))) : v; SC.step = nv - SC.shown; SC.shown = nv; if (nv === S.total) SC.kick = 1; } else { SC.step = 0; if (v < SC.shown) SC.shown = v; } }
 function scoreShow() { return !HOW.on && barShow > .9 && ["play", "shop", "swap", "melt", "upgrade"].includes(S.phase); }
+/* ================= making the interface stand off the room (Workshop "pop", 2026-11-14) =================
+   Chris: the bar and the run score could stand out from the room more, without darkening the room. #pop-N: 0 as now; 1 a soft
+   shadow cast on the room above the bar and under the run score; 2 a warm rim of lamplight along their top edges; 3 a thin dark
+   keyline round them; 4 the room a little less colorful (same brightness) so the warm brass reads stronger; 5 shadow and rim.
+   All cheap: a few fills a frame, and 4 is one grayed copy of the room made once. */
+let POP = 1; {   // Chris picked 1, the cast shadow (2026-11-14)
+  const m = location.hash.match(/pop-(\d)/); if (m) POP = Math.min(5, +m[1]); }
+function scoreRect() { const { w, h, x, y } = scoreDrumBox(), maxW = Math.max(250, Math.min(440, FX(L.radioX + 70) - 16)), s = Math.min(1, maxW / w); return { x, y: y + h - h * s, w: w * s, h: h * s }; }
+function popBarShadow() { const y = L.barY, g = wctx.createLinearGradient(0, y - 12, 0, y); g.addColorStop(0, "rgba(6,3,2,0)"); g.addColorStop(1, "rgba(6,3,2,.6)"); wctx.fillStyle = g; wctx.fillRect(0, y - 12, W, 12); }
+function popScoreShadow() { if (!scoreShow()) return; const r = scoreRect(); ctx.save(); ctx.shadowColor = "rgba(4,2,1,.8)"; ctx.shadowBlur = 14; ctx.shadowOffsetX = 3; ctx.shadowOffsetY = 5; ctx.fillStyle = "#120804"; ctx.fillRect(r.x + 6, r.y + 6, r.w - 12, r.h - 10); ctx.restore(); }
+function popRims() { const by = FX(L.barY), g = ctx.createLinearGradient(0, 0, CVW, 0); g.addColorStop(0, "rgba(255,214,140,0)"); g.addColorStop(.25, "rgba(255,214,140,.85)"); g.addColorStop(.75, "rgba(255,214,140,.85)"); g.addColorStop(1, "rgba(255,214,140,0)");
+  ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = g; ctx.fillRect(0, by, CVW, 3); ctx.fillStyle = "rgba(255,200,120,.16)"; ctx.fillRect(0, by - 6, CVW, 6);
+  if (scoreShow()) { const r = scoreRect(), g2 = ctx.createLinearGradient(r.x, 0, r.x + r.w, 0); g2.addColorStop(0, "rgba(255,214,140,.15)"); g2.addColorStop(.5, "rgba(255,214,140,.9)"); g2.addColorStop(1, "rgba(255,214,140,.15)"); ctx.fillStyle = g2; ctx.fillRect(r.x + 8, r.y, r.w - 16, 3); }
+  ctx.restore(); }
+function popKeylines() { const by = FX(L.barY); ctx.save(); ctx.fillStyle = "rgba(8,3,1,.92)"; ctx.fillRect(0, by - 4, CVW, 4);
+  if (scoreShow()) { const r = scoreRect(); ctx.strokeStyle = "rgba(8,3,1,.92)"; ctx.lineWidth = 4; ctx.beginPath(); ctx.roundRect(r.x - 2, r.y - 2, r.w + 4, r.h + 4, 8); ctx.stroke(); } ctx.restore(); }
+const DULL = { src: null, cv: null };
+function roomDull() { if (DULL.src === roomCv) return DULL.cv; const c = document.createElement("canvas"); c.width = roomCv.width; c.height = roomCv.height; const x = c.getContext("2d"); x.drawImage(roomCv, 0, 0);
+  const im = x.getImageData(0, 0, c.width, c.height), d = im.data; for (let i = 0; i < d.length; i += 4) { const l = d[i] * .3 + d[i + 1] * .59 + d[i + 2] * .11; d[i] = l + (d[i] - l) * .55; d[i + 1] = l + (d[i + 1] - l) * .55; d[i + 2] = l + (d[i + 2] - l) * .55; }
+  x.putImageData(im, 0, 0); DULL.src = roomCv; DULL.cv = c; return c; }
 function scoreDrumBox() { const digs = Math.max(5, String(S.total).length), lab = textW("RUN", "ink") + 16, w = 24 + lab + 8 + digs * 28 + 2 + 24, h = 74, x = 12, y = FX(L.barY) - 10 - h; return { digs, lab, w, h, x, y }; }
 function scoreDrumAnchor() { const b = scoreDrumBox(); return { x: b.x + b.lab + 16 + b.digs * 14, y: b.y + b.h / 2 }; }
 function drawScoreDrums(top) {

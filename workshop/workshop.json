@@ -1673,7 +1673,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "How should the bar and the run score stand out from the room, without making the room darker?",
      "found": "Chris: make our interface stand out over the background a bit more without darkening it or breaking anything. Each option is cheap (a few fills a frame, or one grayed copy of the room made once). 'Close up' shows the run score and the bar's top edge; 'Play in game' opens a word in progress with that option.",
      "options": [
@@ -1797,7 +1797,8 @@
        ],
        "play": "play.html#test-word-pop-5"
       }
-     ]
+     ],
+     "chosen": "1"
     }
    ]
   }
