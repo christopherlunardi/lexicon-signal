@@ -6,7 +6,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "How should the game show what each word still needs to bring?",
      "found": "Night 4 of the new curve (target 205), 70 in with 3 words left: 135 to go, 45 a word. 'Nearly there' is 185 in, 20 to go, 7 a word, with RAT (+10) traced so you see what keeping pace looks like. Pick one, or mix them.",
      "options": [
@@ -141,6 +141,135 @@
         }
        ],
        "play": "play.html#test-pace-5-trace"
+      }
+     ],
+     "chosen": "2"
+    },
+    {
+     "id": "r2",
+     "status": "open",
+     "question": "How should the top plate show your signal against the night's target?",
+     "found": "Round 1: the mark on the tube is in. This round is only the top plate. Same night as before: night 4, target 205, 70 in ('Nearly there': 185 in). Every option also has the tube mark.",
+     "options": [
+      {
+       "id": "0",
+       "title": "As now",
+       "note": "135 TO GO, stamped.",
+       "images": [
+        {
+         "src": "img/pace-r2/togo-0-trace-desk.jpg",
+         "label": "Mid-night"
+        },
+        {
+         "src": "img/pace-r2/togo-0-near-desk.jpg",
+         "label": "Nearly there"
+        },
+        {
+         "src": "img/pace-r2/togo-0-trace-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-togo-0-trace"
+      },
+      {
+       "id": "1",
+       "title": "Stamped score / target",
+       "note": "70 / 205, stamped like the night plate.",
+       "images": [
+        {
+         "src": "img/pace-r2/togo-1-trace-desk.jpg",
+         "label": "Mid-night"
+        },
+        {
+         "src": "img/pace-r2/togo-1-near-desk.jpg",
+         "label": "Nearly there"
+        },
+        {
+         "src": "img/pace-r2/togo-1-trace-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-togo-1-trace"
+      },
+      {
+       "id": "2",
+       "title": "Big score, small target",
+       "note": "The score in the big bold lettering, / 205 small and lighter beside it.",
+       "images": [
+        {
+         "src": "img/pace-r2/togo-2-trace-desk.jpg",
+         "label": "Mid-night"
+        },
+        {
+         "src": "img/pace-r2/togo-2-near-desk.jpg",
+         "label": "Nearly there"
+        },
+        {
+         "src": "img/pace-r2/togo-2-trace-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-togo-2-trace"
+      },
+      {
+       "id": "3",
+       "title": "Lit window",
+       "note": "A dark window set into the plate, 70 / 205 lit in amber (the score brighter than the target).",
+       "images": [
+        {
+         "src": "img/pace-r2/togo-3-trace-desk.jpg",
+         "label": "Mid-night"
+        },
+        {
+         "src": "img/pace-r2/togo-3-near-desk.jpg",
+         "label": "Nearly there"
+        },
+        {
+         "src": "img/pace-r2/togo-3-trace-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-togo-3-trace"
+      },
+      {
+       "id": "4",
+       "title": "Lit dots",
+       "note": "The same window in the dial's dot lettering: 70 bright, /205 amber.",
+       "images": [
+        {
+         "src": "img/pace-r2/togo-4-trace-desk.jpg",
+         "label": "Mid-night"
+        },
+        {
+         "src": "img/pace-r2/togo-4-near-desk.jpg",
+         "label": "Nearly there"
+        },
+        {
+         "src": "img/pace-r2/togo-4-trace-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-togo-4-trace"
+      },
+      {
+       "id": "5",
+       "title": "Both plates",
+       "note": "70 / 205 on the top plate and 135 TO GO on the lower one (the night number stays on the dial's scroll and the night intro).",
+       "images": [
+        {
+         "src": "img/pace-r2/togo-5-trace-desk.jpg",
+         "label": "Mid-night"
+        },
+        {
+         "src": "img/pace-r2/togo-5-near-desk.jpg",
+         "label": "Nearly there"
+        },
+        {
+         "src": "img/pace-r2/togo-5-trace-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-togo-5-trace"
       }
      ]
     }

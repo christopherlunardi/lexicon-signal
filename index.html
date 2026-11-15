@@ -1001,7 +1001,13 @@ function scoreShow() { return !HOW.on && barShow > .9 && ["play", "shop", "swap"
    between "85 TO GO" and "21 A WORD"; 2 a pace mark on the tube where this word should reach; 3 the dial says what a word needs and
    the traced word's number turns hot once it keeps pace; 4 the lower plate says "21 A WORD" (the night stays on the dial);
    5 the plate taking turns and the tube mark together. ---- */
-let PACE = 0; { const m = location.hash.match(/pace-(\d)/); if (m) PACE = Math.min(5, +m[1]); }
+let PACE = 2; { const m = location.hash.match(/pace-(\d)/); if (m) PACE = Math.min(5, +m[1]); }   // Chris picked 2, the mark on the tube (2026-11-15)
+/* ---- Workshop "to go" round 2 (Chris 2026-11-15: the plate is the place; show what you have against the target, nicely).
+   #togo-N: 0 as now (135 TO GO); 1 stamped 70 / 205; 2 the score big, "/ 205" small; 3 a lit window in the plate with 70 / 205;
+   4 the same window in the dial's dot lettering; 5 70 / 205 on the top plate and 135 TO GO on the lower one. ---- */
+let TOGO = 0; { const m = location.hash.match(/togo-(\d)/); if (m) TOGO = Math.min(5, +m[1]); }
+const toGo = () => Math.max(0, S.target - S.shown);
+const togoOn = () => S.phase === "play" && !HOW.on && toGo() > 0;
 const paceNeed = () => { const need = S.target - S.shown; return S.phase === "play" && need > 0 && S.words > 0 ? Math.ceil(need / S.words) : 0; };
 let POP = 1; {   // Chris picked 1, the cast shadow (2026-11-14)
   const m = location.hash.match(/pop-(\d)/); if (m) POP = Math.min(5, +m[1]); }
@@ -1972,7 +1978,18 @@ function drawBarText() {
   const [, , pw, ph] = R("plate"), pc = FX(L.plateX + pw / 2), opt = { under: C.brassHi, ux: 0, uy: 2 };
   const left = S.target - S.shown, pn = paceNeed(), alt = (PACE === 1 || PACE === 5) && pn && (frame % 300) >= 160;
   const t1 = S.phase === "title" ? "SIGNAL" : alt ? `${pn} A WORD` : left > 0 ? `${left} TO GO` : "LOCKED", t2 = S.phase === "title" ? "LEXICON" : PACE === 4 && pn ? `${pn} A WORD` : `NIGHT ${S.night}`;
-  ftext(t1, pc, FX(by + L.plateY0) + Math.round((FX(ph) - 14 * TK) / 2) - 1, "ink", C.ink, "c", opt);
+  const tg = S.phase !== "title" && TOGO, sc0 = String(Math.min(S.shown, S.target)), tt = String(S.target), py0 = FX(by + L.plateY0), mid = Math.round((FX(ph) - 14 * TK) / 2) - 1;
+  if (tg === 1 || tg === 5) ftext(`${sc0} / ${tt}`, pc, py0 + mid, "ink", C.ink, "c", opt);
+  else if (tg === 2) { const a1 = sc0, a2 = " / " + tt, w1 = textW(a1, "key"), w2 = textW(a2, "ink"), x1 = pc - (w1 + w2) / 2, kh = glyphCv("key", "0", C.ink).height;
+    ftext(a1, x1, py0 + Math.round((FX(ph) - kh) / 2) - 1, "key", C.ink, "l", opt); ftext(a2, x1 + w1, py0 + Math.round((FX(ph) - kh) / 2) - 1 + kh - Math.round(14 * TK), "ink", C.inkSoft, "l", opt); }
+  else if (tg === 3 || tg === 4) { const px = FX(L.plateX + 17), py = py0 + 9, pw2 = FX(pw - 34), ph2 = FX(ph) - 18, done = S.shown >= S.target;
+    ctx.fillStyle = "#120804"; ctx.fillRect(px, py, pw2, ph2); ctx.strokeStyle = "#5a3a18"; ctx.lineWidth = 2; ctx.strokeRect(px, py, pw2, ph2);
+    if (tg === 3) { const w1 = textW(sc0 + " ", "ink"), wt = w1 + textW("/ " + tt, "ink"), k3 = Math.min(1, (pw2 - 16) / wt), ty3 = py + Math.round((ph2 - 14 * TK * k3) / 2);
+      ctx.save(); ctx.translate(pc - wt * k3 / 2, ty3); ctx.scale(k3, k3); ftext(sc0, 0, 0, "ink", done ? "#fff0c0" : "#ffcf70", "l"); ftext("/ " + tt, w1, 0, "ink", "#d08a40", "l"); ctx.restore(); }
+    else { const str = sc0 + "/" + tt, sw2 = str.length * 18 - 3, sc2 = Math.min(1, (pw2 - 12) / sw2); ctx.save(); ctx.translate(pc - sw2 * sc2 / 2, py + (ph2 - 21 * sc2) / 2); ctx.scale(sc2, sc2); ftextDot(sc0, 0, 0, C.hot); ftextDot("/" + tt, sc0.length * 18, 0, C.amber); ctx.restore(); }
+    ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(pc, py + ph2 / 2, pw2 * .5, "255,170,80", .18); ctx.restore(); }
+  else ftext(t1, pc, py0 + mid, "ink", C.ink, "c", opt);
+  if (tg === 5) { ftext(left > 0 ? `${left} TO GO` : "LOCKED", pc, FX(by + L.plateY1) + mid, "ink", C.ink, "c", opt); } else
   ftext(t2, pc, FX(by + L.plateY1) + Math.round((FX(ph) - 14 * TK) / 2) - 1, "ink", C.ink, "c", opt);
   // counters on the part slots
   const [, , sw, sh] = R("slot");
@@ -3401,7 +3418,7 @@ async function boot() {
   if (location.hash.startsWith("#test-intro")) { newRun(); S.night = 3; S.parts.push("battery", "amp"); S.total = 140; startNight(); }   // the night intro on night 3 with a battery (#test-intro-N)
   if (location.hash.startsWith("#test-shop-gold")) { newRun(); S.parts.push("amp", "coil"); nightClear(); S.phase = "shop"; shopChoices[1] = PART.gold; }
   if (location.hash.startsWith("#test-trade")) { newRun(); S.night = 4; S.parts.push("amp", "amp", "coil", "battery", "battery", "echo"); startNight(); nightHold = 0; S.score = S.shown = Math.round(S.target * .8); S.words = 0; nightLost(); }
-  if (location.hash.startsWith("#test-pace")) { newRun(); S.night = 4; S.parts.push("amp", "coil"); startNight(); setTimeout(() => { nightHold = 0; S.score = S.shown = /near/.test(location.hash) ? 185 : 70; S.words = 3; S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); usingButtons = true; if (!/idle/.test(location.hash)) { S.path = [0, 1, 2]; S.cursor = S.path[S.path.length - 1]; } }, 400); }
+  if (/^#test-(pace|togo)/.test(location.hash)) { newRun(); S.night = 4; S.parts.push("amp", "coil"); startNight(); setTimeout(() => { nightHold = 0; S.score = S.shown = /near/.test(location.hash) ? 185 : 70; S.words = 3; S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); usingButtons = true; if (!/idle/.test(location.hash)) { S.path = [0, 1, 2]; S.cursor = S.path[S.path.length - 1]; } }, 400); }
   if (location.hash === "#test-swap") { newRun(); S.parts.push("amp", "amp", "coil", "echo", "owl", "short"); nightClear(); const k = shopChoices.findIndex(c => !S.parts.includes(c.id)); if (k >= 0) choosePart(k); }
   if (location.hash.startsWith("#test-shop-tap")) { newRun(); S.parts.push("amp", "coil"); nightClear(); S.phase = "shop"; shopChoices[1] = PART.tap; }
   if (/^#test-word-tap/.test(location.hash)) setTimeout(() => { S.parts = ["amp", "tap", "coil"]; S.tap = 12; S.path = [6, 12, 18]; S.cursor = 18; }, 320);

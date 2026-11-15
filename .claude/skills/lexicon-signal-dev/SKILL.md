@@ -165,8 +165,10 @@ the same batch.
   of a non-rare part opens the trade screen (phase "trade", drawTrade, nightLost): left/right picks among stackable slots, A trades one
   copy and the night counts (next night, no part, no bonus), B or the GIVE UP plate ends the run. Unlimited trades doubled runs in
   the sim; the three-quarter rule gives about one a run. #test-trade. The play log notes picked "trade:<id>" and run.trades.
-- Workshop pace-r1 (2026-11-15, open): ways to show what each word still needs (PACE, #pace-N, paceNeed; #test-pace-N-trace/idle/near).
-  The night intro plaque already says ABOUT N A WORD.
+- Pace mark (Workshop pace-r1, Chris picked 2, 2026-11-15): a brass mark on the tube where this word should reach to keep pace
+  (paceNeed = what's left / words left), the cells up to it outlined; it lights when the traced word gets there. PACE 2 (#pace-N
+  shows the other looks). The night intro plaque says ABOUT N A WORD.
+- Workshop pace-r2 (open): how the top plate shows signal against target (TOGO, #togo-N; #test-togo-N-trace/near).
 - The red key (2026-11-13): always exactly one; a word through it x(2 + Red Heat copies). Red Lamp (id carrier, its red lamp icon)
   now adds +5 signal per copy to a word through the red key. Rare parts (`rare:true`, gold frame and gold label RARE: ONCE ONLY,
   offered one night in six, one in two after an overdrive, never twice): the Gold Key (id gold) puts a gold wildcard key "?" on
