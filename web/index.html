@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 124;</script><script>
+<script>window.LEX_BUILD = 125;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -468,7 +468,10 @@ const BASE_WORDS = 6;   // one per battery lamp
 const OVERDRIVE = 1.5;   // finish a night with this much of its target or more: overdrive (a red flash, and four parts to pick from)
 // night targets (Chris 2026-11-13, after the balance sim in tools/balance: the early nights were far too easy): 40 on night 1,
 // x1.8 a night up to night 5, then x1.5 a night: 40, 70, 130, 235, 420, 630, 945...
-const targetFor = (n) => { let t = 40; for (let k = 2; k <= n; k++) t *= k <= 5 ? 1.8 : 1.5; return Math.round(t / 5) * 5; };
+// the night's target (Chris 2026-11-15): 50, then x1.6 a night to night 5, then x1.4 (was 40, x1.8, x1.5: a wall at nights 5-7)
+const targetFor = (n) => { let t = 50; for (let k = 2; k <= n; k++) t *= k <= 5 ? 1.6 : 1.4; return Math.round(t / 5) * 5; };
+// an unused retune pays a share of the target that grows (Chris 2026-11-15): a sixth to night 3, a quarter to night 6, a third after
+const retuneShare = (n) => n <= 3 ? 1 / 6 : n <= 6 ? 1 / 4 : 1 / 3;
 const freqFor = (n) => +(88.1 + ((n - 1) * 1.9) % 19.8).toFixed(1);
 let S = null, uid = 0;
 const has = (id) => S.parts.filter(p => p === id).length;
@@ -615,7 +618,7 @@ function arrive() {
   else if (S.score >= S.target) { S.over = S.score >= S.target * OVERDRIVE;
     if (S.over) { overT = 1; shake = 8; Sound.full(); Sound.beacon(true); dialFlash = { text: "OVERDRIVE", t: 140 }; log(`Overdrive! ${S.score} of ${S.target}.`); }
     busy++; setTimeout(() => { busy--; nightClear(); }, S.over ? 2300 : 1700); }
-  else if (S.words <= 0) { busy++; setTimeout(() => { busy--; gameOver(); }, 1400); }
+  else if (S.words <= 0) { busy++; setTimeout(() => { busy--; nightLost(); }, 1400); }
   else log(`${S.target - S.score} to go, ${S.words} word${S.words === 1 ? "" : "s"} left.`);
 }
 function retune() { if (!canAct() || S.retunes <= 0) return; if (PLAYLOG.run && !HOW.on) PLAYLOG.run.retunes++; if (S.retunes > 1) log("Tuning knob spent."); S.retunes--; S.path = []; pathSound = 0; fillGrid(true); knobA.R += 2.4; staticKick = .5; Sound.retune(); log("Retuned."); }
@@ -662,12 +665,10 @@ function upgradeConfirm(k) { const sl = partSlots()[k]; if (!sl || PART[sl.id].r
 const REPORT = { t: 0 };
 // the night report's clock (frames): the words drop in one by one, the night's total lands, it flies up into the run score,
 // the run score counts up with a climbing tick and jumps when it's done
-// what's left when a night clears pays a bonus: a quarter of the night's target for each word (lamp) still lit, a sixth for each
-// retune not used, rounded to 5. Night 1: 10 a word, 5 a retune; night 5: 40 and 25.
 const round5 = (v) => Math.max(5, Math.round(v / 5) * 5);
 // each lamp still lit pays the night's best word again (Chris 2026-11-14: with a fixed bonus, stopping just short to squeeze in one more
-// word paid better than finishing; now spending a lamp always costs at least what the word adds). An unused retune pays a sixth of the target.
-function nightBonus() { const wl = HOW.on ? 0 : Math.max(0, S.words), rl = HOW.on ? 0 : Math.max(0, S.retunes), wv = Math.max(0, ...(S.nw || []).map(w => w.p)), rv = round5(S.target / 6);
+// word paid better than finishing; now spending a lamp always costs at least what the word adds). An unused retune pays retuneShare of the target.
+function nightBonus() { const wl = HOW.on ? 0 : Math.max(0, S.words), rl = HOW.on ? 0 : Math.max(0, S.retunes), wv = Math.max(0, ...(S.nw || []).map(w => w.p)), rv = round5(S.target * retuneShare(S.night));
   const rows = [], om = owlX();
   if (wl && wv) rows.push({ k: "WORDS LEFT", n: wl, v: wv, note: `BEST WORD ${wv} EACH` });
   if (rl) rows.push({ k: rl === 1 ? "RETUNE LEFT" : "RETUNES LEFT", n: rl, v: rv });
@@ -866,6 +867,18 @@ function loadScores() { try { const a = JSON.parse(localStorage.getItem("lexsig.
 function saveRun() { const a = loadScores(), run = { s: S.total, n: S.night - 1, w: S.best.word || "", p: S.best.pts || 0, d: Date.now() };
   a.push(run); a.sort((x, y) => y.s - x.s || y.n - x.n); const top = a.slice(0, 10); try { localStorage.setItem("lexsig.scores", JSON.stringify(top)); } catch (e) {}
   const i = top.indexOf(run); return i < 0 ? 0 : i + 1; }
+/* ---- the trade (Chris 2026-11-15): a lost night isn't the end while you have a stacked part (two or more copies in one slot).
+   Only when the night got at least three-quarters of its target. Trade one copy and the night counts: the next night starts, with no new part and no leftover bonus. B (or tapping the room)
+   gives up. Slots with a single part or a rare part can't be traded. ---- */
+const tradeSlots = () => partSlots().map((s, k) => ({ ...s, k })).filter(s => s.n >= 2 && !PART[s.id].rare);
+const TRADE_REACH = .75;   // a trade is only offered when the night got at least three-quarters of its target (the sim: unlimited trades doubled runs)
+function nightLost() { if (HOW.on) return; const t = tradeSlots(); if (!t.length || S.score < S.target * TRADE_REACH) return gameOver();
+  S.phase = "trade"; swapFocus = t[0].k; TRADE.t = 0; Sound.over(); staticKick = .6; log(`Short by ${S.target - S.score}. Trade a part?`); }
+const TRADE = { t: 0 };
+function tradeConfirm(k) { const sl = partSlots()[k]; if (S.phase !== "trade" || !sl || sl.n < 2 || PART[sl.id].rare) return;
+  S.parts.splice(S.parts.lastIndexOf(sl.id), 1); plNight([]); plPick("trade:" + sl.id); if (PLAYLOG.run) PLAYLOG.run.trades = (PLAYLOG.run.trades || 0) + 1;
+  log(`Traded: ${PART[sl.id].name}. Night ${S.night} pushed through.`); Sound.lock(); shake = 4; S.night += 1; knobA.L += 3; staticKick = .5; Sound.retune(); startNight(); }
+function tradeGiveUp() { if (S.phase === "trade") gameOver(); }
 function gameOver() {
   S.phase = "over"; Sound.over(); staticKick = .9; log("Dead air."); S.rank = S.total > 0 ? saveRun() : 0; plEnd("lost");
   try { const prev = JSON.parse(localStorage.getItem("lexsig-best") || "null"), cleared = S.night - 1;
@@ -919,9 +932,9 @@ function draw() {
   if (overT > 0) { ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(255,40,24,${.42 * overT * (.6 + .4 * Math.sin(frame / 2))})`; ctx.fillRect(0, 0, CVW, CVH); ctx.restore(); overT = Math.max(0, overT - .012); }
   drawScoreDrums(); if (POP === 2 || POP === 5) popRims(); if (POP === 3) popKeylines();
   drawBarText(); if (nightCard > 0 && S.phase === "play" && !HOW.on) { if (INTRO) { drawIntro(); introT++; if (!nightHold) nightCard--; } else { drawNightCard(); nightCard--; } }
-  if (S.phase === "title" || S.phase === "shop" || S.phase === "swap" || S.phase === "over" || S.phase === "melt" || S.phase === "upgrade" || S.phase === "report") {
+  if (S.phase === "title" || S.phase === "shop" || S.phase === "swap" || S.phase === "trade" || S.phase === "over" || S.phase === "melt" || S.phase === "upgrade" || S.phase === "report") {
     octx.clearRect(0, 0, W, H); octx.imageSmoothingEnabled = false;
-    if (S.phase === "title") drawTitle(); else if (S.phase === "shop") drawShop(); else if (S.phase === "swap") drawSwap(); else if (S.phase === "melt") drawMelt(); else if (S.phase === "report") drawReport(); else if (S.phase === "upgrade") drawUpgrade(); else drawOver();
+    if (S.phase === "title") drawTitle(); else if (S.phase === "shop") drawShop(); else if (S.phase === "swap") drawSwap(); else if (S.phase === "trade") drawTrade(); else if (S.phase === "melt") drawMelt(); else if (S.phase === "report") drawReport(); else if (S.phase === "upgrade") drawUpgrade(); else drawOver();
   }
   if (HOW.on) { howStep(); drawHowCard(); }
   if (PAUSE.on) drawPause();
@@ -976,12 +989,18 @@ function scoreUpdate() { if (SC.kick > 0) SC.kick = Math.max(0, SC.kick - .035);
   const v = S.phase === "play" && !HOW.on ? Math.min(S.total, (S.startTotal || 0) + S.shown) : S.phase === "report" ? reportRun() : S.total;
   // in play it follows the tube's count; on the night report it rolls up on its own once the night score lands in it
   if (v > SC.shown) { const nv = S.phase === "report" ? Math.min(v, SC.shown + Math.max(1, Math.ceil((v - SC.shown) / 14))) : v; SC.step = nv - SC.shown; SC.shown = nv; if (nv === S.total) SC.kick = 1; } else { SC.step = 0; if (v < SC.shown) SC.shown = v; } }
-function scoreShow() { return !HOW.on && barShow > .9 && ["play", "shop", "swap", "melt", "upgrade"].includes(S.phase); }
+function scoreShow() { return !HOW.on && barShow > .9 && ["play", "shop", "swap", "trade", "melt", "upgrade"].includes(S.phase); }
 /* ================= making the interface stand off the room (Workshop "pop", 2026-11-14) =================
    Chris: the bar and the run score could stand out from the room more, without darkening the room. #pop-N: 0 as now; 1 a soft
    shadow cast on the room above the bar and under the run score; 2 a warm rim of lamplight along their top edges; 3 a thin dark
    keyline round them; 4 the room a little less colorful (same brightness) so the warm brass reads stronger; 5 shadow and rim.
    All cheap: a few fills a frame, and 4 is one grayed copy of the room made once. */
+/* ---- Workshop "pace" (Chris 2026-11-15: show what each word still needs to bring). #pace-N: 0 as now; 1 the top plate takes turns
+   between "85 TO GO" and "21 A WORD"; 2 a pace mark on the tube where this word should reach; 3 the dial says what a word needs and
+   the traced word's number turns hot once it keeps pace; 4 the lower plate says "21 A WORD" (the night stays on the dial);
+   5 the plate taking turns and the tube mark together. ---- */
+let PACE = 0; { const m = location.hash.match(/pace-(\d)/); if (m) PACE = Math.min(5, +m[1]); }
+const paceNeed = () => { const need = S.target - S.shown; return S.phase === "play" && need > 0 && S.words > 0 ? Math.ceil(need / S.words) : 0; };
 let POP = 1; {   // Chris picked 1, the cast shadow (2026-11-14)
   const m = location.hash.match(/pop-(\d)/); if (m) POP = Math.min(5, +m[1]); }
 function scoreRect() { const { w, h, x, y } = scoreDrumBox(), maxW = Math.max(250, Math.min(440, FX(L.radioX + 70) - 16)), s = Math.min(1, maxW / w); return { x, y: y + h - h * s, w: w * s, h: h * s }; }
@@ -1084,16 +1103,17 @@ function drawDial() {
     // adding it would bring: its letter after the word and "+gain" in front of the number. With nothing traced, the hovered key's own value.
     const cur = S.path.length ? scoreOf(S.path).pts : 0, nxt = cand >= 0 ? scoreOf([...S.path, cand]).pts : cur, target = S.path.length ? cur : nxt;
     const prev = Math.round(dialVal); dialVal += (target - dialVal) * .3; if (Math.abs(target - dialVal) < .5) dialVal = target; if (Math.round(dialVal) !== prev) Sound.tick();
-    const num = (ok ? "+" : "") + Math.round(dialVal), gain = S.path.length && cand >= 0 ? "+" + (nxt - cur) : "";
+    const num = (ok ? "+" : "") + Math.round(dialVal) + (PACE === 3 && paceNeed() ? "/" + paceNeed() : ""), gain = S.path.length && cand >= 0 ? "+" + (nxt - cur) : "";
     const room = cols - num.length - (gain ? gain.length + 1 : 0) - 1, w = pathWord(S.path).toUpperCase();
     const chW = w.length + (cand >= 0 ? (S.grid[cand].ch === "Qu" ? 2 : 1) : 0), sh = Math.max(0, chW - room);
     ftextDot(w.slice(Math.min(sh, w.length)), x0, y0, ok ? C.hot : C.amber);
     const pv = ok ? C.selFill : C.dotDim;   // preview color: dim, but still readable on the lit display
     if (cand >= 0) ftextDot(S.grid[cand].ch.toUpperCase(), x0 + Math.max(0, w.length - sh) * 18, y0, pv);
     if (gain) ftextDot(gain, x0 + (cols - num.length - 1 - gain.length) * 18, y0, pv);
-    ftextDot(num, x0 + (cols - num.length) * 18, y0, ok ? C.hot : S.path.length ? C.amber : C.dotDim);
+    const keeps = PACE !== 3 || !paceNeed() || target >= paceNeed();   // (pace look 3: a sendable word below pace stays amber)
+    ftextDot(num, x0 + (cols - num.length) * 18, y0, ok && keeps ? C.hot : S.path.length ? C.amber : C.dotDim);
   }
-  else if (!dialFlash) { const msg = S.phase === "title" ? `  ${tipNow()} *` : S.phase === "play" ? `  ${freqFor(S.night).toFixed(1)} FM * NIGHT ${S.night} * REACH ${S.target} * SCORE ${S.total} *` : `  ${freqFor(S.night).toFixed(1)} FM *`;
+  else if (!dialFlash) { const msg = S.phase === "title" ? `  ${tipNow()} *` : S.phase === "play" ? (PACE === 3 && paceNeed() ? `  NEED ${paceNeed()} A WORD * ${S.target - S.shown} TO GO * ${S.words} WORD${S.words === 1 ? "" : "S"} LEFT *` : `  ${freqFor(S.night).toFixed(1)} FM * NIGHT ${S.night} * REACH ${S.target} * SCORE ${S.total} *`) : `  ${freqFor(S.night).toFixed(1)} FM *`;
     const full = msg.repeat(3), off = (marquee >> 3) % msg.length, sub = (marquee & 7) * 18 / 8; s = full.substr(off, cols + 1); ftextDot(s, x0 - sub, y0, C.amber); s = ""; dialVal = 0; }
   if (s && !(blink && dialFlash && dialFlash.t < 40 && (dialFlash.t >> 3) & 1)) ftextDot(s.slice(0, cols), x0, y0, col);
   ctx.restore();
@@ -1150,7 +1170,7 @@ function drawLamps() {
   if (lampOut) { const u = lampOut.t / 26; ctx.save(); ctx.globalAlpha = Math.max(0, 1 - u); drawLamp(FX(lampOut.x), FX(lampOut.y), lampOut.r, false);
     ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = 1; bloom(FX(lampOut.x), FX(lampOut.y), 50 + 30 * (1 - u), "255,240,200", .7 * (1 - u)); ctx.restore(); if (++lampOut.t > 26) lampOut = null; }
   // retunes left: small lamps in a row on the base lip under the right (tuning) knob, one per retune each night, lit while unused
-  if (S.phase === "play" || S.phase === "shop" || S.phase === "swap" || S.phase === "melt" || S.phase === "upgrade" || S.phase === "report") { const n = maxRetunes(), k = L.knobR;
+  if (S.phase === "play" || S.phase === "shop" || S.phase === "swap" || S.phase === "trade" || S.phase === "melt" || S.phase === "upgrade" || S.phase === "report") { const n = maxRetunes(), k = L.knobR;
     for (let i = 0; i < n; i++) { const x = FX(k.x + .5 + (i - (n - 1) / 2) * 13), y = FX(L.lamps[0].y + 31);
       ctx.fillStyle = "#1a0e08"; ctx.beginPath(); ctx.arc(x, y, 6, 0, 6.283); ctx.fill(); ctx.strokeStyle = "#b07a2a"; ctx.lineWidth = 1.5; ctx.stroke();
       if (i < S.retunes) drawLamp(x, y, 4.5, false);
@@ -1948,7 +1968,8 @@ function drawBarText() {
   if (show.length && (frame >> 4) & 1) { const last = show[show.length - 1]; ctx.fillStyle = C.ink; ctx.fillRect(Math.min(FX(L.log.x + L.log.w) - 26 - 10 * TK, FX(L.log.x) + 26 + last.s.length * ADV.ink), top + (show.length - 1) * lh + 12 * TK, 10 * TK, 2 * TK); }
   // stamped plates: dark letters with a light edge under them
   const [, , pw, ph] = R("plate"), pc = FX(L.plateX + pw / 2), opt = { under: C.brassHi, ux: 0, uy: 2 };
-  const left = S.target - S.shown, t1 = S.phase === "title" ? "SIGNAL" : left > 0 ? `${left} TO GO` : "LOCKED", t2 = S.phase === "title" ? "LEXICON" : `NIGHT ${S.night}`;
+  const left = S.target - S.shown, pn = paceNeed(), alt = (PACE === 1 || PACE === 5) && pn && (frame % 300) >= 160;
+  const t1 = S.phase === "title" ? "SIGNAL" : alt ? `${pn} A WORD` : left > 0 ? `${left} TO GO` : "LOCKED", t2 = S.phase === "title" ? "LEXICON" : PACE === 4 && pn ? `${pn} A WORD` : `NIGHT ${S.night}`;
   ftext(t1, pc, FX(by + L.plateY0) + Math.round((FX(ph) - 14 * TK) / 2) - 1, "ink", C.ink, "c", opt);
   ftext(t2, pc, FX(by + L.plateY1) + Math.round((FX(ph) - 14 * TK) / 2) - 1, "ink", C.ink, "c", opt);
   // counters on the part slots
@@ -2090,6 +2111,13 @@ function drawTube() {
     if (f) tubeFlash[k] = f > .03 ? f * .9 : 0;
   }
   tubeKick *= .9;
+  // pace look 2/5: a brass mark on the tube where this word should reach to keep pace; it lights when the traced word gets there
+  if ((PACE === 2 || PACE === 5) && paceNeed()) { const k = Math.min(G.n, Math.ceil((S.shown + paceNeed()) / S.target * G.n)), mx = G.ix + k * (G.cw + G.gap) - G.gap / 2, on = ok && pts >= paceNeed();
+    for (let j = lit; j < k; j++) { ctx.strokeStyle = "rgba(255,190,100,.32)"; ctx.lineWidth = 2; ctx.strokeRect(G.ix + j * (G.cw + G.gap) + 1, G.iy + 1, G.cw - 2, G.ih - 2); }   // the stretch this word should cover
+    ctx.fillStyle = "#1a0d06"; ctx.fillRect(mx - 4, G.iy - 12, 8, G.ih + 20);
+    ctx.fillStyle = on ? C.hot : "#f0c070"; ctx.fillRect(mx - 2, G.iy - 10, 4, G.ih + 16);
+    ctx.beginPath(); ctx.moveTo(mx - 9, G.iy - 16); ctx.lineTo(mx + 9, G.iy - 16); ctx.lineTo(mx, G.iy - 5); ctx.closePath(); ctx.fill();
+    if (on) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(mx, G.iy + G.ih / 2, 30, "255,200,110", .5); ctx.restore(); } }
   // the end lamp (Chris 2026-11-12): lights and pulses at the far end of the tube only while the traced word would fill it,
   // so a word that won't quite get there is easy to spot by the lamp staying dark
   { const t = L.tube, ex = FX(t.x + t.w) - 14, ey = FX(L.barY + t.y + t.h / 2), p = .65 + .35 * Math.sin(frame / 5);
@@ -2151,7 +2179,9 @@ const TIPS = [
   "EVERY POINT COUNTS TOWARD YOUR RUN SCORE. HOW HIGH CAN YOU GO?",
   "YOUR RUN SCORE SITS IN THE BOTTOM LEFT CORNER",
   "EVERY LAMP STILL LIT WHEN A NIGHT CLEARS PAYS YOUR BEST WORD AGAIN",
-  "AN UNUSED RETUNE PAYS A BONUS AT THE END OF THE NIGHT",
+  "AN UNUSED RETUNE PAYS A BONUS AT THE END OF THE NIGHT, AND MORE IN LATER NIGHTS",
+  "FALL JUST SHORT OF A NIGHT? TRADE ONE COPY OF A STACKED PART TO PUSH ON",
+  "A TRADE NEEDS THREE-QUARTERS OF THE NIGHT'S TARGET AND A PART WITH TWO OR MORE COPIES",
   "AFTER EACH NIGHT A REPORT SHOWS EVERY WORD AND WHAT BOOSTED IT",
   "TAP THE LEFT KNOB TO PAUSE",
   "THE LAMP AT THE END OF THE TUBE LIGHTS WHEN YOUR WORD WILL FILL IT",
@@ -2511,9 +2541,9 @@ const HOW_CARDS = [
     setup() {}, steps: [...[[30, 8], [58, 9], [86, 10], [114, 11]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(11))]] },
   { title: "FILL THE TUBE", keys: [], len: 380, text: "Fill the signal tube before the lamps go dark. Every word you send uses one lamp. Longer words and letters with more dots fill it faster. When the lamp at the end of the tube lights, the word you've spelled will fill it; when it burns red, it's overdrive: four parts to pick from. Every lamp still lit when it fills pays your best word again, so finishing in fewer words pays.",
     setup() { S.score = S.shown = 18; S.words = 3; }, steps: [...[[30, 12], [58, 13], [86, 14], [114, 15]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(15))]] },
-  { title: "STUCK? RETUNE", keys: ["Y"], len: 270, text: "Press {Y}[[, tap the right knob,| or]] move right past the bottom rows onto the knob and press {A}, to swap every letter for new ones, once a night. The small light under that knob shows you still have it. Keep it and it pays a bonus when the night clears.",
+  { title: "STUCK? RETUNE", keys: ["Y"], len: 270, text: "Press {Y}[[, tap the right knob,| or]] move right past the bottom rows onto the knob and press {A}, to swap every letter for new ones, once a night. The small light under that knob shows you still have it. Keep it and it pays a bonus when the night clears, and more in later nights.",
     setup() {}, steps: [[80, () => retune()]] },
-  { title: "RADIO PARTS", keys: [], len: 260, text: "Clear a night to fit one of three radio parts. They sit in the slots below and light up when they help. [[Tap a slot, or press|Press]] down past the bottom row to read what a part does. That's the basics!",
+  { title: "RADIO PARTS", keys: [], len: 260, text: "Clear a night to fit one of three radio parts. They sit in the slots below and light up when they help. [[Tap a slot, or press|Press]] down past the bottom row to read what a part does. Copies of a part stack, and when a night falls just short you can trade one copy to push on. That's the basics!",
     setup() { S.parts = ["battery", "echo"]; S.words = maxWords(); HOW.shop = true; nightClear(); HOW.shop = false; }, steps: [[70, () => { shopFocus = 1; Sound.click(); }], [140, () => { shopFocus = 2; Sound.click(); }], [210, () => { shopFocus = 0; Sound.click(); }]] },
 ];
 HOW_CARDS.forEach(c => { c.steps = c.steps.map(([t, f]) => [t, typeof f === "number" ? () => tapTile(f) : f]); });
@@ -2754,6 +2784,24 @@ function drawUpgrade() {
   ctx.save(); ctx.strokeStyle = (frame >> 3) & 1 ? "#ffd24a" : "#fff2c0"; ctx.lineWidth = 4; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 14; ctx.strokeRect(sx - 4, sy - 4, FX(sw) + 8, FX(shh) + 8); ctx.restore();
   ftext("+1", sx + FX(sw) / 2, sy - 22, "ink", C.hot, "c", { outline: C.dark });
 }
+// the trade screen: how short the night fell, the stacked part that would lose a copy (blinking in the bar), and a GIVE UP plate
+function drawTrade() { const t = ++TRADE.t, w = Math.min(W - 48, 400), h = 112, x = Math.round(W / 2 - w / 2), y = Math.max(12, Math.round((SCENE_H - h) / 2) - 14), sl = partSlots()[swapFocus];
+  dim(); octx.drawImage(panelCv("logbox", w, h), x, y); const r = sl ? R(iconOf(sl.id)) : null; if (r) spr(octx, iconOf(sl.id), x + 24, y + Math.round((h - r[3]) / 2)); blitOver();
+  const iw = r ? r[2] : 0, tx = FX(x + 24 + iw + (w - 24 - iw) / 2), lh = Math.round(22 * TK); let ty = FX(y) + 26;
+  ftext(`SHORT BY ${S.target - S.score}`, tx, ty, "key", C.ink, "c", { under: C.brassHi, uy: 3 }); ty += 50;
+  wrap(`Trade one copy of a stacked part to push on to night ${S.night + 1}.`, "ink", FX(w - iw - 40) - 40).forEach(s2 => { ftext(s2, tx, ty, "ink", C.ink, "c"); ty += lh; });
+  if (sl) ftext(`TRADE: ${PART[sl.id].name} X${sl.n} > X${sl.n - 1}`.toUpperCase(), tx, ty + 6, "ink", C.inkRed, "c");
+  ftext(TAPW() ? "TAP A STACKED PART TO TRADE IT" : btn("LEFT / RIGHT: CHOOSE   {A}: TRADE   {B}: GIVE UP"), FX(W / 2), FX(y + h) + 16, "ink", C.gold, "c", { outline: C.dark });
+  // GIVE UP: a plate to tap (the run ends as dead air)
+  const gy = FX(y + h) + 16 + Math.round(30 * TK), gs = "GIVE UP", gw = textW(gs, "ink") + 40, gh = Math.round(22 * TK) + 12;
+  TRADE.give = { x0: FX(W / 2) - gw / 2, x1: FX(W / 2) + gw / 2, y0: gy - gh / 2, y1: gy + gh / 2 };
+  if (TAPW()) { ctx.fillStyle = "rgba(20,8,4,.7)"; ctx.fillRect(TRADE.give.x0, TRADE.give.y0, gw, gh); ctx.strokeStyle = C.gold; ctx.lineWidth = 2; ctx.strokeRect(TRADE.give.x0, TRADE.give.y0, gw, gh); ftext(gs, FX(W / 2), gy, "ink", C.gold, "c"); }
+  // every slot that can be traded glows softly; the chosen one blinks with "-1" above it
+  const [, , sw, sh] = R("slot");
+  tradeSlots().forEach(s2 => { const sx = FX(L.slotX + s2.k * L.slotStep), sy = FX(L.barY + L.slotY), on = s2.k === swapFocus;
+    ctx.save(); ctx.strokeStyle = on ? ((frame >> 3) & 1 ? "#ff6a50" : "#ffd27a") : "rgba(255,200,110,.45)"; ctx.lineWidth = on ? 4 : 2; ctx.shadowColor = "#ff5a40"; ctx.shadowBlur = on ? 14 : 4; ctx.strokeRect(sx - 4, sy - 4, FX(sw) + 8, FX(sh) + 8); ctx.restore();
+    if (on) ftext("-1", sx + FX(sw) / 2, sy - 22, "ink", C.redHot, "c", { outline: C.dark }); });
+}
 function drawSwap() {
   const w = Math.min(W - 48, 400), h = 104, x = Math.round(W / 2 - w / 2), y = Math.max(12, Math.round((SCENE_H - h) / 2) - 10), r = R(iconOf(swapNew.id));
   dim(); octx.drawImage(panelCv("logbox", w, h), x, y); spr(octx, iconOf(swapNew.id), x + 24, y + Math.round((h - r[3]) / 2)); blitOver();
@@ -2941,6 +2989,7 @@ function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ?
     shopFocus = (shopFocus + (dx || dy) + n) % n; Sound.click(); return; }
   if (S.phase === "upgrade") { const sl = partSlots(), n = sl.length; let k = swapFocus; for (let j = 0; j < n; j++) { k = (k + (dx || dy) + n) % n; if (!PART[sl[k].id].rare) break; } swapFocus = k; Sound.click(); return; }
   if (S.phase === "swap") { const n = partSlots().length; swapFocus = (swapFocus + (dx || dy) + n) % n; Sound.click(); return; }
+  if (S.phase === "trade") { const t = tradeSlots(), j = t.findIndex(s => s.k === swapFocus), n = t.length; swapFocus = t[((j < 0 ? 0 : j) + (dx || dy) + n) % n].k; Sound.click(); return; }
   if (S.phase !== "play") return;
   if (inspectKey(dk)) return;
   if (knobKey(dk)) return;
@@ -2953,11 +3002,11 @@ function titleBusy() { if (S.phase === "title" && !titleSkip && titleT < TITLE_L
 function start() { if (buildReady) return maybeReload(); Sound.ensure(); Sound.music(); newRun(); }   // (a new build waiting in the app loads first)
 // buttons (Chris 2026-11-12: a four-button game, Start pauses, Select doesn't mute): A pick / send, B back, X send the word, Y retune,
 // Start pause (and pick on menus), Select nothing (held: dev mode). Keyboard: Z/Space/Enter A, X/Backspace B, C/R retune (Y), V send (X), Esc/P pause.
-function pressA() { if (devKey("a")) return; if (pauseKey("a")) return; if (boardKey("a")) return; if (howKey("a")) return; if (inspectKey("a")) return; if (knobKey("a")) return; Sound.ensure(); usingButtons = true; if (dismissCard()) return; if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
-function pressB() { if (devKey("b")) return; if (pauseKey("b")) return; if (boardKey("b")) return; if (howKey("b")) return; if (inspectKey("a")) return; if (knobKey("b")) return; if (nightHold) return void dismissCard(); if (S.phase === "melt") return meltDone(); if (S.phase === "swap") return swapCancel(); if (S.phase === "play") back(); }
+function pressA() { if (devKey("a")) return; if (pauseKey("a")) return; if (boardKey("a")) return; if (howKey("a")) return; if (inspectKey("a")) return; if (knobKey("a")) return; Sound.ensure(); usingButtons = true; if (dismissCard()) return; if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "trade") return tradeConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
+function pressB() { if (devKey("b")) return; if (pauseKey("b")) return; if (boardKey("b")) return; if (howKey("b")) return; if (inspectKey("a")) return; if (knobKey("b")) return; if (nightHold) return void dismissCard(); if (S.phase === "melt") return meltDone(); if (S.phase === "swap") return swapCancel(); if (S.phase === "trade") return tradeGiveUp(); if (S.phase === "play") back(); }
 function pressX() { if (devKey("x")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play" && S.path.length) send(); else pressA(); }
 function pressY() { if (devKey("y")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play") retune(); else if (S.phase === "report") reportToggle(); }
-function pressStart() { if (devKey("start")) return; if (pauseKey("start")) return; if (boardKey("start")) return; if (howKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); if (S.phase === "play") pauseOpen(); }
+function pressStart() { if (devKey("start")) return; if (pauseKey("start")) return; if (boardKey("start")) return; if (howKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return start(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "trade") return tradeConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); if (S.phase === "play") pauseOpen(); }
 function pressSel() { if (devKey("select")) return; }   // Select does nothing by itself (held a moment: dev mode, once it's unlocked)
 window.addEventListener("keydown", (e) => {
   if (!e.ctrlKey && !e.metaKey && !e.altKey) { INPUT = "keys"; usingTouch = false; }
@@ -2991,6 +3040,9 @@ cv.addEventListener("pointerdown", (e) => {
   if (S.phase === "swap") { const [, , sw, sh] = R("slot"), y0 = L.barY + L.slotY, k = Math.floor((p.x - L.slotX) / L.slotStep);
     if (p.y >= y0 && p.y <= y0 + sh && k >= 0 && k < partSlots().length && p.x - L.slotX - k * L.slotStep <= sw) { if (swapFocus === k || usingTouch) swapConfirm(k); else swapFocus = k; }
     else if (p.y < SCENE_H) swapCancel(); return; }
+  if (S.phase === "trade") { const [, , sw, sh] = R("slot"), y0 = L.barY + L.slotY, k = Math.floor((p.x - L.slotX) / L.slotStep), sl = partSlots()[k];
+    if (p.y >= y0 && p.y <= y0 + sh && sl && sl.n >= 2 && !PART[sl.id].rare && p.x - L.slotX - k * L.slotStep <= sw) { if (swapFocus === k || usingTouch) tradeConfirm(k); else { swapFocus = k; Sound.click(); } }
+    else { const fx = p.x * FINE, fy = p.y * FINE, g = TRADE.give; if (TRADE.t > 30 && g && fx >= g.x0 && fx <= g.x1 && fy >= g.y0 && fy <= g.y1) tradeGiveUp(); } return; }
   if (S.phase === "report") { const fx = p.x * FINE, fy = p.y * FINE, inR = (r) => r && fx >= r.x0 && fx <= r.x1 && fy >= r.y0 && fy <= r.y1;
     if (inR(REPORT.hit)) { reportToggle(); return; } if (inR(REPORT.list)) { REPORT.drag = { y: fy, s: REPORT.sT }; return; } reportNext(); return; }
   if (S.phase === "melt") { meltDone(); return; }
@@ -3346,6 +3398,8 @@ async function boot() {
   if (/^#test-shop-tags/.test(location.hash)) { newRun(); S.parts.push("amp", "coil", "battery", "knob"); if (/full/.test(location.hash)) S.parts.push("echo"); S.over = true; nightClear(); S.phase = "shop"; shopChoices = [PART.coil, PART.gold, PART.owl, PART.amp]; }
   if (location.hash.startsWith("#test-intro")) { newRun(); S.night = 3; S.parts.push("battery", "amp"); S.total = 140; startNight(); }   // the night intro on night 3 with a battery (#test-intro-N)
   if (location.hash.startsWith("#test-shop-gold")) { newRun(); S.parts.push("amp", "coil"); nightClear(); S.phase = "shop"; shopChoices[1] = PART.gold; }
+  if (location.hash.startsWith("#test-trade")) { newRun(); S.night = 4; S.parts.push("amp", "amp", "coil", "battery", "battery", "echo"); startNight(); nightHold = 0; S.score = S.shown = Math.round(S.target * .8); S.words = 0; nightLost(); }
+  if (location.hash.startsWith("#test-pace")) { newRun(); S.night = 4; S.parts.push("amp", "coil"); startNight(); setTimeout(() => { nightHold = 0; S.score = S.shown = /near/.test(location.hash) ? 185 : 70; S.words = 3; S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); usingButtons = true; if (!/idle/.test(location.hash)) { S.path = [0, 1, 2]; S.cursor = S.path[S.path.length - 1]; } }, 400); }
   if (location.hash === "#test-swap") { newRun(); S.parts.push("amp", "amp", "coil", "echo", "owl", "short"); nightClear(); const k = shopChoices.findIndex(c => !S.parts.includes(c.id)); if (k >= 0) choosePart(k); }
   if (location.hash.startsWith("#test-shop-tap")) { newRun(); S.parts.push("amp", "coil"); nightClear(); S.phase = "shop"; shopChoices[1] = PART.tap; }
   if (/^#test-word-tap/.test(location.hash)) setTimeout(() => { S.parts = ["amp", "tap", "coil"]; S.tap = 12; S.path = [6, 12, 18]; S.cursor = 18; }, 320);

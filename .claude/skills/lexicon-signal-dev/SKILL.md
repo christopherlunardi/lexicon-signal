@@ -155,10 +155,18 @@ the same batch.
   signal per letter worth 3+; Vowel Antenna vowels +1 signal each (it no longer adds vowels: that made scores worse); Red Lamp (id
   carrier) +1 red key; Red Heat (id heat, the fuse icon via `icon`) red keys multiply one more. Static Filter was dropped.
   Every slot shows a lamp per copy. Score = signal (letter values + 2 + adds) x boost (length - 2, at least 1, + adds) x multipliers.
-- Targets (Chris 2026-11-13, the early nights were far too easy): 40 on night 1, x1.8 a night to night 5, then x1.5 (40, 70, 130,
-  235, 420, 630, 945...), rounded to 5. Points are rounded (the coil can give halves). Balance is checked with the bot simulator in
-  tools/balance (README there; the game's rules copied into sim.js: keep them in step). With this curve, random picks: a casual bot
-  ends around night 7, a good one 8, an expert 10-11. Rerun it after any change to scoring, parts or targets.
+- Targets (Chris 2026-11-15, after his runs kept dying at nights 5-7): 50 on night 1, x1.6 a night to night 5, then x1.4 (50, 80,
+  130, 205, 330, 460, 645, 900...), rounded to 5 (was 40, x1.8, x1.5). Points are rounded (the coil can give halves). Balance is
+  checked with the bot simulator in tools/balance (README there; the game's rules copied into sim.js: keep them in step; t3.js whole
+  runs, t9.js trade limits, env T=base,g1,g2 and TRADE/TMAX/TCLOSE). With smart picks: casual ~9.4 nights, good ~11, expert ~16.
+  Rerun it after any change to scoring, parts or targets. Only the target rises with the nights; the parts are the answer to it.
+- An unused retune pays retuneShare of the night's target when it clears: a sixth to night 3, a quarter to night 6, a third after.
+- The trade (Chris 2026-11-15): a lost night with at least three-quarters of its target (TRADE_REACH) and a slot holding 2+ copies
+  of a non-rare part opens the trade screen (phase "trade", drawTrade, nightLost): left/right picks among stackable slots, A trades one
+  copy and the night counts (next night, no part, no bonus), B or the GIVE UP plate ends the run. Unlimited trades doubled runs in
+  the sim; the three-quarter rule gives about one a run. #test-trade. The play log notes picked "trade:<id>" and run.trades.
+- Workshop pace-r1 (2026-11-15, open): ways to show what each word still needs (PACE, #pace-N, paceNeed; #test-pace-N-trace/idle/near).
+  The night intro plaque already says ABOUT N A WORD.
 - The red key (2026-11-13): always exactly one; a word through it x(2 + Red Heat copies). Red Lamp (id carrier, its red lamp icon)
   now adds +5 signal per copy to a word through the red key. Rare parts (`rare:true`, gold frame and gold label RARE: ONCE ONLY,
   offered one night in six, one in two after an overdrive, never twice): the Gold Key (id gold) puts a gold wildcard key "?" on

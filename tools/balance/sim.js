@@ -11,8 +11,10 @@ const VALUES = { "?":0, A:1,E:1,I:1,O:1,U:1,N:1,R:1,S:1,T:1,L:1, D:2,G:2,H:2, B:
 const VOWELS = new Set(["A","E","I","O","U"]);
 const PARTS = ["amp","battery","knob","coil","short","echo","owl","treble","vowel","carrier","heat"]; const RARE = ["gold","tap"];
 const N = 5, NN = 25, BASE_WORDS = 6, OVERDRIVE = 1.5, SLOTS = 5, MELT_N = 5;
-const TG = (process.env.T || '40,1.8,1.5').split(',').map(Number);   // base, growth for the first nights, growth after night 5
+const TG = (process.env.T || '50,1.6,1.4').split(',').map(Number);   // base, growth for the first nights, growth after night 5
 const targetFor = (n) => { let t = TG[0]; for (let k = 2; k <= n; k++) t *= k <= 5 ? TG[1] : TG[2]; return Math.round(t / 5) * 5; };
+// an unused retune pays a share of the target that grows: a sixth to night 3, a quarter to night 6, a third after
+const retuneShare = (n) => n <= 3 ? 1 / 6 : n <= 6 ? 1 / 4 : 1 / 3;
 const round5 = (v) => Math.max(5, Math.round(v / 5) * 5);
 const WT = Object.entries(WEIGHTS), WTOT = WT.reduce((a, [, w]) => a + w, 0);
 let rnd = Math.random; const V = Object.fromEntries((process.env.V || '').split(',').filter(Boolean).map(k => [k, 1]));
@@ -57,7 +59,7 @@ function scoreOf(S, p, word) { const tiles = p.map(i => S.grid[i]), len = word.l
   if (reds) mult *= 2 + h("heat");
   const tap = has(S, "tap") && p.includes(12) ? (S.tap || 0) + len : 0;
   return Math.round(signal * boost * mult) + tap; }
-function nightBonus(S) { const wl = Math.max(0, S.words), rl = Math.max(0, S.retunes), wv = process.env.OLDLAMP ? round5(S.target / 4) : S.nightBest, rv = round5(S.target / 6);
+function nightBonus(S) { const wl = Math.max(0, S.words), rl = Math.max(0, S.retunes), wv = process.env.OLDLAMP ? round5(S.target / 4) : S.nightBest, rv = round5(S.target * retuneShare(S.night));
   return wl * wv + rl * rv + (wl && has(S, "owl") ? wv * (1 + 2 * has(S, "owl")) : 0); }
 
 // bots. skill: "expert" knows every word and always sees the best; "player" knows common words (zipf >= z) and spots each one with
@@ -88,7 +90,12 @@ function shop(S, pickFn) { const bag = PARTS.slice(), ch = []; while (ch.length 
 function run(bot, opts = {}) { const S = mk(opts.parts || []); const st = { nights: 0, words: [], pts: [], retunes: 0, bonus: 0, picks: [], over: 0, nightScores: [], byNight: {} };
   const pickFn = opts.pick || ((ch) => ch[(rnd() * ch.length) | 0]);
   while (S.night <= (opts.maxNight || 40)) { S.over = false; const ok = playNight(S, bot, st); st.nightScores.push(S.score / S.target);
-    if (!ok) break; st.nights = S.night; if (S.over) st.over++;
+    // a lost night: trade one copy of a stacked part (two or more of a kind) to push on to the next night, no new part
+    if (!ok) { const sl = [...new Set(S.parts)].filter(k => !RARE.includes(k) && has(S, k) >= 2);
+      const short = 1 - S.score / S.target, tl = +(process.env.TMAX || 99), tc = +(process.env.TCLOSE || 1);
+      if (opts.trade && sl.length && (st.trades || 0) < tl && short <= tc) { const k = sl.sort((a, b) => has(S, b) - has(S, a))[0]; S.parts.splice(S.parts.indexOf(k), 1); st.trades = (st.trades || 0) + 1; st.nights = S.night; S.night++; continue; }
+      break; }
+    st.nights = S.night; if (S.over) st.over++;
     if (!opts.noShop) { const p = shop(S, pickFn); if (p) st.picks.push([S.night, p]); }
     S.night++; }
   st.total = S.total; st.parts = S.parts; return st; }
