@@ -337,7 +337,7 @@ def main():
         if nm in imgs: imgs[nm] = frames.unify_brass(imgs[nm])
     # the radio's lamp (Chris 2026-11-14): one lamp goes on the Pixel Bench for Chris to paint; what he sends back is src/bench/lamp.png
     if not os.path.exists(SRC + "bench/lamp.png"):
-        lx_, ly_ = pts["radio"]["lamp2"]; lc_ = np.asarray(imgs["radio"].crop((lx_ - 12, ly_ - 12, lx_ + 13, ly_ + 13))).copy()
+        lx_, ly_ = pts["radio"]["lamp1"]; lc_ = np.asarray(imgs["radio"].crop((lx_ - 12, ly_ - 12, lx_ + 13, ly_ + 13))).copy()
         yy_, xx_ = np.mgrid[0:25, 0:25]; lc_[(yy_ - 12) ** 2 + (xx_ - 12) ** 2 > 12.6 ** 2, 3] = 0
         Image.fromarray(lc_, "RGBA").save(ROOT_ART + "bench/img/lamp.png")
         json.dump([{"file": "img/lamp.png", "group": "To do: frames under the rivets", "label": "One lamp for under the radio's glass (unlit; the game draws its glow on top). It will be used six times on plain wood", "w": 25, "h": 25, "key": "lamp"}], open(ROOT_ART + "bench/manifest.json", "w"), indent=1)
