@@ -1666,6 +1666,140 @@
      "chosen": "1"
     }
    ]
+  },
+  {
+   "id": "pop",
+   "title": "Interface standing out",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "How should the bar and the run score stand out from the room, without making the room darker?",
+     "found": "Chris: make our interface stand out over the background a bit more without darkening it or breaking anything. Each option is cheap (a few fills a frame, or one grayed copy of the room made once). 'Close up' shows the run score and the bar's top edge; 'Play in game' opens a word in progress with that option.",
+     "options": [
+      {
+       "id": "0",
+       "title": "As it is now",
+       "note": "The bar and the run score sit straight on the room, lit like the room.",
+       "images": [
+        {
+         "src": "img/pop-r1/pop-0-close.jpg",
+         "label": "Close up"
+        },
+        {
+         "src": "img/pop-r1/pop-0-desk.jpg",
+         "label": "Computer"
+        },
+        {
+         "src": "img/pop-r1/pop-0-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-word-pop-0"
+      },
+      {
+       "id": "1",
+       "title": "Cast shadow",
+       "note": "A soft shadow falls on the room just above the bar and under the run score, as if they stand in front of the wall.",
+       "images": [
+        {
+         "src": "img/pop-r1/pop-1-close.jpg",
+         "label": "Close up"
+        },
+        {
+         "src": "img/pop-r1/pop-1-desk.jpg",
+         "label": "Computer"
+        },
+        {
+         "src": "img/pop-r1/pop-1-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-word-pop-1"
+      },
+      {
+       "id": "2",
+       "title": "Rim of lamplight",
+       "note": "A warm line of light along the bar's top edge and the run score's top, as if the lamp catches their brass.",
+       "images": [
+        {
+         "src": "img/pop-r1/pop-2-close.jpg",
+         "label": "Close up"
+        },
+        {
+         "src": "img/pop-r1/pop-2-desk.jpg",
+         "label": "Computer"
+        },
+        {
+         "src": "img/pop-r1/pop-2-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-word-pop-2"
+      },
+      {
+       "id": "3",
+       "title": "Dark keyline",
+       "note": "A thin dark line round the run score and along the top of the bar, separating them from the room like a printed outline.",
+       "images": [
+        {
+         "src": "img/pop-r1/pop-3-close.jpg",
+         "label": "Close up"
+        },
+        {
+         "src": "img/pop-r1/pop-3-desk.jpg",
+         "label": "Computer"
+        },
+        {
+         "src": "img/pop-r1/pop-3-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-word-pop-3"
+      },
+      {
+       "id": "4",
+       "title": "Room less colorful",
+       "note": "The room (wallpaper, radio, sideboard, window) a little grayer at the same brightness, so the warm brass and parchment read stronger. Made once, costs nothing per frame.",
+       "images": [
+        {
+         "src": "img/pop-r1/pop-4-close.jpg",
+         "label": "Close up"
+        },
+        {
+         "src": "img/pop-r1/pop-4-desk.jpg",
+         "label": "Computer"
+        },
+        {
+         "src": "img/pop-r1/pop-4-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-word-pop-4"
+      },
+      {
+       "id": "5",
+       "title": "Shadow and rim",
+       "note": "Options 1 and 2 together.",
+       "images": [
+        {
+         "src": "img/pop-r1/pop-5-close.jpg",
+         "label": "Close up"
+        },
+        {
+         "src": "img/pop-r1/pop-5-desk.jpg",
+         "label": "Computer"
+        },
+        {
+         "src": "img/pop-r1/pop-5-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-word-pop-5"
+      }
+     ]
+    }
+   ]
   }
  ]
 }
