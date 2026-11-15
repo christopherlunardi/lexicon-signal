@@ -356,7 +356,7 @@ def main():
         for k_ in range(6):   # evenly spaced now that they're all one lamp; the lamp's middle is at the mark plus half a pixel each way
             pts["radio"]["lamp%d" % k_] = [166 + round(k_ * 149 / 5), 232]; lx_, ly_ = pts["radio"]["lamp%d" % k_]; rim_.alpha_composite(lamp_, (lx_ - 13, ly_ - 13))
         imgs["radio"] = rim_
-    if True:   # (the stained glass stays on the bench, his latest version, while Chris keeps touching it up; listed after the bench's own list)
+    if not os.path.exists(SRC + "bench/stained.png"):   # (the stained glass on the bench until Chris has painted it; listed after the bench's own list)
         if os.path.exists(SRC + "bench/stained.png"): Image.open(SRC + "bench/stained.png").save(ROOT_ART + "bench/img/stained.png")
         json.dump([{"file": "img/stained.png", "group": "To do: frames under the rivets", "label": "The window's stained glass (everything inside the wood, 98 x 33)", "w": 98, "h": 33, "key": "stained"}], open(ROOT_ART + "bench/manifest.json", "w"), indent=1)
     # the bar's clasp (Chris 2026-11-14): PixelLab's winged brass piece (src/clasp_wings.png, trimmed to the wings' shape)
