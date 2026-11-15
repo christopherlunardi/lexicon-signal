@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 123;</script><script>
+<script>window.LEX_BUILD = 124;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -555,13 +555,14 @@ const playWhere = () => document.body.classList.contains("pwa") ? "webapp" : doc
 function plStart() { if (HOW.on) return; PLAYLOG.run = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), at: Date.now(), build: window.LEX_BUILD || 0, where: playWhere(),
     screen: innerWidth + "x" + innerHeight, input: usingTouch ? "touch" : usingButtons ? "buttons" : "mouse", words: [], nights: [], fails: 0, retunes: 0, end: "" }; PLAYLOG.last = Date.now(); }
 function plWord(sc) { const r = PLAYLOG.run; if (!r || HOW.on) return; const now = Date.now();
-  r.words.push({ n: S.night, w: sc.word, p: sc.pts, len: sc.len, m: sc.mult, red: sc.red, gold: sc.gold, left: S.words, rt: S.retunes, s: Math.round((now - PLAYLOG.last) / 100) / 10 }); PLAYLOG.last = now; }
+  r.words.push({ n: S.night, w: sc.word, p: sc.pts, len: sc.len, m: sc.mult, red: sc.red, gold: sc.gold, left: S.words, rt: S.retunes, s: Math.round((now - PLAYLOG.last) / 100) / 10 }); PLAYLOG.last = now; plSave(); }   // (saved after every word, so a run left mid-night still counts: 2026-11-15)
 function plNight(offered) { const r = PLAYLOG.run; if (!r || HOW.on) return; r.nights.push({ n: S.night, target: S.target, score: S.score, over: !!S.over, wordsLeft: S.words, offered: offered.map(p => p.id), picked: null, parts: S.parts.slice() }); plSave(); }
 function plPick(id) { const r = PLAYLOG.run; if (!r) return; const nn = r.nights[r.nights.length - 1]; if (nn) nn.picked = id; }
 function plEnd(how) { const r = PLAYLOG.run; if (!r || r.end) return; r.end = how; r.total = S.total; r.reached = S.night; r.parts = S.parts.slice(); plSave(); PLAYLOG.run = null; }
-function plSave() { const r = PLAYLOG.run; if (!r) return; r.total = S.total;
+function plSave() { const r = PLAYLOG.run; if (!r) return; r.total = S.total; r.reached = S.night; r.now = { n: S.night, target: S.target, score: S.score, words: S.words, retunes: S.retunes, parts: S.parts.slice() };
   try { const a = JSON.parse(localStorage.getItem("lexsig.runs") || "[]").filter(x => x.id !== r.id); a.push(r); localStorage.setItem("lexsig.runs", JSON.stringify(a.slice(-40))); } catch (e) {}
   if (PLAYLOG.db && PLAYLOG.uid) PLAYLOG.db.collection("plays/" + PLAYLOG.uid + "/runs").doc(r.id).set(JSON.parse(JSON.stringify(r))).catch(() => {}); }
+addEventListener("pagehide", () => { if (PLAYLOG.run && !PLAYLOG.run.end && S && S.phase !== "title") plSave(); });
 function plShare() { let txt = "[]"; try { txt = localStorage.getItem("lexsig.runs") || "[]"; } catch (e) {}
   if (navigator.share) navigator.share({ title: "Lexicon Signal play log", text: txt }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(() => log("Play log copied.")).catch(() => {}); }
 function newRun() { S = fresh("play"); log("On the air."); plStart(); startNight(); }
