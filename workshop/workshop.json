@@ -8,13 +8,17 @@
      "id": "r1",
      "status": "open",
      "question": "How should the red key stand out a bit more, keeping its look?",
-     "found": "Every option keeps today's red scan line and adds one thing. The red key is the G in the second row. Play opens each one live, since the pulses and glows move.",
+     "found": "Every option keeps today's red scan line and adds one thing. The red key is the G in the second row. Each option opens on a 5-second video.",
      "options": [
       {
        "id": "0",
        "title": "As now",
        "note": "The red scan line rolls down the key, with a soft red glow.",
        "images": [
+        {
+         "src": "img/redkey-r1/red-0.mp4",
+         "label": "Video"
+        },
         {
          "src": "img/redkey-r1/red-0-close.jpg",
          "label": "Close up"
@@ -36,6 +40,10 @@
        "note": "The same key with a bigger, stronger red glow that slowly swells and fades.",
        "images": [
         {
+         "src": "img/redkey-r1/red-1.mp4",
+         "label": "Video"
+        },
+        {
          "src": "img/redkey-r1/red-1-close.jpg",
          "label": "Close up"
         },
@@ -55,6 +63,10 @@
        "title": "Red frame",
        "note": "The key's frame glows red, pulsing gently.",
        "images": [
+        {
+         "src": "img/redkey-r1/red-2.mp4",
+         "label": "Video"
+        },
         {
          "src": "img/redkey-r1/red-2-close.jpg",
          "label": "Close up"
@@ -76,6 +88,10 @@
        "note": "The key's dark dots warm to a deep red behind the letter, so the whole key reads red.",
        "images": [
         {
+         "src": "img/redkey-r1/red-3.mp4",
+         "label": "Video"
+        },
+        {
          "src": "img/redkey-r1/red-3-close.jpg",
          "label": "Close up"
         },
@@ -95,6 +111,10 @@
        "title": "Bright scan",
        "note": "A brighter, quicker scan line with a fading red trail behind it.",
        "images": [
+        {
+         "src": "img/redkey-r1/red-4.mp4",
+         "label": "Video"
+        },
         {
          "src": "img/redkey-r1/red-4-close.jpg",
          "label": "Close up"
@@ -116,6 +136,10 @@
        "note": "Every couple of seconds a red ring pulses out from the key and fades.",
        "images": [
         {
+         "src": "img/redkey-r1/red-5.mp4",
+         "label": "Video"
+        },
+        {
          "src": "img/redkey-r1/red-5-close.jpg",
          "label": "Close up"
         },
@@ -135,6 +159,10 @@
        "title": "Glow + frame",
        "note": "Options 1 and 2 together.",
        "images": [
+        {
+         "src": "img/redkey-r1/red-6.mp4",
+         "label": "Video"
+        },
         {
          "src": "img/redkey-r1/red-6-close.jpg",
          "label": "Close up"
