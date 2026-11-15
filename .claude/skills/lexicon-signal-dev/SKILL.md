@@ -168,6 +168,9 @@ the same batch.
 - Pace mark (Workshop pace-r1, Chris picked 2, 2026-11-15): a brass mark on the tube where this word should reach to keep pace
   (paceNeed = what's left / words left), the cells up to it outlined; it lights when the traced word gets there. PACE 2 (#pace-N
   shows the other looks). The night intro plaque says ABOUT N A WORD.
+- Shine (Chris 2026-11-15): prominent brass plates outside play get the title buttons' hard-striped light sweep every SHINE_PER
+  frames (shinyPlateCv): the night intro plaque and every big title plate on a sheet (edgePlate with key lettering: DEAD AIR, the
+  night report, PAUSED, HIGH SCORES...). Any new plate of that kind uses shinyPlateCv too.
 - Top plate (Workshop pace-r2, Chris picked 3, 2026-11-15): a dark lit window set in the plate shows score / target (70 / 205),
   the score bright amber, the target dimmer, brighter still once the tube is full. TOGO 3; #togo-N shows the others.
 - The red key (2026-11-13): always exactly one; a word through it x(2 + Red Heat copies). Red Lamp (id carrier, its red lamp icon)

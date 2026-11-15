@@ -685,10 +685,10 @@ const INSET = { logbox: { x: 22, y: 18 }, plate: { x: 16, y: 6 } };
 // a brass nameplate riding a panel's edge, its text stamped in the middle (fine px in, world px for the plate)
 function edgePlate(s, kind, cx, cy, col) { const rf = S.phase === "report" && RT_FONTS[REPORT_TYPE];
   if (rf) { const f = (kind === "key" ? rf[2] : rf[0]).replace(/(\d+)px/, (m, n) => Math.round(n * TK) + "px"); ctx.save(); ctx.font = f; const tw = ctx.measureText(s).width, th2 = parseInt(f.match(/(\d+)px/)[1]) * .8, w = Math.round(tw / FINE) + 2 * INSET.plate.x + 8, hh = Math.round((th2 + 2 * FINE * INSET.plate.y + 8) / FINE), x = Math.round(cx / FINE - w / 2), y = Math.round(cy / FINE - hh / 2);
-    ctx.fillStyle = "rgba(8,4,2,.45)"; ctx.fillRect(FX(x + 2), FX(y + 3), FX(w), FX(hh)); ctx.drawImage(panelCv("plate", w, hh), FX(x), FX(y), FX(w), FX(hh));
+    ctx.fillStyle = "rgba(8,4,2,.45)"; ctx.fillRect(FX(x + 2), FX(y + 3), FX(w), FX(hh)); ctx.drawImage(kind === "key" ? shinyPlateCv(w, hh, frame - 40) : panelCv("plate", w, hh), FX(x), FX(y), FX(w), FX(hh));
     ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillStyle = "rgba(255,240,200,.6)"; ctx.fillText(s, FX(x + w / 2), FX(y + hh / 2) + 2); ctx.fillStyle = col || C.ink; ctx.fillText(s, FX(x + w / 2), FX(y + hh / 2)); ctx.restore(); return { w, hh }; }
   const th = glyphCv(kind, "N", C.ink).height, w = Math.round(textW(s, kind) / FINE) + 2 * INSET.plate.x + 8, hh = Math.round((th + 2 * FINE * INSET.plate.y + 8) / FINE), x = Math.round(cx / FINE - w / 2), y = Math.round(cy / FINE - hh / 2);
-  ctx.fillStyle = "rgba(8,4,2,.45)"; ctx.fillRect(FX(x + 2), FX(y + 3), FX(w), FX(hh)); ctx.drawImage(panelCv("plate", w, hh), FX(x), FX(y), FX(w), FX(hh));
+  ctx.fillStyle = "rgba(8,4,2,.45)"; ctx.fillRect(FX(x + 2), FX(y + 3), FX(w), FX(hh)); ctx.drawImage(kind === "key" ? shinyPlateCv(w, hh, frame - 40) : panelCv("plate", w, hh), FX(x), FX(y), FX(w), FX(hh));
   ftext(s, FX(x + w / 2), FX(y) + Math.round((FX(hh) - th) / 2) - 2, kind, col || C.ink, "c", { under: C.brassHi, uy: kind === "key" ? 3 : 2 }); return { w, hh }; }
 // a parchment sheet for any screen: brass nameplate on its top edge, an optional plate on its bottom edge, the body (bodyH fine px)
 // between them with INSET kept clear of the gold frame. Returns where the body goes (fine px); call .plates() after drawing it.
@@ -1924,7 +1924,7 @@ function drawIntro() {
   ctx.globalAlpha = e;
   if (INTRO === 1) {   // a big brass plaque, the goal stamped large
     const w = Math.min(W - 24, 250), hh = Math.ceil((30 + kh + 10 + ih + 8 + (kh + 8) * 2 + 2 + lh * 2 + 4 + ih + 26) / FINE), x = Math.round(W / 2 - w / 2), y = Math.round((L.barY - hh) / 2 - (1 - e) * 30);
-    ctx.fillStyle = "rgba(8,4,2,.45)"; ctx.fillRect(FX(x + 4), FX(y + 5), FX(w), FX(hh)); ctx.drawImage(panelCv("plate", w, hh), FX(x), FX(y), FX(w), FX(hh));
+    ctx.fillStyle = "rgba(8,4,2,.45)"; ctx.fillRect(FX(x + 4), FX(y + 5), FX(w), FX(hh)); ctx.drawImage(shinyPlateCv(w, hh, introT - 30), FX(x), FX(y), FX(w), FX(hh));
     let yy = FX(y) + 30; ftext(`NIGHT ${S.night}`, CX, yy, "key", C.ink, "c", { under: C.brassHi, uy: 3 }); yy += kh + 10;
     ftext("BEAM", CX, yy, "ink", C.ink, "c", { under: C.brassHi, uy: 2 }); yy += ih + 8;
     yy += bigText(String(S.target), CX, yy, "key", C.inkRed, 2, { under: C.brassHi, uy: 3 }) + 2;
@@ -2475,6 +2475,15 @@ function pushPlateCv(w, on, since) { const base = slice3Cv("plate", w, 18);
   const per = 170, run = 46, t = since % per, pos = -h + (w + 2 * h) * Math.min(1, t / run);
   if (t < run) for (let yy = 0; yy < h; yy++) { const sx = Math.round(pos - yy * .6);
     x.fillStyle = "rgba(255,248,220,.6)"; x.fillRect(sx, yy, 5, 1); x.fillStyle = "rgba(255,236,170,.3)"; x.fillRect(sx + 7, yy, 3, 1); }
+  return c; }
+// a brass plate that shows off now and then (Chris 2026-11-15: prominent plates outside play get the title buttons' sweep): every
+// SHINE_PER frames the same hard-striped band of light crosses it, left to right. `t` staggers plates that show together.
+const SHINE_PER = 200, shinePl = { cv: document.createElement("canvas") };
+function shinyPlateCv(w, hh, t) { const base = panelCv("plate", w, hh), run = Math.max(46, Math.round((w + 2 * hh) / 5)), u = ((t % SHINE_PER) + SHINE_PER) % SHINE_PER; if (u >= run) return base;
+  const c = shinePl.cv; if (c.width !== w || c.height !== hh) { c.width = w; c.height = hh; } const x = c.getContext("2d");
+  x.globalCompositeOperation = "source-over"; x.clearRect(0, 0, w, hh); x.drawImage(base, 0, 0); x.globalCompositeOperation = "source-atop";
+  const pos = -hh + (w + 2 * hh) * (u / run);
+  for (let yy = 0; yy < hh; yy++) { const sx = Math.round(pos - yy * .6); x.fillStyle = "rgba(255,248,220,.55)"; x.fillRect(sx, yy, 5, 1); x.fillStyle = "rgba(255,236,170,.28)"; x.fillRect(sx + 7, yy, 3, 1); }
   return c; }
 function panelCvKey(k, make) { let c = panelCache.get(k); if (!c) { if (panelCache.size > 80) panelCache.clear(); c = make(); panelCache.set(k, c); } return c; }
 // 6. Console (Chris's art, 2026-11-13): the wooden console the radio stands on, with a brass push-button plate per option; the chosen
