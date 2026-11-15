@@ -319,6 +319,9 @@ def main():
             for yy in range(cy_ - 4, cy_ + 5):
                 for xx in range(cx_ - 4, cx_ + 5):
                     if (xx - cx_) ** 2 + (yy - cy_) ** 2 <= 20: ba[yy, xx, :3] = (42, 12, 2)
+        # the top rail's highlight toned down to the slots' warm gold (Chris 2026-11-14: too pale a yellow for the rest of the brass)
+        top_ = ba[:12]; lu_ = top_[..., :3].astype(float) @ [.3, .59, .11] / 255; warm_ = (top_[..., 0] >= top_[..., 1]) & (top_[..., 1] >= top_[..., 2])
+        hi_ = warm_ & (lu_ > .8); mid_ = warm_ & (lu_ > .66) & ~hi_; top_[hi_, :3] = frames.BRASS[4]; top_[mid_, :3] = frames.BRASS[3]
         bp = Image.fromarray(ba, "RGBA"); BAR_RIVET_IMG = bp
         imgs["bar_left"] = bp.crop((0, 0, 39, bh)); imgs["bar_right"] = bp.crop((bw - 39, 0, bw, bh)); imgs["bar_mid"] = bp.crop((bw // 2 - 40, 0, bw // 2 + 41, bh))
         RIVETS.pop("bar_left", None); RIVETS.pop("bar_right", None)
