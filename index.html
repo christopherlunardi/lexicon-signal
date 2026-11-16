@@ -435,7 +435,7 @@ function buildBar() {
   nine(c, "logbox", L.log.x, L.log.y, L.log.w, L.log.h);
   spr(c, "plate", L.plateX, L.plateY0); spr(c, "plate", L.plateX, L.plateY1);
   const [, , sw0, sh0] = R("slot");
-  for (let k = 0; k < L.nSlots; k++) { spr(c, "slot", slotPX(k), L.slotY); if (k < KEY_SLOTS) { velvetRegion(c, slotPX(k) + 6, L.slotY + 6, sw0 - 12, sh0 - 12); c.fillStyle = "rgba(12,2,6,.42)"; c.fillRect(slotPX(k) + 7, L.slotY + 7, sw0 - 14, 49); } }   // the key slots are lined with velvet (deepened, so a red key still reads on it)
+  for (let k = 0; k < L.nSlots; k++) { spr(c, "slot", slotPX(k), L.slotY); if (k < KEY_SLOTS) { velvetRegion(c, slotPX(k) + 6, L.slotY + 6, sw0 - 12, sh0 - 12); velvetTone(c, slotPX(k) + 7, L.slotY + 7, sw0 - 14, 49); } }   // the key slots are lined with velvet
 }
 
 /* ================= game rules ================= */
@@ -3247,6 +3247,16 @@ function velvet(w, h) { const k = w + "x" + h; if (velvetCache[k]) return velvet
   for (let yy = 0; yy < h; yy++) for (let xx = 0; xx < w; xx++) { const i = (yy * w + xx) * 4, mid = 1 - Math.abs(xx / (w - 1) - .5) * 1.4, v = .55 + .3 * mid + .15 * rnd() - .12 * (yy / h);
     d[i] = 128 * v; d[i + 1] = 10 * v; d[i + 2] = 30 * v; d[i + 3] = 255; }
   x.putImageData(id, 0, 0); return (velvetCache[k] = cv); }
+/* the key slots' velvet tone (Chris 2026-11-16: the deepened red sank into the cherry wood around it). VELVET: 0 as it was (deepened
+   red), 1 brighter crimson, 2 wine (red turned toward plum), 3 midnight blue, 4 bottle green. #velvet-N */
+let VELVET = 0; { const m = location.hash.match(/velvet-(\d)/); if (m) VELVET = Math.min(4, +m[1]); }
+function velvetTone(c, x, y, w, h) { c.save();
+  if (VELVET === 0) { c.fillStyle = "rgba(12,2,6,.42)"; c.fillRect(x, y, w, h); }
+  if (VELVET === 1) { c.globalCompositeOperation = "color"; c.fillStyle = "rgb(200,20,60)"; c.fillRect(x, y, w, h); c.globalCompositeOperation = "screen"; c.fillStyle = "rgba(60,0,20,1)"; c.fillRect(x, y, w, h); }
+  if (VELVET === 2) { c.globalCompositeOperation = "color"; c.fillStyle = "rgb(130,30,110)"; c.fillRect(x, y, w, h); c.globalCompositeOperation = "source-over"; c.fillStyle = "rgba(10,0,12,.18)"; c.fillRect(x, y, w, h); }
+  if (VELVET === 3) { c.globalCompositeOperation = "color"; c.fillStyle = "rgb(40,70,170)"; c.fillRect(x, y, w, h); c.globalCompositeOperation = "source-over"; c.fillStyle = "rgba(0,4,16,.3)"; c.fillRect(x, y, w, h); }
+  if (VELVET === 4) { c.globalCompositeOperation = "color"; c.fillStyle = "rgb(30,120,70)"; c.fillRect(x, y, w, h); c.globalCompositeOperation = "source-over"; c.fillStyle = "rgba(0,10,4,.3)"; c.fillRect(x, y, w, h); }
+  c.restore(); }
 // velvet over the dark glass inside a frame (only the plain dark pixels inside the border are replaced)
 function velvetRegion(c, x, y, w, h) { const v = velvet(w, h).getContext("2d").getImageData(0, 0, w, h).data, id = c.getImageData(x, y, w, h), d = id.data;
   for (let i = 0; i < d.length; i += 4) { const l = (.3 * d[i] + .59 * d[i + 1] + .11 * d[i + 2]) / 255; if (d[i + 3] > 200 && l < .1) { d[i] = v[i]; d[i + 1] = v[i + 1]; d[i + 2] = v[i + 2]; } }
