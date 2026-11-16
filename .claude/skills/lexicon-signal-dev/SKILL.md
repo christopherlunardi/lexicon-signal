@@ -39,9 +39,12 @@ the same batch.
 - Things rearrange by screen shape: the wallpaper is a tile, the sideboard and bar are left end + repeated middle + right end, panels
   are 9-sliced from the log box, the bar is made taller by repeating its plain middle rows. Narrow (4:3) screens tuck the window
   behind the radio's left edge (beacon still visible).
-- Part slots (2026-11-12): always 5, on every screen (a rule of play, PART_SLOTS). Copies of one part stack in its slot (x2, x3).
-  Wide screens: log | plates | 5 slots in one row. Narrow: log and plates on top, the 5 slots centered in a row under them.
-  All 5 full and a new kind of part picked: the swap screen (phase "swap") asks which part to take out (all its copies go);
+- Slots (Chris 2026-11-15): 3 velvet KEY slots, a small gap (SLOT_KG), then 3 part slots (KEY_SLOTS, PART_SLOTS), on every screen.
+  The velvet is painted into the bar art (buildBar: velvetRegion, deepened so a red key reads). partSlots() lists keys first (the red
+  key always, even at level 0) then parts; slotBox(k) maps the k-th entry onto its group (slotPos/slotPX). Use slotAt()/slotBox(),
+  never L.slotX + k * L.slotStep. Copies of one part stack in its slot (x2, x3).
+  Wide screens: log | plates | 6 slots in one row. Narrow: log and plates on top, the slots centered in a row under them.
+  All 3 part slots full and a new kind of part picked: the swap screen (phase "swap") asks which part to take out (all its copies go);
   left/right + A, or tap the slot; B or a tap on the room goes back to the picker. Picker cards say "STACKS: XN" or
   "SLOTS FULL: SWAP ONE". `#test-swap` opens the swap screen.
 - The night's goal is a signal tube along the top of the bar, the full inner width (2026-11-12, Chris wanted a satisfying fill bar):
@@ -155,7 +158,7 @@ the same batch.
   signal per letter worth 3+; Vowel Antenna vowels +1 signal each (it no longer adds vowels: that made scores worse); Red Lamp (id
   carrier) +1 red key; Red Heat (id heat, the fuse icon via `icon`) red keys multiply one more. Static Filter was dropped.
   Every slot shows a lamp per copy. Score = signal (letter values + 2 + adds) x boost (length - 2, at least 1, + adds) x multipliers.
-- Targets (Chris 2026-11-15, after his runs kept dying at nights 5-7): 50 on night 1, x1.6 a night to night 5, then x1.4 (50, 80,
+- Targets (Chris 2026-11-15, after his runs kept dying at nights 5-7; x1.45 after night 5 since the keys): 50 on night 1, x1.6 a night to night 5, then x1.4 (50, 80,
   130, 205, 330, 460, 645, 900...), rounded to 5 (was 40, x1.8, x1.5). Points are rounded (the coil can give halves). Balance is
   checked with the bot simulator in tools/balance (README there; the game's rules copied into sim.js: keep them in step; t3.js whole
   runs, t9.js trade limits, env T=base,g1,g2 and TRADE/TMAX/TCLOSE). With smart picks: casual ~9.4 nights, good ~11, expert ~16.
@@ -197,9 +200,22 @@ the same batch.
   night report, PAUSED, HIGH SCORES...). Any new plate of that kind uses shinyPlateCv too.
 - Top plate (Workshop pace-r2, Chris picked 3, 2026-11-15): a dark lit window set in the plate shows score / target (70 / 205),
   the score bright amber, the target dimmer, brighter still once the tube is full. TOGO 3; #togo-N shows the others.
-- The red key (2026-11-13): always exactly one; a word through it x(2 + Red Heat copies). Red Lamp (id carrier, its red lamp icon)
-  now adds +5 signal per copy to a word through the red key. Rare parts (`rare:true`, gold frame and gold label RARE: ONCE ONLY,
-  offered one night in six, one in two after an overdrive, never twice): the Gold Key (id gold) puts a gold wildcard key "?" on
+- KEYS (Chris 2026-11-15): red, gold and tap are keys (`key:true` in PARTS; Red Lamp and Red Heat are gone, folded into the red key).
+  A key stacks like a part, but each copy is the next level on its ladder (KEY_LADDER, then KEY_MORE; keyStep(id, lv)):
+  red: start x2 (on the glass from the start, in key slot 1 at level 0) / L1 x3 / L2 +5 signal / L3 a second red key / L4 x4 / +1x each
+  (redX, redSig, redN); gold: L1 a gold key / L2 its letter worth 3 / L3 a second gold key / +2 signal each (goldN, goldSig);
+  tap: L1 charges / L2 charges twice as fast / L3 pays its charge twice / faster (tapAdd, tapPay; sc.charge is what S.tap becomes).
+  Picker card for a key: "NEW KEY" or "KEY: LEVEL n" and the next level's line (partDesc); the slot's inspect card lists every level
+  (keyNow). Keys come up in the picker with KEY_ODDS .25 + KEY_ODDS_UP .15 per night in a row without one (S.keyDry, bad-luck
+  protection); an overdrive always has one. The red key slot icon is the gold key recolored in build.py (iconL_redkey) until Chris
+  has one painted (src/redkey_icon_fixed.png). Tests: #test-keys, #test-keyup (melter on keys).
+- Overdrive (2026-11-15): 1.5x = four cards with a key guaranteed ("OVERDRIVE: KEY GUARANTEED"); 2x (OVERDRIVE2) = pick two
+  (S.picks; fitPart stays in the shop for the second, "PICK ONE MORE"). Signal past the target carries into the next night's tube,
+  up to CARRY_MAX (a quarter) of its target (S.carry, startNight). Tests: #test-over2, #test-carry. Targets went to x1.45 after
+  night 5 to make up for it (sim: casual 10.4 nights before, 10.7 after; scores higher).
+- The red key (2026-11-13, history): always exactly one; a word through it x(2 + Red Heat copies). Red Lamp (id carrier, its red lamp icon)
+  added +5 signal per copy to a word through the red key. Rare parts (`rare:true`, gold frame and gold label RARE: ONCE ONLY,
+  offered one night in six, one in two after an overdrive, never twice; now keys, above): the Gold Key (id gold) puts a gold wildcard key "?" on
   the glass (t.wild, ch "?", value 0); resolveWord() reads it as the first letter that makes a real word. It can also be the red key
   (then it's any letter and doubles). Its icon is a stand-in drawn in build.py until src/gold_icon_fixed.png exists.
   Tests: #test-word-gold, #test-shop-gold.
@@ -272,7 +288,8 @@ the same batch.
   scoreDisplay(). The report, DEAD AIR, HIGH SCORES and PAUSED are built this way. Any new panel follows the same rule.
 - The run score is always on show in the rolling-drum counter (see score-r1), except while the report or DEAD AIR shows it big.
 - `#test-...` pages expose window.__lex(js) to run code in the game's scope, for screenshots of any screen.
-- The melter (2026-11-13, art iconL_melter / iconL_molten): once all five slots are full the picker shows a MELT THEM plate under the
+- The melter (2026-11-13, art iconL_melter / iconL_molten; since 2026-11-15 the Molten Upgrade levels up a KEY of your choice,
+  red included, and the plate shows once the 3 part slots are full): once all five slots were full the picker shows a MELT THEM plate under the
   cases (down to reach it, or tap; meltPlate, kept above the bar). Choosing it opens the melter screen (phase "melt", drawMelt): the
   parts on offer arc into its mouth one by one, a lamp lights (S.melt, kept all run), then the next night. At five lamps it pours a
   Molten Upgrade (phase "upgrade", drawUpgrade): the screen goes back to the picker's card view with one gold-framed case, MOLTEN

@@ -218,6 +218,28 @@ def main():
     imgs["iconL_gold"] = gold; fa = np.asarray(gold); hw, hh = max(1, fa.shape[1] // 2), max(1, fa.shape[0] // 2)
     gpal = np.unique(fa[..., :3][fa[..., 3] > 0].reshape(-1, 3), axis=0).astype(float)
     imgs["icon_gold"] = Image.fromarray(pix.mode_shrink(fa[..., :3].astype(float), fa[..., 3] > 0, hw, hh, gpal), "RGBA")
+    # the Red Key's slot icon (2026-11-15, keys as their own slots): the Gold Key's picture turned red, its tag's "?" wiped. A stand-in
+    # until Chris has one painted (src/redkey_icon_fixed.png, magenta keyed, is used instead when it exists)
+    import colorsys
+    if os.path.exists(SRC + "redkey_icon_fixed.png"):
+        ri = np.asarray(Image.open(SRC + "redkey_icon_fixed.png").convert("RGBA")).copy(); mg = (ri[..., 0] > 170) & (ri[..., 1] < 110) & (ri[..., 2] > 170); ri[..., 3] = np.where(mg, 0, 255)
+    else:
+        gk = np.asarray(gold).copy(); ri = gk.astype(float); Hh, Ww = gk.shape[:2]; lum = gk[..., :3].astype(float) @ [.3, .59, .11]
+        if (Hh, Ww) == (64, 35):
+            inner = np.zeros((Hh, Ww), bool); inner[31:44, 24:34] = True; inner &= gk[..., 3] > 0; tagc = np.median(gk[inner & (lum > 120)][:, :3], axis=0)
+            for y in range(32, 43):
+                for x in range(25, 33):
+                    if gk[y, x, 3] and lum[y, x] < 100: ri[y, x, :3] = tagc
+        for y in range(Hh):
+            for x in range(Ww):
+                if gk[y, x, 3]:
+                    h_, s_, v_ = colorsys.rgb_to_hsv(*(ri[y, x, :3] / 255))
+                    if s_ > .25: h_ = (h_ - .08) % 1.0; s_ = min(1, s_ * .95)
+                    ri[y, x, :3] = np.array(colorsys.hsv_to_rgb(h_, s_, v_)) * 255
+        ri = ri.astype(np.uint8)
+    imgs["iconL_redkey"] = Image.fromarray(ri, "RGBA"); fa = ri; hw, hh = max(1, fa.shape[1] // 2), max(1, fa.shape[0] // 2)
+    rpal = np.unique(fa[..., :3][fa[..., 3] > 0].reshape(-1, 3), axis=0).astype(float)
+    imgs["icon_redkey"] = Image.fromarray(pix.mode_shrink(fa[..., :3].astype(float), fa[..., 3] > 0, hw, hh, rpal), "RGBA")
     # the Center Tap (gold part, 2026-11-14): src/tap_icon.png (ChatGPT) shrunk by k-centroid to its native grid (152 px square),
     # cropped to the object and shrunk again to 46x60 (kdown.py) as src/tap_icon_fixed.png; magenta keyed out like the Gold Key
     ti = np.asarray(Image.open(SRC + "tap_icon_fixed.png").convert("RGBA")).copy(); mg = (ti[..., 0] > 170) & (ti[..., 1] < 110) & (ti[..., 2] > 170); ti[..., 3] = np.where(mg, 0, 255)
