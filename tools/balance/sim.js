@@ -50,8 +50,11 @@ function findAll(S) { const out = new Map(), path = [], seen = new Uint8Array(NN
   return [...out].map(([word, p]) => ({ word, path: p })); }
 // one word's points, exactly as scoreOf in the game
 // listener requests (Chris 2026-11-15): one a night; the word that fills it scores x3 and keeps its lamp. Off with REQ=0.
-const REQ_WORDS = ["MOON", "RAIN", "BLUE", "JAZZ", "SONG", "STAR", "KISS", "DAWN", "TUNE", "HUSH", "GLOW", "DRUM", "HORN", "SWAY", "SOUL", "LOVE", "ROSE", "MIST", "SNOW", "WIND", "LAMP", "GOLD", "WAVE", "ECHO", "NOTE", "BEAT", "HOME", "TIDE", "HAZE", "DUSK"];
-function makeReq() { return { word: REQ_WORDS[(rnd() * REQ_WORDS.length) | 0], done: false, nights: 0 }; }
+const REQ_LISTS = { 3: "SKY SUN ICE SEA OWL JOY HUM DEW FOG KEY AIR BOW DIM RAY TEA CUP HAT CAB FAN WAX ZIP JAM BOP HIP SAX OAK INK".split(" "),
+  4: "MOON RAIN BLUE JAZZ SONG STAR KISS DAWN TUNE HUSH GLOW DRUM HORN SWAY SOUL LOVE ROSE MIST SNOW WIND LAMP GOLD WAVE ECHO NOTE BEAT HOME TIDE HAZE DUSK".split(" "),
+  5: "NIGHT RADIO DREAM STORM HEART DANCE LIGHT TOWER LOVER BLUES TANGO WALTZ SWING TORCH CROON STARS NEONS MAMBO RUMBA DUSKY SMOKE HONEY SATIN PEARL LUNAR CHIME MUSIC SWEET ROUGE".split(" ") };
+const REQ_LEN = [3, 3, 3, 3, 3, 4, 4, 4, 5];   // by how many have been played this run (then 5 on)
+function makeReq(S) { const L = REQ_LEN[Math.min(REQ_LEN.length - 1, S.reqN || 0)], l = REQ_LISTS[L]; let w; do w = l[(rnd() * l.length) | 0]; while (S.req && w === S.req.word); return { word: w, done: false, nights: 0 }; }
 function reqMet(S, p, w) { const q = S.req; return !!q && !q.done && w.toUpperCase() === q.word; }
 // a retune keeps the request's letters in place and refreshes the rest
 function retuneKeep(S) { const keep = S.req && !S.req.done ? S.grid.map(t => S.req.word.includes(t.ch) ? t : null) : []; fillGrid(S); keep.forEach((t, i) => { if (t) { t.hot = false; S.grid[i] = t; } }); ensureHot(S); }
@@ -65,7 +68,7 @@ function scoreOf(S, p, word) { const tiles = p.map(i => S.grid[i]), len = word.l
   if (h("echo") && used === 0) mult *= 2 + h("echo");      // first word x3, x4...
   if (h("owl") && S.words === 1) mult *= 1 + 2 * h("owl"); // last word x3, x5, x7...
   if (reds) mult *= 2 + h("heat");
-  if (reqMet(S, p, word)) mult *= 3 + (S.reqN || 0);   // x3, x4, x5... through the run
+  if (reqMet(S, p, word)) mult *= +(process.env.RX0 || 4) + +(process.env.RXS || 2) * (S.reqN || 0);   // x3, x4, x5... through the run
   const tap = has(S, "tap") && p.includes(12) ? (S.tap || 0) + len : 0;
   return Math.round(signal * boost * mult) + tap; }
 function nightBonus(S) { const wl = Math.max(0, S.words), rl = Math.max(0, S.retunes), wv = process.env.OLDLAMP ? round5(S.target / 4) : S.nightBest, rv = round5(S.target * retuneShare(S.night));
@@ -79,12 +82,12 @@ function candidates(S, bot) { let c = findAll(S);
   return c.map(w => ({ ...w, pts: scoreOf(S, w.path, w.word) })); }
 function playNight(S, bot, st) {
   S.target = targetFor(S.night); S.score = 0; S.nightBest = 0; S.words = maxWords(S); S.retunes = maxRetunes(S); if (S.night === 1) fillGrid(S); else ensureHot(S);
-  if (process.env.REQ !== "0" && (!S.req || S.req.done)) { S.req = makeReq(); if (process.env.SEED !== "0") { const free = S.grid.map((t, i) => i).filter(i => !S.grid[i].hot && !S.grid[i].wild); for (const c of S.req.word) { const k = free.splice((rnd() * free.length) | 0, 1)[0]; S.grid[k].ch = c; } } } if (S.req) S.req.nights++; REQ_W = S.req && !S.req.done ? S.req.word : null;
+  if (process.env.REQ !== "0" && (!S.req || S.req.done)) { S.req = makeReq(S); if (process.env.SEED === "1") { const free = S.grid.map((t, i) => i).filter(i => !S.grid[i].hot && !S.grid[i].wild); for (const c of S.req.word) { const k = free.splice((rnd() * free.length) | 0, 1)[0]; S.grid[k].ch = c; } } } if (S.req) S.req.nights++; REQ_W = S.req && !S.req.done ? S.req.word : null;
   while (S.words > 0) {
     let c = candidates(S, bot); c.sort((a, b) => b.pts - a.pts); let best = c[0];
     const need = S.target - S.score, per = need / S.words;
     // retune when nothing on the glass gets close to what each word needs (a kept retune is worth a little with the knob)
-    if (S.retunes > 0 && (!best || best.pts < per * .55)) { S.retunes--; retuneKeep(S); st.retunes++; continue; }
+    if (S.retunes > 0 && (!best || best.pts < per * .55)) { S.retunes--; if (process.env.KEEP) retuneKeep(S); else fillGrid(S); st.retunes++; continue; }
     if (!best) { S.words = 0; break; }
     // a finisher: if a word clears the night, send the one that clears it (the biggest; overdrive helps)
     if (has(S, "tap") && best.path.includes(12)) S.tap = (S.tap || 0) + best.word.length; S.score += best.pts; S.total += best.pts; S.nightBest = Math.max(S.nightBest, best.pts); st.words.push(best.word.length); st.pts.push(best.pts); (st.byNight[S.night] = st.byNight[S.night] || []).push(best.pts / S.target);
