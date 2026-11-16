@@ -484,7 +484,7 @@ const PARTS = [
 const KEY_LADDER = {
   red: ["Red key words x3", "Red key words +5 signal", "A second red key on the glass", "Red key words x4"],
   gold: ["A gold key on the glass: any letter", "The gold letter is worth 3 signal", "A second gold key on the glass"],
-  blue: ["A blue key that freezes the keys around it", "The frost can spread to the corners too", "Every frozen key pays x2 more, not x1", "Slip onto the ice and only half of it breaks"],
+  blue: ["A blue key that freezes the keys around it", "Every miss freezes two keys, not one", "Every frozen key pays x2 more, not x1", "Slip onto the ice and only half of it breaks"],
   tap: ["The green key starts charging", "The green key charges twice as fast", "The green key pays its charge twice"] };
 const KEY_MORE = { blue: "Every frozen key pays one more x", red: "Red key words one more x", gold: "Gold letters +2 signal", tap: "The green key charges faster" };
 const keyLv = (id) => has(id);
@@ -498,15 +498,15 @@ const BLUE_ON = true;   // (the Blue Key's trial: in the normal picker since 202
 const iceN = () => S.grid.filter(t => t && t.ice).length, blueAt = () => S.grid.findIndex(t => t && t.blue);
 // once every key it can reach is frozen, each word that misses it deepens the frost: +1 more (S.blueDeep), so you can save up (Chris 2026-11-16)
 const blueX = () => { const v = keyLv("blue"); return 2 + iceN() * (v >= 3 ? 2 : 1) + iceN() * Math.max(0, v - 4) + (S.blueDeep || 0); };
-const blueNb = (b) => Array.from({ length: NN }, (_, j) => j).filter(j => j !== b && Math.abs(j % N - b % N) <= 1 && Math.abs(((j / N) | 0) - ((b / N) | 0)) <= 1 && (keyLv("blue") >= 2 || j % N === b % N || ((j / N) | 0) === ((b / N) | 0)));
+const blueNb = (b) => Array.from({ length: NN }, (_, j) => j).filter(j => j !== b && Math.abs(j % N - b % N) <= 1 && Math.abs(((j / N) | 0) - ((b / N) | 0)) <= 1);   // all eight around it, corners too (Chris 2026-11-16)
 let iceFx = [];   // ice shards: cash-in (bright) and shatter (gray)
 function blueAfter(used) { if (!has("blue")) return; const ub = used.some(i => S.grid[i].blue), ui = used.some(i => S.grid[i].ice);
   if (ub) { const n = iceN(), bx = blueX(); S.blueDeep = 0; S.grid.forEach((t, i) => { if (t.ice) { t.ice = false; iceFx.push({ i, t: 0, cash: true }); } }); if (n) log(`The ice paid x${bx}.`); }
   else if (ui) { const ic = S.grid.map((t, i) => t.ice ? i : -1).filter(i => i >= 0), keep = keyLv("blue") >= 4 ? ic.filter(() => Math.random() < .5) : [];
     S.blueDeep = keep.length ? Math.floor((S.blueDeep || 0) / 2) : 0; ic.forEach(i => { if (!keep.includes(i)) { S.grid[i].ice = false; iceFx.push({ i, t: 0, cash: false }); } }); log(keep.length ? "Half the ice broke." : "The ice broke!"); Sound.fail(); shake = Math.max(shake, 3); }
-  else { const b = blueAt(); if (b >= 0) { const nb = blueNb(b).filter(j => !S.grid[j].ice && !used.includes(j)); if (nb.length) { const j = nb[(Math.random() * nb.length) | 0], t = S.grid[j];
+  else { const b = blueAt(); if (b >= 0) { const nb = blueNb(b).filter(j => !S.grid[j].ice && !used.includes(j)); if (nb.length) { for (let q = keyLv("blue") >= 2 ? 2 : 1; q > 0 && nb.length; q--) { const j = nb.splice((Math.random() * nb.length) | 0, 1)[0], t = S.grid[j];
       if (t.hot || t.wild) keyHop(j, used);
-      t.ice = true; t.iceT = frame; log(`Frost spreads: ${iceN()} frozen.`); } else if (blueNb(b).every(j => S.grid[j].ice)) { S.blueDeep = (S.blueDeep || 0) + 1; iceFx.push({ i: b, t: 0, cash: true }); log(`The frost deepens: x${blueX()}.`); } } } }
+      t.ice = true; t.iceT = frame; } log(`Frost spreads: ${iceN()} frozen.`); } else if (blueNb(b).every(j => S.grid[j].ice)) { S.blueDeep = (S.blueDeep || 0) + 1; iceFx.push({ i: b, t: 0, cash: true }); log(`The frost deepens: x${blueX()}.`); } } } }
 // the frost reached the red or gold key: it hops away to an open key, a bright arc showing where it went (Chris 2026-11-16: the frost
 // never moves aside; the key does, so it's never locked in the ice)
 let hopFx = [];
@@ -771,9 +771,10 @@ function arrive() {
   else log(`${S.target - S.score} to go, ${S.words} word${S.words === 1 ? "" : "s"} left.`);
 }
 function retune() { if (!canAct() || S.retunes <= 0) return; if (PLAYLOG.run && !HOW.on) PLAYLOG.run.retunes++; if (S.retunes > 1) log("Tuning knob spent."); S.retunes--; S.path = []; pathSound = 0;
-  // a retune changes the loose letters only: the blue key and its frozen keys stay where they are (Chris 2026-11-16)
+  // a retune: the blue key and its frozen keys stay where they are (Chris 2026-11-16)
   const keep = S.grid.map(t => t && (t.ice || t.blue) ? t : null); fillGrid(true);
-  if (keep.some(Boolean)) { S.grid.forEach(t => { t.blue = false; }); keep.forEach((t, i) => { if (t) { t.yOff = 0; t.vy = 0; t.wait = 0; S.grid[i] = t; } }); ensureHot(); }
+  // (their letters do change with the rest, Chris 2026-11-16; the frost's depth stays too)
+  if (keep.some(Boolean)) { S.grid.forEach(t => { t.blue = false; }); keep.forEach((t, i) => { if (t) { t.ch = pickLetter(); t.wild = false; t.hot = false; t.land = 1; t.yOff = 0; t.vy = 0; t.wait = 0; S.grid[i] = t; } }); ensureHot(); }
   knobA.R += 2.4; staticKick = .5; Sound.retune(); log("Retuned."); }
 let shopChoices = [], shopFocus = 0;
 function nightClear() {
@@ -1758,7 +1759,8 @@ function paDotGlass({ G, tiles, ok, low }) {
   const frameOf = (x, y, a) => { ctx.globalAlpha = a; ctx.fillStyle = "#0e0806"; rr(ctx, x + 1, y - 1, w0 - 2, h0 + 2, 5); ctx.fill(); ctx.strokeStyle = "rgba(130,86,52,.4)"; ctx.lineWidth = 1.5; ctx.stroke(); };
   for (const g of ghosts) if (g.t < 16) { const a = 1 - g.t / 16, x = FX(g.x) - w0 / 2, y = FX(g.y) - h0 / 2; frameOf(x, y, a);
     for (let r = 0; r < 7; r++) for (let c = 0; c < 9; c++) ctx.drawImage(OFF, x + 4 + c * 6, y + 4 + r * 6, 6, 6); ctx.globalAlpha = 1; }
-  for (const o of tiles) { const { t, x, y, w, hh } = o, lit = t.lit, mx = x + Math.round((w - 54) / 2), my = y + Math.round((hh - 42) / 2), b = bits(o.ch === "Qu" ? "Q" : o.ch), qu = o.ch === "Qu", lc = qu ? 1 : 2;
+  let clipped = tiles.length && tiles[0].fall && tiles.some(o => !o.fall && (o.t.ice || o.t.blue)); if (clipped) fallClip(G);   // (a frozen key always comes later in the list, so the clip is always undone)
+  for (const o of tiles) { if (clipped && !o.fall) { ctx.restore(); clipped = false; } const { t, x, y, w, hh } = o, lit = t.lit, mx = x + Math.round((w - 54) / 2), my = y + Math.round((hh - 42) / 2), b = bits(o.ch === "Qu" ? "Q" : o.ch), qu = o.ch === "Qu", lc = qu ? 1 : 2;
     const scr = t.land > .4, dim = 1 - low * .35 * (1 - lit), wave = o.on && ok, hot = !!t.hot, HS = HOT_STYLE, br = .75 + .25 * Math.sin(frame / 9 + o.i);
     const scan = hot && HS === 5 ? ((frame * .42 + o.i * 3) % 10) - 1.5 : -9;
     // (picked letters stay steady until the traced word is a real word; then they flicker too)
@@ -2009,6 +2011,12 @@ function gkGlow(t, c) { const x = FX(c.x), y = FX(c.y + t.yOff), GS = GOLD_STYLE
   if (t.hot) { bloom(x - 13, y - 9, 42, GK.rgb, .32 * k * (.72 + .28 * p)); bloom(x + 13, y + 9, 46, "255,60,40", .3 * (.72 - .28 * p)); }   // gold and red side by side, taking turns
   else bloom(x, y, 52, GK.rgb, .3 * k * (.8 + .2 * p));
   if (locked && age < 16) bloom(x, y, 74, "255,230,140", .34 * (1 - age / 16)); }
+// the clip for falling letters: the glass minus every frozen square, each column's run of frozen keys (and the gaps between them) as one block
+function fallClip(G) { ctx.save(); ctx.beginPath(); ctx.rect(G.x, G.y, G.w, G.h); const hg = FX(L.gap) / 2;
+  for (let c = 0; c < N; c++) { let r = 0; while (r < N) { const pin = (rr) => { const t = S.grid[rr * N + c]; return t && (t.ice || t.blue) && !t.yOff; };
+    if (!pin(r)) { r++; continue; } const r0 = r; while (r < N && pin(r)) r++; const a = tileXY(r0 * N + c), b = tileXY((r - 1) * N + c);
+    ctx.rect(FX(a.x) - hg, FX(a.y) - hg, FX(L.tw) + 2 * hg, FX(b.y + L.th) - FX(a.y) + 2 * hg); } }
+  ctx.clip("evenodd"); }
 function paGlassVar({ G, tiles, ok, low }) {
   const GS = GLASS_STYLE, P = GF.side ? GV_EMB : GV_STD, w0 = FX(L.tw), h0 = FX(L.th), ox = Math.round((w0 - 54) / 2), oy = Math.round((h0 - 42) / 2);
   if (ok && !dotOkWas) dotOkAt = frame; dotOkWas = ok; const lockT = frame - dotOkAt; if (GOLD_STYLE) gkFrame();
@@ -2022,7 +2030,8 @@ function paGlassVar({ G, tiles, ok, low }) {
       ctx.globalAlpha = a * .55 * Math.max(0, 1 - g.t / (rel + 8)); ctx.drawImage(gvLet(g.ch, g.gold ? GK.on : P.on), x + ox, y + oy); ctx.globalAlpha = 1; continue; }
     if (g.t < 16) { ctx.globalAlpha = 1 - g.t / 16; ctx.drawImage(gvBase(P, GS, 0, w0, h0), x - 4, y - 4); ctx.globalAlpha = 1; } }
   const rings = [];
-  for (const o of tiles) { const { t, x, y } = o, lit = t.lit, hot = !!t.hot, mx = x + ox, my = y + oy, land = t.land || 0, wave = o.on && ok;
+  let clipped = tiles.length && tiles[0].fall && tiles.some(o => !o.fall && (o.t.ice || o.t.blue)); if (clipped) fallClip(G);   // (a frozen key always comes later in the list, so the clip is always undone)
+  for (const o of tiles) { if (clipped && !o.fall) { ctx.restore(); clipped = false; } const { t, x, y } = o, lit = t.lit, hot = !!t.hot, mx = x + ox, my = y + oy, land = t.land || 0, wave = o.on && ok;
     if (t.flN == null || t.flN < frame - 600) t.flN = frame + 60 + Math.random() * 500;
     if (frame >= t.flN) { t.flE = frame + 2 + Math.random() * 10; t.flN = frame + 40 + Math.random() * (Math.random() < .3 ? 120 : 700); }
     const fl = t.flE > frame ? .68 + .27 * hsh(frame >> 1, t.seed * 7) : 1;   // the whole letter dips gently, never single dots
@@ -2154,6 +2163,8 @@ function drawPlayArea() {
   ctx.save(); ctx.beginPath(); ctx.roundRect(G.x, G.y, G.w, G.h, FX(GLASS_R)); ctx.clip(); ctx.imageSmoothingEnabled = true; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineCap = ctx.lineJoin = "round";
   const tiles = []; for (let i = 0; i < NN; i++) { const t = S.grid[i]; if (!t || t.ch === " ") continue; const p = tileXY(i), x = FX(p.x), y = FX(p.y + t.yOff), w = FX(L.tw), hh = FX(L.th), k = S.path.indexOf(i);
     tiles.push({ t, i, x, y, w, hh, cx: x + w / 2, cy: y + hh / 2, on: k >= 0, k, hv: i === cand, v: VALUES[t.ch], dots: Math.min(4, Math.ceil(VALUES[t.ch] / 2)), ch: t.ch }); }
+  // letters falling past frozen keys (and the blue key) go behind them: they're drawn first, clipped out of those squares (Chris 2026-11-16)
+  { const pin = (t) => t && (t.ice || t.blue) && !t.yOff; tiles.forEach(o => { o.fall = !pin(o.t) && (o.t.yOff !== 0 || o.t.vy !== 0); }); tiles.sort((a, b) => b.fall - a.fall); }
   PA_DRAW[KS - 6]({ G, tiles, ok, low, last, play });
   drawIce(tiles);
   if (KS !== 10) for (const o of tiles) if (o.t.hot) { ctx.strokeStyle = (frame >> 3) & 1 ? "#ff3a2e" : "#ff8060"; ctx.lineWidth = 3; ctx.shadowColor = "#ff3a2e"; ctx.shadowBlur = 14; rr(ctx, o.x - 1, o.y - 2, o.w + 1, o.hh + 2, 9); ctx.stroke(); ctx.shadowBlur = 0; }
