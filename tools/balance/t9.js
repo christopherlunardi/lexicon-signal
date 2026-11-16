@@ -1,6 +1,6 @@
 const { run } = require("./sim.js");
 const avg = (a) => a.reduce((x, y) => x + y, 0) / (a.length || 1);
-const RANK = ["red","coil","knob","gold","tap","amp","treble","owl","vowel","echo","battery","short","hat"];
+const RANK = ["red","coil","knob","gold","tap","meter","amp","treble","owl","vowel","echo","battery","short","hat"];
 const smart = (ch) => ch.slice().sort((a, b) => RANK.indexOf(a) - RANK.indexOf(b))[0];
 for (const [nm, bot] of [["player", { kind: "player", z: 3.0, eye: 1 }], ["casual", { kind: "player", z: 3.5, eye: .7 }]]) {
   const R = []; for (let i = 0; i < 120; i++) R.push(run(bot, { pick: smart, parts: process.env.START ? process.env.START.split(',') : [], maxNight: 20, trade: !!process.env.TRADE }));

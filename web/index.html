@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 149;</script><script>
+<script>window.LEX_BUILD = 150;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -443,12 +443,15 @@ const VOWELS = new Set(["A","E","I","O","U"]), HARD = new Set(["Qu","X","Z","J"]
 // Radio parts (Chris 2026-11-13: every part stacks; each copy adds the same again). One red key is always on the glass (a word
 // through it scores x2); Red Lamp and Red Heat make that one key stronger. Rare parts (gold frame) come once only. icon: the atlas picture to use when it isn't the part's own id.
 const PARTS = [
-  { id:"amp",     name:"Tube Amp",          desc:"+1 boost on every word." },
+  { id:"amp",     name:"Tube Amp",          desc:"Every word scores as if it were 1 letter longer." },
   { id:"battery", name:"Spare Battery",     desc:"+1 word every night." },
-  { id:"knob",    name:"Fine Tuning Knob",  desc:"+1 retune a night. Each kept retune: +1 boost." },
+  { id:"knob",    name:"Fine Tuning Knob",  desc:"+1 retune a night. Each retune you keep: words score 1 letter longer." },
   { id:"coil",    name:"Long Wave Coil",    desc:"Words of 5+ letters x2 (x2.5, x3...)." },
   { id:"short",   name:"Shortwave Crystal", desc:"Words of 3 or 4 letters x2 (x3...)." },
-  { id:"echo",    name:"Echo Tube",         desc:"First word each night x3 (x4...)." },
+  // the Pilot Lamp (was the Echo Tube, Chris 2026-11-15: two tubes looked alike): the light that comes on first, the old Red Lamp picture
+  { id:"echo",    name:"Pilot Lamp",        desc:"First word each night x3 (x4...).", icon:"carrier" },
+  // the Signal Meter (Chris 2026-11-15): builds up over the night. Every word sent this night adds +1 boost (per copy) to the words after
+  { id:"meter",   name:"Signal Meter",      desc:"Each word you send makes the rest of the night's words score 1 letter longer." },
   { id:"owl",     name:"Night Owl Clock",   desc:"Last word each night x3 (x5...), even if left over." },
   { id:"treble",  name:"Treble Slider",     desc:"+3 signal per letter worth 3+." },
   { id:"vowel",   name:"Vowel Antenna",     desc:"Vowels +1 signal each." },
@@ -483,7 +486,7 @@ const tapAdd = (len) => { const v = keyLv("tap"); return len * (1 + (v >= 2) + M
 const PART = Object.fromEntries(PARTS.map(p => [p.id, p]));
 const TAP_I = 12;
 const GLASS_R = 6;   // the main glass is rounded into its brass bezel (build.py frames.bezel: ring radius 14, 8 thick)   // the middle of the 5x5 glass
-const HIT_NAME = { red: "RED KEY", hat: "REQUEST", tap: "GREEN", amp: "AMP", knob: "KNOB", treble: "TREBLE", vowel: "VOWELS", short: "CRYSTAL", coil: "COIL", echo: "ECHO", owl: "OWL", gold: "GOLD" };
+const HIT_NAME = { red: "RED KEY", hat: "REQUEST", tap: "GREEN", amp: "AMP", knob: "KNOB", treble: "TREBLE", vowel: "VOWELS", short: "CRYSTAL", coil: "COIL", echo: "PILOT", meter: "METER", owl: "OWL", gold: "GOLD" };
 // a mystery part keeps its secret until you've fitted one (remembered on this device from then on)
 let HAT_KNOWN = false; try { HAT_KNOWN = localStorage.getItem("lexsig.hatKnown") === "1"; } catch (e) {}
 const hatKnown = () => HAT_KNOWN || has("hat") > 0;
@@ -508,6 +511,7 @@ const has = (id) => S.parts.filter(p => p === id).length;
 const maxWords = () => BASE_WORDS + has("battery");
 const coilX = () => 1.5 + has("coil") / 2, owlX = () => 1 + 2 * has("owl");
 const maxRetunes = () => 1 + has("knob");
+const meterB = () => has("meter") * ((S.nw && S.nw.length) || 0);   // the Signal Meter: +1 boost per copy for every word already sent this night
 function fresh(phase) { return { phase, tap: 0, melt: 0, night: 1, score: 0, shown: 0, total: 0, parts: [], words: BASE_WORDS, retunes: 1, firstWord: true, grid: [], path: [], cursor: 6, best: { word: "", pts: 0 }, target: 30, log: [] }; }
 function pickLetter() {
   let total = 0; const pool = [];
@@ -551,7 +555,7 @@ function scoreOf(p) {
   let signal = 2 + tiles.reduce((s, t) => s + VALUES[t.ch], 0);   // every word carries 2 signal, so short words still count
   signal += 3 * has("treble") * tiles.filter(t => VALUES[t.ch] >= 3).length + has("vowel") * tiles.filter(t => VOWELS.has(t.ch)).length;
   if (reds) signal += redSig(); signal += goldSig() * tiles.filter(t => t.wild).length;
-  const boost = Math.max(1, len - 2) + has("amp") + (has("knob") ? S.retunes : 0); let mult = 1;
+  const boost = Math.max(1, len - 2) + has("amp") + (has("knob") ? S.retunes : 0) + meterB(); let mult = 1;
   // (Chris 2026-11-13, from the balance sim) coil x2, x2.5, x3...; crystal x2, x3...; echo first word x3, x4...; owl last word x3, x5, x7...
   if (has("coil") && len >= 5) mult *= coilX(); if (has("short") && len <= 4) mult *= 1 + has("short"); if (has("echo") && used === 0) mult *= 2 + has("echo"); if (has("owl") && S.words === 1) mult *= owlX();
   if (reds) mult *= redX();
@@ -570,6 +574,7 @@ function partHits(p) {
   if (n("short") && len <= 4) hits.short = "x" + (1 + n("short"));
   if (n("coil") && len >= 5) hits.coil = "x" + coilX();
   if (n("echo") && used === 0) hits.echo = "x" + (2 + n("echo"));
+  if (meterB()) hits.meter = "+" + meterB();
   if (n("owl") && S.words === 1) hits.owl = "x" + owlX();
   if (reds) hits.red = "x" + redX();
   if (n("gold") && tiles.some(t => t.wild)) hits.gold = "?";
@@ -2228,6 +2233,7 @@ function slotState(id, n) {
   if (id === "battery") { st.pips = n; st.lit = play ? Math.max(0, Math.min(n, S.words - BASE_WORDS)) : n; }
   if (id !== "battery" && id !== "knob") { st.pips = n; st.lit = n; }
   if (id === "knob") { st.pips = n; st.lit = play ? Math.max(0, Math.min(n, S.retunes - 1)) : n; }
+  if (id === "meter") st.armed = play && meterB() > 0;
   if (id === "echo") { const used = maxWords() - S.words; st.armed = play && used === 0; st.spent = play && used > 0; }
   if (id === "owl") st.armed = play && S.words === 1;
   if (id === "red" || id === "gold") st.armed = play;
@@ -2401,7 +2407,7 @@ const titleGlass = { ready: false };
 const TIPS = [
   "TRACE TOUCHING LETTERS IN ANY OF 8 DIRECTIONS",
   "A WORD NEEDS 3 LETTERS OR MORE",
-  "LONGER WORDS GET A BIGGER BOOST",
+  "EVERY LETTER PAST THE SECOND MULTIPLIES YOUR WORD: LONGER WORDS PAY MUCH MORE",
   "EVERY WORD CARRIES +2 SIGNAL, SO SHORT WORDS STILL COUNT",
   "THE DOTS ON A KEY SHOW WHAT ITS LETTER IS WORTH",
   "Z, QU, X AND J ARE WORTH THE MOST",
@@ -2410,7 +2416,7 @@ const TIPS = [
   "FILL THE SIGNAL TUBE BEFORE THE LAMPS GO DARK",
   "STUCK? RETUNE FOR A FRESH SET OF LETTERS",
   "THE LIGHTS UNDER THE TUNING KNOB ARE YOUR RETUNES",
-  "THE FINE TUNING KNOB GIVES AN EXTRA RETUNE, AND KEPT RETUNES BOOST EVERY WORD",
+  "THE FINE TUNING KNOB GIVES AN EXTRA RETUNE, AND EACH ONE YOU KEEP MAKES WORDS SCORE A LETTER LONGER",
   "THE LETTERS CARRY OVER TO THE NEXT NIGHT: SAVE A BIG WORD FOR LATER",
   "B TAKES BACK THE LAST LETTER",
   "PRESS {Y} OR TAP THE RIGHT KNOB TO RETUNE",
@@ -2453,7 +2459,8 @@ const TIPS = [
   "A SPARE BATTERY ADDS A LIGHT UNDER THE LAMPS: AN EXTRA WORD EVERY NIGHT",
   "THE NIGHT OWL CLOCK TRIPLES YOUR LAST WORD OF THE NIGHT, AND EACH COPY ADDS TWO MORE",
   "CLEAR A NIGHT EARLY WITH THE NIGHT OWL CLOCK AND YOUR BEST WORD PAYS TRIPLE AGAIN",
-  "THE ECHO TUBE TRIPLES YOUR FIRST WORD OF THE NIGHT",
+  "THE PILOT LAMP TRIPLES YOUR FIRST WORD OF THE NIGHT",
+  "THE SIGNAL METER CLIMBS ALL NIGHT: EACH WORD YOU SEND MAKES THE NEXT ONES SCORE A LETTER LONGER",
   "THE SHORTWAVE CRYSTAL DOUBLES WORDS OF 3 OR 4 LETTERS",
   "THE RED KEY DOUBLES ANY WORD THAT USES IT",
   "THE RED KEY STARTS ON THE GLASS. LEVEL IT UP: X3, THEN +5 SIGNAL, THEN A SECOND RED KEY, THEN X4",

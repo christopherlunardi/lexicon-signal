@@ -10,7 +10,7 @@ const WEIGHTS = { E:12, A:9, I:8, O:8, N:6, R:6, T:6, S:5, L:4, U:4, D:4, G:3, B
 const VALUES = { "?":0, A:1,E:1,I:1,O:1,U:1,N:1,R:1,S:1,T:1,L:1, D:2,G:2,H:2, B:3,C:3,M:3,P:3,F:3,W:3,Y:3, K:4,V:4, J:6,X:6, Qu:7,Z:7 };
 const VOWELS = new Set(["A","E","I","O","U"]);
 // keys (2026-11-15): red / gold / tap stack as levels in 3 key slots; Red Lamp and Red Heat are red key levels now
-const PARTS = ["amp","battery","knob","coil","short","echo","owl","treble","vowel"].concat(process.env.HAT === "0" ? [] : ["hat"]); const KEYS = ["red","gold","tap"], RARE = KEYS;
+const PARTS = ["amp","battery","knob","coil","short","echo","owl","treble","vowel"].concat(process.env.METER === "0" ? [] : ["meter"]).concat(process.env.HAT === "0" ? [] : ["hat"]); const KEYS = ["red","gold","tap"], RARE = KEYS;
 const KEY_ODDS = +(process.env.KODDS || .25), KEY_UP = +(process.env.KUP || .15), CARRY = +(process.env.CARRY ?? .25), PART_SLOTS = 3, KEY_SLOTS = 3;
 const N = 5, NN = 25, BASE_WORDS = 6, OVERDRIVE = 1.5, MELT_N = 5;
 const TG = (process.env.T || '50,1.6,1.45').split(',').map(Number);   // base, growth for the first nights, growth after night 5
@@ -87,7 +87,7 @@ function scoreOf(S, p, word) { const tiles = p.map(i => S.grid[i]), len = word.l
   let signal = 2 + tiles.reduce((s, t) => s + VALUES[t.ch], 0);
   signal += 3 * h("treble") * tiles.filter(t => VALUES[t.ch] >= 3).length + h("vowel") * tiles.filter(t => VOWELS.has(t.ch)).length;
   if (reds) signal += redSig(S); signal += goldSig(S) * tiles.filter(t => t.wild).length;
-  const boost = Math.max(1, len - 2) + h("amp") + (h("knob") ? S.retunes : 0); let mult = 1;
+  const boost = Math.max(1, len - 2) + h("amp") + (h("knob") ? S.retunes : 0) + h("meter") * (S.nwc || 0); let mult = 1;
   if (h("coil") && len >= 5) mult *= 1.5 + h("coil") / 2;   // x2, x2.5, x3...
   if (h("short") && len <= 4) mult *= 1 + h("short");     // x2, x3...
   if (h("echo") && used === 0) mult *= 2 + h("echo");      // first word x3, x4...
@@ -106,7 +106,7 @@ function candidates(S, bot) { let c = findAll(S);
   if (bot.kind === "player") c = c.filter(w => reqMet(S, w.path, w.word) || ((ZIPF.get(w.word) || 0) >= bot.z && rnd() < (SPOT[Math.min(7, w.word.length)] * bot.eye)));   // (the request word is marked on the glass: always seen)
   return c.map(w => ({ ...w, pts: scoreOf(S, w.path, w.word) })); }
 function playNight(S, bot, st) {
-  S.target = targetFor(S.night); S.score = Math.min(S.carry || 0, CARRY ? round5(S.target * CARRY) : 0); S.carry = 0; S.nightBest = 0; S.words = maxWords(S); S.retunes = maxRetunes(S); if (S.night === 1) fillGrid(S); else ensureHot(S);
+  S.target = targetFor(S.night); S.score = Math.min(S.carry || 0, CARRY ? round5(S.target * CARRY) : 0); S.carry = 0; S.nightBest = 0; S.nwc = 0; S.words = maxWords(S); S.retunes = maxRetunes(S); if (S.night === 1) fillGrid(S); else ensureHot(S);
   if (process.env.HAT !== "0" && !has(S, "hat")) { S.req = null; REQ_W = null; }
   else if (process.env.REQ !== "0" && (!S.req || S.req.done)) { S.req = makeReq(S); if (process.env.SEED === "1") { const free = S.grid.map((t, i) => i).filter(i => !S.grid[i].hot && !S.grid[i].wild); for (const c of S.req.word) { const k = free.splice((rnd() * free.length) | 0, 1)[0]; S.grid[k].ch = c; } } } if (S.req) S.req.nights++; REQ_W = S.req && !S.req.done ? S.req.word : null;
   while (S.words > 0) {
@@ -116,7 +116,7 @@ function playNight(S, bot, st) {
     if (S.retunes > 0 && (!best || best.pts < per * .55)) { S.retunes--; if (process.env.KEEP) retuneKeep(S); else fillGrid(S); st.retunes++; continue; }
     if (!best) { S.words = 0; break; }
     // a finisher: if a word clears the night, send the one that clears it (the biggest; overdrive helps)
-    if (has(S, "tap") && best.path.includes(12)) S.tap = (S.tap || 0) + tapAdd(S, best.word.length); S.score += best.pts; S.total += best.pts; S.nightBest = Math.max(S.nightBest, best.pts); st.words.push(best.word.length); st.pts.push(best.pts); (st.byNight[S.night] = st.byNight[S.night] || []).push(best.pts / S.target);
+    if (has(S, "tap") && best.path.includes(12)) S.tap = (S.tap || 0) + tapAdd(S, best.word.length); S.score += best.pts; S.total += best.pts; S.nwc = (S.nwc || 0) + 1; S.nightBest = Math.max(S.nightBest, best.pts); st.words.push(best.word.length); st.pts.push(best.pts); (st.byNight[S.night] = st.byNight[S.night] || []).push(best.pts / S.target);
     const used = best.path; if (reqMet(S, best.path, best.word)) { S.req.done = true; S.reqN = (S.reqN || 0) + 1; REQ_W = null; st.reqs = (st.reqs || 0) + 1; (st.reqWait = st.reqWait || []).push(S.req.nights); if (S.req.kind) ((st.kindWait = st.kindWait || {})[S.req.kind] = st.kindWait[S.req.kind] || []).push(S.req.nights); } else S.words--; collapse(S, used);
     if (S.score >= S.target) { S.over = S.score >= S.target * OVERDRIVE; S.over2 = S.score >= S.target * 2; S.carry = S.score - S.target; const b = nightBonus(S); S.total += b; st.bonus += b; return true; }
   }

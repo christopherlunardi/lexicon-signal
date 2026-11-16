@@ -254,6 +254,11 @@ def main():
     imgs["iconL_tap"] = Image.fromarray(ti, "RGBA"); fa = ti; hw, hh = max(1, fa.shape[1] // 2), max(1, fa.shape[0] // 2)
     tpal = np.unique(fa[..., :3][fa[..., 3] > 0].reshape(-1, 3), axis=0).astype(float)
     imgs["icon_tap"] = Image.fromarray(pix.mode_shrink(fa[..., :3].astype(float), fa[..., 3] > 0, hw, hh, tpal), "RGBA")
+    # the Signal Meter (2026-11-15): src/meter_icon_fixed.png once painted; until then the old Center Tap picture (a round brass gauge)
+    mi = np.asarray(Image.open(SRC + ("meter_icon_fixed.png" if os.path.exists(SRC + "meter_icon_fixed.png") else "tap_icon_fixed.png")).convert("RGBA")).copy(); mg = (mi[..., 0] > 170) & (mi[..., 1] < 110) & (mi[..., 2] > 170); mi[..., 3] = np.where(mg, 0, 255)
+    imgs["iconL_meter"] = Image.fromarray(mi, "RGBA"); fa = mi; hw, hh = max(1, fa.shape[1] // 2), max(1, fa.shape[0] // 2)
+    mpal = np.unique(fa[..., :3][fa[..., 3] > 0].reshape(-1, 3), axis=0).astype(float)
+    imgs["icon_meter"] = Image.fromarray(pix.mode_shrink(fa[..., :3].astype(float), fa[..., 3] > 0, hw, hh, mpal), "RGBA")
     # the Stranger's Hat (2026-11-15, the mystery part that brings the caller): Chris's ChatGPT painting, k-centroid shrunk to
     # src/hat_icon_fixed.png (magenta keyed out) when it comes; until then a stand-in cut from the caller's own fedora
     if os.path.exists(SRC + "hat_icon_fixed.png"):
