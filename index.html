@@ -499,7 +499,17 @@ function blueAfter(used) { if (!has("blue")) return; const ub = used.some(i => S
   if (ub) { const n = iceN(), bx = blueX(); S.grid.forEach((t, i) => { if (t.ice) { t.ice = false; iceFx.push({ i, t: 0, cash: true }); } }); if (n) log(`The ice paid x${bx}.`); }
   else if (ui) { const ic = S.grid.map((t, i) => t.ice ? i : -1).filter(i => i >= 0), keep = keyLv("blue") >= 4 ? ic.filter(() => Math.random() < .5) : [];
     ic.forEach(i => { if (!keep.includes(i)) { S.grid[i].ice = false; iceFx.push({ i, t: 0, cash: false }); } }); log(keep.length ? "Half the ice broke." : "The ice broke!"); Sound.fail(); shake = Math.max(shake, 3); }
-  else { const b = blueAt(); if (b >= 0) { const nb = blueNb(b).filter(j => !S.grid[j].ice && !used.includes(j) && !S.grid[j].hot && !S.grid[j].wild); if (nb.length) { const j = nb[(Math.random() * nb.length) | 0]; S.grid[j].ice = true; S.grid[j].iceT = frame; log(`Frost spreads: ${iceN()} frozen.`); } } } }
+  else { const b = blueAt(); if (b >= 0) { const nb = blueNb(b).filter(j => !S.grid[j].ice && !used.includes(j)); if (nb.length) { const j = nb[(Math.random() * nb.length) | 0], t = S.grid[j];
+      if (t.hot || t.wild) keyHop(j, used);
+      t.ice = true; t.iceT = frame; log(`Frost spreads: ${iceN()} frozen.`); } } } }
+// the frost reached the red or gold key: it hops away to an open key, a bright arc showing where it went (Chris 2026-11-16: the frost
+// never moves aside; the key does, so it's never locked in the ice)
+let hopFx = [];
+function keyHop(j, used) { const t = S.grid[j], free = S.grid.map((u, i) => i).filter(i => i !== j && !used.includes(i) && !S.grid[i].ice && !S.grid[i].blue && !S.grid[i].hot && !S.grid[i].wild);
+  if (!free.length) return; const to = S.grid[free[(Math.random() * free.length) | 0]], c = tileC(j);
+  for (const k of ["hot", "wild"]) if (t[k]) { t[k] = false; to[k] = true; if (k === "wild") { to.ch = "?"; t.ch = pickLetter(); }
+    hopFx.push({ x: c.x, y: c.y, to, t: 0, col: k === "hot" ? "255,80,60" : "255,210,80" }); log(`The frost pushed the ${k === "hot" ? "red" : "gold"} key away.`); }
+  Sound.click(); }
 // (frost never covers the red or gold key: you'd have to break the ice to use them; it can cover the green key, Chris 2026-11-16)
 const melt = () => S.grid.forEach(t => { if (t) t.ice = false; });
 const tapAdd = (len) => { const v = keyLv("tap"); return len * (1 + (v >= 2) + Math.max(0, v - 3)); }, tapPay = () => keyLv("tap") >= 3 ? 2 : 1;
@@ -2025,7 +2035,13 @@ function frostCorner(cx, cy, dx, dy, len, a) {   // a little frost sprig: a stem
   ctx.strokeStyle = `rgba(235,248,255,${a})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + dx * len, cy + dy * len);
   for (let k = 1; k <= 3; k++) { const px = cx + dx * len * k / 4, py = cy + dy * len * k / 4, s2 = len * (.4 - k * .08); ctx.moveTo(px, py); ctx.lineTo(px + dx * s2, py); ctx.moveTo(px, py); ctx.lineTo(px, py + dy * s2); } ctx.stroke(); }
 function drawIce(tiles) {
-  if (!has("blue") && !iceFx.length) return; const BS = BLUE_STYLE, b = tiles.find(o => o.t.blue);
+  if (!has("blue") && !iceFx.length && !hopFx.length) return;
+  hopFx = hopFx.filter(h => h.t < 46); for (const h of hopFx) { h.t++; const i = S.grid.indexOf(h.to); if (i < 0) continue; const d = tileC(i), k = Math.min(1, h.t / 26), e = 1 - (1 - k) * (1 - k);
+    const x0 = FX(h.x), y0 = FX(h.y), x1 = FX(d.x), y1 = FX(d.y + (h.to.yOff || 0)), mx = (x0 + x1) / 2, my = Math.min(y0, y1) - 70;
+    const at = (u) => [(1 - u) * (1 - u) * x0 + 2 * (1 - u) * u * mx + u * u * x1, (1 - u) * (1 - u) * y0 + 2 * (1 - u) * u * my + u * u * y1];
+    ctx.save(); ctx.globalCompositeOperation = "lighter"; for (let q = 0; q < 10; q++) { const u = e - q * .045; if (u < 0) break; const [px, py] = at(u); ctx.fillStyle = `rgba(${h.col},${(1 - q / 10) * (h.t < 34 ? 1 : (46 - h.t) / 12)})`; ctx.beginPath(); ctx.arc(px, py, 7 - q * .5, 0, 6.283); ctx.fill(); }
+    if (k >= 1) { const r = 20 + (h.t - 26) * 3; ctx.strokeStyle = `rgba(${h.col},${Math.max(0, 1 - (h.t - 26) / 20)})`; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(x1, y1, r, 0, 6.283); ctx.stroke(); }
+    ctx.restore(); } const BS = BLUE_STYLE, b = tiles.find(o => o.t.blue);
   ctx.save(); ctx.lineCap = "round";
   if (BS === 5 && b) for (const o of tiles) if (o.t.ice) { ctx.strokeStyle = "rgba(190,230,255,.55)"; ctx.lineWidth = 3; ctx.setLineDash([6, 5]); ctx.lineDashOffset = -frame * .3; ctx.beginPath(); ctx.moveTo(b.cx, b.cy); ctx.lineTo(o.cx, o.cy); ctx.stroke(); ctx.setLineDash([]); }
   for (const o of tiles) { const t = o.t; if (!t.ice) continue; const age = Math.min(1, (frame - (t.iceT || 0)) / 24), x = o.x + 3, y = o.y + 3, w = o.w - 6, h = o.hh - 6;
