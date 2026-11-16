@@ -65,7 +65,7 @@ function scoreOf(S, p, word) { const tiles = p.map(i => S.grid[i]), len = word.l
   if (h("echo") && used === 0) mult *= 2 + h("echo");      // first word x3, x4...
   if (h("owl") && S.words === 1) mult *= 1 + 2 * h("owl"); // last word x3, x5, x7...
   if (reds) mult *= 2 + h("heat");
-  if (reqMet(S, p, word)) mult *= 3;
+  if (reqMet(S, p, word)) mult *= 3 + (S.reqN || 0);   // x3, x4, x5... through the run
   const tap = has(S, "tap") && p.includes(12) ? (S.tap || 0) + len : 0;
   return Math.round(signal * boost * mult) + tap; }
 function nightBonus(S) { const wl = Math.max(0, S.words), rl = Math.max(0, S.retunes), wv = process.env.OLDLAMP ? round5(S.target / 4) : S.nightBest, rv = round5(S.target * retuneShare(S.night));
@@ -88,7 +88,7 @@ function playNight(S, bot, st) {
     if (!best) { S.words = 0; break; }
     // a finisher: if a word clears the night, send the one that clears it (the biggest; overdrive helps)
     if (has(S, "tap") && best.path.includes(12)) S.tap = (S.tap || 0) + best.word.length; S.score += best.pts; S.total += best.pts; S.nightBest = Math.max(S.nightBest, best.pts); st.words.push(best.word.length); st.pts.push(best.pts); (st.byNight[S.night] = st.byNight[S.night] || []).push(best.pts / S.target);
-    const used = best.path; if (reqMet(S, best.path, best.word)) { S.req.done = true; REQ_W = null; st.reqs = (st.reqs || 0) + 1; (st.reqWait = st.reqWait || []).push(S.req.nights); } else S.words--; collapse(S, used);
+    const used = best.path; if (reqMet(S, best.path, best.word)) { S.req.done = true; S.reqN = (S.reqN || 0) + 1; REQ_W = null; st.reqs = (st.reqs || 0) + 1; (st.reqWait = st.reqWait || []).push(S.req.nights); } else S.words--; collapse(S, used);
     if (S.score >= S.target) { S.over = S.score >= S.target * OVERDRIVE; const b = nightBonus(S); S.total += b; st.bonus += b; return true; }
   }
   return false; }

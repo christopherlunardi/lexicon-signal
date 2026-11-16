@@ -175,7 +175,8 @@ the same batch.
   It stays, night after night, until it is spelled; then a new caller brings the next at the start of a night (startNight; an open
   one's card is already on the sill). The glass helps build it: its letters are dropped on at random when the card comes (reqSeed),
   REQ_BIAS (0.15) of new keys are one of its letters, its keys get a red line, a retune keeps them in place. Spelling it (reqMet:
-  the exact word, only once the card has landed): x3 in scoreOf and it keeps its lamp (send()); the card is stamped PLAYED. The intro
+  the exact word, only once the card has landed): x3 for the first in a run, then x4, x5... (reqX, S.reqN; Chris 2026-11-15) in
+  scoreOf, and it keeps its lamp (send()); the card shows the current x in red; S.setList keeps the run's played words; the card is stamped PLAYED. The intro
   plaque says PLEASE PLAY <word>. Sim (tools/balance, REQ=0 off, SEED=0 no drop-in, RB=bias): a bot that never plans for it plays one
   every 4-5 nights; heavier bias crowds the glass and lowers scores. The caller: a close-up PixelLab silhouette in a fedora, smoking
   (src/caller_pixellab.png); his reaching frame is PixelLab's edit painted over by Chris (src/bench/caller_reach.png), split in
