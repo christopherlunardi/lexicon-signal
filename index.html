@@ -475,8 +475,8 @@ const PARTS = [
   // (renamed the Green Key, 2026-11-15: keys are colored keys; id stays "tap" so old play logs still read. Icon: src/greenkey_icon.png)
   /* the Blue Key (Chris 2026-11-15, on trial: only offered with #blue-on in the address or from the dev panel). Every word that
      doesn't use it freezes one more key beside it; a word through it pays x2 plus x1 for every frozen key; a word that touches the
-     ice without it shatters the ice. Frozen keys and the blue key hold their place (letters above fall past them). The ice melts
-     each night (and on a retune). BLUE_STYLE (Workshop topic "blue") picks how the frost looks. */
+     ice without it shatters the ice. Frozen keys and the blue key hold their place (letters above fall past them). The ice keeps
+     from night to night and through a retune; once it can spread no further, each miss adds +1 more (S.blueDeep). BLUE_STYLE (Workshop topic "blue") picks how the frost looks. */
   { id:"blue",    name:"Blue Key",          desc:"Miss it and ice spreads. Through it: x2, +1 per frozen key.", key:true, icon:"bluekey", trial:true },
   { id:"tap",     name:"Green Key",         desc:"Words through the green middle key build its charge, then score it.", key:true, icon:"greenkey" },
 ];
@@ -496,16 +496,17 @@ const redSig = () => keyLv("red") >= 2 ? 5 : 0, redN = () => keyLv("red") >= 3 ?
 const goldN = () => { const v = keyLv("gold"); return v >= 3 ? 2 : v >= 1 ? 1 : 0; }, goldSig = () => { const v = keyLv("gold"); return v >= 2 ? 3 + 2 * Math.max(0, v - 3) : 0; };
 const BLUE_ON = true;   // (the Blue Key's trial: in the normal picker since 2026-11-16, Chris)   // (the Blue Key is on trial: the picker only offers it with #blue-on)
 const iceN = () => S.grid.filter(t => t && t.ice).length, blueAt = () => S.grid.findIndex(t => t && t.blue);
-const blueX = () => { const v = keyLv("blue"); return 2 + iceN() * (v >= 3 ? 2 : 1) + iceN() * Math.max(0, v - 4); };
+// once every key it can reach is frozen, each word that misses it deepens the frost: +1 more (S.blueDeep), so you can save up (Chris 2026-11-16)
+const blueX = () => { const v = keyLv("blue"); return 2 + iceN() * (v >= 3 ? 2 : 1) + iceN() * Math.max(0, v - 4) + (S.blueDeep || 0); };
 const blueNb = (b) => Array.from({ length: NN }, (_, j) => j).filter(j => j !== b && Math.abs(j % N - b % N) <= 1 && Math.abs(((j / N) | 0) - ((b / N) | 0)) <= 1 && (keyLv("blue") >= 2 || j % N === b % N || ((j / N) | 0) === ((b / N) | 0)));
 let iceFx = [];   // ice shards: cash-in (bright) and shatter (gray)
 function blueAfter(used) { if (!has("blue")) return; const ub = used.some(i => S.grid[i].blue), ui = used.some(i => S.grid[i].ice);
-  if (ub) { const n = iceN(), bx = blueX(); S.grid.forEach((t, i) => { if (t.ice) { t.ice = false; iceFx.push({ i, t: 0, cash: true }); } }); if (n) log(`The ice paid x${bx}.`); }
+  if (ub) { const n = iceN(), bx = blueX(); S.blueDeep = 0; S.grid.forEach((t, i) => { if (t.ice) { t.ice = false; iceFx.push({ i, t: 0, cash: true }); } }); if (n) log(`The ice paid x${bx}.`); }
   else if (ui) { const ic = S.grid.map((t, i) => t.ice ? i : -1).filter(i => i >= 0), keep = keyLv("blue") >= 4 ? ic.filter(() => Math.random() < .5) : [];
-    ic.forEach(i => { if (!keep.includes(i)) { S.grid[i].ice = false; iceFx.push({ i, t: 0, cash: false }); } }); log(keep.length ? "Half the ice broke." : "The ice broke!"); Sound.fail(); shake = Math.max(shake, 3); }
+    S.blueDeep = keep.length ? Math.floor((S.blueDeep || 0) / 2) : 0; ic.forEach(i => { if (!keep.includes(i)) { S.grid[i].ice = false; iceFx.push({ i, t: 0, cash: false }); } }); log(keep.length ? "Half the ice broke." : "The ice broke!"); Sound.fail(); shake = Math.max(shake, 3); }
   else { const b = blueAt(); if (b >= 0) { const nb = blueNb(b).filter(j => !S.grid[j].ice && !used.includes(j)); if (nb.length) { const j = nb[(Math.random() * nb.length) | 0], t = S.grid[j];
       if (t.hot || t.wild) keyHop(j, used);
-      t.ice = true; t.iceT = frame; log(`Frost spreads: ${iceN()} frozen.`); } } } }
+      t.ice = true; t.iceT = frame; log(`Frost spreads: ${iceN()} frozen.`); } else if (blueNb(b).every(j => S.grid[j].ice)) { S.blueDeep = (S.blueDeep || 0) + 1; iceFx.push({ i: b, t: 0, cash: true }); log(`The frost deepens: x${blueX()}.`); } } } }
 // the frost reached the red or gold key: it hops away to an open key, a bright arc showing where it went (Chris 2026-11-16: the frost
 // never moves aside; the key does, so it's never locked in the ice)
 let hopFx = [];
@@ -547,7 +548,7 @@ const coilX = () => 1.5 + has("coil") / 2, owlX = () => 1 + 2 * has("owl");
 const maxRetunes = () => 1 + has("knob");
 const firstW = () => !(S.nw && S.nw.length);   // the night's first word: nothing sent yet (a request word keeps its lamp, so lamps can't tell: bug check 2026-11-16)
 const meterB = () => has("meter") * Math.floor(((S.nw && S.nw.length) || 0) / 2);   // (every 2 words, not every word: it was the strongest part for a human-like player, sim 2026-11-16)   // the Signal Meter: +1 boost per copy for every word already sent this night
-function fresh(phase) { return { phase, tokens: 3, banned: [], tap: 0, melt: 0, night: 1, score: 0, shown: 0, total: 0, parts: [], words: BASE_WORDS, retunes: 1, firstWord: true, grid: [], path: [], cursor: 6, best: { word: "", pts: 0 }, target: 30, log: [] }; }
+function fresh(phase) { return { phase, tokens: 3, blueDeep: 0, banned: [], tap: 0, melt: 0, night: 1, score: 0, shown: 0, total: 0, parts: [], words: BASE_WORDS, retunes: 1, firstWord: true, grid: [], path: [], cursor: 6, best: { word: "", pts: 0 }, target: 30, log: [] }; }
 function pickLetter() {
   let total = 0; const pool = [];
   for (const [k, w] of Object.entries(WEIGHTS)) { pool.push([k, w]); total += w; }
@@ -713,7 +714,7 @@ function newRun() { S = fresh("play"); log("On the air."); plStart(); startNight
 function startNight() {
   S.score = 0; S.shown = 0; S.over = false; S.over2 = false; S.picks = 1; S.nw = []; S.startTotal = S.total; S.firstWord = true; S.target = targetFor(S.night); S.words = maxWords(); S.retunes = maxRetunes(); S.path = [];
   if (S.carry > 0 && !HOW.on) { S.score = Math.min(S.carry, round5(S.target * CARRY_MAX)); log(`Overdrive carried over: ${S.score} already in the tube.`); } S.carry = 0;
-  if (S.grid.length === NN) melt();
+  // the ice and the depth of the frost carry over from night to night (Chris 2026-11-16: a reset worked against planning)
   if (S.grid.length === NN && S.night > 1) ensureHot(); else fillGrid(true);   // the glass keeps its letters from night to night; a new run starts fresh
   // a song request: a new one (and a new caller) when none is open; an open one stays on the sill, its card already there
   if (REQ && !HOW.on && has("hat")) { S.reqNext = 0; if (!S.req || S.req.done) { S.req = makeReq(); S.reqAt = null; } else S.reqAt = frame - 10000; S.req.nights++; }
@@ -770,7 +771,10 @@ function arrive() {
   else log(`${S.target - S.score} to go, ${S.words} word${S.words === 1 ? "" : "s"} left.`);
 }
 function retune() { if (!canAct() || S.retunes <= 0) return; if (PLAYLOG.run && !HOW.on) PLAYLOG.run.retunes++; if (S.retunes > 1) log("Tuning knob spent."); S.retunes--; S.path = []; pathSound = 0;
-  fillGrid(true); knobA.R += 2.4; staticKick = .5; Sound.retune(); log("Retuned."); }
+  // a retune changes the loose letters only: the blue key and its frozen keys stay where they are (Chris 2026-11-16)
+  const keep = S.grid.map(t => t && (t.ice || t.blue) ? t : null); fillGrid(true);
+  if (keep.some(Boolean)) { S.grid.forEach(t => { t.blue = false; }); keep.forEach((t, i) => { if (t) { t.yOff = 0; t.vy = 0; t.wait = 0; S.grid[i] = t; } }); ensureHot(); }
+  knobA.R += 2.4; staticKick = .5; Sound.retune(); log("Retuned."); }
 let shopChoices = [], shopFocus = 0;
 function nightClear() {
   if (HOW.on && !HOW.shop) return;
@@ -1049,7 +1053,7 @@ function fitPart(p, k) { plPick(p.id); S.parts.push(p.id); if (p.id === "hat") h
 const swapOk = (sl) => !!sl && !!swapNew && (swapNew.key ? PART[sl.id].key && sl.id !== "red" : !PART[sl.id].key);
 // (a key taken out leaves the glass)
 function swapConfirm(k) { const sl = partSlots()[k]; if (!swapOk(sl)) return;
-  if (sl.id === "gold") S.grid.forEach(t => { if (t.wild) { t.wild = false; t.ch = pickLetter(); } }); if (sl.id === "blue") S.grid.forEach(t => { t.blue = false; t.ice = false; }); if (sl.id === "tap") S.tap = 0; S.parts = S.parts.filter(id => id !== sl.id); log(`Took out: ${PART[sl.id].name}.`); const p = swapNew; swapNew = null; fitPart(p, swapK); }
+  if (sl.id === "gold") S.grid.forEach(t => { if (t.wild) { t.wild = false; t.ch = pickLetter(); } }); if (sl.id === "blue") { S.grid.forEach(t => { t.blue = false; t.ice = false; }); S.blueDeep = 0; } if (sl.id === "tap") S.tap = 0; S.parts = S.parts.filter(id => id !== sl.id); log(`Took out: ${PART[sl.id].name}.`); const p = swapNew; swapNew = null; fitPart(p, swapK); }
 function swapCancel() { S.phase = "shop"; swapNew = null; Sound.click(); }
 // the run score is all the signal beamed in a run; the best ten runs on this device are kept (lexsig.scores)
 function loadScores() { try { const a = JSON.parse(localStorage.getItem("lexsig.scores") || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
@@ -2581,6 +2585,8 @@ const titleGlass = { ready: false };
 /* Tips shown scrolling on the dial of the title screen, one at a time in random order. KEEP THIS LIST TRUE TO THE GAME: whenever a
    rule, number, control or part changes, fix the tips it touches, drop the ones that no longer hold and add tips for new things. */
 const TIPS = [
+  "THE BLUE KEY'S ICE KEEPS FROM NIGHT TO NIGHT: SAVE IT UP FOR ONE BIG WORD",
+  "ONCE THE BLUE KEY HAS FROZEN ALL IT CAN, EVERY WORD THAT MISSES IT ADDS X1 MORE",
   "TRACE TOUCHING LETTERS IN ANY OF 8 DIRECTIONS",
   "A WORD NEEDS 3 LETTERS OR MORE",
   "EVERY LETTER PAST THE SECOND MULTIPLIES YOUR WORD: LONGER WORDS PAY MUCH MORE",
