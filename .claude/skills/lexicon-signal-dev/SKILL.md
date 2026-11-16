@@ -237,7 +237,7 @@ the same batch.
   short, round and diagonal; the Center Tap is now the GREEN KEY (id still "tap"; src/greenkey_icon.png drawn lying flat, kdown 64x32,
   transposed upright as greenkey_icon_fixed.png). Its look on the glass is Workshop topic "green" (decided: 1, the green ring; GREEN_STYLE 1..5, #green-N,
   #test-green[-red][-full]); the middle key can also be the red key, so its look must never copy or hide the red key's.
-  BLUE KEY (on trial, 2026-11-15; PARTS `trial:true`, offered only with #blue-on, BLUE_ON): words that miss it freeze one more key
+  BLUE KEY (2026-11-15; in the normal picker since 2026-11-16, BLUE_ON true): words that miss it freeze one more key
   beside it (blueAfter, blueNb: 4 sides at L1, 8 from L2); a word through it pays x(2 + frozen keys) (blueX; x2 per frozen key from L3);
   a word touching the ice without it shatters the ice (half from L4). Frozen keys and the blue key are pinned in collapse() (letters
   above fall past them); the ice melts each night (melt()). Key placement (Chris 2026-11-16, ensureHot/place): a key's first appearance in a run lands on a plain key; after that a returning key

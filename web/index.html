@@ -169,7 +169,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 180;</script><script>
+<script>window.LEX_BUILD = 181;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -494,7 +494,7 @@ const keyStep = (id, lv) => lv <= KEY_LADDER[id].length ? KEY_LADDER[id][lv - 1]
 const redX = () => { const v = keyLv("red"); return 2 + (v >= 1) + (v >= 4) + Math.max(0, v - 4); };
 const redSig = () => keyLv("red") >= 2 ? 5 : 0, redN = () => keyLv("red") >= 3 ? 2 : 1;
 const goldN = () => { const v = keyLv("gold"); return v >= 3 ? 2 : v >= 1 ? 1 : 0; }, goldSig = () => { const v = keyLv("gold"); return v >= 2 ? 3 + 2 * Math.max(0, v - 3) : 0; };
-const BLUE_ON = /blue-on|test-blue/.test(location.hash);   // (the Blue Key is on trial: the picker only offers it with #blue-on)
+const BLUE_ON = true;   // (the Blue Key's trial: in the normal picker since 2026-11-16, Chris)   // (the Blue Key is on trial: the picker only offers it with #blue-on)
 const iceN = () => S.grid.filter(t => t && t.ice).length, blueAt = () => S.grid.findIndex(t => t && t.blue);
 const blueX = () => { const v = keyLv("blue"); return 2 + iceN() * (v >= 3 ? 2 : 1) + iceN() * Math.max(0, v - 4); };
 const blueNb = (b) => Array.from({ length: NN }, (_, j) => j).filter(j => j !== b && Math.abs(j % N - b % N) <= 1 && Math.abs(((j / N) | 0) - ((b / N) | 0)) <= 1 && (keyLv("blue") >= 2 || j % N === b % N || ((j / N) | 0) === ((b / N) | 0)));
