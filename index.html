@@ -611,12 +611,12 @@ function makeReq(force) { const n = S.reqN || 0, pick = (l) => l[(Math.random() 
   if (kind === "word") { const w = force || pick(REQ_LISTS[n < 4 ? 3 : n < 8 ? 4 : 5]); Object.assign(q, { big: w, top: "PLEASE PLAY", bot: "" }); }
   else if (kind === "chunk") { let c; do c = pick(CHUNKS[n < 3 ? 2 : n < 7 ? 3 : 4]); while (S.req && S.req.big === c); Object.assign(q, { big: c, top: "SOMETHING WITH", bot: "IN IT" }); }
   else if (kind === "letter") { q.ch = "JXZKVWYBFH"[(Math.random() * (4 + Math.min(6, n))) | 0]; Object.assign(q, { big: q.ch, top: "SOMETHING WITH", bot: "IN IT" }); }
-  else if (kind === "long") { q.len = n >= 6 ? 7 : 6; Object.assign(q, { big: q.len + "+", top: "SOMETHING", bot: "LETTERS LONG" }); }
+  else if (kind === "long") { q.len = n < 3 ? 5 : n < 7 ? 6 : 7; Object.assign(q, { big: q.len + "+", top: "SOMETHING", bot: "LETTERS LONG" }); }   // (early ones easier, Chris 2026-11-15)
   else if (kind === "double") Object.assign(q, { big: "DOUBLE", top: "SOMETHING WITH A", bot: "LETTER, LIKE LL" });
   else if (kind === "red") Object.assign(q, { big: "RED KEY", top: "5+ LETTERS", bot: "THROUGH THE" });
-  else if (kind === "vowels") Object.assign(q, { big: "4 VOWELS", top: "SOMETHING WITH", bot: "OR MORE" });
+  else if (kind === "vowels") { q.n = n < 4 ? 3 : 4; Object.assign(q, { big: q.n + " VOWELS", top: "SOMETHING WITH", bot: "OR MORE" }); }
   else Object.assign(q, { big: "SAME", top: "STARTS AND ENDS", bot: "LETTER" });
-  if (kind === "red") { q.top = "5+ LETTERS"; q.bot = "THROUGH THE RED KEY"; q.big = "RED KEY"; }
+  if (kind === "red") { q.len = n < 3 ? 4 : 5; q.top = q.len + "+ LETTERS"; q.bot = "THROUGH THE RED KEY"; q.big = "RED KEY"; }
   q.text = [q.top, q.big, q.bot].filter(Boolean).join(" "); q.short = q.big; q.word = kind === "word" ? q.big : null; return q; }
 // how many of the card's big letters your traced letters light up: a song title or letters-together as you trace into them; the
 // others light up whole once the traced word fills them
@@ -628,8 +628,8 @@ function reqLit() { if (!reqOpen() || !S.path.length) return 0; const q = S.req,
 function reqMet(p) { const q = S.req; if (!q || q.done || HOW.on || (REQ === 4 && (S.reqAt == null || frame - S.reqAt < CALLER.card1)) || !p || p.length < 3 || !isValid(p)) return false;
   const W2 = pathWord(p).toUpperCase();
   if (q.kind === "word") return W2 === q.big; if (q.kind === "chunk") return W2.includes(q.big); if (q.kind === "letter") return W2.includes(q.ch);
-  if (q.kind === "long") return W2.length >= q.len; if (q.kind === "double") return /(.)\1/.test(W2); if (q.kind === "red") return W2.length >= 5 && p.some(i => S.grid[i].hot);
-  if (q.kind === "vowels") return [...W2].filter(c => "AEIOU".includes(c)).length >= 4; return W2[0] === W2[W2.length - 1]; }
+  if (q.kind === "long") return W2.length >= q.len; if (q.kind === "double") return /(.)\1/.test(W2); if (q.kind === "red") return W2.length >= q.len && p.some(i => S.grid[i].hot);
+  if (q.kind === "vowels") return [...W2].filter(c => "AEIOU".includes(c)).length >= q.n; return W2[0] === W2[W2.length - 1]; }
 function newRun() { S = fresh("play"); log("On the air."); plStart(); startNight(); }
 function startNight() {
   S.score = 0; S.shown = 0; S.over = false; S.nw = []; S.startTotal = S.total; S.firstWord = true; S.target = targetFor(S.night); S.words = maxWords(); S.retunes = maxRetunes(); S.path = [];

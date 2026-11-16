@@ -64,13 +64,15 @@ const REQ_PAY = Object.fromEntries(KINDS.map(k => [k, +(process.env["PAY_" + k] 
 function makeReqMix(S) { let r = rnd() * KW.reduce((a, b) => a + b), k = 0; while ((r -= KW[k]) > 0) k++; const kind = KINDS[k], n = S.reqN || 0;
   if (kind === "chunk") { const l = CHUNKS[n < 3 ? 2 : n < 7 ? 3 : 4]; return { kind, word: l[(rnd() * l.length) | 0], chunk: true, done: false, nights: 0 }; }
   if (kind === "letter") return { kind, ch: "JXZKVWYBFH"[(rnd() * (4 + Math.min(6, n))) | 0], done: false, nights: 0 };
-  if (kind === "long") return { kind, len: 6 + (n >= 6 ? 1 : 0), done: false, nights: 0 };
+  if (kind === "long") return { kind, len: n < 3 ? 5 : n < 7 ? 6 : 7, done: false, nights: 0 };
+  if (kind === "vowels") return { kind, n: n < 4 ? 3 : 4, done: false, nights: 0 };
+  if (kind === "red") return { kind, len: n < 3 ? 4 : 5, done: false, nights: 0 };
   if (kind === "word") { const l = REQ_LISTS[n < 4 ? 3 : n < 8 ? 4 : 5]; return { kind, word: l[(rnd() * l.length) | 0], done: false, nights: 0 }; }
   return { kind, done: false, nights: 0 }; }
 function makeReq(S) { if (process.env.RQ !== "word" && process.env.RQ !== "chunk") return makeReqMix(S); if (process.env.RQ === "chunk") { const l = CHUNKS[CH_LEN[Math.min(CH_LEN.length - 1, S.reqN || 0)]]; let w; do w = l[(rnd() * l.length) | 0]; while (S.req && w === S.req.word); return { word: w, chunk: true, done: false, nights: 0 }; } const L = REQ_LEN[Math.min(REQ_LEN.length - 1, S.reqN || 0)], l = REQ_LISTS[L]; let w; do w = l[(rnd() * l.length) | 0]; while (S.req && w === S.req.word); return { word: w, done: false, nights: 0 }; }
 function reqMet(S, p, w) { const q = S.req; if (!q || q.done) return false; const W = w.toUpperCase();
   if (q.kind === "letter") return W.includes(q.ch); if (q.kind === "long") return W.length >= q.len; if (q.kind === "double") return /(.)\1/.test(W);
-  if (q.kind === "red") return W.length >= 5 && p.some(i => S.grid[i].hot); if (q.kind === "vowels") return [...W].filter(c => "AEIOU".includes(c)).length >= 4;
+  if (q.kind === "red") return W.length >= q.len && p.some(i => S.grid[i].hot); if (q.kind === "vowels") return [...W].filter(c => "AEIOU".includes(c)).length >= q.n;
   if (q.kind === "ends") return W[0] === W[W.length - 1];
   return q.chunk ? W.includes(q.word) : W === q.word; }
 // a retune keeps the request's letters in place and refreshes the rest

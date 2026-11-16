@@ -174,8 +174,8 @@ the same batch.
 - Requests and the Stranger's Hat (Chris 2026-11-15): requests come only with the hat, a regular stacking part (id hat, its icon
   Chris's ChatGPT painting k-shrunk to src/hat_icon_fixed.png, 62x44). It's a mystery: until you've fitted one (remembered on the
   device, lexsig.hatKnown) its picker card shows the blurb and "??? MYSTERY"; then its desc. With it, a caller brings a request
-  (makeReq: a mixed deck REQ_KINDS: letters together 2/3/4 (CHUNKS), a rare letter, 6+/7+ letters, a double letter, 5+ through the
-  red key, 4 vowels, same ends, and now and then a song title to spell exactly (REQ_LISTS 3/4/5)). It stays on the sill until a word
+  (makeReq: a mixed deck REQ_KINDS: letters together 2/3/4 (CHUNKS), a rare letter, 5+/6+/7+ letters, a double letter, 4+/5+
+  through the red key, 3 then 4 vowels (easier early, Chris), same ends, and now and then a song title to spell exactly (REQ_LISTS 3/4/5)). It stays on the sill until a word
   fills it (reqMet); pay by difficulty REQ_PAY (x2 easy, x3 letters, x6 a title) +2 per extra hat (reqX), and the word keeps its
   lamp. The hat's slot lights and tags when the traced word fills it (partHits). A quiet unmarked lean (REQ_BIAS) for the letter kinds.
   The card (src/reqcard_pixellab.png, stamp wiped, made 96x64 in build.py by repeating ruled rows and plain columns) has a small
