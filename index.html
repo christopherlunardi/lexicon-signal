@@ -2141,7 +2141,7 @@ function drawIce(tiles) {
     if (BS === 3) { const grow = Math.min(1, (frame - (t.iceT || 0)) / 90), L2 = Math.min(w, h) * (.12 + .14 * grow) * age; frostCorner(x + 3, y + 3, 1, 1, L2, .95); frostCorner(x + w - 3, y + 3, -1, 1, L2 * .75, .85); frostCorner(x + 3, y + h - 3, 1, -1, L2 * .75, .85); frostCorner(x + w - 3, y + h - 3, -1, -1, L2, .95); }
     if (BS === 4) { frostCorner(x + 4, y + 4, 1, 1, Math.min(w, h) * .16 * age, .8); }
   }
-  if (b) { const txt = "x" + blueX(), cw = Math.max(30, textW(txt, "ink") + 14), ch = Math.round(22 * TK), cx = b.x + b.w - cw + 6, cy = b.y - ch + 10;
+  if (b) { const txt = "x" + blueX(), cw = Math.max(30, textW(txt, "ink") + 14), ch = Math.round(22 * TK), cx = b.x + b.w - cw + 6, cy = blueAt() < N ? b.y + b.hh - 10 : b.y - ch + 10;   // (on the top row the bezel would cover it: bottom right there, Chris 2026-11-16)
     ctx.fillStyle = `rgba(80,160,255,${.16 + .05 * Math.sin(frame / 12)})`; ctx.beginPath(); ctx.roundRect(b.x + 4, b.y + 4, b.w - 8, b.hh - 8, 7); ctx.fill();   // (no ring: the ring is the green key's)
     frostCorner(b.x + 7, b.y + 7, 1, 1, Math.min(b.w, b.hh) * .16, .9); frostCorner(b.x + b.w - 7, b.y + b.hh - 7, -1, -1, Math.min(b.w, b.hh) * .16, .9);
     ctx.fillStyle = "#06101c"; ctx.beginPath(); ctx.roundRect(cx, cy, cw, ch, 6); ctx.fill(); ctx.strokeStyle = "#3a8ad0"; ctx.lineWidth = 2; ctx.stroke();
