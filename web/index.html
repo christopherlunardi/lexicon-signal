@@ -169,7 +169,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 194;</script><script>
+<script>window.LEX_BUILD = 195;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -505,8 +505,9 @@ function blueAfter(used) { if (!has("blue")) return; const ub = used.some(i => S
   else if (ui) { const ic = S.grid.map((t, i) => t.ice ? i : -1).filter(i => i >= 0), keep = keyLv("blue") >= 4 ? ic.filter(() => Math.random() < .5) : [];
     S.blueDeep = keep.length ? Math.floor((S.blueDeep || 0) / 2) : 0; ic.forEach(i => { if (!keep.includes(i)) { S.grid[i].ice = false; iceFx.push({ i, t: 0, cash: false }); } }); log(keep.length ? "Half the ice broke." : "The ice broke!"); Sound.fail(); shake = Math.max(shake, 3); }
   else S.blueSpread = true; }
-/* a miss spreads the frost after the letters have dropped (Chris 2026-11-16): the used keys around the blue key refill first, then a
-   random unfrozen key around it freezes (two from level 2), the same as any other turn; a key still falling freezes when it lands */
+/* a miss spreads the frost at the end of the turn (Chris 2026-11-16: a turn is over when everything it caused is over): once the
+   letters have flown and the keys have dropped, a random unfrozen key around the blue key freezes (two from level 2), used ones
+   included. (A key still falling would freeze when it lands: iceSoon.) */
 function blueSpread() { if (!S.blueSpread) return; S.blueSpread = false; const b = blueAt(); if (b < 0) return;
   const nb = blueNb(b).filter(j => !S.grid[j].ice && !S.grid[j].iceSoon);
   if (nb.length) { for (let q = keyLv("blue") >= 2 ? 2 : 1; q > 0 && nb.length; q--) { const j = nb.splice((Math.random() * nb.length) | 0, 1)[0], t = S.grid[j];
@@ -719,7 +720,7 @@ function reqWordOk(W2, p) { const q = S.req;
   if (q.kind === "vowels") return [...W2].filter(c => "AEIOU".includes(c)).length >= q.n; return W2[0] === W2[W2.length - 1]; }
 function newRun() { S = fresh("play"); log("On the air."); plStart(); startNight(); }
 function startNight() {
-  S.score = 0; S.shown = 0; S.over = false; S.over2 = false; S.picks = 1; S.nw = []; S.startTotal = S.total; S.firstWord = true; S.target = targetFor(S.night); S.words = maxWords(); S.retunes = maxRetunes(); S.path = [];
+  S.ending = 0; S.score = 0; S.shown = 0; S.over = false; S.over2 = false; S.picks = 1; S.nw = []; S.startTotal = S.total; S.firstWord = true; S.target = targetFor(S.night); S.words = maxWords(); S.retunes = maxRetunes(); S.path = [];
   if (S.carry > 0 && !HOW.on) { S.score = Math.min(S.carry, round5(S.target * CARRY_MAX)); log(`Overdrive carried over: ${S.score} already in the tube.`); } S.carry = 0;
   // the ice and the depth of the frost carry over from night to night (Chris 2026-11-16: a reset worked against planning)
   if (S.grid.length === NN && S.night > 1) ensureHot(); else fillGrid(true);   // the glass keeps its letters from night to night; a new run starts fresh
@@ -759,7 +760,7 @@ function send() {
   const letters = used.map(i => { const t = S.grid[i], wk = !!(t.wild && gch); return { ch: wk ? gch : t.ch, wk, gold: wk || gall, red: wk && !!t.hot, ...tileC(i) }; });
   dialFlash = { text: sc.word.toUpperCase() + " +" + sc.pts, t: 100 };
   blueAfter(used);
-  S.path = []; pathSound = 0; collapse(used); blueSpread(); Sound.send(big); sendT = 0;
+  S.path = []; pathSound = 0; collapse(used); Sound.send(big); sendT = 0;
   letters.forEach((l, k) => { const t0 = PA() ? (GF.lift ? -16 - k * 4 : -10 - k * 3) : -k * 4, pv = letters[Math.max(0, k - 1)]; ghosts.push({ ch: l.ch, x: l.x, y: l.y, px: pv.x, py: pv.y, k, t: 0, gold: l.gold, wk: l.wk, red: l.red });
     flyers.push({ ch: l.ch, k, t0, ax: l.x, ay: l.y, cx: (l.x + L.beacon.x) / 2, cy: Math.min(l.y, L.beacon.y) - 90 - Math.random() * 30, t: t0, dur: 46 + k * 2, last: k === letters.length - 1, gold: l.gold });
     burst(l.x, l.y, big ? 12 : 7, C.amber); });
@@ -773,8 +774,8 @@ function arrive() {
   if (HOW.on) {}   // (the how-to-play demo never clears the night or ends the run)
   else if (S.score >= S.target) { S.over = S.score >= S.target * OVERDRIVE;
     if (S.over) { overT = 1; shake = 8; Sound.full(); Sound.beacon(true); dialFlash = { text: "OVERDRIVE", t: 140 }; log(`Overdrive! ${S.score} of ${S.target}.`); }
-    busy++; setTimeout(() => { busy--; nightClear(); }, S.over ? 2300 : 1700); }
-  else if (S.words <= 0) { busy++; setTimeout(() => { busy--; nightLost(); }, 1400); }
+    S.ending = frame; busy++; setTimeout(() => { busy--; nightClear(); }, S.over ? 2300 : 1700); }
+  else if (S.words <= 0) { S.ending = frame; busy++; setTimeout(() => { busy--; nightLost(); }, 1400); }
   else log(`${S.target - S.score} to go, ${S.words} word${S.words === 1 ? "" : "s"} left.`);
 }
 function retune() { if (!canAct() || S.retunes <= 0) return; if (PLAYLOG.run && !HOW.on) PLAYLOG.run.retunes++; if (S.retunes > 1) log("Tuning knob spent."); S.retunes--; S.path = []; pathSound = 0;
@@ -1098,6 +1099,7 @@ function update() {
   // a filled request: the stamped card shows for a moment, then the caller comes back with the next one (Chris 2026-11-16)
   if (S && S.phase === "play" && S.req && S.req.done && S.reqNext && frame >= S.reqNext && !busy) { S.req = makeReq(); S.req.nights = 1; S.reqAt = frame; S.reqNext = 0; REQZ.open = false; }
   const thudCols = new Set();
+  if (S && S.blueSpread && S.phase === "play" && !pending && !flyers.length && !moving()) blueSpread();
   for (const t of S.grid) if (t && t.iceSoon && !t.wait && t.yOff === 0 && t.vy === 0) { t.iceSoon = false; t.ice = true; t.iceT = frame; }
   for (let i = 0; i < NN; i++) { const t = S.grid[i]; if (!t) continue; if (t.wait > 0) { t.wait--; continue; }
     if (t.yOff < 0 || t.vy !== 0) { t.vy += .72; t.yOff += t.vy;
@@ -1377,7 +1379,7 @@ function drawGrid() {
   if (KS === 0) for (let k = 1; k < S.path.length; k++) { const a = tileC(S.path[k - 1]), b = tileC(S.path[k]); line(wctx, a.x, a.y, b.x, b.y, ok ? C.hot : C.gold, 2); }
   const cand = candidate(); if (cand >= 0 && !usingButtons && KS === 0) { const p = tileXY(cand); wctx.fillStyle = C.gold; wctx.fillRect(p.x - 1, p.y - 1, L.tw + 2, 1); wctx.fillRect(p.x - 1, p.y + L.th, L.tw + 2, 1); wctx.fillRect(p.x - 1, p.y, 1, L.th); wctx.fillRect(p.x + L.tw, p.y, 1, L.th);
     if (S.path.length) { const a = tileC(S.path[S.path.length - 1]), b = tileC(cand); if ((frame >> 2) & 1) line(wctx, a.x, a.y, b.x, b.y, C.amber, 1); } }
-  if (S.phase === "play" && usingButtons && !INSPECT.on && !KNOB.on) { const p = tileXY(S.cursor), x = p.x - 3, y = p.y - 3, w = L.tw + 5, h = L.th + 5; wctx.fillStyle = (frame >> 4) & 1 ? C.hot : C.blue;
+  if (S.phase === "play" && !S.ending && usingButtons && !INSPECT.on && !KNOB.on) { const p = tileXY(S.cursor), x = p.x - 3, y = p.y - 3, w = L.tw + 5, h = L.th + 5; wctx.fillStyle = (frame >> 4) & 1 ? C.hot : C.blue;
     for (const [cx, cy, dx, dy] of [[x, y, 1, 1], [x + w, y, -1, 1], [x, y + h, 1, -1], [x + w, y + h, -1, -1]]) { wctx.fillRect(Math.min(cx, cx + dx * 4), cy, 5, 1); wctx.fillRect(cx, Math.min(cy, cy + dy * 4), 1, 5); } }
   wctx.restore();
 }
@@ -2167,7 +2169,7 @@ function drawGreenKey(p, x, y, w, h, on, f) { const k = greenK(), GS = GREEN_STY
   ctx.fillStyle = "#06140a"; ctx.beginPath(); ctx.roundRect(cx, cy, cw, ch, 6); ctx.fill(); ctx.strokeStyle = GD; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
   ftext(txt, cx + cw / 2, cy + Math.round((ch - 14 * TK) / 2), "ink", f > 0 ? "#eaffef" : GR, "c"); }
 function drawPlayArea() {
-  const g = L.glass, G = { x: FX(g.x), y: FX(g.y), w: FX(g.w), h: FX(g.h) }, play = S.phase === "play", ok = play && isValid(), cand = candidate(), low = play ? clamp01(1 - S.words / maxWords()) : 0, last = play && S.words === 1;
+  const g = L.glass, G = { x: FX(g.x), y: FX(g.y), w: FX(g.w), h: FX(g.h) }, play = S.phase === "play" && !S.ending, ok = play && isValid(), cand = candidate(), low = play ? clamp01(1 - S.words / maxWords()) : 0, last = play && S.words === 1;
   ctx.save(); ctx.beginPath(); ctx.roundRect(G.x, G.y, G.w, G.h, FX(GLASS_R)); ctx.clip(); ctx.imageSmoothingEnabled = true; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineCap = ctx.lineJoin = "round";
   const tiles = []; for (let i = 0; i < NN; i++) { const t = S.grid[i]; if (!t || t.ch === " ") continue; const p = tileXY(i), x = FX(p.x), y = FX(p.y + t.yOff), w = FX(L.tw), hh = FX(L.th), k = S.path.indexOf(i);
     tiles.push({ t, i, x, y, w, hh, cx: x + w / 2, cy: y + hh / 2, on: k >= 0, k, hv: i === cand, v: VALUES[t.ch], dots: Math.min(4, Math.ceil(VALUES[t.ch] / 2)), ch: t.ch }); }
@@ -2176,6 +2178,8 @@ function drawPlayArea() {
   PA_DRAW[KS - 6]({ G, tiles, ok, low, last, play });
   drawIce(tiles);
   if (KS !== 10) for (const o of tiles) if (o.t.hot) { ctx.strokeStyle = (frame >> 3) & 1 ? "#ff3a2e" : "#ff8060"; ctx.lineWidth = 3; ctx.shadowColor = "#ff3a2e"; ctx.shadowBlur = 14; rr(ctx, o.x - 1, o.y - 2, o.w + 1, o.hh + 2, 9); ctx.stroke(); ctx.shadowBlur = 0; }
+  // a night that's over: no cursor, and the glass dims while the night wraps up, so it doesn't look like you can still play (Chris 2026-11-16)
+  if (S.ending && S.phase === "play") { ctx.fillStyle = `rgba(4,2,1,${Math.min(.45, (frame - S.ending) / 30 * .45)})`; ctx.fillRect(G.x, G.y, G.w, G.h); }
   if (play && usingButtons && !CARDF.on) { const o = tiles.find(o => o.i === S.cursor); if (o) { const c = PA_CUR[KS - 6]; c ? paCursor(o, c[0], c[1]) : curScope(o); } }
   // the glass itself: a recessed pane with a soft slanted reflection; its rim pulses red on the last word
   if (GF.deep) gvGlassOver(G); else {

@@ -249,7 +249,7 @@ the same batch.
   BLUE KEY (2026-11-15; in the normal picker since 2026-11-16, BLUE_ON true): words that miss it freeze one more key
   beside it (blueAfter, blueNb: 4 sides at L1, 8 from L2); a word through it pays x(2 + frozen keys) (blueX; x2 per frozen key from L3);
   a word touching the ice without it shatters the ice (half from L4). Frozen keys and the blue key are pinned in collapse() (letters
-  above fall past them); the frost spreads to all eight keys around it from level 1 (level 2: two keys a miss); the ice keeps from night to night and through a retune (a retune gives the frozen keys new letters but keeps the squares and the multiplier) (Chris 2026-11-16: planning); a miss freezes after the letters drop (blueSpread after collapse; a key still falling freezes when it lands, iceSoon), so used neighbors can freeze too; letters falling past frozen keys are drawn first and clipped out of the frozen squares (fallClip), so they pass behind the ice; once every key it can reach is frozen, each miss adds +1 more (S.blueDeep, reset when cashed or broken). Key placement (Chris 2026-11-16, ensureHot/place): a key's first appearance in a run lands on a plain key; after that a returning key
+  above fall past them); the frost spreads to all eight keys around it from level 1 (level 2: two keys a miss); the ice keeps from night to night and through a retune (a retune gives the frozen keys new letters but keeps the squares and the multiplier) (Chris 2026-11-16: planning); a miss freezes at the end of the turn (Chris: a turn is over when everything it caused is over; blueSpread runs once no letters fly or fall; a key still falling freezes when it lands, iceSoon), so used neighbors can freeze too; letters falling past frozen keys are drawn first and clipped out of the frozen squares (fallClip), so they pass behind the ice; once every key it can reach is frozen, each miss adds +1 more (S.blueDeep, reset when cashed or broken). Key placement (Chris 2026-11-16, ensureHot/place): a key's first appearance in a run lands on a plain key; after that a returning key
   may land on another key (red inside the blue key: both pay) but never on ice, and blue never on the green middle key. Frost spreads only to the blue key's
   neighbors; when it reaches the red or gold key, that key hops to an open key (keyHop, hopFx: a bright arc and a ring where it lands,
   "The frost pushed the red key away."), so it is never locked in ice. Frost can cover the green key. Look: Workshop topic "blue"
@@ -400,6 +400,8 @@ the same batch.
 - Request card focus (Chris 2026-11-16, CARDF, cardKey, drawCardFocus): from the bottom two rows, left past column 1 picks the card on
   the sill (when one is there); A reads it up close (A again puts it back); right or B back to the keys; left wraps to the glass's
   right side. Right from the retune knob wraps to the glass's left side.
+- Night over (Chris 2026-11-16): once the last word fills the tube (or the last lamp goes out), S.ending is set: the glass dims and the
+  cursor goes, so it never looks playable while the night wraps up. startNight clears it.
 - Tube end lamp (Chris 2026-11-12): a round lamp at the right end of the signal tube lights and pulses only while the traced word would
   fill the tube (S.score + pts >= S.target); a word that falls short never lights the last preview cell. How to Play's FILL THE TUBE
   card and the tips say so. Test with #test-word-near (score 3 short) and #test-word-fill.
