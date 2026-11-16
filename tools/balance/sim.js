@@ -93,9 +93,9 @@ function reqMet(S, p, w) { const q = S.req; if (!q || q.done) return false; cons
 function retuneKeep(S) { const keep = S.req && !S.req.done ? S.grid.map(t => S.req.word.includes(t.ch) ? t : null) : []; fillGrid(S); keep.forEach((t, i) => { if (t) { t.hot = false; S.grid[i] = t; } }); ensureHot(S); }
 function scoreOf(S, p, word) { const tiles = p.map(i => S.grid[i]), len = word.length, used = maxWords(S) - S.words, reds = tiles.filter(t => t.hot).length, h = (id) => has(S, id);
   let signal = 2 + tiles.reduce((s, t) => s + VALUES[t.ch], 0);
-  signal += 3 * h("treble") * tiles.filter(t => VALUES[t.ch] >= 3).length + h("vowel") * tiles.filter(t => VOWELS.has(t.ch)).length;
+  signal += +(process.env.TREB || 3) * h("treble") * tiles.filter(t => VALUES[t.ch] >= 3).length + h("vowel") * tiles.filter(t => VOWELS.has(t.ch)).length;
   if (reds) signal += redSig(S); signal += goldSig(S) * tiles.filter(t => t.wild).length;
-  const boost = Math.max(1, len - 2) + h("amp") + (h("knob") ? S.retunes : 0) + h("meter") * (S.nwc || 0); let mult = 1;
+  const boost = Math.max(1, len - 2) + h("amp") + (h("knob") ? S.retunes : 0) + h("meter") * Math.min(+(process.env.MCAP || 99), Math.floor((S.nwc || 0) / +(process.env.MDIV || 1))); let mult = 1;
   if (h("coil") && len >= 5) mult *= 1.5 + h("coil") / 2;   // x2, x2.5, x3...
   if (h("short") && len <= 4) mult *= 1 + h("short");     // x2, x3...
   if (h("echo") && used === 0) mult *= 2 + h("echo");      // first word x3, x4...
@@ -115,7 +115,7 @@ function candidates(S, bot) { let c = findAll(S);
   if (bot.kind === "player") c = c.filter(w => reqMet(S, w.path, w.word) || ((ZIPF.get(w.word) || 0) >= bot.z && rnd() < (SPOT[Math.min(7, w.word.length)] * bot.eye)));   // (the request word is marked on the glass: always seen)
   // "human" (2026-11-16, calibrated on Chris's own runs): knows common words (zipf >= z) and now and then an odd one (rare), spots
   // each with a chance by length (spot), and doesn't always send the very best one it saw (greedy)
-  if (bot.kind === "human") c = c.filter(w => { const z = ZIPF.get(w.word) || 0; if (reqMet(S, w.path, w.word)) return true; if (z < bot.z && !(rnd() < bot.rare)) return false; return rnd() < (bot.spot[Math.min(7, w.word.length)] || 0); });
+  if (bot.kind === "human") c = c.filter(w => { const z = ZIPF.get(w.word) || 0; const sp = bot.spot[Math.min(7, w.word.length)] || 0; if (reqMet(S, w.path, w.word)) return rnd() < Math.min(1, sp * 2); if (z < bot.z && !(rnd() < bot.rare)) return false; return rnd() < (bot.spot[Math.min(7, w.word.length)] || 0); });
   return c.map(w => ({ ...w, pts: scoreOf(S, w.path, w.word) })); }
 function playNight(S, bot, st) {
   S.target = targetFor(S.night); S.score = Math.min(S.carry || 0, CARRY ? round5(S.target * CARRY) : 0); S.carry = 0; S.nightBest = 0; S.nwc = 0; if (S.grid.length) melt(S); S.words = maxWords(S); S.retunes = maxRetunes(S); if (S.night === 1) fillGrid(S); else ensureHot(S);
@@ -124,14 +124,14 @@ function playNight(S, bot, st) {
   while (S.words > 0) {
     let c = candidates(S, bot); c.sort((a, b) => b.pts - a.pts);
     if (iceN(S)) { const safe = c.filter(w => w.path.some(i => S.grid[i].blue) || !w.path.some(i => S.grid[i].ice)); if (safe.length) c = safe; }
-    let best = c[0]; if (bot.kind === "human" && c.length > 1 && rnd() > bot.greedy) best = c[1 + ((rnd() * Math.min(3, c.length - 1)) | 0)];
+    let best = c[0]; if (bot.kind === "human" && c.length > 1 && rnd() > bot.greedy) best = c[(rnd() * c.length) | 0];   // (not the best: just one it saw)
     const need = S.target - S.score, per = need / S.words;
     // retune when nothing on the glass gets close to what each word needs (a kept retune is worth a little with the knob)
     if (S.retunes > 0 && (!best || best.pts < per * (bot.rt ?? .55))) { S.retunes--; if (process.env.KEEP) retuneKeep(S); else fillGrid(S); st.retunes++; continue; }
     if (!best) { S.words = 0; break; }
     // a finisher: if a word clears the night, send the one that clears it (the biggest; overdrive helps)
     if (has(S, "tap") && best.path.includes(12)) S.tap = (S.tap || 0) + tapAdd(S, best.word.length); S.score += best.pts; S.total += best.pts; S.nwc = (S.nwc || 0) + 1; S.nightBest = Math.max(S.nightBest, best.pts); st.words.push(best.word.length); (st.wz = st.wz || []).push(ZIPF.get(best.word) || 0); st.wpn = st.wpn || {}; st.wpn[S.night] = (st.wpn[S.night] || 0) + 1; st.pts.push(best.pts); (st.byNight[S.night] = st.byNight[S.night] || []).push(best.pts / S.target);
-    const used = best.path; if (reqMet(S, best.path, best.word)) { S.req.done = true; S.reqN = (S.reqN || 0) + 1; REQ_W = null; st.reqs = (st.reqs || 0) + 1; (st.reqWait = st.reqWait || []).push(S.req.nights); if (S.req.kind) ((st.kindWait = st.kindWait || {})[S.req.kind] = st.kindWait[S.req.kind] || []).push(S.req.nights); } else S.words--;
+    const used = best.path; if (reqMet(S, best.path, best.word)) { S.req.done = true; S.reqN = (S.reqN || 0) + 1; REQ_W = null; if (process.env.REQNOW) { S.req = makeReq(S); S.req.nights = 0; REQ_W = S.req.word; } if (process.env.REQLAMP === "0") S.words--; st.reqs = (st.reqs || 0) + 1; (st.reqWait = st.reqWait || []).push(S.req.nights); if (S.req.kind) ((st.kindWait = st.kindWait || {})[S.req.kind] = st.kindWait[S.req.kind] || []).push(S.req.nights); } else S.words--;
     if (has(S, "blue")) { const ub = used.some(i => S.grid[i].blue), ui = used.some(i => S.grid[i].ice); if (ub || ui) melt(S); if (!ub && !ui) blueSpread(S); }
     collapse(S, used);
     if (S.score >= S.target) { (st.nightRatio = st.nightRatio || []).push([S.night, S.score / S.target, S.words]); S.over = S.score >= S.target * OVERDRIVE; S.over2 = S.score >= S.target * 2; S.carry = S.score - S.target; const b = nightBonus(S); S.total += b; st.bonus += b; return true; }
@@ -141,7 +141,7 @@ function shop(S, pickFn) { const bag = PARTS.slice(), ch = []; while (ch.length 
   if (rnd() < (S.over ? 1 : KEY_ODDS + (S.keyDry || 0) * KEY_UP)) { ch[(rnd() * ch.length) | 0] = KEYS[(rnd() * KEYS.length) | 0]; S.keyDry = 0; } else S.keyDry = (S.keyDry || 0) + 1;
   let picks = S.over2 ? 2 : 1, last = null;
   while (picks-- > 0 && ch.length) { const kinds = new Set(S.parts.filter(k => !KEYS.includes(k))), ok = ch.filter(p => KEYS.includes(p) || kinds.has(p) || kinds.size < PART_SLOTS);
-    if (!ok.length) { S.melt++; if (S.melt >= MELT_N) { S.melt = 0; const ks = ["red", ...new Set(S.parts.filter(k => KEYS.includes(k) && k !== "red"))]; S.parts.push(pickFn(ks, S)); } return last; }
+    if (!ok.length) { S.melt++; S.melts = (S.melts || 0) + 1; if (S.melt >= MELT_N) { S.melt = 0; const ks = ["red", ...new Set(S.parts.filter(k => KEYS.includes(k) && k !== "red"))]; S.parts.push(pickFn(ks, S)); } return last; }
     const p = pickFn(ok, S); S.parts.push(p); ch.splice(ch.indexOf(p), 1); last = p; }
   return last; }
 function run(bot, opts = {}) { const S = mk(opts.parts || []); const st = { nights: 0, words: [], pts: [], retunes: 0, bonus: 0, picks: [], over: 0, nightScores: [], byNight: {} };
@@ -155,5 +155,5 @@ function run(bot, opts = {}) { const S = mk(opts.parts || []); const st = { nigh
     st.nights = S.night; if (S.over) st.over++;
     if (!opts.noShop) { const p = shop(S, pickFn); if (p) st.picks.push([S.night, p]); }
     S.night++; }
-  st.total = S.total; st.parts = S.parts; return st; }
+  st.total = S.total; st.parts = S.parts; st.melts = S.melts || 0; return st; }
 module.exports = { run, PARTS, targetFor, setRnd: (f) => rnd = f };

@@ -205,6 +205,11 @@ the same batch.
   to the words after; its icon is Chris's painted needle meter (src/meter_icon.png, kdown 44x56). Sim: about as strong as the
   Long Wave Coil. Player-facing text never says "boost" (Chris: confusing): +1 boost is said as "scores as if it were 1 letter longer"
   (it is exactly that, since boost = letters - 2).
+- Human bot (2026-11-16): tools/balance/human.js runs the sim with a bot tuned on Chris's own play logs (ArtifactData plays/<his id>/runs
+  on the phone link): mostly 3-4 letter words (spot S3..S7), word commonness (Z, RARE), sends a random word it saw 40% of the time
+  (GREEDY .6), almost never retunes (RT 0), picks parts the way he does (HIS weights; PICK=smart/random to compare). It matches his
+  lengths, commonness and lamps left per night; median run 7 nights. Env knobs: START, N, CARRY, NOTRADE, TMAX, KODDS/KUP, REQNOW,
+  REQLAMP=0, MDIV/MCAP (meter), TREB (treble per letter), PAY_<kind>.
 - KEYS (Chris 2026-11-15): red, gold and tap are keys (`key:true` in PARTS; Red Lamp and Red Heat are gone, folded into the red key).
   A key stacks like a part, but each copy is the next level on its ladder (KEY_LADDER, then KEY_MORE; keyStep(id, lv)):
   red: start x2 (on the glass from the start, in key slot 1 at level 0) / L1 x3 / L2 +5 signal / L3 a second red key / L4 x4 / +1x each
