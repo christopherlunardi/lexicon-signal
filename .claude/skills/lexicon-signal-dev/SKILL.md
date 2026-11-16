@@ -205,6 +205,12 @@ the same batch.
   to the words after; its icon is Chris's painted needle meter (src/meter_icon.png, kdown 44x56). Sim: about as strong as the
   Long Wave Coil. Player-facing text never says "boost" (Chris: confusing): +1 boost is said as "scores as if it were 1 letter longer"
   (it is exactly that, since boost = letters - 2).
+- Speed (2026-11-16, the handheld felt slow): never set ctx.shadowBlur in a per-frame draw. Bake blurred shadows once with
+  shCache(key, w, h, pad, fn(x, pad, s)) and stamp them (key icon shadows, slot glows, the green ring, the score's cast shadow, the
+  last-word rim); s = 1/RS keeps them looking the same at half render size. dim() draws straight on the screen; blitOver(box) copies
+  only the box drawn into on the world-size overlay. The report's dot screen is a cached picture. Profile with Playwright + the CDP
+  Profiler on a #test-...-step page (window.__lex, LEXSTEP).
+- Gold key + request (2026-11-16): resolveWord(w, p) picks a letter that also fills the open request first (MO? with OW wanted = MOW).
 - Fonts are EMBEDDED (Chris 2026-11-16: ready for packaging, nothing from the internet): tools/fonts/*.woff2 (Alfa Slab One, Bungee
   cut to Latin, Silkscreen, Special Elite) with their licenses beside them; `python3 -I tools/fonts.py` writes them as data URIs into
   the <style id="fonts"> block at the top of index.html. Run it after adding or changing a font. No Google Fonts links anywhere.
