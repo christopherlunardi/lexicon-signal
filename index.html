@@ -499,8 +499,8 @@ function blueAfter(used) { if (!has("blue")) return; const ub = used.some(i => S
   if (ub) { const n = iceN(), bx = blueX(); S.grid.forEach((t, i) => { if (t.ice) { t.ice = false; iceFx.push({ i, t: 0, cash: true }); } }); if (n) log(`The ice paid x${bx}.`); }
   else if (ui) { const ic = S.grid.map((t, i) => t.ice ? i : -1).filter(i => i >= 0), keep = keyLv("blue") >= 4 ? ic.filter(() => Math.random() < .5) : [];
     ic.forEach(i => { if (!keep.includes(i)) { S.grid[i].ice = false; iceFx.push({ i, t: 0, cash: false }); } }); log(keep.length ? "Half the ice broke." : "The ice broke!"); Sound.fail(); shake = Math.max(shake, 3); }
-  else { const b = blueAt(); if (b >= 0) { const nb = blueNb(b).filter(j => !S.grid[j].ice && !used.includes(j) && !S.grid[j].hot && !S.grid[j].wild && !(has("tap") && j === TAP_I)); if (nb.length) { const j = nb[(Math.random() * nb.length) | 0]; S.grid[j].ice = true; S.grid[j].iceT = frame; log(`Frost spreads: ${iceN()} frozen.`); } } } }
-// (frost never covers the red, gold or green key: you'd have to break the ice to use them, Chris 2026-11-16)
+  else { const b = blueAt(); if (b >= 0) { const nb = blueNb(b).filter(j => !S.grid[j].ice && !used.includes(j) && !S.grid[j].hot && !S.grid[j].wild); if (nb.length) { const j = nb[(Math.random() * nb.length) | 0]; S.grid[j].ice = true; S.grid[j].iceT = frame; log(`Frost spreads: ${iceN()} frozen.`); } } } }
+// (frost never covers the red or gold key: you'd have to break the ice to use them; it can cover the green key, Chris 2026-11-16)
 const melt = () => S.grid.forEach(t => { if (t) t.ice = false; });
 const tapAdd = (len) => { const v = keyLv("tap"); return len * (1 + (v >= 2) + Math.max(0, v - 3)); }, tapPay = () => keyLv("tap") >= 3 ? 2 : 1;
 const PART = Object.fromEntries(PARTS.map(p => [p.id, p]));
