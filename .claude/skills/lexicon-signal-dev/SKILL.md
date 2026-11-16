@@ -221,7 +221,9 @@ the same batch.
   BLUE KEY (on trial, 2026-11-15; PARTS `trial:true`, offered only with #blue-on, BLUE_ON): words that miss it freeze one more key
   beside it (blueAfter, blueNb: 4 sides at L1, 8 from L2); a word through it pays x(2 + frozen keys) (blueX; x2 per frozen key from L3);
   a word touching the ice without it shatters the ice (half from L4). Frozen keys and the blue key are pinned in collapse() (letters
-  above fall past them); the ice melts each night (melt()). It never sits on the red, gold or green key. Look: Workshop topic "blue"
+  above fall past them); the ice melts each night (melt()). Key placement (Chris 2026-11-16, ensureHot/place): a key's first appearance in a run lands on a plain key; after that a returning key
+  may land on another key (red inside the blue key: both pay) but never on ice, and blue never on the green middle key. Frost never
+  covers the red, gold or green key. Look: Workshop topic "blue"
   (decided: 4, blue letters; BLUE_STYLE 1..5, drawIce, blueGlow; the blue key has no outline: outlines are the green key's). #test-blue[-red][-green]-blue-N.
   Icon: the gold key turned blue until src/bluekey_icon_fixed.png. Modeled in the balance sim (about level with the other keys).
   Tests: #test-keys, #test-keyup (melter on keys).

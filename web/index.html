@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 158;</script><script>
+<script>window.LEX_BUILD = 161;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -497,7 +497,8 @@ function blueAfter(used) { if (!has("blue")) return; const ub = used.some(i => S
   if (ub) { const n = iceN(), bx = blueX(); S.grid.forEach((t, i) => { if (t.ice) { t.ice = false; iceFx.push({ i, t: 0, cash: true }); } }); if (n) log(`The ice paid x${bx}.`); }
   else if (ui) { const ic = S.grid.map((t, i) => t.ice ? i : -1).filter(i => i >= 0), keep = keyLv("blue") >= 4 ? ic.filter(() => Math.random() < .5) : [];
     ic.forEach(i => { if (!keep.includes(i)) { S.grid[i].ice = false; iceFx.push({ i, t: 0, cash: false }); } }); log(keep.length ? "Half the ice broke." : "The ice broke!"); Sound.fail(); shake = Math.max(shake, 3); }
-  else { const b = blueAt(); if (b >= 0) { const nb = blueNb(b).filter(j => !S.grid[j].ice && !used.includes(j)); if (nb.length) { const j = nb[(Math.random() * nb.length) | 0]; S.grid[j].ice = true; S.grid[j].iceT = frame; log(`Frost spreads: ${iceN()} frozen.`); } } } }
+  else { const b = blueAt(); if (b >= 0) { const nb = blueNb(b).filter(j => !S.grid[j].ice && !used.includes(j) && !S.grid[j].hot && !S.grid[j].wild && !(has("tap") && j === TAP_I)); if (nb.length) { const j = nb[(Math.random() * nb.length) | 0]; S.grid[j].ice = true; S.grid[j].iceT = frame; log(`Frost spreads: ${iceN()} frozen.`); } } } }
+// (frost never covers the red, gold or green key: you'd have to break the ice to use them, Chris 2026-11-16)
 const melt = () => S.grid.forEach(t => { if (t) t.ice = false; });
 const tapAdd = (len) => { const v = keyLv("tap"); return len * (1 + (v >= 2) + Math.max(0, v - 3)); }, tapPay = () => keyLv("tap") >= 3 ? 2 : 1;
 const PART = Object.fromEntries(PARTS.map(p => [p.id, p]));
@@ -538,12 +539,18 @@ function pickLetter() {
 }
 const newTile = () => ({ id: ++uid, ch: (Math.random() < REQ_BIAS && leanCh()) || pickLetter(), hot: false, yOff: 0, vy: 0, wait: 0, lit: 0, land: 0, seed: Math.random() });
 const vowelCount = () => S.grid.filter(t => VOWELS.has(t.ch)).length;
-function ensureHot() { let g = 0;   // one red key is always on the glass; with the Gold Key, one gold wildcard key too
+/* placing the keys (Chris 2026-11-16): the first time a key shows up in a run it lands on a plain key, never on another key or the ice;
+   after that, when a used key comes back, it can land on another key (a red key inside the blue key: both pay), but never on a frozen
+   key (you'd have to break the ice to use it), and the blue key never on the green middle key. S.keyNew remembers which kinds have shown. */
+function ensureHot() { const seen = S.keyNew || (S.keyNew = {});
+  const place = (kind, want, has_, set) => { let g = 0; while (S.grid.filter(has_).length < want && g++ < 99) { const i = (Math.random() * NN) | 0, t = S.grid[i];
+      if (t.ice || has_(t)) continue; if (!seen[kind] && (t.hot || t.wild || t.blue)) continue; if (kind === "blue" && has("tap") && i === TAP_I) continue; set(t); }
+    if (want) seen[kind] = true; };
   // (the gold key can be the red key too, Chris 2026-11-13: then it's any letter AND doubles the word)
-  while (S.grid.filter(t => t.hot).length < redN() && g++ < 99) { const t = S.grid[(Math.random() * NN) | 0]; if (!t.blue) t.hot = true; }   // (never on the blue key: bug check 2026-11-16)
-  g = 0; while (S.grid.filter(t => t.wild).length < goldN() && g++ < 99) { const t = S.grid[(Math.random() * NN) | 0]; if (!t.blue && !t.ice) { t.wild = true; t.ch = "?"; } }
+  place("red", redN(), t => t.hot, t => { t.hot = true; });
+  place("gold", goldN(), t => t.wild, t => { t.wild = true; t.ch = "?"; });
   if (has("tap") && S.grid[TAP_I] && S.grid[TAP_I].blue) S.grid[TAP_I].blue = false;   // the blue key never sits on the green key
-  if (has("blue") && !S.grid.some(t => t.blue)) { const f = S.grid.map((t, i) => i).filter(i => !S.grid[i].ice && !S.grid[i].hot && !S.grid[i].wild && !(has("tap") && i === TAP_I)); if (f.length) { const t = S.grid[f[(Math.random() * f.length) | 0]]; t.blue = true; t.blueT = frame; } } }
+  place("blue", has("blue") ? 1 : 0, t => t.blue, t => { t.blue = true; t.blueT = frame; }); }
 function fillGrid(dropIn) {
   S.grid = Array.from({ length: NN }, newTile);
   let g = 0; while (vowelCount() < 6 && g++ < 50) S.grid[(Math.random() * NN) | 0].ch = "AEIOU"[(Math.random() * 5) | 0];
