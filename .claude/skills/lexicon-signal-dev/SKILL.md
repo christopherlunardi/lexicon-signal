@@ -216,7 +216,9 @@ the same batch.
   keys (never the red key); the key taken out leaves the glass (swapConfirm clears wild / blue / ice / tap charge).
 - Reroll / banish (Chris 2026-11-16): one stock S.tokens, 3 at the start of a run, +1 per overdrive. shopReroll() deals new cards
   (Y in the picker), shopBanish(k) takes the card out of the run (S.banned, never offered again) and deals one in its place (X).
-  Look: Workshop topic "reroll" (REROLL_STYLE 1 plates, 2 dial, 3 tokens; tokenRow, drawShopTokens, SHOPUI hit boxes).
+  Look (Workshop "reroll", decided): REROLL_STYLE 4, ONE brass "REROLL / BANISH" plate beside MELT THEM (plateKinds, tokenRow), its
+  lamps = the stock. A (or tap, or Y) opens a small menu in the plate row: REROLL ALL / BANISH ONE (TOKM, tokMenuKey). Banish
+  then asks for a card (red frame, A banishes, B backs out). Styles 1-3 (plates, dial, tokens) stay behind #reroll-N.
   #test-reroll[-melt]-reroll-N.
 - Fonts are EMBEDDED (Chris 2026-11-16: ready for packaging, nothing from the internet): tools/fonts/*.woff2 (Alfa Slab One, Bungee
   cut to Latin, Silkscreen, Special Elite) with their licenses beside them; `python3 -I tools/fonts.py` writes them as data URIs into

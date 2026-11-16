@@ -169,7 +169,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 186;</script><script>
+<script>window.LEX_BUILD = 189;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -781,7 +781,7 @@ function nightClear() {
   // target carries into the next night, up to a quarter of its target (S.carry, used in startNight).
   S.over2 = S.score >= S.target * OVERDRIVE2; S.picks = S.over2 ? 2 : 1; S.carry = Math.max(0, S.score - S.target);
   if (S.over && !HOW.on) { S.tokens = (S.tokens || 0) + 1; log("Overdrive: +1 reroll."); }   // every overdrive adds a reroll / banish
-  makeOffers(false); shopFocus = 0;
+  makeOffers(false); shopFocus = 0; TOKM.open = TOKM.banish = false;
   plNight(shopChoices);
 }
 // the fitted parts as slots: one per kind, in the order they were first fitted, with how many copies are stacked in it
@@ -816,7 +816,8 @@ function shopBanish(k) { if (S.phase !== "shop") return; const p = shopChoices[k
   SHOPFX = { kind: "banish", t: 0, k, old: p }; if (fresh.length) shopChoices[k] = pick1(fresh); else { shopChoices.splice(k, 1); shopFocus = Math.min(shopFocus, shopChoices.length - 1); }
   Sound.thud(1); shake = 4; log(`${p.name} banished for this run. ${S.tokens} left.`); if (PLAYLOG.run) (PLAYLOG.run.banished = PLAYLOG.run.banished || []).push(p.id); }
 function choosePart(k) {
-  if (S.phase === "shop" && k === shopChoices.length && meltOpen()) return meltStart();
+  if (S.phase === "shop" && TOKM.banish && k < shopChoices.length) { TOKM.banish = false; shopBanish(k); shopFocus = Math.min(k, shopChoices.length - 1); return; }
+  if (S.phase === "shop" && k >= shopChoices.length) { const kind = plateKinds()[k - shopChoices.length]; if (kind === "melt") return meltStart(); if (kind === "tokens") return tokMenuOpen(); return; }
   if (S.phase !== "shop" || !shopChoices[k]) return; const p = shopChoices[k];
   // every slot taken and this is a new kind of part: pick one to take out first (B goes back to the parts)
   if (!p.key && !S.parts.includes(p.id) && plainFull()) { S.phase = "swap"; swapNew = p; swapFocus = keyCount(); swapK = k; Sound.click(); return; }
@@ -2616,6 +2617,8 @@ const TIPS = [
   "THE NIGHT OWL CLOCK TRIPLES YOUR LAST WORD OF THE NIGHT, AND EACH COPY ADDS TWO MORE",
   "CLEAR A NIGHT EARLY WITH THE NIGHT OWL CLOCK AND YOUR BEST WORD PAYS TRIPLE AGAIN",
   "THE PILOT LAMP TRIPLES YOUR FIRST WORD OF THE NIGHT",
+  "YOU START EACH RUN WITH 3 REROLLS / BANISHES, AND EVERY OVERDRIVE ADDS ONE",
+  "IN THE PART PICKER, PRESS DOWN TO THE REROLL / BANISH PLATE: DEAL NEW CARDS, OR BANISH ONE FOR THE REST OF THE RUN",
   "THE SIGNAL METER CLIMBS ALL NIGHT: EVERY 2 WORDS YOU SEND MAKE THE NEXT ONES SCORE A LETTER LONGER",
   "THE SHORTWAVE CRYSTAL DOUBLES WORDS OF 3 OR 4 LETTERS",
   "THE RED KEY DOUBLES ANY WORD THAT USES IT",
@@ -3154,12 +3157,23 @@ function meltPlate() { const G = shopGeom(), w0 = Math.min(W - 24, 260), hh = R(
    and MELT when it's open), each showing the stock as lamps; 2 a tuning dial at the lower right, its lamps round the rim, with a red
    BANISH tab on the chosen case; 3 brass tokens in the top corner and a red BANISH tab on the chosen case, one REROLL plate under the
    cases. Y rerolls, X banishes the chosen card (or tap). The stock: S.tokens. */
-let REROLL_STYLE = 1; { const m = location.hash.match(/reroll-(\d)/); if (m) REROLL_STYLE = Math.min(3, +m[1]); }
+let REROLL_STYLE = 4;   // (Chris picked plates like MELT THEM, 2026-11-16, as ONE plate that opens a small menu: style 4) { const m = location.hash.match(/reroll-(\d)/); if (m) REROLL_STYLE = Math.min(3, +m[1]); }
 let SHOPUI = { reroll: null, banish: null };
+// the plates under the cards: REROLL / BANISH (it opens a small menu), then MELT THEM when it's open. d-pad down reaches them
+const plateKinds = () => HOW.on || S.phase !== "shop" ? [] : REROLL_STYLE === 4 ? ["tokens", ...(meltOpen() ? ["melt"] : [])] : meltOpen() ? ["melt"] : [];
+const TOKM = { open: false, sel: 0, banish: false, t: 0 };
+function tokMenuOpen() { if (!(S.tokens > 0)) { Sound.fail(); shake = 3; log("No rerolls or banishes left. Overdrive for more."); return; } TOKM.open = true; TOKM.sel = 0; TOKM.t = 0; Sound.click(); }
+function tokMenuKey(k) { if (S.phase !== "shop" || (!TOKM.open && !TOKM.banish)) return false;
+  if (TOKM.open) { if (k === "left" || k === "right" || k === "up" || k === "down") { TOKM.sel ^= 1; Sound.click(); }
+    else if (k === "a") { TOKM.open = false; if (TOKM.sel === 0) shopReroll(); else { TOKM.banish = true; shopFocus = 0; Sound.click(); } }
+    else if (k === "b") { TOKM.open = false; Sound.click(); } return true; }
+  if (k === "b") { TOKM.banish = false; shopFocus = shopChoices.length; Sound.click(); return true; }
+  if (k === "left" || k === "right") { const n = shopChoices.length; shopFocus = (Math.min(shopFocus, n - 1) + (k === "right" ? 1 : -1) + n) % n; Sound.click(); return true; }
+  if (k === "a") { choosePart(Math.min(shopFocus, shopChoices.length - 1)); return true; } return true; }
 function tokenRow() { if (S.phase !== "shop" || HOW.on || REROLL_STYLE === 2) return null; const G = shopGeom(), hh = R("plate")[3], y = Math.min(G.y0 + G.ch + 22, SCENE_H - hh - 4);
-  const kinds = REROLL_STYLE === 1 ? ["reroll", "banish"] : ["reroll"]; if (meltOpen()) kinds.push("melt");
+  const kinds = REROLL_STYLE === 4 ? plateKinds() : REROLL_STYLE === 1 ? ["reroll", "banish"] : ["reroll"]; if (REROLL_STYLE !== 4 && meltOpen()) kinds.push("melt"); if (!kinds.length) return null;
   const sr = scoreRect(), left = Math.ceil((sr.x + sr.w) / FINE) + 10, right = W - 12, room = right - left;   // (clear of the run score at the lower left)
-  const gap = 10, w = Math.min(meltOpen() || REROLL_STYLE === 1 ? 200 : 240, Math.floor((room - gap * (kinds.length - 1)) / kinds.length)), tot = kinds.length * w + (kinds.length - 1) * gap, x0 = Math.round(Math.max(left, Math.min(W / 2 - tot / 2, right - tot)));
+  const gap = 10, w = Math.min(kinds.length > 1 ? 210 : 240, Math.floor((room - gap * (kinds.length - 1)) / kinds.length)), tot = kinds.length * w + (kinds.length - 1) * gap, x0 = Math.round(Math.max(left, Math.min(W / 2 - tot / 2, right - tot)));
   return kinds.map((kind, i) => ({ kind, x: x0 + i * (w + gap), y, w, h: hh })); }
 function tokenLamps(cx, cy, r, step, n, flashT) { const shown = Math.min(n, 6);
   for (let k = 0; k < Math.max(1, shown); k++) { const x = cx + (k - (Math.max(1, shown) - 1) / 2) * step, on = k < n;
@@ -3178,9 +3192,20 @@ function banishTab(g, G) {   // a red tab hanging off the top of the chosen case
   ctx.fillStyle = S.tokens > 0 ? "#b0261a" : "#4a1a14"; ctx.beginPath(); ctx.roundRect(FX(x), FX(y), FX(w), FX(h), 6); ctx.fill(); ctx.restore();
   const lab = TAPW() ? "BANISH" : btn("{X} BANISH"), sc = Math.min(1, (FX(w) - 16) / textW(lab, "ink")); ctx.save(); ctx.translate(FX(x + w / 2), FX(y) + Math.round((FX(h) - 14 * TK * sc) / 2)); ctx.scale(sc, sc);
   ftext(lab, 0, 0, "ink", "#ffe0c8", "c"); ctx.restore(); SHOPUI.banish = { x, y, w, h }; }
-function drawShopTokens(G, geo) { SHOPUI = { reroll: null, banish: null }; if (HOW.on) return; const fx = SHOPFX, pr = fx ? Math.max(0, 1 - fx.t / 14) : 0;
+function drawShopTokens(G, geo) { SHOPUI = { reroll: null, banish: null, tokens: null, menu: null }; if (HOW.on) return; const fx = SHOPFX, pr = fx ? Math.max(0, 1 - fx.t / 14) : 0;
   const row = tokenRow();
-  if (row) row.forEach(r => { if (r.kind === "reroll") { tokenPlate(r, TAPW() ? "REROLL" : btn("{Y} REROLL"), fx && fx.kind === "reroll" ? pr : 0); SHOPUI.reroll = r; }
+  if (row && REROLL_STYLE === 4 && !TOKM.open) row.forEach((r, j) => { if (r.kind !== "tokens") return; const on = !TOKM.open && !TOKM.banish && shopFocus === shopChoices.length + j;
+    if (on) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(FX(r.x + r.w / 2), FX(r.y + r.h / 2), FX(r.w) * .6, "255,170,70", .3); ctx.restore(); }
+    tokenPlate(r, "REROLL / BANISH", on ? 1 : 0); SHOPUI.tokens = r; });
+  if (TOKM.open && row) { TOKM.t++; const r0 = row[0], hh = r0.h, sr = scoreRect(), left = Math.ceil((sr.x + sr.w) / FINE) + 10, w = Math.min(190, Math.floor((W - 12 - left - 10) / 2)), gap = 10, y = r0.y, x0 = Math.round(Math.max(left, Math.min(W - 12 - (2 * w + gap), W / 2 - (2 * w + gap) / 2)));   // the two choices take the plates' place
+    SHOPUI.menu = ["REROLL ALL", "BANISH ONE"].map((lab, i) => { const b = { x: x0 + i * (w + gap), y, w, h: hh }, on = TOKM.sel === i;
+      if (on) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(FX(b.x + w / 2), FX(b.y + hh / 2), FX(w) * .6, "255,170,70", .35); ctx.restore(); }
+      ctx.drawImage(pushPlateCv(w, on, frame), FX(b.x), FX(b.y), FX(w), FX(hh)); const sc = Math.min(1, (FX(w) - 24) / textW(lab, "ink")); ctx.save(); ctx.translate(FX(b.x + w / 2), FX(b.y) + Math.round((FX(hh) - 14 * TK) / 2) - 2); ctx.scale(sc, sc);
+      ftext(lab, 0, 0, "ink", on ? "#3a1806" : C.ink, "c", { under: C.brassHi, uy: 2 }); ctx.restore(); return b; });
+    ftext(TAPW() ? "TAP ONE, OR TAP AWAY TO CLOSE" : btn("LEFT / RIGHT   {A} CHOOSE   {B} BACK"), FX(W / 2), FX(G.y0 + G.ch) + 8, "ink", C.gold, "c", { outline: C.dark }); }
+  if (TOKM.banish) { ftext(TAPW() ? "TAP A CARD TO BANISH IT" : btn("PICK A CARD TO BANISH   {A} BANISH   {B} BACK"), FX(W / 2), FX(G.y0 + G.ch) + 8, "ink", "#ff6a50", "c", { outline: C.dark });
+    if (shopFocus < shopChoices.length) { const g = geo(shopFocus); ctx.save(); ctx.strokeStyle = (frame >> 3) & 1 ? "#ff4a32" : "#ffb0a0"; ctx.lineWidth = 4; ctx.beginPath(); ctx.roundRect(FX(g.x) - 6, FX(g.y) - 6, FX(G.cw) + 12, FX(G.ch) + 12, 9); ctx.stroke(); ctx.restore(); } }
+  if (row && REROLL_STYLE !== 4) row.forEach(r => { if (r.kind === "reroll") { tokenPlate(r, TAPW() ? "REROLL" : btn("{Y} REROLL"), fx && fx.kind === "reroll" ? pr : 0); SHOPUI.reroll = r; }
     if (r.kind === "banish") { tokenPlate(r, TAPW() ? "BANISH" : btn("{X} BANISH"), fx && fx.kind === "banish" ? pr : 0); SHOPUI.banish = r; } });
   if (REROLL_STYLE === 3) {   // brass tokens in the top right corner
     const n = S.tokens || 0, cx = FX(W - 16), cy = 30; for (let k = 0; k < Math.max(1, Math.min(n, 6)); k++) { const x = cx - k * 30, on = k < n;
@@ -3197,7 +3222,7 @@ function drawShopTokens(G, geo) { SHOPUI = { reroll: null, banish: null }; if (H
       ctx.fillStyle = "#140a05"; ctx.beginPath(); ctx.arc(lx, ly, 7, 0, 6.283); ctx.fill(); ctx.fillStyle = on ? "#ff8a24" : "#3a1f10"; ctx.beginPath(); ctx.arc(lx, ly, 4, 0, 6.283); ctx.fill(); if (on) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(lx, ly, 16, "255,140,40", .35); ctx.restore(); } }
     ftext(TAPW() ? "TAP TO REROLL" : btn("{Y} REROLL"), FX(x - r - 14), cy - 7 * TK, "ink", n > 0 ? C.gold : C.dotDim, "r", { outline: C.dark });
     SHOPUI.reroll = { x: x - r, y: y - r, w: r * 2, h: r * 2 }; }
-  if (REROLL_STYLE !== 1 && shopFocus < shopChoices.length) banishTab(geo(shopFocus), G);
+  if ((REROLL_STYLE === 2 || REROLL_STYLE === 3) && shopFocus < shopChoices.length) banishTab(geo(shopFocus), G);
   // the moment: a reroll washes the cases with static light; a banish stamps the card and drops it away as the new one comes up
   if (fx) { fx.t++;
     if (fx.kind === "reroll" && fx.t < 18) { ctx.save(); ctx.globalCompositeOperation = "lighter"; shopChoices.forEach((_, k) => { const g = geo(k); ctx.fillStyle = `rgba(255,220,150,${.5 * (1 - fx.t / 18)})`; ctx.fillRect(FX(g.x), FX(g.y), FX(G.cw), FX(G.ch));
@@ -3212,7 +3237,7 @@ function drawShopTokens(G, geo) { SHOPUI = { reroll: null, banish: null }; if (H
 function meltLamps(cx, cy, r, step, lit, flash) { for (let k = 0; k < MELT_N; k++) { const x = cx + (k - (MELT_N - 1) / 2) * step, on = k < lit;
     ctx.fillStyle = "#140a05"; ctx.beginPath(); ctx.arc(x, cy, r + 3, 0, 6.283); ctx.fill(); ctx.fillStyle = on ? (k === lit - 1 && flash ? "#fff6d8" : "#ff8a24") : "#3a1f10"; ctx.beginPath(); ctx.arc(x, cy, r, 0, 6.283); ctx.fill();
     if (on) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(x, cy, r * 4, "255,140,40", .4); ctx.restore(); } } }
-function drawMeltPlate() { if (!meltOpen()) return; const m = meltPlate(), on = shopFocus === shopChoices.length, r = R("iconL_melter"), ih = m.h - 8, s = ih / r[3];
+function drawMeltPlate() { if (!meltOpen()) return; const m = meltPlate(), on = !TOKM.open && !TOKM.banish && shopFocus === shopChoices.length + Math.max(0, plateKinds().indexOf("melt")), r = R("iconL_melter"), ih = m.h - 8, s = ih / r[3];
   ctx.save();
   if (on) { ctx.globalCompositeOperation = "lighter"; bloom(FX(m.x + m.w / 2), FX(m.y + m.h / 2), FX(m.w) * .6, "255,170,70", .3); ctx.globalCompositeOperation = "source-over"; }
   ctx.drawImage(pushPlateCv(m.w, on, frame), FX(m.x), FX(m.y), FX(m.w), FX(m.h));
@@ -3429,7 +3454,7 @@ function drawShop() {
   ctx.restore();
   // the icons, the writing and the lamp labels only change with the choice too: a second cached layer at fine size (shopTop),
   // drawn over the live glow; only the chosen case's blinking frame is drawn every frame
-  const tk = [bk, TAPW(), S.night, S.over, S.picks, shopChoices.map(p => p.id).join(), plainFull(), partSlots().map(s => s.id + s.n).join()].join("|");
+  const tk = [bk, TAPW(), TOKM.banish || TOKM.open, S.night, S.over, S.picks, shopChoices.map(p => p.id).join(), plainFull(), partSlots().map(s => s.id + s.n).join()].join("|");
   if (shopTop.k !== tk) { shopTop.k = tk; shopTop.cv.width = CVW; shopTop.cv.height = CVH; const c = shopTop.cv.getContext("2d"); c.imageSmoothingEnabled = false; TXT = c;
     shopChoices.forEach((p, k) => { const g = geo(k), r = R(iconOf(p.id));
       c.drawImage(atlasImg, r[0], r[1], r[2], r[3], FX(g.x + G.cw / 2 - r[2] / 2), FX(g.y + 14 + (64 - r[3]) / 2), FX(r[2]), FX(r[3])); });
@@ -3443,14 +3468,17 @@ function drawShop() {
       // what fitting it will do to the slots, as a small lamp label at the foot
       cardTag(c, p, g, G, cx);
       if (!g.f) { c.fillStyle = "rgba(8,5,3,.38)"; c.fillRect(FX(g.x), FX(g.y), FX(G.cw), FX(G.ch)); } });
-    if (!(meltOpen() && meltPlate().tight)) ftext(TAPW() ? "TAP A PART" : meltOpen() ? btn("LEFT / RIGHT TO LOOK, DOWN TO MELT, {A} TO PICK") : btn("LEFT / RIGHT TO LOOK, {A} TO FIT"), FX(W / 2), FX(G.y0 + G.ch) + 8, "ink", C.gold, "c", { outline: C.dark });
+    if (!TOKM.banish && !TOKM.open && !(plateKinds().length && meltPlate().tight)) ftext(TAPW() ? "TAP A PART" : plateKinds().length ? btn("LEFT / RIGHT TO LOOK, DOWN FOR MORE, {A} TO PICK") : btn("LEFT / RIGHT TO LOOK, {A} TO FIT"), FX(W / 2), FX(G.y0 + G.ch) + 8, "ink", C.gold, "c", { outline: C.dark });
     TXT = null; }
-  ctx.drawImage(shopTop.cv, 0, 0, CVW, CVH); drawMeltPlate(); drawShopTokens(G, geo);
+  ctx.drawImage(shopTop.cv, 0, 0, CVW, CVH); drawMeltPlate();
   shopChoices.forEach((p, k) => { const g = geo(k); if (!p.key) return;   // rare parts: a gold line round the case (style 0), or the gold looks
     if (!RARE_STYLE) { ctx.save(); ctx.strokeStyle = "#ffd24a"; ctx.lineWidth = 4; ctx.beginPath(); ctx.roundRect(FX(g.x) - 2, FX(g.y) - 2, FX(G.cw) + 4, FX(G.ch) + 4, 6); ctx.stroke(); ctx.restore(); return; }
     if (rareHas("glint")) drawGlint(g.x, g.y, G.cw, G.ch, 7, 0); if (rareHas("seal")) drawSeal(g.x + G.cw - 18, g.y - 8); });
-  shopChoices.forEach((p, k) => { const g = geo(k); if (!g.f) return;
-    ctx.save(); ctx.strokeStyle = (frame >> 4) & 1 ? C.hot : C.gold; ctx.lineWidth = 3; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 16; ctx.beginPath(); ctx.roundRect(FX(g.x) - 5, FX(g.y) - 5, FX(G.cw) + 10, FX(G.ch) + 10, 8); ctx.stroke(); ctx.restore(); });
+  shopChoices.forEach((p, k) => { const g = geo(k); if (!g.f || TOKM.open) return;   // the chosen case's blinking frame (red while banishing; baked, not blurred every frame)
+    const col = TOKM.banish ? ((frame >> 3) & 1 ? "#ff4a32" : "#ffb0a0") : (frame >> 4) & 1 ? C.hot : C.gold, glow = TOKM.banish ? "#ff3020" : "#ffb040", P = Math.ceil(40 / RS), w = FX(G.cw) + 10, h = FX(G.ch) + 10;
+    if (TOKM.banish) { ctx.fillStyle = "rgba(200,30,20,.16)"; ctx.fillRect(FX(g.x), FX(g.y), FX(G.cw), FX(G.ch)); }
+    ctx.drawImage(shCache("caseframe|" + col + "|" + w + "x" + h, w, h, P, (x2, pp, sc) => { x2.strokeStyle = col; x2.lineWidth = TOKM.banish ? 4 : 3; x2.shadowColor = glow; x2.shadowBlur = 16 * sc; x2.beginPath(); x2.roundRect(pp, pp, w, h, 8); x2.stroke(); }), FX(g.x) - 5 - P, FX(g.y) - 5 - P); });
+  drawShopTokens(G, geo);
 }
 function drawOver() {   // DEAD AIR: the run score big and lit, then how the run ended
   const w = Math.min(W - 24, 400), ih = Math.round(14 * TK), lh = Math.round(22 * TK), cw = FX(w - 2 * INSET.logbox.x);
@@ -3482,9 +3510,10 @@ function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ?
   usingButtons = true; Sound.ensure();
   if (S.phase === "report") { if (dy) reportScroll(dy); return; }
   if (S.phase === "title" && TS === 6 && (dy || dx)) { dy = dy || dx; if (titleBusy()) return; titleSel = (titleSel + dy + TITLE_MENU.length) % TITLE_MENU.length; Sound.click(); return; }
-  if (S.phase === "shop") { const n = shopChoices.length;
-    if (meltOpen() && dy) { shopFocus = dy > 0 ? n : Math.min(shopFocus, n - 1); Sound.click(); return; }   // down to the melter plate, up back to the parts
-    if (shopFocus >= n) { if (dx) { shopFocus = dx > 0 ? 0 : n - 1; Sound.click(); } return; }
+  if (S.phase === "shop") { const n = shopChoices.length, pk = plateKinds().length;
+    if (tokMenuKey(dk)) return;
+    if (pk && dy) { shopFocus = dy > 0 ? (shopFocus >= n ? shopFocus : n) : Math.min(shopFocus, n - 1); Sound.click(); return; }   // down to the plates (reroll / banish, melt), up back to the cards
+    if (shopFocus >= n) { if (dx) { shopFocus = n + ((shopFocus - n + dx) % pk + pk) % pk; Sound.click(); } return; }
     shopFocus = (shopFocus + (dx || dy) + n) % n; Sound.click(); return; }
   if (S.phase === "upgrade") { const n = keyCount(); swapFocus = (swapFocus + (dx || dy) + n) % n; Sound.click(); return; }   // the melter levels a key
   if (S.phase === "swap") { const ok = partSlots().map((s2, i) => swapOk(s2) ? i : -1).filter(i => i >= 0), j = ok.indexOf(swapFocus); swapFocus = ok[((j < 0 ? 0 : j) + (dx || dy) + ok.length) % ok.length]; Sound.click(); return; }   // only what can be taken out: parts for a part, keys (not red) for a key
@@ -3503,10 +3532,10 @@ function titleBusy() { if (S.phase === "title" && !titleSkip && titleT < TITLE_L
 function start() { if (buildReady) return maybeReload(); Sound.ensure(); Sound.music(); newRun(); }   // (a new build waiting in the app loads first)
 // buttons (Chris 2026-11-12: a four-button game, Start pauses, Select doesn't mute): A pick / send, B back, X send the word, Y retune,
 // Start pause (and pick on menus), Select nothing (held: dev mode). Keyboard: Z/Space/Enter A, X/Backspace B, C/R retune (Y), V send (X), Esc/P pause.
-function pressA() { if (devKey("a")) return; if (pauseKey("a")) return; if (boardKey("a")) return; if (howKey("a")) return; if (inspectKey("a")) return; if (knobKey("a")) return; if (cardKey("a")) return; Sound.ensure(); usingButtons = true; if (dismissCard()) return; if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return overToTitle(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "trade") return tradeConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
-function pressB() { if (devKey("b")) return; if (pauseKey("b")) return; if (boardKey("b")) return; if (howKey("b")) return; if (inspectKey("a")) return; if (knobKey("b")) return; if (cardKey("b")) return; if (nightHold) return void dismissCard(); if (S.phase === "melt") return meltDone(); if (S.phase === "swap") return swapCancel(); if (S.phase === "trade") return tradeGiveUp(); if (S.phase === "play") back(); }
-function pressX() { if (devKey("x")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play" && S.path.length) send(); else if (S.phase === "shop" && shopFocus < shopChoices.length) shopBanish(shopFocus); else pressA(); }
-function pressY() { if (devKey("y")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play") retune(); else if (S.phase === "report") reportToggle(); else if (S.phase === "shop") shopReroll(); }
+function pressA() { if (devKey("a")) return; if (pauseKey("a")) return; if (boardKey("a")) return; if (howKey("a")) return; if (inspectKey("a")) return; if (knobKey("a")) return; if (cardKey("a")) return; if (tokMenuKey("a")) return; Sound.ensure(); usingButtons = true; if (dismissCard()) return; if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return overToTitle(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "trade") return tradeConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
+function pressB() { if (devKey("b")) return; if (pauseKey("b")) return; if (boardKey("b")) return; if (howKey("b")) return; if (inspectKey("a")) return; if (knobKey("b")) return; if (cardKey("b")) return; if (tokMenuKey("b")) return; if (nightHold) return void dismissCard(); if (S.phase === "melt") return meltDone(); if (S.phase === "swap") return swapCancel(); if (S.phase === "trade") return tradeGiveUp(); if (S.phase === "play") back(); }
+function pressX() { if (devKey("x")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play" && S.path.length) send(); else pressA(); }
+function pressY() { if (devKey("y")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play") retune(); else if (S.phase === "report") reportToggle(); else if (S.phase === "shop" && REROLL_STYLE === 4 && !TOKM.banish) { if (TOKM.open) TOKM.open = false; else tokMenuOpen(); } }   // (Y opens the reroll / banish menu)
 function pressStart() { if (devKey("start")) return; if (pauseKey("start")) return; if (boardKey("start")) return; if (howKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return overToTitle(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "trade") return tradeConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); if (S.phase === "play") pauseOpen(); }
 function pressSel() { if (devKey("select")) return; }   // Select does nothing by itself (held a moment: dev mode, once it's unlocked)
 window.addEventListener("keydown", (e) => {
@@ -3549,8 +3578,11 @@ cv.addEventListener("pointerdown", (e) => {
     if (inR(REPORT.hit)) { reportToggle(); return; } if (inR(REPORT.list)) { REPORT.drag = { y: fy, s: REPORT.sT }; return; } reportNext(); return; }
   if (S.phase === "melt") { meltDone(); return; }
   if (S.phase === "upgrade") { const k = slotAt(p); if (k >= 0 && PART[partSlots()[k].id].key) { if (swapFocus === k || usingTouch) upgradeConfirm(k); else swapFocus = k; } return; }
-  if (S.phase === "shop") { const inR = (r) => r && p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h; if (inR(SHOPUI.reroll)) { shopReroll(); return; } if (inR(SHOPUI.banish)) { shopBanish(shopFocus); return; } }
-  if (S.phase === "shop" && meltOpen()) { const m = meltPlate(); if (p.x >= m.x && p.x <= m.x + m.w && p.y >= m.y && p.y <= m.y + m.h) { if (shopFocus === shopChoices.length || usingTouch) meltStart(); else shopFocus = shopChoices.length; return; } }
+  if (S.phase === "shop") { const inR = (r) => r && p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
+    if (TOKM.open) { const m = SHOPUI.menu || []; if (inR(m[0])) { TOKM.sel = 0; tokMenuKey("a"); } else if (inR(m[1])) { TOKM.sel = 1; tokMenuKey("a"); } else { TOKM.open = false; Sound.click(); } return; }
+    if (TOKM.banish) { const G = shopGeom(), k = Math.floor((p.x - G.x0) / (G.cw + 10)); if (k >= 0 && k < G.n && p.y > G.y0 - 6 && p.y < G.y0 + G.ch) choosePart(k); else { TOKM.banish = false; Sound.click(); } return; }
+    if (inR(SHOPUI.tokens)) { tokMenuOpen(); return; } if (inR(SHOPUI.reroll)) { shopReroll(); return; } if (inR(SHOPUI.banish)) { shopBanish(shopFocus); return; } }
+  if (S.phase === "shop" && meltOpen()) { const m = meltPlate(); if (p.x >= m.x && p.x <= m.x + m.w && p.y >= m.y && p.y <= m.y + m.h) { const mi = shopChoices.length + Math.max(0, plateKinds().indexOf("melt")); if (shopFocus === mi || usingTouch) meltStart(); else shopFocus = mi; return; } }
   if (S.phase === "shop") { const G = shopGeom(), k = Math.floor((p.x - G.x0) / (G.cw + 10)); if (k >= 0 && k < G.n && p.y > G.y0 - 6 && p.y < G.y0 + G.ch) { if (shopFocus === k || usingTouch) choosePart(k); else shopFocus = k; } return; }
   if (S.phase === "play") { const k = slotAt(p); if (k >= 0) { if (INSPECT.on && INSPECT.k === k) INSPECT.on = false; else { INSPECT.on = true; INSPECT.k = k; } Sound.click(); return; } INSPECT.on = false; }
   if (S.phase === "play" && Math.hypot(p.x - L.knobR.x, p.y - L.knobR.y) < 18) { retune(); return; }   // the right tuning knob retunes

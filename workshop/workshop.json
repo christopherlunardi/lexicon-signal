@@ -6,9 +6,9 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "How should rerolls and banishes look and work in the part picker?",
-     "found": "Rerolls and banishes share one stock: 3 at the start of a run, +1 for every overdrive. A reroll deals a new set of cards; a banish takes the chosen card out of the run for good and deals one in its place. Buttons: Y rerolls (like the retune knob), X banishes the card you're on. Also new: a key card is now a coin flip between a new key and a level-up, an overdrive brings one of each, and a new key shows up even when your key slots are full (you take one out, never the red key). Tell me in the notes if you'd rather call the stock something else.",
+     "found": "Rerolls and banishes share one stock: 3 at the start of a run, +1 for every overdrive. A reroll deals a new set of cards; a banish takes the chosen card out of the run for good and deals one in its place. Buttons: Y rerolls (like the retune knob), X banishes the card you're on. Also new: a key card is now a coin flip between a new key and a level-up, an overdrive brings one of each, and a new key shows up even when your key slots are full (you take one out, never the red key). Tell me in the notes if you'd rather call the stock something else. Decided: brass plates like MELT THEM, as one REROLL / BANISH plate that opens a small menu (Chris).",
      "options": [
       {
        "id": "1",
@@ -82,7 +82,8 @@
        ],
        "play": "play.html#test-reroll-melt-reroll-3"
       }
-     ]
+     ],
+     "decided": "1"
     }
    ]
   },
