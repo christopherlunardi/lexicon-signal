@@ -205,6 +205,9 @@ the same batch.
   to the words after; its icon is Chris's painted needle meter (src/meter_icon.png, kdown 44x56). Sim: about as strong as the
   Long Wave Coil. Player-facing text never says "boost" (Chris: confusing): +1 boost is said as "scores as if it were 1 letter longer"
   (it is exactly that, since boost = letters - 2).
+- Fonts are EMBEDDED (Chris 2026-11-16: ready for packaging, nothing from the internet): tools/fonts/*.woff2 (Alfa Slab One, Bungee
+  cut to Latin, Silkscreen, Special Elite) with their licenses beside them; `python3 -I tools/fonts.py` writes them as data URIs into
+  the <style id="fonts"> block at the top of index.html. Run it after adding or changing a font. No Google Fonts links anywhere.
 - Trades are OFF (TRADE_ON false, Chris 2026-11-16: a lost night ends the run). The trade code stays for a later rework where you'd
   have to give up a key. Tips about trading were removed. human.js runs without trades unless TRADE=1.
 - Balance from the human bot (2026-11-16, applied): Signal Meter +1 per 2 words sent (meterB; was every word, median 12 nights as a
