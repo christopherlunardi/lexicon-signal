@@ -457,7 +457,7 @@ const PARTS = [
   { id:"heat",    name:"Red Heat",          desc:"The red key multiplies one more.", icon:"fuse" },
   // the Stranger's Hat (Chris 2026-11-15): a mystery part. Until you've fitted one its card shows only the blurb; fitted, a caller
   // starts bringing requests (song requests below). Each copy after the first adds +2 to every request.
-  { id:"hat",     name:"Stranger's Hat",    desc:"A caller brings requests. Fill one: x2 to x6, and it keeps its lamp. More hats: +2 each.", blurb:"Left on your doorstep. Nobody knows whose it is.", mystery:true },
+  { id:"hat",     name:"Stranger's Hat",    desc:"A caller brings requests. Fill one: its signal pays x4 to x8 again, and it keeps its lamp. More hats: +2 each.", blurb:"Left on your doorstep. Nobody knows whose it is.", mystery:true },
   // rare (gold): only one, now and then in the picker (more often after an overdrive)
   { id:"gold",    name:"Gold Key",          desc:"A gold key on the glass can be any letter.", rare:true },
   // Center Tap (Chris 2026-11-14): the middle key of the glass holds a charge that lasts the whole run. A word through it scores the
@@ -494,7 +494,7 @@ function pickLetter() {
   for (const [k, w] of Object.entries(WEIGHTS)) { pool.push([k, w]); total += w; }
   let r = Math.random() * total; for (const [k, w] of pool) if ((r -= w) <= 0) return k; return "E";
 }
-const newTile = () => ({ id: ++uid, ch: reqLean() && Math.random() < REQ_BIAS ? reqLean()[(Math.random() * reqLean().length) | 0] : pickLetter(), hot: false, yOff: 0, vy: 0, wait: 0, lit: 0, land: 0, seed: Math.random() });
+const newTile = () => ({ id: ++uid, ch: (Math.random() < REQ_BIAS && leanCh()) || pickLetter(), hot: false, yOff: 0, vy: 0, wait: 0, lit: 0, land: 0, seed: Math.random() });
 const vowelCount = () => S.grid.filter(t => VOWELS.has(t.ch)).length;
 function ensureHot() { let g = 0;   // one red key is always on the glass; with the Gold Key, one gold wildcard key too
   // (the gold key can be the red key too, Chris 2026-11-13: then it's any letter AND doubles the word)
@@ -535,9 +535,9 @@ function scoreOf(p) {
   // (Chris 2026-11-13, from the balance sim) coil x2, x2.5, x3...; crystal x2, x3...; echo first word x3, x4...; owl last word x3, x5, x7...
   if (has("coil") && len >= 5) mult *= coilX(); if (has("short") && len <= 4) mult *= 1 + has("short"); if (has("echo") && used === 0) mult *= 2 + has("echo"); if (has("owl") && S.words === 1) mult *= owlX();
   if (reds) mult *= 2 + has("heat");
-  if (reqMet(p)) mult *= reqX();   // the song request: x4 for the first in a run, then x6, x8... (and it keeps its lamp)
   const tap = has("tap") && p.includes(TAP_I) ? (S.tap || 0) + len : 0;   // the Center Tap: charge up first, then score the charge, flat
-  return { word, len, signal, boost, mult, tap, pts: Math.round(signal * boost * mult) + tap };
+  const req = reqMet(p) ? Math.round(signal * boost * (reqX() - 1)) : 0;   // a filled request pays x4..x8 of the word's own signal, added on: it doesn't multiply the other parts' multipliers (Chris 2026-11-15: echo x red x request made one word worth 1134)
+  return { word, len, signal, boost, mult, tap, reqB: req, pts: Math.round(signal * boost * mult) + tap + req };
 }
 // which fitted parts change this word, and how (shown on their slots: lit while tracing, a flash and a tag when the signal lands)
 function partHits(p) {
@@ -583,11 +583,11 @@ function plShare() { let txt = "[]"; try { txt = localStorage.getItem("lexsig.ru
 /* ---- Listener requests (Chris 2026-11-15: a hard side goal each night that pays big). A caller asks for a kind of word; a word that
    fills it is shown as it's traced. Workshop req-r1: where the request shows. #req-N: 1 the lower plate, 2 the dial, 3 pinned at the
    top of the log, 4 a paper slip tucked in the window frame. Off (0) in the game until it's decided. ---- */
-let REQ = 4; {   // (Chris 2026-11-15: the caller at the window; a filled request scores x3 and keeps its lamp)
+let REQ = 4; {   // (Chris 2026-11-15: the caller at the window; a filled request pays and keeps its lamp)
  const m = location.hash.match(/req-(\d)/); if (m) REQ = Math.min(4, +m[1]); }
 /* Requests (Chris 2026-11-15): with the Stranger's Hat fitted, a caller at the window brings a request. It stays on the sill, night
    after night, until a word fills it; then a new caller brings the next at the start of a night. A mixed deck (REQ_KINDS, by weight),
-   each paying by how hard it is (pay: x2 easy, x3 letters, x6 a song title; +2 for each extra hat), and the word keeps its lamp:
+   each paying by how hard it is (pay: x4 easy, x5 letters, x8 a song title; +2 for each extra hat; added as that many times the word's plain signal, so it never multiplies the other parts' multipliers: Chris 2026-11-15), and the word keeps its lamp:
    letters together ("something with OR in it": 2 letters, then 3, then 4 as you fill more), a rare letter, a long word, a double
    letter, 5+ letters through the red key, 4 vowels, starts and ends alike, and now and then a song title to spell exactly (3 letters,
    then 4, then 5). A quiet lean helps the letter kinds: REQ_BIAS of new keys are one of its letters, unmarked. Tuned in the sim
@@ -599,18 +599,20 @@ const REQ_LISTS = { 3: "SKY SUN ICE SEA OWL JOY HUM DEW FOG KEY AIR BOW DIM RAY 
   4: "MOON RAIN BLUE JAZZ SONG STAR KISS DAWN TUNE HUSH GLOW DRUM HORN SWAY SOUL LOVE ROSE MIST SNOW WIND LAMP GOLD WAVE ECHO NOTE BEAT HOME TIDE HAZE DUSK".split(" "),
   5: "NIGHT RADIO DREAM STORM HEART DANCE LIGHT TOWER LOVER BLUES TANGO WALTZ SWING TORCH CROON STARS NEONS MAMBO RUMBA DUSKY SMOKE HONEY SATIN PEARL LUNAR CHIME MUSIC SWEET ROUGE".split(" ") };
 const REQ_KINDS = [["chunk", 3], ["letter", 2], ["long", 2], ["double", 2], ["red", 2], ["vowels", 1], ["ends", 1], ["word", 1]];
-const REQ_PAY = { chunk: 3, letter: 3, long: 2, double: 2, red: 2, vowels: 2, ends: 2, word: 6 };
+const REQ_PAY = { chunk: 5, letter: 5, long: 4, double: 4, red: 4, vowels: 4, ends: 4, word: 8 };
 const REQ_BIAS = .15;
 const reqX = () => (S.req ? REQ_PAY[S.req.kind] : 3) + 2 * Math.max(0, has("hat") - 1);
 const reqOpen = () => !!(S && S.req && !S.req.done && !HOW.on);
 const reqLean = () => reqOpen() ? (S.req.kind === "word" || S.req.kind === "chunk" ? S.req.big : S.req.kind === "letter" ? S.req.ch : null) : null;
+// the lean only brings a request letter that isn't on the glass already (Chris 2026-11-15: a "Z" request filled a whole row with Zs)
+const leanCh = () => { const lt = reqLean(); if (!lt || !S.grid) return null; const on = new Set(S.grid.filter(Boolean).map(t => t.ch)), c = [...lt].filter(ch => !on.has(ch)); return c.length ? c[(Math.random() * c.length) | 0] : null; };
 function makeReq(force) { const n = S.reqN || 0, pick = (l) => l[(Math.random() * l.length) | 0];
   let kind = force ? "word" : null; if (!kind) { let r = Math.random() * REQ_KINDS.reduce((a, k) => a + k[1], 0); for (const [k, w] of REQ_KINDS) if ((r -= w) <= 0) { kind = k; break; } }
   if (S.req && S.req.kind === kind && kind !== "chunk" && kind !== "word" && kind !== "letter") kind = "chunk";   // (not the same kind of request twice in a row)
   const q = { kind, nights: 0 };
   if (kind === "word") { const w = force || pick(REQ_LISTS[n < 4 ? 3 : n < 8 ? 4 : 5]); Object.assign(q, { big: w, top: "PLEASE PLAY", bot: "" }); }
   else if (kind === "chunk") { let c; do c = pick(CHUNKS[n < 3 ? 2 : n < 7 ? 3 : 4]); while (S.req && S.req.big === c); Object.assign(q, { big: c, top: "SOMETHING WITH", bot: "IN IT" }); }
-  else if (kind === "letter") { q.ch = "JXZKVWYBFH"[(Math.random() * (4 + Math.min(6, n))) | 0]; Object.assign(q, { big: q.ch, top: "SOMETHING WITH", bot: "IN IT" }); }
+  else if (kind === "letter") { q.ch = "BFHKWYVJXZ"[(Math.random() * (4 + Math.min(6, n))) | 0]; Object.assign(q, { big: q.ch, top: "SOMETHING WITH", bot: "IN IT" }); }
   else if (kind === "long") { q.len = n < 3 ? 5 : n < 7 ? 6 : 7; Object.assign(q, { big: q.len + "+", top: "SOMETHING", bot: "LETTERS LONG" }); }   // (early ones easier, Chris 2026-11-15)
   else if (kind === "double") Object.assign(q, { big: "DOUBLE", top: "SOMETHING WITH A", bot: "LETTER, LIKE LL" });
   else if (kind === "red") Object.assign(q, { big: "RED KEY", top: "5+ LETTERS", bot: "THROUGH THE" });
@@ -661,7 +663,7 @@ function send() {
   if (!canAct() || !S.path.length) return;
   if (!isValid()) { const short = S.path.length < 3; dialFlash = { text: short ? "TOO SHORT" : "NO SIGNAL", bad: true, t: 70 }; if (PLAYLOG.run && !HOW.on) PLAYLOG.run.fails++; shake = 6; staticKick = .4; Sound.fail(); log(short ? "Too short." : `${pathWord()}: no signal.`); return; }
   const sc = scoreOf(S.path), used = [...S.path], hits = partHits(S.path); sc.red = used.some(i => S.grid[i].hot) ? 1 : 0; sc.gold = used.some(i => S.grid[i].wild) ? 1 : 0; plWord(sc);
-  if (S.nw) S.nw.push({ w: sc.word, p: sc.pts, tags: [...(reqMet(used) ? ["REQUEST x" + reqX()] : []), ...(sc.red ? ["RED x" + (2 + has("heat"))] : []), ...Object.entries(hits).filter(([id]) => id !== "heat" && id !== "gold").map(([id, v]) => (HIT_NAME[id] || id.toUpperCase()) + " " + v.toUpperCase())] });
+  if (S.nw) S.nw.push({ w: sc.word, p: sc.pts, tags: [...(reqMet(used) ? ["REQUEST x" + reqX()] : []), ...(sc.red ? ["RED x" + (2 + has("heat"))] : []), ...Object.entries(hits).filter(([id]) => id !== "heat" && id !== "gold" && id !== "hat").map(([id, v]) => (HIT_NAME[id] || id.toUpperCase()) + " " + v.toUpperCase())] });
   if (sc.tap) { S.tap = sc.tap; tapFlash = 40; log(`Center Tap charged to ${S.tap}.`); }
   const reqHit = reqMet(used), rx = reqX(); if (reqHit) { S.req.done = true; S.req.doneT = frame; sc.req = 1; S.reqN = (S.reqN || 0) + 1; (S.setList = S.setList || []).push(S.req.text); }
   if (reqHit) log(`Request filled! x${rx}, and the lamp stays lit.`); else { if (S.words > BASE_WORDS) log("Spare battery spent."); S.words -= 1; } S.firstWord = false; if (sc.pts > S.best.pts) S.best = { word: sc.word, pts: sc.pts };
@@ -2358,7 +2360,7 @@ const TIPS = [
   "AN UNUSED RETUNE PAYS A BONUS AT THE END OF THE NIGHT, AND MORE IN LATER NIGHTS",
   "FALL JUST SHORT OF A NIGHT? TRADE ONE COPY OF A STACKED PART TO PUSH ON",
   "SOMEONE LEFT A HAT ON YOUR DOORSTEP. FIT IT AND SEE WHO COMES CALLING",
-  "WITH THE STRANGER'S HAT, A CALLER SLIPS REQUESTS UNDER THE WINDOW. FILL ONE FOR X2 TO X6, AND THE WORD KEEPS ITS LAMP",
+  "WITH THE STRANGER'S HAT, A CALLER SLIPS REQUESTS UNDER THE WINDOW. FILL ONE AND ITS SIGNAL PAYS X4 TO X8 MORE, AND THE WORD KEEPS ITS LAMP",
   "A REQUEST WAITS ON THE SILL UNTIL YOU FILL IT. TAP THE CARD TO READ IT UP CLOSE",
   "EVERY EXTRA STRANGER'S HAT ADDS +2 TO EACH REQUEST",
   "AS YOU TRACE, THE REQUEST CARD LIGHTS THE LETTERS YOUR WORD MATCHES",

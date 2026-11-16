@@ -21,7 +21,8 @@ let rnd = Math.random; const V = Object.fromEntries((process.env.V || '').split(
 function pickLetter() { let r = rnd() * WTOT; for (const [k, w] of WT) if ((r -= w) <= 0) return k; return "E"; }
 // an open song request leans new keys toward its letters (REQ_BIAS of them are one of its letters, picked at random)
 let REQ_W = null; const REQ_BIAS = +(process.env.RB ?? .15);
-const tile = () => ({ ch: REQ_W && rnd() < REQ_BIAS ? REQ_W[(rnd() * REQ_W.length) | 0] : pickLetter(), hot: false, wild: false });
+const leanCh = (S) => { if (!REQ_W || !S || !S.grid) return null; const on = new Set(S.grid.filter(Boolean).map(t => t.ch)), c = [...REQ_W].filter(ch => !on.has(ch)); return c.length ? c[(rnd() * c.length) | 0] : null; };   // only letters not on the glass already
+const tile = (S) => ({ ch: (rnd() < REQ_BIAS && (process.env.OLDLEAN ? REQ_W && REQ_W[(rnd() * REQ_W.length) | 0] : leanCh(S))) || pickLetter(), hot: false, wild: false });
 
 function mk(parts) { const S = { parts: parts.slice(), night: 1, total: 0, melt: 0, grid: [] }; return S; }
 const has = (S, id) => S.parts.filter(p => p === id).length;
@@ -33,7 +34,7 @@ function fillGrid(S) { S.grid = Array.from({ length: NN }, tile); let g = 0; whi
 function collapse(S, used) { const us = new Set(used), moved = new Set();
   for (let col = 0; col < N; col++) { const keep = []; for (let row = N - 1; row >= 0; row--) { const i = row * N + col; if (!us.has(i)) keep.push({ t: S.grid[i], from: row }); }
     for (let j = 0; j < N; j++) { const row = N - 1 - j, i = row * N + col;
-      if (j < keep.length) { S.grid[i] = keep[j].t; if (keep[j].from !== row) moved.add(keep[j].t); } else { const t = tile(); S.grid[i] = t; moved.add(t); } } }
+      if (j < keep.length) { S.grid[i] = keep[j].t; if (keep[j].from !== row) moved.add(keep[j].t); } else { const t = tile(S); S.grid[i] = t; moved.add(t); } } }
   let g = 0; while (vc(S) < 5 && g++ < 50) { const fr = S.grid.filter(t => moved.has(t) && !VOWELS.has(t.ch) && !t.wild); if (!fr.length) break; fr[(rnd() * fr.length) | 0].ch = "AEIOU"[(rnd() * 5) | 0]; }
   ensureHot(S); }
 const ADJ = Array.from({ length: NN }, (_, a) => { const r = []; for (let b = 0; b < NN; b++) if (a !== b && Math.abs(a % N - b % N) <= 1 && Math.abs(((a / N) | 0) - ((b / N) | 0)) <= 1) r.push(b); return r; });
@@ -59,11 +60,11 @@ const CHUNKS = { 2: "ST OR AR EA ON AN ER RE OU CH SH TH LO AT IT IN EN AL LE OW
 const CH_LEN = [2, 2, 2, 3, 3, 3, 3, 4];
 // RQ=mix: a mixed deck of request kinds, each paying by how hard it is (REQ_PAY, tunable with env PAY_<kind>)
 const KINDS = ["chunk", "letter", "long", "double", "red", "vowels", "ends", "word"], KW = [3, 2, 2, 2, 2, 1, 1, 1];
-const PAY0 = { chunk: 3, letter: 3, long: 2, double: 2, red: 2, vowels: 2, ends: 2, word: 6 };   // the game's REQ_PAY
+const PAY0 = { chunk: 5, letter: 5, long: 4, double: 4, red: 4, vowels: 4, ends: 4, word: 8 };   // the game's REQ_PAY
 const REQ_PAY = Object.fromEntries(KINDS.map(k => [k, +(process.env["PAY_" + k] || PAY0[k])]));
 function makeReqMix(S) { let r = rnd() * KW.reduce((a, b) => a + b), k = 0; while ((r -= KW[k]) > 0) k++; const kind = KINDS[k], n = S.reqN || 0;
   if (kind === "chunk") { const l = CHUNKS[n < 3 ? 2 : n < 7 ? 3 : 4]; return { kind, word: l[(rnd() * l.length) | 0], chunk: true, done: false, nights: 0 }; }
-  if (kind === "letter") return { kind, ch: "JXZKVWYBFH"[(rnd() * (4 + Math.min(6, n))) | 0], done: false, nights: 0 };
+  if (kind === "letter") return { kind, ch: (process.env.OLDLEAN ? "JXZKVWYBFH" : "BFHKWYVJXZ")[(rnd() * (4 + Math.min(6, n))) | 0], done: false, nights: 0 };
   if (kind === "long") return { kind, len: n < 3 ? 5 : n < 7 ? 6 : 7, done: false, nights: 0 };
   if (kind === "vowels") return { kind, n: n < 4 ? 3 : 4, done: false, nights: 0 };
   if (kind === "red") return { kind, len: n < 3 ? 4 : 5, done: false, nights: 0 };
@@ -87,9 +88,9 @@ function scoreOf(S, p, word) { const tiles = p.map(i => S.grid[i]), len = word.l
   if (h("echo") && used === 0) mult *= 2 + h("echo");      // first word x3, x4...
   if (h("owl") && S.words === 1) mult *= 1 + 2 * h("owl"); // last word x3, x5, x7...
   if (reds) mult *= 2 + h("heat");
-  if (reqMet(S, p, word)) mult *= S.req.kind ? REQ_PAY[S.req.kind] + +(process.env.RXH || 2) * Math.max(0, has(S, "hat") - 1) : +(process.env.RX0 || 4) + +(process.env.RXS || 2) * (S.reqN || 0) + +(process.env.RXH || 2) * Math.max(0, has(S, "hat") - 1);   // x3, x4, x5... through the run
+  let rx = 1; if (reqMet(S, p, word)) rx = S.req.kind ? REQ_PAY[S.req.kind] + +(process.env.RXH || 2) * Math.max(0, has(S, "hat") - 1) : +(process.env.RX0 || 4) + +(process.env.RXS || 2) * (S.reqN || 0) + +(process.env.RXH || 2) * Math.max(0, has(S, "hat") - 1);   // x3, x4, x5... through the run
   const tap = has(S, "tap") && p.includes(12) ? (S.tap || 0) + len : 0;
-  return Math.round(signal * boost * mult) + tap; }
+  return process.env.REQMUL ? Math.round(signal * boost * mult * rx) + tap : Math.round(signal * boost * mult) + Math.round(signal * boost * (rx - 1)) + tap; }   // the request adds x(rx-1) of the plain word (REQMUL=1: the old way, multiplying everything)
 function nightBonus(S) { const wl = Math.max(0, S.words), rl = Math.max(0, S.retunes), wv = process.env.OLDLAMP ? round5(S.target / 4) : S.nightBest, rv = round5(S.target * retuneShare(S.night));
   return wl * wv + rl * rv + (wl && has(S, "owl") ? wv * (1 + 2 * has(S, "owl")) : 0); }
 

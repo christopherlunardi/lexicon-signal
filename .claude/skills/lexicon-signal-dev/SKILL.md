@@ -176,8 +176,12 @@ the same batch.
   device, lexsig.hatKnown) its picker card shows the blurb and "??? MYSTERY"; then its desc. With it, a caller brings a request
   (makeReq: a mixed deck REQ_KINDS: letters together 2/3/4 (CHUNKS), a rare letter, 5+/6+/7+ letters, a double letter, 4+/5+
   through the red key, 3 then 4 vowels (easier early, Chris), same ends, and now and then a song title to spell exactly (REQ_LISTS 3/4/5)). It stays on the sill until a word
-  fills it (reqMet); pay by difficulty REQ_PAY (x2 easy, x3 letters, x6 a title) +2 per extra hat (reqX), and the word keeps its
-  lamp. The hat's slot lights and tags when the traced word fills it (partHits). A quiet unmarked lean (REQ_BIAS) for the letter kinds.
+  fills it (reqMet); pay by difficulty REQ_PAY (x4 easy, x5 letters, x8 a title) +2 per extra hat (reqX), and the word keeps its
+  lamp. The pay is ADDED as (reqX-1) x the word's plain signal x boost (sc.reqB), never multiplied into the other parts' multipliers
+  (Chris 2026-11-15: echo x red x request made one word 1134 on a 130 night; sim REQMUL=1 shows the old way). The hat's slot lights
+  when the traced word fills it (partHits); the word's tags show REQUEST once. A quiet unmarked lean (REQ_BIAS, leanCh) for the letter
+  kinds, only for request letters not already on the glass (a Z request once filled a row with Zs). Letter requests start with
+  B F H K, adding W Y V J X Z as more are filled.
   The card (src/reqcard_pixellab.png, stamp wiped, made 96x64 in build.py by repeating ruled rows and plain columns) has a small
   top line, a big line (lit letters as you trace: reqLit) and a bottom line, REQUEST stamped, the x in red; PLAYED when filled.
   drawReqCard(X, Y, z) draws it on the sill and in the close-up (drawReqZoom: up to 3x in the middle when a new one lands, or on a tap
