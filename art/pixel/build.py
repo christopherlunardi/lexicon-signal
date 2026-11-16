@@ -254,7 +254,8 @@ def main():
     imgs["iconL_tap"] = Image.fromarray(ti, "RGBA"); fa = ti; hw, hh = max(1, fa.shape[1] // 2), max(1, fa.shape[0] // 2)
     tpal = np.unique(fa[..., :3][fa[..., 3] > 0].reshape(-1, 3), axis=0).astype(float)
     imgs["icon_tap"] = Image.fromarray(pix.mode_shrink(fa[..., :3].astype(float), fa[..., 3] > 0, hw, hh, tpal), "RGBA")
-    # the Signal Meter (2026-11-15): src/meter_icon_fixed.png once painted; until then the old Center Tap picture (a round brass gauge)
+    # the Signal Meter (2026-11-15): src/meter_icon.png (ChatGPT, a cream-faced needle meter) shrunk by k-centroid to its 44x56 grid as
+    # src/meter_icon_fixed.png; without it, the old Center Tap picture (a round brass gauge)
     mi = np.asarray(Image.open(SRC + ("meter_icon_fixed.png" if os.path.exists(SRC + "meter_icon_fixed.png") else "tap_icon_fixed.png")).convert("RGBA")).copy(); mg = (mi[..., 0] > 170) & (mi[..., 1] < 110) & (mi[..., 2] > 170); mi[..., 3] = np.where(mg, 0, 255)
     imgs["iconL_meter"] = Image.fromarray(mi, "RGBA"); fa = mi; hw, hh = max(1, fa.shape[1] // 2), max(1, fa.shape[0] // 2)
     mpal = np.unique(fa[..., :3][fa[..., 3] > 0].reshape(-1, 3), axis=0).astype(float)

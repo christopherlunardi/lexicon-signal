@@ -202,7 +202,7 @@ the same batch.
   the score bright amber, the target dimmer, brighter still once the tube is full. TOGO 3; #togo-N shows the others.
 - Parts, 2026-11-15: the Echo Tube is now the PILOT LAMP (same id "echo", same effect, the old Red Lamp picture via icon "carrier":
   two tubes looked alike). New part SIGNAL METER (id meter, meterB): every word sent this night (S.nw.length) adds +1 boost per copy
-  to the words after; its icon is the old Center Tap gauge until src/meter_icon_fixed.png is painted. Sim: about as strong as the
+  to the words after; its icon is Chris's painted needle meter (src/meter_icon.png, kdown 44x56). Sim: about as strong as the
   Long Wave Coil. Player-facing text never says "boost" (Chris: confusing): +1 boost is said as "scores as if it were 1 letter longer"
   (it is exactly that, since boost = letters - 2).
 - KEYS (Chris 2026-11-15): red, gold and tap are keys (`key:true` in PARTS; Red Lamp and Red Heat are gone, folded into the red key).
