@@ -369,6 +369,9 @@ the same batch.
   drawKnobFocus: a ring and a card, RETUNE / SWAP EVERY LETTER FOR NEW ONES / PRESS A: N LEFT TONIGHT); A retunes, left or B goes
   back. Night 1's log adds "Stuck? Press Y to retune" (tap the right knob on touch). Wording: no "tune in" anywhere (Chris didn't
   like it): PRESS A TO PLAY / PLAY AGAIN, the log starts "On the air.", the phone's A button says PICK.
+- Request card focus (Chris 2026-11-16, CARDF, cardKey, drawCardFocus): from the bottom two rows, left past column 1 picks the card on
+  the sill (when one is there); A reads it up close (A again puts it back); right or B back to the keys; left wraps to the glass's
+  right side. Right from the retune knob wraps to the glass's left side.
 - Tube end lamp (Chris 2026-11-12): a round lamp at the right end of the signal tube lights and pulses only while the traced word would
   fill the tube (S.score + pts >= S.target); a word that falls short never lights the last preview cell. How to Play's FILL THE TUBE
   card and the tips say so. Test with #test-word-near (score 3 short) and #test-word-fill.
