@@ -1,1 +1,10 @@
-[]
+[
+ {
+  "file": "img/caller_reach.png",
+  "group": "To do: the request caller",
+  "label": "The caller reaching (try C): fix the cigarette in his mouth. 85 x 104, transparent around him",
+  "w": 85,
+  "h": 104,
+  "key": "caller_reach"
+ }
+]

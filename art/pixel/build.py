@@ -382,6 +382,12 @@ def main():
             if os.path.exists(SRC + fn_):
                 ca_ = np.asarray(Image.open(SRC + fn_).convert("RGBA")).copy(); ca_[(ca_[..., 0] > 200) & (ca_[..., 1] > 200) & (ca_[..., 2] > 200)] = 0
                 imgs[nm_] = Image.fromarray(ca_).crop(CB)
+        # his reaching frame (try C, Chris 2026-11-15) goes on the Pixel Bench for Chris to fix the cigarette; what he sends back
+        # (src/bench/caller_reach.png, the same 85 x 104 cut) is used exactly as painted
+        if os.path.exists(SRC + "bench/caller_reach.png"): imgs["caller_reach"] = Image.open(SRC + "bench/caller_reach.png").convert("RGBA")
+        else:
+            imgs["caller_reach"].save(ROOT_ART + "bench/img/caller_reach.png")
+            json.dump([{"file": "img/caller_reach.png", "group": "To do: the request caller", "label": "The caller reaching (try C): fix the cigarette in his mouth. 85 x 104, transparent around him", "w": 85, "h": 104, "key": "caller_reach"}], open(ROOT_ART + "bench/manifest.json", "w"), indent=1)
     # the bar's top-middle clasp on the Pixel Bench (Chris 2026-11-14): what he paints (src/bench/bar_clasp.png) is used exactly as sent
     if os.path.exists(SRC + "bench/bar_clasp.png"): imgs["bar_clasp"] = Image.open(SRC + "bench/bar_clasp.png").convert("RGBA")
     elif not os.path.exists(SRC + "clasp_wings.png"):
