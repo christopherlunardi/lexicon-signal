@@ -453,9 +453,9 @@ const PARTS = [
   // the Pilot Lamp (was the Echo Tube, Chris 2026-11-15: two tubes looked alike): the light that comes on first, the old Red Lamp picture
   { id:"echo",    name:"Pilot Lamp",        desc:"First word each night x3 (x4...).", icon:"carrier" },
   // the Signal Meter (Chris 2026-11-15): builds up over the night. Every word sent this night adds +1 boost (per copy) to the words after
-  { id:"meter",   name:"Signal Meter",      desc:"Each word you send makes later ones score 1 letter longer." },
+  { id:"meter",   name:"Signal Meter",      desc:"Every 2 words you send make later ones score 1 letter longer." },
   { id:"owl",     name:"Night Owl Clock",   desc:"Last word each night x3 (x5...), even if left over." },
-  { id:"treble",  name:"Treble Slider",     desc:"+3 signal per letter worth 3+." },
+  { id:"treble",  name:"Treble Slider",     desc:"+5 signal per letter worth 3+." },
   { id:"vowel",   name:"Vowel Antenna",     desc:"Vowels +1 signal each." },
   // the Stranger's Hat (Chris 2026-11-15): a mystery part. Until you've fitted one its card shows only the blurb; fitted, a caller
   // starts bringing requests (song requests below). Each copy after the first adds +2 to every request.
@@ -542,7 +542,7 @@ const maxWords = () => BASE_WORDS + has("battery");
 const coilX = () => 1.5 + has("coil") / 2, owlX = () => 1 + 2 * has("owl");
 const maxRetunes = () => 1 + has("knob");
 const firstW = () => !(S.nw && S.nw.length);   // the night's first word: nothing sent yet (a request word keeps its lamp, so lamps can't tell: bug check 2026-11-16)
-const meterB = () => has("meter") * ((S.nw && S.nw.length) || 0);   // the Signal Meter: +1 boost per copy for every word already sent this night
+const meterB = () => has("meter") * Math.floor(((S.nw && S.nw.length) || 0) / 2);   // (every 2 words, not every word: it was the strongest part for a human-like player, sim 2026-11-16)   // the Signal Meter: +1 boost per copy for every word already sent this night
 function fresh(phase) { return { phase, tap: 0, melt: 0, night: 1, score: 0, shown: 0, total: 0, parts: [], words: BASE_WORDS, retunes: 1, firstWord: true, grid: [], path: [], cursor: 6, best: { word: "", pts: 0 }, target: 30, log: [] }; }
 function pickLetter() {
   let total = 0; const pool = [];
@@ -596,7 +596,7 @@ const isValid = (p = S.path) => { const w = pathWord(p); return w.length >= 3 &&
 function scoreOf(p) {
   const tiles = p.map(i => S.grid[i]), word = pathWord(p), len = word.length, used = maxWords() - S.words, reds = tiles.filter(t => t.hot).length;
   let signal = 2 + tiles.reduce((s, t) => s + VALUES[t.ch], 0);   // every word carries 2 signal, so short words still count
-  signal += 3 * has("treble") * tiles.filter(t => VALUES[t.ch] >= 3).length + has("vowel") * tiles.filter(t => VOWELS.has(t.ch)).length;
+  signal += 5 * has("treble") * tiles.filter(t => VALUES[t.ch] >= 3).length + has("vowel") * tiles.filter(t => VOWELS.has(t.ch)).length;
   if (reds) signal += redSig(); signal += goldSig() * tiles.filter(t => t.wild).length;
   const boost = Math.max(1, len - 2) + has("amp") + (has("knob") ? S.retunes : 0) + meterB(); let mult = 1;
   // (Chris 2026-11-13, from the balance sim) coil x2, x2.5, x3...; crystal x2, x3...; echo first word x3, x4...; owl last word x3, x5, x7...
@@ -613,7 +613,7 @@ function partHits(p) {
   if (n("tap") && p.includes(TAP_I)) hits.tap = "+" + ((S.tap || 0) + tapAdd(len)) * tapPay();
   if (n("amp")) hits.amp = "+" + n("amp");
   if (n("knob") && S.retunes) hits.knob = "+" + S.retunes;
-  const tr = tiles.filter(t => VALUES[t.ch] >= 3).length; if (n("treble") && tr) hits.treble = "+" + 3 * n("treble") * tr;
+  const tr = tiles.filter(t => VALUES[t.ch] >= 3).length; if (n("treble") && tr) hits.treble = "+" + 5 * n("treble") * tr;
   const vw = tiles.filter(t => VOWELS.has(t.ch)).length; if (n("vowel") && vw) hits.vowel = "+" + n("vowel") * vw;
   if (n("short") && len <= 4) hits.short = "x" + (1 + n("short"));
   if (n("coil") && len >= 5) hits.coil = "x" + coilX();
@@ -708,7 +708,7 @@ function startNight() {
   if (S.grid.length === NN) melt();
   if (S.grid.length === NN && S.night > 1) ensureHot(); else fillGrid(true);   // the glass keeps its letters from night to night; a new run starts fresh
   // a song request: a new one (and a new caller) when none is open; an open one stays on the sill, its card already there
-  if (REQ && !HOW.on && has("hat")) { if (!S.req || S.req.done) { S.req = makeReq(); S.reqAt = null; } else S.reqAt = frame - 10000; S.req.nights++; }
+  if (REQ && !HOW.on && has("hat")) { S.reqNext = 0; if (!S.req || S.req.done) { S.req = makeReq(); S.reqAt = null; } else S.reqAt = frame - 10000; S.req.nights++; }
   else S.req = null;   // (no hat, no caller)
   S.phase = "play"; INSPECT.on = false; KNOB.on = false; CARDF.on = false; dialFlash = null; nightCard = 170; if (INTRO && !HOW.on && (!location.hash.startsWith("#test-") || location.hash.includes("intro-"))) { nightHold = true; introT = 0; nightCard = 16; } log(`Night ${S.night}: beam ${S.target} signal to the tower in ${S.words} words.`); if (S.night === 1 && !HOW.on) log(TAPW() ? "Stuck? Tap the right knob to retune: all new letters." : btn("Stuck? Press {Y} to retune: all new letters."));
 }
@@ -736,7 +736,7 @@ function send() {
   const sc = scoreOf(S.path), used = [...S.path], hits = partHits(S.path); sc.red = used.some(i => S.grid[i].hot) ? 1 : 0; sc.gold = used.some(i => S.grid[i].wild) ? 1 : 0; plWord(sc);
   if (S.nw) S.nw.push({ w: sc.word, p: sc.pts, tags: [...(reqMet(used) ? ["REQUEST x" + reqX()] : []), ...(sc.red ? ["RED x" + redX()] : []), ...Object.entries(hits).filter(([id]) => id !== "red" && id !== "gold" && id !== "hat").map(([id, v]) => (HIT_NAME[id] || id.toUpperCase()) + " " + v.toUpperCase())] });
   if (sc.tap) { S.tap = sc.charge; tapFlash = 40; log(`Green key charged to ${S.tap}.`); }
-  const reqHit = reqMet(used), rx = reqX(); if (reqHit) { S.req.done = true; S.req.doneT = frame; sc.req = 1; S.reqN = (S.reqN || 0) + 1; (S.setList = S.setList || []).push(S.req.text); }
+  const reqHit = reqMet(used), rx = reqX(); if (reqHit) { S.req.done = true; S.req.doneT = frame; S.reqNext = frame + 150; sc.req = 1; S.reqN = (S.reqN || 0) + 1; (S.setList = S.setList || []).push(S.req.text); }
   if (reqHit) log(`Request filled! x${rx}, and the lamp stays lit.`); else { if (S.words > BASE_WORDS) log("Spare battery spent."); S.words -= 1; } S.firstWord = false; if (sc.pts > S.best.pts) S.best = { word: sc.word, pts: sc.pts };
   const big = sc.len >= 6 || sc.pts >= 60; busy++;
   const gch = GOLD_STYLE ? gkLetterOf(used) : null, gall = GOLD_STYLE === 5 && gch != null;   // (Workshop gold looks: the gold key leaves as the letter it stood for, in gold)
@@ -1048,6 +1048,8 @@ function burst(x, y, n, col) { for (let i = 0; i < n; i++) { const a = Math.rand
 function update() {
   if (PAUSE.on) return;   // paused: everything holds still
   frame++; meltUpdate(); scoreUpdate();
+  // a filled request: the stamped card shows for a moment, then the caller comes back with the next one (Chris 2026-11-16)
+  if (S && S.phase === "play" && S.req && S.req.done && S.reqNext && frame >= S.reqNext && !busy) { S.req = makeReq(); S.req.nights = 1; S.reqAt = frame; S.reqNext = 0; REQZ.open = false; }
   const thudCols = new Set();
   for (let i = 0; i < NN; i++) { const t = S.grid[i]; if (!t) continue; if (t.wait > 0) { t.wait--; continue; }
     if (t.yOff < 0 || t.vy !== 0) { t.vy += .72; t.yOff += t.vy;
@@ -2541,7 +2543,7 @@ const TIPS = [
   "FALL JUST SHORT OF A NIGHT? TRADE ONE COPY OF A STACKED PART TO PUSH ON",
   "SOMEONE LEFT A HAT ON YOUR DOORSTEP. FIT IT AND SEE WHO COMES CALLING",
   "WITH THE STRANGER'S HAT, A CALLER SLIPS REQUESTS UNDER THE WINDOW. FILL ONE AND ITS SIGNAL PAYS X4 TO X8 MORE, AND THE WORD KEEPS ITS LAMP",
-  "A REQUEST WAITS ON THE SILL UNTIL YOU FILL IT. TAP THE CARD TO READ IT UP CLOSE",
+  "A REQUEST WAITS ON THE SILL UNTIL YOU FILL IT, THEN THE CALLER BRINGS THE NEXT ONE. TAP THE CARD TO READ IT UP CLOSE",
   "FROM THE BOTTOM ROWS, PRESS LEFT PAST THE FIRST COLUMN TO REACH THE REQUEST CARD, THEN {A} TO READ IT",
   "EVERY EXTRA STRANGER'S HAT ADDS +2 TO EACH REQUEST",
   "AS YOU TRACE, THE REQUEST CARD LIGHTS THE LETTERS YOUR WORD MATCHES",
@@ -2568,7 +2570,7 @@ const TIPS = [
   "THE NIGHT OWL CLOCK TRIPLES YOUR LAST WORD OF THE NIGHT, AND EACH COPY ADDS TWO MORE",
   "CLEAR A NIGHT EARLY WITH THE NIGHT OWL CLOCK AND YOUR BEST WORD PAYS TRIPLE AGAIN",
   "THE PILOT LAMP TRIPLES YOUR FIRST WORD OF THE NIGHT",
-  "THE SIGNAL METER CLIMBS ALL NIGHT: EACH WORD YOU SEND MAKES THE NEXT ONES SCORE A LETTER LONGER",
+  "THE SIGNAL METER CLIMBS ALL NIGHT: EVERY 2 WORDS YOU SEND MAKE THE NEXT ONES SCORE A LETTER LONGER",
   "THE SHORTWAVE CRYSTAL DOUBLES WORDS OF 3 OR 4 LETTERS",
   "THE RED KEY DOUBLES ANY WORD THAT USES IT",
   "THE RED KEY STARTS ON THE GLASS. LEVEL IT UP: X3, THEN +5 SIGNAL, THEN A SECOND RED KEY, THEN X4",
@@ -2582,7 +2584,7 @@ const TIPS = [
   "PRESS {Y} TO RETUNE: EVERY LETTER SWAPS FOR NEW ONES",
   "FROM THE BOTTOM ROWS, PRESS RIGHT PAST THE LAST COLUMN TO REACH THE RETUNE KNOB",
   "THE VOWEL ANTENNA MAKES EVERY VOWEL WORTH ONE MORE",
-  "THE TREBLE SLIDER ADDS 3 FOR EVERY LETTER WORTH 3 OR MORE",
+  "THE TREBLE SLIDER ADDS 5 FOR EVERY LETTER WORTH 3 OR MORE",
   "THE LONG WAVE COIL DOUBLES WORDS OF 5 LETTERS OR MORE, AND EACH COPY ADDS A HALF",
 ];
 let tipI = TIPS.findIndex(t => !/\b(CLICK|TAP)\b/.test(t));

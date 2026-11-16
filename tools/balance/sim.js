@@ -93,9 +93,9 @@ function reqMet(S, p, w) { const q = S.req; if (!q || q.done) return false; cons
 function retuneKeep(S) { const keep = S.req && !S.req.done ? S.grid.map(t => S.req.word.includes(t.ch) ? t : null) : []; fillGrid(S); keep.forEach((t, i) => { if (t) { t.hot = false; S.grid[i] = t; } }); ensureHot(S); }
 function scoreOf(S, p, word) { const tiles = p.map(i => S.grid[i]), len = word.length, used = maxWords(S) - S.words, reds = tiles.filter(t => t.hot).length, h = (id) => has(S, id);
   let signal = 2 + tiles.reduce((s, t) => s + VALUES[t.ch], 0);
-  signal += +(process.env.TREB || 3) * h("treble") * tiles.filter(t => VALUES[t.ch] >= 3).length + h("vowel") * tiles.filter(t => VOWELS.has(t.ch)).length;
+  signal += +(process.env.TREB || 5) * h("treble") * tiles.filter(t => VALUES[t.ch] >= 3).length + h("vowel") * tiles.filter(t => VOWELS.has(t.ch)).length;
   if (reds) signal += redSig(S); signal += goldSig(S) * tiles.filter(t => t.wild).length;
-  const boost = Math.max(1, len - 2) + h("amp") + (h("knob") ? S.retunes : 0) + h("meter") * Math.min(+(process.env.MCAP || 99), Math.floor((S.nwc || 0) / +(process.env.MDIV || 1))); let mult = 1;
+  const boost = Math.max(1, len - 2) + h("amp") + (h("knob") ? S.retunes : 0) + h("meter") * Math.min(+(process.env.MCAP || 99), Math.floor((S.nwc || 0) / +(process.env.MDIV || 2))); let mult = 1;
   if (h("coil") && len >= 5) mult *= 1.5 + h("coil") / 2;   // x2, x2.5, x3...
   if (h("short") && len <= 4) mult *= 1 + h("short");     // x2, x3...
   if (h("echo") && used === 0) mult *= 2 + h("echo");      // first word x3, x4...
@@ -131,7 +131,7 @@ function playNight(S, bot, st) {
     if (!best) { S.words = 0; break; }
     // a finisher: if a word clears the night, send the one that clears it (the biggest; overdrive helps)
     if (has(S, "tap") && best.path.includes(12)) S.tap = (S.tap || 0) + tapAdd(S, best.word.length); S.score += best.pts; S.total += best.pts; S.nwc = (S.nwc || 0) + 1; S.nightBest = Math.max(S.nightBest, best.pts); st.words.push(best.word.length); (st.wz = st.wz || []).push(ZIPF.get(best.word) || 0); st.wpn = st.wpn || {}; st.wpn[S.night] = (st.wpn[S.night] || 0) + 1; st.pts.push(best.pts); (st.byNight[S.night] = st.byNight[S.night] || []).push(best.pts / S.target);
-    const used = best.path; if (reqMet(S, best.path, best.word)) { S.req.done = true; S.reqN = (S.reqN || 0) + 1; REQ_W = null; if (process.env.REQNOW) { S.req = makeReq(S); S.req.nights = 0; REQ_W = S.req.word; } if (process.env.REQLAMP === "0") S.words--; st.reqs = (st.reqs || 0) + 1; (st.reqWait = st.reqWait || []).push(S.req.nights); if (S.req.kind) ((st.kindWait = st.kindWait || {})[S.req.kind] = st.kindWait[S.req.kind] || []).push(S.req.nights); } else S.words--;
+    const used = best.path; if (reqMet(S, best.path, best.word)) { S.req.done = true; S.reqN = (S.reqN || 0) + 1; REQ_W = null; if (process.env.REQNOW !== "0") { S.req = makeReq(S); S.req.nights = 0; REQ_W = S.req.word; } if (process.env.REQLAMP === "0") S.words--; st.reqs = (st.reqs || 0) + 1; (st.reqWait = st.reqWait || []).push(S.req.nights); if (S.req.kind) ((st.kindWait = st.kindWait || {})[S.req.kind] = st.kindWait[S.req.kind] || []).push(S.req.nights); } else S.words--;
     if (has(S, "blue")) { const ub = used.some(i => S.grid[i].blue), ui = used.some(i => S.grid[i].ice); if (ub || ui) melt(S); if (!ub && !ui) blueSpread(S); }
     collapse(S, used);
     if (S.score >= S.target) { (st.nightRatio = st.nightRatio || []).push([S.night, S.score / S.target, S.words]); S.over = S.score >= S.target * OVERDRIVE; S.over2 = S.score >= S.target * 2; S.carry = S.score - S.target; const b = nightBonus(S); S.total += b; st.bonus += b; return true; }

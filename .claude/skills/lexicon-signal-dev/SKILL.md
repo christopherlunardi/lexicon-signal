@@ -205,6 +205,9 @@ the same batch.
   to the words after; its icon is Chris's painted needle meter (src/meter_icon.png, kdown 44x56). Sim: about as strong as the
   Long Wave Coil. Player-facing text never says "boost" (Chris: confusing): +1 boost is said as "scores as if it were 1 letter longer"
   (it is exactly that, since boost = letters - 2).
+- Balance from the human bot (2026-11-16, applied): Signal Meter +1 per 2 words sent (meterB; was every word, median 12 nights as a
+  starting part against 7 with none); Treble Slider +5 per letter worth 3+ (was 3, the weakest); a filled request brings the next one
+  right away (S.reqNext: the PLAYED card shows 2.5 s, then the caller comes back; it keeps its lamp). After: meter 10, hat 10, treble 9.
 - Human bot (2026-11-16): tools/balance/human.js runs the sim with a bot tuned on Chris's own play logs (ArtifactData plays/<his id>/runs
   on the phone link): mostly 3-4 letter words (spot S3..S7), word commonness (Z, RARE), sends a random word it saw 40% of the time
   (GREEDY .6), almost never retunes (RT 0), picks parts the way he does (HIS weights; PICK=smart/random to compare). It matches his
