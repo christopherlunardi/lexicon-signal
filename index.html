@@ -459,7 +459,7 @@ const PARTS = [
   { id:"vowel",   name:"Vowel Antenna",     desc:"Vowels +1 signal each." },
   // the Stranger's Hat (Chris 2026-11-15): a mystery part. Until you've fitted one its card shows only the blurb; fitted, a caller
   // starts bringing requests (song requests below). Each copy after the first adds +2 to every request.
-  { id:"hat",     name:"Stranger's Hat",    desc:"A caller brings requests. Fill one: its signal pays x4 to x8 again, and it keeps its lamp. More hats: +2 each.", blurb:"Left on your doorstep. Nobody knows whose it is.", mystery:true },
+  { id:"hat",     name:"Stranger's Hat",    desc:"A caller brings requests. Fill one for x4 to x8, and your lamp stays lit.", more:"Every request pays x2 more.", blurb:"Left on your doorstep. Nobody knows whose it is.", mystery:true },
   /* KEYS (Chris 2026-11-15): special keys on the glass, kept in their own three velvet slots. A key stacks like a part, but each copy
      is the next step on its ladder (KEY_LADDER). The red key is on the glass from the start (level 0, x2) and always sits in the first
      key slot, so it teaches how keys work; Red Lamp and Red Heat were folded into its ladder. Keys come up in the picker now and then
@@ -521,7 +521,7 @@ const HIT_NAME = { blue: "BLUE KEY", red: "RED KEY", hat: "REQUEST", tap: "GREEN
 let HAT_KNOWN = false; try { HAT_KNOWN = localStorage.getItem("lexsig.hatKnown") === "1"; } catch (e) {}
 const hatKnown = () => HAT_KNOWN || has("hat") > 0;
 function hatLearn() { if (HAT_KNOWN) return; HAT_KNOWN = true; try { localStorage.setItem("lexsig.hatKnown", "1"); } catch (e) {} }
-const partDesc = (p) => p.mystery && !hatKnown() ? p.blurb : p.key && (has(p.id) || p.id === "red") ? keyStep(p.id, has(p.id) + 1) + "." : p.desc;
+const partDesc = (p) => p.mystery && !hatKnown() ? p.blurb : p.more && has(p.id) ? p.more : p.key && (has(p.id) || p.id === "red") ? keyStep(p.id, has(p.id) + 1) + "." : p.desc;
 // a key's reading (the slot's inspect card): what it does at the level it's at
 const keyNow = (id) => [PART[id].desc.replace(/\.$/, ""), ...Array.from({ length: has(id) }, (_, i) => keyStep(id, i + 1))].join(". ") + ".";
 const iconOf = (id) => "iconL_" + ((PART[id] && PART[id].icon) || id);
@@ -2388,7 +2388,9 @@ function drawSlotStates() {
     // every fitted copy is a lamp along the bottom (batteries and knobs put theirs out as they're spent); the icon sits above them
     // the copy lamps sit inside the slot's dark window, clear of its brass frame (the window runs 7..56 world px down the slot)
     const pipY = FX(b.y + b.h - 13), t0 = FX(b.y) + 16, b0 = st.pips ? pipY - 10 : FX(b.y + b.h) - 16, iy = t0 + Math.round((b0 - t0 - r[3]) / 2), ix = x + Math.round((w - r[2]) / 2);
-    ctx.drawImage(atlasImg, r[0], r[1], r[2], r[3], ix, iy, r[2], r[3]);
+    if (PART[c.id] && PART[c.id].key) { ctx.save(); ctx.shadowColor = "rgba(8,0,3,1)"; ctx.shadowBlur = 16; ctx.shadowOffsetX = 3; ctx.shadowOffsetY = 6;   // a dark shadow and a dark rim lift the key off the bright velvet (Chris 2026-11-16)
+      for (let q = 0; q < 2; q++) ctx.drawImage(atlasImg, r[0], r[1], r[2], r[3], ix, iy, r[2], r[3]); ctx.shadowOffsetX = ctx.shadowOffsetY = 0; ctx.shadowBlur = 5; for (let q = 0; q < 3; q++) ctx.drawImage(atlasImg, r[0], r[1], r[2], r[3], ix, iy, r[2], r[3]); ctx.restore(); }
+    else ctx.drawImage(atlasImg, r[0], r[1], r[2], r[3], ix, iy, r[2], r[3]);
     if (st.spent && !f) { ctx.fillStyle = "rgba(10,6,4,.55)"; ctx.fillRect(x, y, w, hh); }
     const glow = Math.max(f, st.active ? .8 : 0, st.armed ? .35 + .25 * Math.sin(frame / 8) : 0);
     if (glow > .02) { ctx.save(); ctx.strokeStyle = c.id === "red" && !st.active ? `rgba(255,90,60,${glow})` : `rgba(255,214,120,${glow})`; ctx.lineWidth = 2; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 10;
