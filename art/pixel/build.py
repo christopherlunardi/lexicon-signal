@@ -384,7 +384,27 @@ def main():
                 imgs[nm_] = Image.fromarray(ca_).crop(CB)
         # his reaching frame (try C, Chris 2026-11-15) goes on the Pixel Bench for Chris to fix the cigarette; what he sends back
         # (src/bench/caller_reach.png, the same 85 x 104 cut) is used exactly as painted
-        if os.path.exists(SRC + "bench/caller_reach.png"): imgs["caller_reach"] = Image.open(SRC + "bench/caller_reach.png").convert("RGBA")
+        if os.path.exists(SRC + "bench/caller_reach.png"):
+            imgs["caller_reach"] = Image.open(SRC + "bench/caller_reach.png").convert("RGBA")
+            # the forearm comes off at the elbow (Chris 2026-11-15: it rides the top of the card down, the whole forearm and hand
+            # lowering together): the glove is the shape left of the gap to his coat in rows 62-77 (flood fill from its palm), and the
+            # sleeve is rows 74-83 between x 31 and 52 above its lower edge, a line from (32, 83) to (52, 74). Where the piece covered
+            # his coat, the coat is filled back in dark with a teal edge along a line from (48, 62) to (32, 84).
+            cr_ = np.asarray(imgs["caller_reach"]).copy(); op_ = cr_[..., 3] > 0; hm_ = np.zeros_like(op_); st_ = [(67, 20)]
+            while st_:
+                y_, x_ = st_.pop()
+                if 62 <= y_ <= 77 and 0 <= x_ < cr_.shape[1] and op_[y_, x_] and not hm_[y_, x_]:
+                    hm_[y_, x_] = True; st_ += [(y_ + 1, x_), (y_ - 1, x_), (y_, x_ + 1), (y_, x_ - 1)]
+            for y_ in range(74, 84):
+                for x_ in range(31, 53):
+                    if op_[y_, x_] and y_ <= 83 - (x_ - 32) * 9 / 20: hm_[y_, x_] = True
+            hand_ = np.zeros_like(cr_); hand_[hm_] = cr_[hm_]; body_ = cr_.copy(); body_[hm_] = 0
+            for y_ in range(62, 85):
+                ex_ = round(48 - (y_ - 62) * 16 / 22)
+                for x_ in range(ex_, cr_.shape[1]):
+                    if hm_[y_, x_] or not body_[y_, x_, 3]: body_[y_, x_] = (18, 44, 56, 255) if x_ == ex_ else (1, 1, 18, 255)
+            hb_ = Image.fromarray(hand_).getbbox(); imgs["caller_hand"] = Image.fromarray(hand_).crop(hb_); imgs["caller_reach"] = Image.fromarray(body_)
+            pts["caller"] = {"hand": [hb_[0], hb_[1]], "tipR": [34, 54], "tip": [22, 54]}
         else:
             imgs["caller_reach"].save(ROOT_ART + "bench/img/caller_reach.png")
             json.dump([{"file": "img/caller_reach.png", "group": "To do: the request caller", "label": "The caller reaching (try C): fix the cigarette in his mouth. 85 x 104, transparent around him", "w": 85, "h": 104, "key": "caller_reach"}], open(ROOT_ART + "bench/manifest.json", "w"), indent=1)
