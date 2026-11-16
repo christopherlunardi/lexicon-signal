@@ -504,9 +504,16 @@ function blueAfter(used) { if (!has("blue")) return; const ub = used.some(i => S
   if (ub) { const n = iceN(), bx = blueX(); S.blueDeep = 0; S.grid.forEach((t, i) => { if (t.ice) { t.ice = false; iceFx.push({ i, t: 0, cash: true }); } }); if (n) log(`The ice paid x${bx}.`); }
   else if (ui) { const ic = S.grid.map((t, i) => t.ice ? i : -1).filter(i => i >= 0), keep = keyLv("blue") >= 4 ? ic.filter(() => Math.random() < .5) : [];
     S.blueDeep = keep.length ? Math.floor((S.blueDeep || 0) / 2) : 0; ic.forEach(i => { if (!keep.includes(i)) { S.grid[i].ice = false; iceFx.push({ i, t: 0, cash: false }); } }); log(keep.length ? "Half the ice broke." : "The ice broke!"); Sound.fail(); shake = Math.max(shake, 3); }
-  else { const b = blueAt(); if (b >= 0) { const nb = blueNb(b).filter(j => !S.grid[j].ice && !used.includes(j)); if (nb.length) { for (let q = keyLv("blue") >= 2 ? 2 : 1; q > 0 && nb.length; q--) { const j = nb.splice((Math.random() * nb.length) | 0, 1)[0], t = S.grid[j];
-      if (t.hot || t.wild) keyHop(j, used);
-      t.ice = true; t.iceT = frame; } log(`Frost spreads: ${iceN()} frozen.`); } else if (blueNb(b).every(j => S.grid[j].ice)) { S.blueDeep = (S.blueDeep || 0) + 1; iceFx.push({ i: b, t: 0, cash: true }); log(`The frost deepens: x${blueX()}.`); } } } }
+  else S.blueSpread = true; }
+/* a miss spreads the frost after the letters have dropped (Chris 2026-11-16): the used keys around the blue key refill first, then a
+   random unfrozen key around it freezes (two from level 2), the same as any other turn; a key still falling freezes when it lands */
+function blueSpread() { if (!S.blueSpread) return; S.blueSpread = false; const b = blueAt(); if (b < 0) return;
+  const nb = blueNb(b).filter(j => !S.grid[j].ice && !S.grid[j].iceSoon);
+  if (nb.length) { for (let q = keyLv("blue") >= 2 ? 2 : 1; q > 0 && nb.length; q--) { const j = nb.splice((Math.random() * nb.length) | 0, 1)[0], t = S.grid[j];
+      if (t.hot || t.wild) keyHop(j, []);
+      if (t.yOff !== 0 || t.vy !== 0 || t.wait > 0) t.iceSoon = true; else { t.ice = true; t.iceT = frame; } }
+    log(`Frost spreads: ${iceN() + S.grid.filter(t => t.iceSoon).length} frozen.`); }
+  else { S.blueDeep = (S.blueDeep || 0) + 1; iceFx.push({ i: b, t: 0, cash: true }); log(`The frost deepens: x${blueX()}.`); } }
 // the frost reached the red or gold key: it hops away to an open key, a bright arc showing where it went (Chris 2026-11-16: the frost
 // never moves aside; the key does, so it's never locked in the ice)
 let hopFx = [];
@@ -752,7 +759,7 @@ function send() {
   const letters = used.map(i => { const t = S.grid[i], wk = !!(t.wild && gch); return { ch: wk ? gch : t.ch, wk, gold: wk || gall, red: wk && !!t.hot, ...tileC(i) }; });
   dialFlash = { text: sc.word.toUpperCase() + " +" + sc.pts, t: 100 };
   blueAfter(used);
-  S.path = []; pathSound = 0; collapse(used); Sound.send(big); sendT = 0;
+  S.path = []; pathSound = 0; collapse(used); blueSpread(); Sound.send(big); sendT = 0;
   letters.forEach((l, k) => { const t0 = PA() ? (GF.lift ? -16 - k * 4 : -10 - k * 3) : -k * 4, pv = letters[Math.max(0, k - 1)]; ghosts.push({ ch: l.ch, x: l.x, y: l.y, px: pv.x, py: pv.y, k, t: 0, gold: l.gold, wk: l.wk, red: l.red });
     flyers.push({ ch: l.ch, k, t0, ax: l.x, ay: l.y, cx: (l.x + L.beacon.x) / 2, cy: Math.min(l.y, L.beacon.y) - 90 - Math.random() * 30, t: t0, dur: 46 + k * 2, last: k === letters.length - 1, gold: l.gold });
     burst(l.x, l.y, big ? 12 : 7, C.amber); });
@@ -1091,6 +1098,7 @@ function update() {
   // a filled request: the stamped card shows for a moment, then the caller comes back with the next one (Chris 2026-11-16)
   if (S && S.phase === "play" && S.req && S.req.done && S.reqNext && frame >= S.reqNext && !busy) { S.req = makeReq(); S.req.nights = 1; S.reqAt = frame; S.reqNext = 0; REQZ.open = false; }
   const thudCols = new Set();
+  for (const t of S.grid) if (t && t.iceSoon && !t.wait && t.yOff === 0 && t.vy === 0) { t.iceSoon = false; t.ice = true; t.iceT = frame; }
   for (let i = 0; i < NN; i++) { const t = S.grid[i]; if (!t) continue; if (t.wait > 0) { t.wait--; continue; }
     if (t.yOff < 0 || t.vy !== 0) { t.vy += .72; t.yOff += t.vy;
       if (t.yOff >= 0) { if (t.vy > 2.8) { t.yOff = 0; t.vy = -t.vy * .22; thudCols.add(i % N); t.land = 1; if (KS === 8) { const c = tileC(i); burst(c.x, c.y + L.th / 2, 4, C.amber); } } else { t.yOff = 0; t.vy = 0; } } } }
