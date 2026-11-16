@@ -171,6 +171,8 @@ the same batch.
 - Red key (Workshop redkey-r1, Chris picked 1, 2026-11-15): its red glow is bigger and breathes slowly (REDPOP 1), and the red scan
   runs quicker (frame * .42). #redpop-N shows the other looks (drawn in paGlassVar, the glass the game uses, and the glow pass;
   #test-togo-3-idle-redpop-N puts the red key on the second row's G). Videos for a Workshop round: a -step hash + LEXSTEP, ffmpeg.
+- Listener requests (in progress, Workshop req-r1): a hard side goal each night (makeReq, reqMet, S.req; REQ 0 = off until decided;
+  #req-N picks where it shows; #test-togo-3-met-req-N traces LINK for A WORD WITH K). The intro plaque lists it. Payout undecided.
 - Shine (Chris 2026-11-15): prominent brass plates outside play get the title buttons' hard-striped light sweep every SHINE_PER
   frames (shinyPlateCv): the night intro plaque and every big title plate on a sheet (edgePlate with key lettering: DEAD AIR, the
   night report, PAUSED, HIGH SCORES...). Any new plate of that kind uses shinyPlateCv too.

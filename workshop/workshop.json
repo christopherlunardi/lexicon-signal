@@ -1,6 +1,116 @@
 {
  "topics": [
   {
+   "id": "req",
+   "title": "Listener requests",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "Where should the night's listener request show while you play?",
+     "found": "The request is announced on the night intro plaque in every option (last picture). This is where it stays while you play. The example: A WORD WITH K, with LINK traced. Payout is still to be decided (see chat).",
+     "options": [
+      {
+       "id": "1",
+       "title": "Lower plate",
+       "note": "The request takes the lower brass plate (in place of NIGHT 4) in red stamping, with a small request lamp. When your traced word would fill it, the lamp and letters blink red and the plate glows.",
+       "images": [
+        {
+         "src": "img/req-r1/req-1-met-desk.jpg",
+         "label": "Word fills it"
+        },
+        {
+         "src": "img/req-r1/req-1-idle-desk.jpg",
+         "label": "Nothing traced"
+        },
+        {
+         "src": "img/req-r1/req-1-met-phone.jpg",
+         "label": "Phone"
+        },
+        {
+         "src": "img/req-r1/intro-desk.jpg",
+         "label": "Night intro"
+        }
+       ],
+       "play": "play.html#test-togo-3-met-req-1"
+      },
+      {
+       "id": "2",
+       "title": "On the dial",
+       "note": "With nothing traced, the dial scrolls REQUEST: A WORD WITH K. While you trace, a red REQ blinks beside the word's value when it would fill it.",
+       "images": [
+        {
+         "src": "img/req-r1/req-2-met-desk.jpg",
+         "label": "Word fills it"
+        },
+        {
+         "src": "img/req-r1/req-2-idle-desk.jpg",
+         "label": "Nothing traced"
+        },
+        {
+         "src": "img/req-r1/req-2-met-phone.jpg",
+         "label": "Phone"
+        },
+        {
+         "src": "img/req-r1/intro-desk.jpg",
+         "label": "Night intro"
+        }
+       ],
+       "play": "play.html#test-togo-3-met-req-2"
+      },
+      {
+       "id": "3",
+       "title": "Pinned in the log",
+       "note": "The request stays pinned as the log's top line in red ink, under a red line. When your word would fill it, the line lights up red.",
+       "images": [
+        {
+         "src": "img/req-r1/req-3-met-desk.jpg",
+         "label": "Word fills it"
+        },
+        {
+         "src": "img/req-r1/req-3-idle-desk.jpg",
+         "label": "Nothing traced"
+        },
+        {
+         "src": "img/req-r1/req-3-met-phone.jpg",
+         "label": "Phone"
+        },
+        {
+         "src": "img/req-r1/intro-desk.jpg",
+         "label": "Night intro"
+        }
+       ],
+       "play": "play.html#test-togo-3-met-req-3"
+      },
+      {
+       "id": "4",
+       "title": "Slip in the window",
+       "note": "A paper slip tucked into the bottom of the window frame: REQUEST LINE, then the request in red. It glows when your word would fill it.",
+       "images": [
+        {
+         "src": "img/req-r1/req-4-met-desk.jpg",
+         "label": "Word fills it"
+        },
+        {
+         "src": "img/req-r1/req-4-idle-desk.jpg",
+         "label": "Nothing traced"
+        },
+        {
+         "src": "img/req-r1/req-4-met-phone.jpg",
+         "label": "Phone"
+        },
+        {
+         "src": "img/req-r1/intro-desk.jpg",
+         "label": "Night intro"
+        }
+       ],
+       "play": "play.html#test-togo-3-met-req-4"
+      }
+     ]
+    }
+   ]
+  },
+  {
    "id": "redkey",
    "title": "Red key",
    "rounds": [
