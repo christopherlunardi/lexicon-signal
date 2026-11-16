@@ -238,12 +238,19 @@ def main():
                     if s_ > .25: h_ = (h_ - .08) % 1.0; s_ = min(1, s_ * .95)
                     ri[y, x, :3] = np.array(colorsys.hsv_to_rgb(h_, s_, v_)) * 255
         ri = ri.astype(np.uint8)
+    # the Green Key (the old Center Tap, Chris 2026-11-15): src/greenkey_icon.png (ChatGPT, a key with a magic-eye bow) shrunk by
+    # k-centroid to 58x29 and turned upright (bow on top, a lossless quarter turn) as src/greenkey_icon_fixed.png, magenta keyed
+    gi2 = np.asarray(Image.open(SRC + "greenkey_icon_fixed.png").convert("RGBA")).copy(); mg = (gi2[..., 0] > 170) & (gi2[..., 1] < 110) & (gi2[..., 2] > 170); gi2[..., 3] = np.where(mg, 0, 255)
+    imgs["iconL_greenkey"] = Image.fromarray(gi2, "RGBA"); hw2, hh2 = max(1, gi2.shape[1] // 2), max(1, gi2.shape[0] // 2)
+    imgs["icon_greenkey"] = Image.fromarray(pix.mode_shrink(gi2[..., :3].astype(float), gi2[..., 3] > 0, hw2, hh2, np.unique(gi2[..., :3][gi2[..., 3] > 0].reshape(-1, 3), axis=0).astype(float)), "RGBA")
     imgs["iconL_redkey"] = Image.fromarray(ri, "RGBA"); fa = ri; hw, hh = max(1, fa.shape[1] // 2), max(1, fa.shape[0] // 2)
     rpal = np.unique(fa[..., :3][fa[..., 3] > 0].reshape(-1, 3), axis=0).astype(float)
     imgs["icon_redkey"] = Image.fromarray(pix.mode_shrink(fa[..., :3].astype(float), fa[..., 3] > 0, hw, hh, rpal), "RGBA")
     # the Center Tap (gold part, 2026-11-14): src/tap_icon.png (ChatGPT) shrunk by k-centroid to its native grid (152 px square),
     # cropped to the object and shrunk again to 46x60 (kdown.py) as src/tap_icon_fixed.png; magenta keyed out like the Gold Key
-    ti = np.asarray(Image.open(SRC + "tap_icon_fixed.png").convert("RGBA")).copy(); mg = (ti[..., 0] > 170) & (ti[..., 1] < 110) & (ti[..., 2] > 170); ti[..., 3] = np.where(mg, 0, 255)
+    # since 2026-11-15 it's the GREEN KEY: src/greenkey_icon.png (ChatGPT, drawn lying flat) shrunk by k-centroid to its 64x32 grid and
+    # stood upright (transposed, so the light still comes from the top left) as src/greenkey_icon_fixed.png
+    ti = np.asarray(Image.open(SRC + ("greenkey_icon_fixed.png" if os.path.exists(SRC + "greenkey_icon_fixed.png") else "tap_icon_fixed.png")).convert("RGBA")).copy(); mg = (ti[..., 0] > 170) & (ti[..., 1] < 110) & (ti[..., 2] > 170); ti[..., 3] = np.where(mg, 0, 255)
     imgs["iconL_tap"] = Image.fromarray(ti, "RGBA"); fa = ti; hw, hh = max(1, fa.shape[1] // 2), max(1, fa.shape[0] // 2)
     tpal = np.unique(fa[..., :3][fa[..., 3] > 0].reshape(-1, 3), axis=0).astype(float)
     imgs["icon_tap"] = Image.fromarray(pix.mode_shrink(fa[..., :3].astype(float), fa[..., 3] > 0, hw, hh, tpal), "RGBA")

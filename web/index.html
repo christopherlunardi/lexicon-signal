@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 144;</script><script>
+<script>window.LEX_BUILD = 148;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -463,14 +463,15 @@ const PARTS = [
   { id:"gold",    name:"Gold Key",          desc:"A gold key on the glass can be any letter.", key:true },
   // Center Tap (Chris 2026-11-14): the middle key of the glass holds a charge that lasts the whole run. A word through it scores the
   // charge as flat points, then adds its own length to the charge. Icon: its own picture (src/tap_icon.png).
-  { id:"tap",     name:"Center Tap",        desc:"Words through the middle key add their letters to its charge, then score it.", key:true },
+  // (renamed the Green Key, 2026-11-15: keys are colored keys; id stays "tap" so old play logs still read. Icon: src/greenkey_icon.png)
+  { id:"tap",     name:"Green Key",         desc:"The middle key turns green: words through it add their letters to its charge, then score it.", key:true, icon:"greenkey" },
 ];
 // each key's ladder: what level 1, 2, 3... adds (past the end, the last step's "more" line repeats)
 const KEY_LADDER = {
   red: ["Red key words x3", "Red key words +5 signal", "A second red key on the glass", "Red key words x4"],
   gold: ["A gold key on the glass: any letter", "The gold letter is worth 3 signal", "A second gold key on the glass"],
-  tap: ["The middle key charges: each word through it adds its letters, then scores the charge", "The middle key charges twice as fast", "The middle key pays its charge twice"] };
-const KEY_MORE = { red: "Red key words one more x", gold: "Gold letters +2 signal", tap: "The middle key charges faster" };
+  tap: ["The green key charges: each word through it adds its letters, then scores the charge", "The green key charges twice as fast", "The green key pays its charge twice"] };
+const KEY_MORE = { red: "Red key words one more x", gold: "Gold letters +2 signal", tap: "The green key charges faster" };
 const keyLv = (id) => has(id);
 // the level a player sees: the red key comes free on the glass, so it shows as level 1 (one lamp) before any copy (Chris 2026-11-15)
 const showLv = (id, n) => n + (id === "red" ? 1 : 0);
@@ -482,7 +483,7 @@ const tapAdd = (len) => { const v = keyLv("tap"); return len * (1 + (v >= 2) + M
 const PART = Object.fromEntries(PARTS.map(p => [p.id, p]));
 const TAP_I = 12;
 const GLASS_R = 6;   // the main glass is rounded into its brass bezel (build.py frames.bezel: ring radius 14, 8 thick)   // the middle of the 5x5 glass
-const HIT_NAME = { red: "RED KEY", hat: "REQUEST", tap: "TAP", amp: "AMP", knob: "KNOB", treble: "TREBLE", vowel: "VOWELS", short: "CRYSTAL", coil: "COIL", echo: "ECHO", owl: "OWL", gold: "GOLD" };
+const HIT_NAME = { red: "RED KEY", hat: "REQUEST", tap: "GREEN", amp: "AMP", knob: "KNOB", treble: "TREBLE", vowel: "VOWELS", short: "CRYSTAL", coil: "COIL", echo: "ECHO", owl: "OWL", gold: "GOLD" };
 // a mystery part keeps its secret until you've fitted one (remembered on this device from then on)
 let HAT_KNOWN = false; try { HAT_KNOWN = localStorage.getItem("lexsig.hatKnown") === "1"; } catch (e) {}
 const hatKnown = () => HAT_KNOWN || has("hat") > 0;
@@ -683,7 +684,7 @@ function send() {
   if (!isValid()) { const short = S.path.length < 3; dialFlash = { text: short ? "TOO SHORT" : "NO SIGNAL", bad: true, t: 70 }; if (PLAYLOG.run && !HOW.on) PLAYLOG.run.fails++; shake = 6; staticKick = .4; Sound.fail(); log(short ? "Too short." : `${pathWord()}: no signal.`); return; }
   const sc = scoreOf(S.path), used = [...S.path], hits = partHits(S.path); sc.red = used.some(i => S.grid[i].hot) ? 1 : 0; sc.gold = used.some(i => S.grid[i].wild) ? 1 : 0; plWord(sc);
   if (S.nw) S.nw.push({ w: sc.word, p: sc.pts, tags: [...(reqMet(used) ? ["REQUEST x" + reqX()] : []), ...(sc.red ? ["RED x" + redX()] : []), ...Object.entries(hits).filter(([id]) => id !== "red" && id !== "gold" && id !== "hat").map(([id, v]) => (HIT_NAME[id] || id.toUpperCase()) + " " + v.toUpperCase())] });
-  if (sc.tap) { S.tap = sc.charge; tapFlash = 40; log(`Center Tap charged to ${S.tap}.`); }
+  if (sc.tap) { S.tap = sc.charge; tapFlash = 40; log(`Green key charged to ${S.tap}.`); }
   const reqHit = reqMet(used), rx = reqX(); if (reqHit) { S.req.done = true; S.req.doneT = frame; sc.req = 1; S.reqN = (S.reqN || 0) + 1; (S.setList = S.setList || []).push(S.req.text); }
   if (reqHit) log(`Request filled! x${rx}, and the lamp stays lit.`); else { if (S.words > BASE_WORDS) log("Spare battery spent."); S.words -= 1; } S.firstWord = false; if (sc.pts > S.best.pts) S.best = { word: sc.word, pts: sc.pts };
   const big = sc.len >= 6 || sc.pts >= 60; busy++;
@@ -1905,7 +1906,7 @@ function paGlassVar({ G, tiles, ok, low }) {
     if (frame >= t.flN) { t.flE = frame + 2 + Math.random() * 10; t.flN = frame + 40 + Math.random() * (Math.random() < .3 ? 120 : 700); }
     const fl = t.flE > frame ? .68 + .27 * hsh(frame >> 1, t.seed * 7) : 1;   // the whole letter dips gently, never single dots
     if (GOLD_STYLE && (t.wild || (gkNow.gild && o.on))) { gkKey(o, P, w0, h0, ox, oy, ok, low, fl, lockT); continue; }
-    const warm = GF.warm ? gvWarm(t) : GV_REST, scr = !GF.warm && land > .4;
+    const warm = GF.warm ? gvWarm(t) : GV_REST, scr = !GF.warm && land > .4, grn = o.i === TAP_I && GREEN_STYLE >= 2 && greenOn();   // (the green key's letter glows green)
     let la = Math.min(1, (1 - low * .35 * (1 - lit)) * fl) * warm[0]; if (GF.lock && !o.on) la *= 1 - .42 * lockK;   // word lock: the rest of the glass dips while a real word is traced
     ctx.globalAlpha = 1; ctx.drawImage(gvBase(P, GS, o.dots, w0, h0), x - 4, y - 4);
     if (hot && lit <= .03) { const pr = .5 + .5 * Math.sin(frame / 14 + o.i);   // (Workshop redkey: the red key at rest)
@@ -1925,11 +1926,11 @@ function paGlassVar({ G, tiles, ok, low }) {
       const H = dotSpr(P.hot); ctx.globalAlpha = 1; for (let r = 0; r < 7; r++) for (let c = 1; c < 8; c++) if (hsh(c + r * 9 + (frame >> 1) * 3.1, t.seed * 17) < .42) ctx.drawImage(H, mx + c * 6, my + r * 6, 6, 6);
     } else if (lit > .5) { const a = wave ? fl : 1;
       if (GF.deep) { ctx.globalAlpha = a; ctx.drawImage(gvGlow(o.ch, "rgba(255,196,120,.6)"), mx - 14, my - 14); }
-      ctx.globalAlpha = a; ctx.drawImage(gvLet(o.ch, t.wild ? "#fff2a8" : hot ? "#ff9a7e" : P.hot), mx, my);
+      ctx.globalAlpha = a; ctx.drawImage(gvLet(o.ch, t.wild ? "#fff2a8" : hot ? "#ff9a7e" : grn ? "#c8ffd6" : P.hot), mx, my);
     } else { const a = Math.min(1, la + (GF.warm ? 0 : land));
       if (GF.deep) { ctx.globalAlpha = a; ctx.drawImage(gvGlow(o.ch, "rgba(255,120,24,.6)"), mx - 14, my - 14); }
-      ctx.globalAlpha = a; ctx.drawImage(gvLet(o.ch, t.wild ? "#ffcf3a" : P.on), mx, my);
-      if (warm[1] > 0) { ctx.globalAlpha = warm[1]; ctx.drawImage(gvLet(o.ch, P.hot), mx, my); } }
+      ctx.globalAlpha = a; ctx.drawImage(gvLet(o.ch, t.wild ? "#ffcf3a" : grn ? "#5cff8a" : P.on), mx, my);
+      if (warm[1] > 0 && !grn) { ctx.globalAlpha = warm[1]; ctx.drawImage(gvLet(o.ch, P.hot), mx, my); } }
     if (hot && HOT_STYLE === 5 && REDPOP === 4) { const scan = ((frame * .42 + o.i * 3) % 10) - 1.5, R = gvAll("#ff4630"), RH = gvAll("#ffb09a");   // brighter scan with a fading trail
       for (let r = 0; r < 7; r++) { const d = scan - r; if (d < -1 || d >= 3.5) continue; ctx.globalAlpha = d < 0 ? 1 + d : d < 1 ? 1 : (3.5 - d) / 2.5 * .7; ctx.drawImage(d < 1 ? RH : R, 0, r * 6, 54, 6, mx, my + r * 6, 54, 6); } }
     else if (hot && HOT_STYLE === 5) { const scan = ((frame * .42 + o.i * 3) % 10) - 1.5, R = gvAll("#ff4630");   // the Carrier key's red scan, row by row
@@ -1954,13 +1955,38 @@ const PA_CUR = [["#ffe9c4", "#ff8a20"], null, ["#ffe9c4", "#ff8a20"], ["#fff3d6"
 // the Center Tap on the glass: a gold ring round the middle key and its charge on a small dark chip at the ring's top right corner;
 // both flare when a word charges it
 let tapFlash = 0;
+/* the Green Key on the glass (Workshop topic "green", round 1, Chris 2026-11-15: the middle key should glow green, not a gold ring).
+   GREEN_STYLE: 0 the old gold ring, 1 green ring, 2 green letter + soft glow, 3 charge level (green light rises in the key as the
+   charge grows), 4 magic eye (a little tuning eye in the key's corner opens as it charges), 5 breathing (a green glow that breathes
+   faster and brighter as it charges). The charge chip shows the number in every style. */
+let GREEN_STYLE = 1; { const m = location.hash.match(/green-(\d)/); if (m) GREEN_STYLE = Math.min(5, +m[1]); }
+const greenOn = () => has("tap") && GREEN_STYLE > 0 && S.grid[TAP_I];
+const greenK = () => 1 - 1 / (1 + (S.tap || 0) / 25);   // how full the charge looks: 0 empty, about .5 at 25, toward 1
+function greenGlow() { if (!greenOn() || !["play", "report", "shop", "swap", "upgrade", "melt"].includes(S.phase)) return; const c = tileC(TAP_I), t = S.grid[TAP_I], k = greenK(), f = tapFlash / 40, cx = FX(c.x), cy = FX(c.y + (t.yOff || 0));
+  const a = GREEN_STYLE === 5 ? (.18 + .22 * k) * (.6 + .4 * Math.sin(frame / (22 - 14 * k))) : GREEN_STYLE === 1 ? .14 : GREEN_STYLE === 2 ? .26 + .12 * k : .16 + .1 * k;
+  bloom(cx, cy, 52 + (GREEN_STYLE === 5 ? 26 * k : 0), "70,255,120", a + .35 * f); }
 function drawTapRing() { if (!has("tap") || !["play", "report", "shop", "swap", "upgrade", "melt"].includes(S.phase)) return; if (tapFlash > 0) tapFlash--;
   const p = tileXY(TAP_I), x = FX(p.x) - 4, y = FX(p.y) - 4, w = FX(L.tw) + 8, h = FX(L.th) + 8, on = S.path.includes(TAP_I), f = tapFlash / 40;
+  if (GREEN_STYLE > 0) return drawGreenKey(p, x, y, w, h, on, f);
   ctx.save(); ctx.strokeStyle = on || f > 0 ? "#fff0a0" : "#e8b030"; ctx.lineWidth = 3; ctx.shadowColor = "#ffc030"; ctx.shadowBlur = 8 + 10 * f + (on ? 6 : 0) + 3 * Math.sin(frame / 14);
   ctx.beginPath(); ctx.roundRect(x, y, w, h, 8); ctx.stroke(); ctx.shadowBlur = 0;
   const txt = String(S.tap || 0), cw = Math.max(26, textW(txt, "ink") + 14), ch = Math.round(22 * TK), cx = x + w - cw + 10, cy = y - ch + 8;
   ctx.fillStyle = "#1a0e04"; ctx.beginPath(); ctx.roundRect(cx, cy, cw, ch, 6); ctx.fill(); ctx.strokeStyle = "#e8b030"; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
   ftext(txt, cx + cw / 2, cy + Math.round((ch - 14 * TK) / 2), "ink", f > 0 ? "#fff6c8" : "#ffd24a", "c"); }
+function drawGreenKey(p, x, y, w, h, on, f) { const k = greenK(), GS = GREEN_STYLE, GR = "#5cff8a", GD = "#1f9a48";
+  ctx.save();
+  if (GS === 1) { ctx.strokeStyle = on || f > 0 ? "#d8ffe2" : GR; ctx.lineWidth = 3; ctx.shadowColor = "#30ff70"; ctx.shadowBlur = 8 + 10 * f + (on ? 6 : 0) + 3 * Math.sin(frame / 14); ctx.beginPath(); ctx.roundRect(x, y, w, h, 8); ctx.stroke(); ctx.shadowBlur = 0; }
+  if (GS === 3) { const ih = Math.round((h - 10) * k), iy = y + h - 5 - ih; ctx.globalCompositeOperation = "lighter"; const g = ctx.createLinearGradient(0, iy, 0, y + h - 5); g.addColorStop(0, `rgba(120,255,160,${.38 + .3 * f})`); g.addColorStop(1, "rgba(30,160,70,.18)");
+    ctx.fillStyle = g; ctx.beginPath(); ctx.roundRect(x + 5, iy, w - 10, ih, 5); ctx.fill(); ctx.fillStyle = `rgba(200,255,215,${.55 + .3 * Math.sin(frame / 9)})`; ctx.fillRect(x + 7, iy, w - 14, 2); ctx.globalCompositeOperation = "source-over";
+    ctx.strokeStyle = "rgba(92,255,138,.55)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(x + 2, y + 2, w - 4, h - 4, 7); ctx.stroke(); }
+  if (GS === 4) { const r = 11, ex = x + 17, ey = y + 17, span = Math.PI * (.15 + .85 * k) + .2 * f;
+    ctx.fillStyle = "#06140a"; ctx.beginPath(); ctx.arc(ex, ey, r + 2, 0, 6.283); ctx.fill(); ctx.strokeStyle = "#8a6a2a"; ctx.lineWidth = 2; ctx.stroke();
+    ctx.shadowColor = "#30ff70"; ctx.shadowBlur = 8; ctx.fillStyle = GR; ctx.beginPath(); ctx.moveTo(ex, ey); ctx.arc(ex, ey, r, -Math.PI / 2 - span, -Math.PI / 2 + span); ctx.closePath(); ctx.fill(); ctx.shadowBlur = 0;
+    ctx.fillStyle = "#06140a"; ctx.beginPath(); ctx.arc(ex, ey, 3, 0, 6.283); ctx.fill(); }
+  if (on && GS !== 1) { ctx.strokeStyle = "rgba(216,255,226,.9)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(x + 1, y + 1, w - 2, h - 2, 8); ctx.stroke(); }
+  const txt = String(S.tap || 0), cw = Math.max(26, textW(txt, "ink") + 14), ch = Math.round(22 * TK), cx = x + w - cw + 10, cy = y - ch + 8;
+  ctx.fillStyle = "#06140a"; ctx.beginPath(); ctx.roundRect(cx, cy, cw, ch, 6); ctx.fill(); ctx.strokeStyle = GD; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+  ftext(txt, cx + cw / 2, cy + Math.round((ch - 14 * TK) / 2), "ink", f > 0 ? "#eaffef" : GR, "c"); }
 function drawPlayArea() {
   const g = L.glass, G = { x: FX(g.x), y: FX(g.y), w: FX(g.w), h: FX(g.h) }, play = S.phase === "play", ok = play && isValid(), cand = candidate(), low = play ? clamp01(1 - S.words / maxWords()) : 0, last = play && S.words === 1;
   ctx.save(); ctx.beginPath(); ctx.roundRect(G.x, G.y, G.w, G.h, FX(GLASS_R)); ctx.clip(); ctx.imageSmoothingEnabled = true; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineCap = ctx.lineJoin = "round";
@@ -2043,6 +2069,7 @@ function drawGlows() {
   const prog = S.phase === "play" ? Math.min(1, S.shown / S.target) : .5;   // the tower burns brighter as the night's signal fills
   bloom(FX(b.x), FX(b.y), 46 + prog * 60 + beaconFlash * 2, "255,60,40", (.25 + .55 * prog) * pulse + beaconFlash / 50);
   bloom(FX(b.x), FX(b.y), 20, "255,200,170", .5 + beaconFlash / 40);
+  if (S.phase !== "title") greenGlow();   // the green key's glow
   if (goldFlash > 0) { bloom(FX(b.x), FX(b.y), 70 + goldFlash * 3, GK.rgb, goldFlash / 44); bloom(FX(b.x), FX(b.y), 30, "255,244,190", goldFlash / 44); }   // a word that used the gold key lands gold
   for (const [x, y, n, kind] of P("window_lights") || []) { if (kind !== "warm") continue; const big = n > 40, cb = CALLER.box; if (cb && !big && x >= cb[0] && x <= cb[2] && y >= cb[1] && y <= cb[3]) continue;
     bloom(FX(L.winX + x), FX(L.winY + y), big ? FX(22) : 10 + Math.sqrt(n) * 3, "255,190,90", big ? .18 : Math.min(.35, .08 + n * .02)); }
@@ -2431,9 +2458,9 @@ const TIPS = [
   "THE RED KEY DOUBLES ANY WORD THAT USES IT",
   "THE RED KEY STARTS ON THE GLASS. LEVEL IT UP: X3, THEN +5 SIGNAL, THEN A SECOND RED KEY, THEN X4",
   "LEVEL UP THE GOLD KEY AND ITS LETTER IS WORTH 3, THEN A SECOND GOLD KEY APPEARS",
-  "LEVEL UP THE CENTER TAP AND IT CHARGES TWICE AS FAST, THEN PAYS ITS CHARGE TWICE",
+  "LEVEL UP THE GREEN KEY AND IT CHARGES TWICE AS FAST, THEN PAYS ITS CHARGE TWICE",
   "THE GOLD KEY CAN BE ANY LETTER YOU NEED",
-  "THE CENTER TAP KEEPS ITS CHARGE ALL RUN: FEED THE MIDDLE KEY LONG WORDS",
+  "THE GREEN KEY IN THE MIDDLE KEEPS ITS CHARGE ALL RUN: FEED IT LONG WORDS",
   "EVERY RADIO PART STACKS: EACH COPY ADDS THE SAME AGAIN",
   "PRESS DOWN PAST THE BOTTOM ROW TO READ YOUR PARTS",
   "TAP A PART'S SLOT TO READ IT",
@@ -3628,6 +3655,8 @@ async function boot() {
   // test hook: #test-shop opens the part picker after night 1 (for screenshots)
   if (location.hash === "#test-shop") { newRun(); S.parts.push("amp", "coil"); nightClear(); S.phase = "shop"; }
   // keys (2026-11-15): #test-keys = red key level 2, a gold key, three parts; #test-over2 = a double overdrive's picker; #test-carry = the night after an overdrive
+  if (/^#test-green/.test(location.hash)) { newRun(); setTimeout(() => { S.parts.push("tap"); S.tap = /full/.test(location.hash) ? 60 : 14; S.cursor = 0;
+    if (/-red/.test(location.hash)) { S.grid.forEach(t => t.hot = false); S.grid[TAP_I].hot = true; } }, 300); }   // -red: the red key is the green key too   // the green key's looks: #test-green-N (-full: a big charge)
   if (/^#test-keys/.test(location.hash)) { newRun(); setTimeout(() => { S.parts.push("red", "red", "gold", "amp", "coil", "hat"); ensureHot(); }, 300); }
   if (/^#test-over2/.test(location.hash)) { newRun(); S.parts.push("amp", "coil", "battery"); S.score = S.target * 2; S.over = true; nightClear(); S.phase = "shop"; }
   if (/^#test-carry/.test(location.hash)) { newRun(); S.score = Math.round(S.target * 1.9); S.over = true; nightClear(); S.phase = "shop"; setTimeout(() => choosePart(0), 400); }

@@ -1,6 +1,140 @@
 {
  "topics": [
   {
+   "id": "green",
+   "title": "Green key",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "How should the Green Key look on the glass?",
+     "found": "The Green Key is the middle key: words through it add to its charge (the small green number), then score it. Each video: the key sits, gets charged (a word lands at about 1.5 s), then a word is traced through it. The second video of each shows it when the red key lands on the middle key too: both looks have to show and not get in each other's way.",
+     "options": [
+      {
+       "id": "1",
+       "title": "Green ring",
+       "note": "A glowing green frame around the middle key, like the red key's scan but as a ring outside the key. When the middle key is also the red key, both show.",
+       "images": [
+        {
+         "src": "img/green-r1/green-1.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/green-r1/green-1-red.mp4",
+         "label": "Video: also the red key"
+        },
+        {
+         "src": "img/green-r1/green-1-close.jpg",
+         "label": "Still"
+        },
+        {
+         "src": "img/green-r1/green-1-red-close.jpg",
+         "label": "Still: also the red key"
+        }
+       ],
+       "play": "play.html#test-green-green-1"
+      },
+      {
+       "id": "2",
+       "title": "Green letter",
+       "note": "The middle key's letter itself glows green, with a soft green light behind it. When the middle key is also the red key, both show.",
+       "images": [
+        {
+         "src": "img/green-r1/green-2.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/green-r1/green-2-red.mp4",
+         "label": "Video: also the red key"
+        },
+        {
+         "src": "img/green-r1/green-2-close.jpg",
+         "label": "Still"
+        },
+        {
+         "src": "img/green-r1/green-2-red-close.jpg",
+         "label": "Still: also the red key"
+        }
+       ],
+       "play": "play.html#test-green-green-2"
+      },
+      {
+       "id": "3",
+       "title": "Charge level",
+       "note": "Green light fills the key from the bottom up as its charge grows, like a level meter. When the middle key is also the red key, both show.",
+       "images": [
+        {
+         "src": "img/green-r1/green-3.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/green-r1/green-3-red.mp4",
+         "label": "Video: also the red key"
+        },
+        {
+         "src": "img/green-r1/green-3-close.jpg",
+         "label": "Still"
+        },
+        {
+         "src": "img/green-r1/green-3-red-close.jpg",
+         "label": "Still: also the red key"
+        }
+       ],
+       "play": "play.html#test-green-green-3"
+      },
+      {
+       "id": "4",
+       "title": "Magic eye",
+       "note": "A little green tuning eye sits on the key's corner and opens wider as the charge grows. When the middle key is also the red key, both show.",
+       "images": [
+        {
+         "src": "img/green-r1/green-4.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/green-r1/green-4-red.mp4",
+         "label": "Video: also the red key"
+        },
+        {
+         "src": "img/green-r1/green-4-close.jpg",
+         "label": "Still"
+        },
+        {
+         "src": "img/green-r1/green-4-red-close.jpg",
+         "label": "Still: also the red key"
+        }
+       ],
+       "play": "play.html#test-green-green-4"
+      },
+      {
+       "id": "5",
+       "title": "Breathing",
+       "note": "A soft green glow that breathes, faster and brighter the more charge it holds. When the middle key is also the red key, both show.",
+       "images": [
+        {
+         "src": "img/green-r1/green-5.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/green-r1/green-5-red.mp4",
+         "label": "Video: also the red key"
+        },
+        {
+         "src": "img/green-r1/green-5-close.jpg",
+         "label": "Still"
+        },
+        {
+         "src": "img/green-r1/green-5-red-close.jpg",
+         "label": "Still: also the red key"
+        }
+       ],
+       "play": "play.html#test-green-green-5"
+      }
+     ]
+    }
+   ]
+  },
+  {
    "id": "req",
    "title": "Listener requests",
    "rounds": [
