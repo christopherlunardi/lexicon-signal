@@ -1,6 +1,92 @@
 {
  "topics": [
   {
+   "id": "reroll",
+   "title": "Reroll and banish",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "How should rerolls and banishes look and work in the part picker?",
+     "found": "Rerolls and banishes share one stock: 3 at the start of a run, +1 for every overdrive. A reroll deals a new set of cards; a banish takes the chosen card out of the run for good and deals one in its place. Buttons: Y rerolls (like the retune knob), X banishes the card you're on. Also new: a key card is now a coin flip between a new key and a level-up, an overdrive brings one of each, and a new key shows up even when your key slots are full (you take one out, never the red key). Tell me in the notes if you'd rather call the stock something else.",
+     "options": [
+      {
+       "id": "1",
+       "title": "Brass plates",
+       "note": "Two brass plates under the cards, REROLL (Y) and BANISH (X), each showing your stock as lamps, beside the MELT THEM plate when it's open. Tap a plate on a phone. In each video: a reroll at 1 second (the cards wash with static light and new ones come up), then the second card is banished (BANISHED stamped across it as it drops away and a new card takes its place).",
+       "images": [
+        {
+         "src": "img/reroll-r1/reroll-1.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/reroll-r1/reroll-1.jpg",
+         "label": "Still"
+        },
+        {
+         "src": "img/reroll-r1/reroll-1-banish.jpg",
+         "label": "Banishing"
+        },
+        {
+         "src": "img/reroll-r1/reroll-1-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-reroll-melt-reroll-1"
+      },
+      {
+       "id": "2",
+       "title": "Tuning dial",
+       "note": "A brass tuning dial at the lower right with your stock as lamps round its rim; Y (or a tap) spins it to reroll. A red BANISH tab hangs on the chosen card; X (or a tap on the tab) banishes it. In each video: a reroll at 1 second (the cards wash with static light and new ones come up), then the second card is banished (BANISHED stamped across it as it drops away and a new card takes its place).",
+       "images": [
+        {
+         "src": "img/reroll-r1/reroll-2.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/reroll-r1/reroll-2.jpg",
+         "label": "Still"
+        },
+        {
+         "src": "img/reroll-r1/reroll-2-banish.jpg",
+         "label": "Banishing"
+        },
+        {
+         "src": "img/reroll-r1/reroll-2-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-reroll-melt-reroll-2"
+      },
+      {
+       "id": "3",
+       "title": "Brass tokens",
+       "note": "Your stock as brass tokens in the top right corner, one REROLL plate under the cards, and the red BANISH tab on the chosen card. In each video: a reroll at 1 second (the cards wash with static light and new ones come up), then the second card is banished (BANISHED stamped across it as it drops away and a new card takes its place).",
+       "images": [
+        {
+         "src": "img/reroll-r1/reroll-3.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/reroll-r1/reroll-3.jpg",
+         "label": "Still"
+        },
+        {
+         "src": "img/reroll-r1/reroll-3-banish.jpg",
+         "label": "Banishing"
+        },
+        {
+         "src": "img/reroll-r1/reroll-3-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-reroll-melt-reroll-3"
+      }
+     ]
+    }
+   ]
+  },
+  {
    "id": "blue",
    "title": "Blue key",
    "rounds": [

@@ -211,6 +211,13 @@ the same batch.
   only the box drawn into on the world-size overlay. The report's dot screen is a cached picture. Profile with Playwright + the CDP
   Profiler on a #test-...-step page (window.__lex, LEXSTEP).
 - Gold key + request (2026-11-16): resolveWord(w, p) picks a letter that also fills the open request first (MO? with OW wanted = MOW).
+- Key cards (Chris 2026-11-16, makeOffers/keyGroups): a key card is a coin flip between a NEW key and a LEVEL-UP (red counts as
+  owned); an overdrive brings one of each. A new key is offered even with the key slots full: choosing it opens the swap screen on the
+  keys (never the red key); the key taken out leaves the glass (swapConfirm clears wild / blue / ice / tap charge).
+- Reroll / banish (Chris 2026-11-16): one stock S.tokens, 3 at the start of a run, +1 per overdrive. shopReroll() deals new cards
+  (Y in the picker), shopBanish(k) takes the card out of the run (S.banned, never offered again) and deals one in its place (X).
+  Look: Workshop topic "reroll" (REROLL_STYLE 1 plates, 2 dial, 3 tokens; tokenRow, drawShopTokens, SHOPUI hit boxes).
+  #test-reroll[-melt]-reroll-N.
 - Fonts are EMBEDDED (Chris 2026-11-16: ready for packaging, nothing from the internet): tools/fonts/*.woff2 (Alfa Slab One, Bungee
   cut to Latin, Silkscreen, Special Elite) with their licenses beside them; `python3 -I tools/fonts.py` writes them as data URIs into
   the <style id="fonts"> block at the top of index.html. Run it after adding or changing a font. No Google Fonts links anywhere.
