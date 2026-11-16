@@ -205,6 +205,8 @@ the same batch.
   to the words after; its icon is Chris's painted needle meter (src/meter_icon.png, kdown 44x56). Sim: about as strong as the
   Long Wave Coil. Player-facing text never says "boost" (Chris: confusing): +1 boost is said as "scores as if it were 1 letter longer"
   (it is exactly that, since boost = letters - 2).
+- Trades are OFF (TRADE_ON false, Chris 2026-11-16: a lost night ends the run). The trade code stays for a later rework where you'd
+  have to give up a key. Tips about trading were removed. human.js runs without trades unless TRADE=1.
 - Balance from the human bot (2026-11-16, applied): Signal Meter +1 per 2 words sent (meterB; was every word, median 12 nights as a
   starting part against 7 with none); Treble Slider +5 per letter worth 3+ (was 3, the weakest); a filled request brings the next one
   right away (S.reqNext: the PLAYED card shows 2.5 s, then the caller comes back; it keeps its lamp). After: meter 10, hat 10, treble 9.

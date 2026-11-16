@@ -10,7 +10,7 @@ const pick = process.env.PICK === "smart" ? (ch) => ch.slice().sort((a, b) => RA
   : process.env.PICK === "random" ? (ch) => ch[(Math.random() * ch.length) | 0]
   : (ch) => { const w = ch.map(p => HIS[p] || 1), t = w.reduce((a, b) => a + b); let r = Math.random() * t; for (let i = 0; i < ch.length; i++) if ((r -= w[i]) <= 0) return ch[i]; return ch[0]; };
 const N = +(process.env.N || 200), R = [];
-for (let i = 0; i < N; i++) R.push(run(bot, { pick, parts: process.env.START ? process.env.START.split(",") : [], maxNight: 25, trade: process.env.NOTRADE ? false : true }));
+for (let i = 0; i < N; i++) R.push(run(bot, { pick, parts: process.env.START ? process.env.START.split(",") : [], maxNight: 25, trade: !!process.env.TRADE }));   // (no trades in the game since 2026-11-16)
 const W = R.flatMap(r => r.words), Z = R.flatMap(r => r.wz || []);
 const ld = {}; W.forEach(l => ld[Math.min(l, 7)] = (ld[Math.min(l, 7)] || 0) + 1);
 const out = { nights: +avg(R.map(r => r.nights)).toFixed(2), median: R.map(r => r.nights).sort((a, b) => a - b)[N >> 1],

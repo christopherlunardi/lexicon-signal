@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 175;</script><script>
+<script>window.LEX_BUILD = 176;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -1025,7 +1025,8 @@ function saveRun() { const a = loadScores(), run = { s: S.total, n: S.night - 1,
    gives up. Slots with a single part or a rare part can't be traded. ---- */
 const tradeSlots = () => partSlots().map((s, k) => ({ ...s, k })).filter(s => s.n >= 2 && !PART[s.id].key);
 const TRADE_REACH = .75;   // a trade is only offered when the night got at least three-quarters of its target (the sim: unlimited trades doubled runs)
-function nightLost() { if (HOW.on) return; const t = tradeSlots(); if (!t.length || S.score < S.target * TRADE_REACH) return gameOver();
+const TRADE_ON = false;   // (Chris 2026-11-16: no trades for now, a lost night ends the run; the code stays for a later rework where you give up a key)
+function nightLost() { if (HOW.on) return; const t = tradeSlots(); if (!TRADE_ON || !t.length || S.score < S.target * TRADE_REACH) return gameOver();
   S.phase = "trade"; swapFocus = t[0].k; TRADE.t = 0; Sound.over(); staticKick = .6; log(`Short by ${S.target - S.score}. Trade a part?`); }
 const TRADE = { t: 0 };
 function tradeConfirm(k) { const sl = partSlots()[k]; if (S.phase !== "trade" || !sl || sl.n < 2 || PART[sl.id].key) return;
@@ -2538,7 +2539,6 @@ const TIPS = [
   "YOUR RUN SCORE SITS IN THE BOTTOM LEFT CORNER",
   "EVERY LAMP STILL LIT WHEN A NIGHT CLEARS PAYS YOUR BEST WORD AGAIN",
   "AN UNUSED RETUNE PAYS A BONUS AT THE END OF THE NIGHT, AND MORE IN LATER NIGHTS",
-  "FALL JUST SHORT OF A NIGHT? TRADE ONE COPY OF A STACKED PART TO PUSH ON",
   "SOMEONE LEFT A HAT ON YOUR DOORSTEP. FIT IT AND SEE WHO COMES CALLING",
   "WITH THE STRANGER'S HAT, A CALLER SLIPS REQUESTS UNDER THE WINDOW. FILL ONE AND ITS SIGNAL PAYS X4 TO X8 MORE, AND THE WORD KEEPS ITS LAMP",
   "A REQUEST WAITS ON THE SILL UNTIL YOU FILL IT, THEN THE CALLER BRINGS THE NEXT ONE. TAP THE CARD TO READ IT UP CLOSE",
@@ -2547,7 +2547,6 @@ const TIPS = [
   "AS YOU TRACE, THE REQUEST CARD LIGHTS THE LETTERS YOUR WORD MATCHES",
   "THE BRASS MARK ON THE TUBE SHOWS WHERE YOUR NEXT WORD SHOULD REACH TO KEEP PACE",
   "THE TOP PLATE SHOWS YOUR SIGNAL AGAINST THE NIGHT'S TARGET",
-  "A TRADE NEEDS THREE-QUARTERS OF THE NIGHT'S TARGET AND A PART WITH TWO OR MORE COPIES",
   "AFTER EACH NIGHT A REPORT SHOWS EVERY WORD AND WHAT HELPED IT",
   "TAP THE LEFT KNOB TO PAUSE",
   "THE LAMP AT THE END OF THE TUBE LIGHTS WHEN YOUR WORD WILL FILL IT",
