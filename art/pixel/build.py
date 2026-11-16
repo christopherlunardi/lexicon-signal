@@ -246,7 +246,8 @@ def main():
     imgs["iconL_redkey"] = Image.fromarray(ri, "RGBA"); fa = ri; hw, hh = max(1, fa.shape[1] // 2), max(1, fa.shape[0] // 2)
     rpal = np.unique(fa[..., :3][fa[..., 3] > 0].reshape(-1, 3), axis=0).astype(float)
     imgs["icon_redkey"] = Image.fromarray(pix.mode_shrink(fa[..., :3].astype(float), fa[..., 3] > 0, hw, hh, rpal), "RGBA")
-    # the Blue Key (on trial, 2026-11-15): src/bluekey_icon_fixed.png once painted; until then the Gold Key turned icy blue
+    # the Blue Key (on trial, 2026-11-15): src/bluekey_icon.png (ChatGPT: a snowflake bow, leaning the other way from the red key),
+    # k-centroid to its 55 px grid, magenta fringe cleaned, as src/bluekey_icon_fixed.png; without it the Gold Key turned icy blue
     if os.path.exists(SRC + "bluekey_icon_fixed.png"):
         bi = np.asarray(Image.open(SRC + "bluekey_icon_fixed.png").convert("RGBA")).copy(); mg = (bi[..., 0] > 170) & (bi[..., 1] < 110) & (bi[..., 2] > 170); bi[..., 3] = np.where(mg, 0, 255)
     else:
