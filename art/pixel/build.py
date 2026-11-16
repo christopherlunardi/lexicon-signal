@@ -224,6 +224,17 @@ def main():
     imgs["iconL_tap"] = Image.fromarray(ti, "RGBA"); fa = ti; hw, hh = max(1, fa.shape[1] // 2), max(1, fa.shape[0] // 2)
     tpal = np.unique(fa[..., :3][fa[..., 3] > 0].reshape(-1, 3), axis=0).astype(float)
     imgs["icon_tap"] = Image.fromarray(pix.mode_shrink(fa[..., :3].astype(float), fa[..., 3] > 0, hw, hh, tpal), "RGBA")
+    # the Stranger's Hat (2026-11-15, the mystery part that brings the caller): Chris's ChatGPT painting, k-centroid shrunk to
+    # src/hat_icon_fixed.png (magenta keyed out) when it comes; until then a stand-in cut from the caller's own fedora
+    if os.path.exists(SRC + "hat_icon_fixed.png"):
+        hi_ = np.asarray(Image.open(SRC + "hat_icon_fixed.png").convert("RGBA")).copy(); r_, g_, b_ = hi_[..., 0].astype(int), hi_[..., 1].astype(int), hi_[..., 2].astype(int)
+        hi_[..., 3] = np.where((b_ > 120) & (r_ > 120) & (g_ < r_ - 60) & (g_ < b_ - 60), 0, 255)
+    else:
+        hi_ = np.asarray(Image.open(SRC + "caller_pixellab.png").convert("RGBA").crop((30, 16, 80, 52))).copy(); hi_[(hi_[..., 0] > 200) & (hi_[..., 1] > 200)] = 0
+    hb2_ = Image.fromarray(hi_).getbbox(); hi_ = np.asarray(Image.fromarray(hi_).crop(hb2_)).copy()
+    imgs["iconL_hat"] = Image.fromarray(hi_, "RGBA"); hw, hh = max(1, hi_.shape[1] // 2), max(1, hi_.shape[0] // 2)
+    hpal = np.unique(hi_[..., :3][hi_[..., 3] > 0].reshape(-1, 3), axis=0).astype(float)
+    imgs["icon_hat"] = Image.fromarray(pix.mode_shrink(hi_[..., :3].astype(float), hi_[..., 3] > 0, hw, hh, hpal), "RGBA")
     # the title screen's console (2026-11-13, Chris's art src/title_console.png): a wooden console panel and two brass button plates
     # (unlit, lit), k-centroid shrunk to *_fixed.png; magenta keyed out. Taken after the palette so the interface colours don't move.
     for nm, fn in (("tpanel", "title_panel_fixed.png"), ("tplate", "title_plate_fixed.png"), ("tplate_lit", "title_plate_lit_fixed.png")):
@@ -372,7 +383,11 @@ def main():
                 if q[3] and int(q[0]) - int(q[1]) > 14 and abs(rc[y_, 30].astype(int) - q.astype(int)).sum() > 24: rc[y_, x_] = rc[y_, 30]
         m_ = rc[..., 3] > 0; ring = np.zeros_like(m_)
         for dy_, dx_ in ((-1, 0), (1, 0), (0, -1), (0, 1)): ring |= np.roll(np.roll(m_, dy_, 0), dx_, 1)
-        rc[ring & ~m_] = (73, 50, 28, 255); imgs["reqcard"] = Image.fromarray(rc)
+        rc[ring & ~m_] = (73, 50, 28, 255)
+        # made bigger (Chris 2026-11-15: hard to read on a phone) without resizing a pixel: five more bands of ruled paper (rows
+        # 19-22, one ruling) after row 22, and four more plain bands of columns 24-31, for 96 x 64
+        rc = np.concatenate([rc[:23]] + [rc[19:23]] * 5 + [rc[23:]], axis=0); rc = np.concatenate([rc[:, :32]] + [rc[:, 24:32]] * 4 + [rc[:, 32:]], axis=1)
+        imgs["reqcard"] = Image.fromarray(rc)
     # the caller (Chris 2026-11-15, close-up 3 of PixelLab's second batch): src/caller_pixellab.png smoking, facing left, and
     # src/caller_reach_pixellab.png (PixelLab's edit of the same picture: cigarette in his mouth, his hand reaching down), so the
     # two line up. Both are cut to the same box; the thin white line PixelLab left along the edges is dropped.
