@@ -47,6 +47,15 @@ function findAll(S) { const out = new Map(), path = [], seen = new Uint8Array(NN
   for (let i = 0; i < NN; i++) go(i, ROOT);
   return [...out].map(([word, p]) => ({ word, path: p })); }
 // one word's points, exactly as scoreOf in the game
+// listener requests (Chris 2026-11-15): one a night; the word that fills it scores x3 and keeps its lamp. Off with REQ=0.
+const REQ_LETTERS = "jxzkvwybfh";
+function makeReq(n) { const r = rnd(), k = Math.min(3, Math.floor(n / 4));
+  if (r < .3) return { kind: "letter", ch: REQ_LETTERS[Math.floor(rnd() * (4 + 2 * k))] }; if (r < .5) return { kind: "len", len: 6 + Math.min(2, Math.floor(n / 5)) };
+  if (r < .65) return { kind: "double" }; if (r < .8) return { kind: "red", len: 5 }; if (r < .9) return { kind: "vowels", n: 4 }; return { kind: "ends" }; }
+function reqMet(S, p, w) { const q = S.req; if (!q || q.done) return false;
+  if (q.kind === "letter") return w.includes(q.ch); if (q.kind === "len") return w.length >= q.len; if (q.kind === "double") return /(.)\1/.test(w);
+  if (q.kind === "red") return w.length >= q.len && p.some(i => S.grid[i].hot); if (q.kind === "vowels") return [...w].filter(c => "aeiou".includes(c)).length >= q.n;
+  return w[0] === w[w.length - 1]; }
 function scoreOf(S, p, word) { const tiles = p.map(i => S.grid[i]), len = word.length, used = maxWords(S) - S.words, reds = tiles.filter(t => t.hot).length, h = (id) => has(S, id);
   let signal = 2 + tiles.reduce((s, t) => s + VALUES[t.ch], 0);
   signal += 3 * h("treble") * tiles.filter(t => VALUES[t.ch] >= 3).length + h("vowel") * tiles.filter(t => VOWELS.has(t.ch)).length;
@@ -57,6 +66,7 @@ function scoreOf(S, p, word) { const tiles = p.map(i => S.grid[i]), len = word.l
   if (h("echo") && used === 0) mult *= 2 + h("echo");      // first word x3, x4...
   if (h("owl") && S.words === 1) mult *= 1 + 2 * h("owl"); // last word x3, x5, x7...
   if (reds) mult *= 2 + h("heat");
+  if (reqMet(S, p, word)) mult *= 3;
   const tap = has(S, "tap") && p.includes(12) ? (S.tap || 0) + len : 0;
   return Math.round(signal * boost * mult) + tap; }
 function nightBonus(S) { const wl = Math.max(0, S.words), rl = Math.max(0, S.retunes), wv = process.env.OLDLAMP ? round5(S.target / 4) : S.nightBest, rv = round5(S.target * retuneShare(S.night));
@@ -70,6 +80,7 @@ function candidates(S, bot) { let c = findAll(S);
   return c.map(w => ({ ...w, pts: scoreOf(S, w.path, w.word) })); }
 function playNight(S, bot, st) {
   S.target = targetFor(S.night); S.score = 0; S.nightBest = 0; S.words = maxWords(S); S.retunes = maxRetunes(S); if (S.night === 1) fillGrid(S); else ensureHot(S);
+  S.req = process.env.REQ === "0" ? null : makeReq(S.night);
   while (S.words > 0) {
     let c = candidates(S, bot); c.sort((a, b) => b.pts - a.pts); let best = c[0];
     const need = S.target - S.score, per = need / S.words;
@@ -78,7 +89,7 @@ function playNight(S, bot, st) {
     if (!best) { S.words = 0; break; }
     // a finisher: if a word clears the night, send the one that clears it (the biggest; overdrive helps)
     if (has(S, "tap") && best.path.includes(12)) S.tap = (S.tap || 0) + best.word.length; S.score += best.pts; S.total += best.pts; S.nightBest = Math.max(S.nightBest, best.pts); st.words.push(best.word.length); st.pts.push(best.pts); (st.byNight[S.night] = st.byNight[S.night] || []).push(best.pts / S.target);
-    const used = best.path; S.words--; collapse(S, used);
+    const used = best.path; if (reqMet(S, best.path, best.word)) { S.req.done = true; st.reqs = (st.reqs || 0) + 1; } else S.words--; collapse(S, used);
     if (S.score >= S.target) { S.over = S.score >= S.target * OVERDRIVE; const b = nightBonus(S); S.total += b; st.bonus += b; return true; }
   }
   return false; }

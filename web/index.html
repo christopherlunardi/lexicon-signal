@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 130;</script><script>
+<script>window.LEX_BUILD = 131;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -525,6 +525,7 @@ function scoreOf(p) {
   // (Chris 2026-11-13, from the balance sim) coil x2, x2.5, x3...; crystal x2, x3...; echo first word x3, x4...; owl last word x3, x5, x7...
   if (has("coil") && len >= 5) mult *= coilX(); if (has("short") && len <= 4) mult *= 1 + has("short"); if (has("echo") && used === 0) mult *= 2 + has("echo"); if (has("owl") && S.words === 1) mult *= owlX();
   if (reds) mult *= 2 + has("heat");
+  if (reqMet(p)) mult *= 3;   // the listener request: the word that fills it scores x3 (and keeps its lamp)
   const tap = has("tap") && p.includes(TAP_I) ? (S.tap || 0) + len : 0;   // the Center Tap: charge up first, then score the charge, flat
   return { word, len, signal, boost, mult, tap, pts: Math.round(signal * boost * mult) + tap };
 }
@@ -558,7 +559,7 @@ const playWhere = () => document.body.classList.contains("pwa") ? "webapp" : doc
 function plStart() { if (HOW.on) return; PLAYLOG.run = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), at: Date.now(), build: window.LEX_BUILD || 0, where: playWhere(),
     screen: innerWidth + "x" + innerHeight, input: usingTouch ? "touch" : usingButtons ? "buttons" : "mouse", words: [], nights: [], fails: 0, retunes: 0, end: "" }; PLAYLOG.last = Date.now(); }
 function plWord(sc) { const r = PLAYLOG.run; if (!r || HOW.on) return; const now = Date.now();
-  r.words.push({ n: S.night, w: sc.word, p: sc.pts, len: sc.len, m: sc.mult, red: sc.red, gold: sc.gold, left: S.words, rt: S.retunes, s: Math.round((now - PLAYLOG.last) / 100) / 10 }); PLAYLOG.last = now; plSave(); }   // (saved after every word, so a run left mid-night still counts: 2026-11-15)
+  r.words.push({ n: S.night, w: sc.word, p: sc.pts, len: sc.len, m: sc.mult, red: sc.red, gold: sc.gold, req: sc.req ? 1 : 0, left: S.words, rt: S.retunes, s: Math.round((now - PLAYLOG.last) / 100) / 10 }); PLAYLOG.last = now; plSave(); }   // (saved after every word, so a run left mid-night still counts: 2026-11-15)
 function plNight(offered) { const r = PLAYLOG.run; if (!r || HOW.on) return; r.nights.push({ n: S.night, target: S.target, score: S.score, over: !!S.over, wordsLeft: S.words, offered: offered.map(p => p.id), picked: null, parts: S.parts.slice() }); plSave(); }
 function plPick(id) { const r = PLAYLOG.run; if (!r) return; const nn = r.nights[r.nights.length - 1]; if (nn) nn.picked = id; }
 function plEnd(how) { const r = PLAYLOG.run; if (!r || r.end) return; r.end = how; r.total = S.total; r.reached = S.night; r.parts = S.parts.slice(); plSave(); PLAYLOG.run = null; }
@@ -568,9 +569,26 @@ function plSave() { const r = PLAYLOG.run; if (!r) return; r.total = S.total; r.
 addEventListener("pagehide", () => { if (PLAYLOG.run && !PLAYLOG.run.end && S && S.phase !== "title") plSave(); });
 function plShare() { let txt = "[]"; try { txt = localStorage.getItem("lexsig.runs") || "[]"; } catch (e) {}
   if (navigator.share) navigator.share({ title: "Lexicon Signal play log", text: txt }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(() => log("Play log copied.")).catch(() => {}); }
+/* ---- Listener requests (Chris 2026-11-15: a hard side goal each night that pays big). A caller asks for a kind of word; a word that
+   fills it is shown as it's traced. Workshop req-r1: where the request shows. #req-N: 1 the lower plate, 2 the dial, 3 pinned at the
+   top of the log, 4 a paper slip tucked in the window frame. Off (0) in the game until it's decided. ---- */
+let REQ = 4; {   // (Chris 2026-11-15: the caller at the window; a filled request scores x3 and keeps its lamp)
+ const m = location.hash.match(/req-(\d)/); if (m) REQ = Math.min(4, +m[1]); }
+const REQ_LETTERS = "JXZKVWYBFH";
+function makeReq(n) { const r = Math.random(), k = Math.min(3, Math.floor(n / 4));
+  if (r < .3) { const ch = REQ_LETTERS[Math.floor(Math.random() * (4 + 2 * k))]; return { kind: "letter", ch, text: `A WORD WITH ${ch}`, short: `${ch} WORD`, card: ["A WORD", "WITH " + ch] }; }
+  if (r < .5) { const len = 6 + Math.min(2, Math.floor(n / 5)); return { kind: "len", len, text: `A WORD OF ${len}+ LETTERS`, short: `${len}+ LETTERS`, card: [`${len} LETTERS`, "OR MORE"] }; }
+  if (r < .65) return { kind: "double", text: "A WORD WITH A DOUBLE LETTER", short: "DOUBLE", card: ["A DOUBLE", "LETTER"] };
+  if (r < .8) return { kind: "red", len: 5, text: "5+ LETTERS THROUGH THE RED KEY", short: "RED 5+", card: ["RED KEY", "5+ LONG"] };
+  if (r < .9) return { kind: "vowels", n: 4, text: "A WORD WITH 4 VOWELS", short: "4 VOWELS", card: ["4 VOWELS"] };
+  return { kind: "ends", text: "STARTS AND ENDS WITH ONE LETTER", short: "SAME ENDS", card: ["STARTS &", "ENDS ALIKE"] }; }
+function reqMet(p) { const q = S.req; if (!q || q.done || HOW.on || (REQ === 4 && (S.reqAt == null || frame - S.reqAt < CALLER.card1)) || !p || p.length < 3 || !isValid(p)) return false; const W2 = pathWord(p).toUpperCase();
+  if (q.kind === "letter") return W2.includes(q.ch); if (q.kind === "len") return W2.length >= q.len; if (q.kind === "double") return /(.)\1/.test(W2);
+  if (q.kind === "red") return W2.length >= q.len && p.some(i => S.grid[i].hot); if (q.kind === "vowels") return [...W2].filter(c => "AEIOU".includes(c)).length >= q.n;
+  if (q.kind === "ends") return W2[0] === W2[W2.length - 1]; return false; }
 function newRun() { S = fresh("play"); log("On the air."); plStart(); startNight(); }
 function startNight() {
-  S.score = 0; S.shown = 0; S.over = false; S.nw = []; S.startTotal = S.total; S.firstWord = true; S.target = targetFor(S.night); S.words = maxWords(); S.retunes = maxRetunes(); S.path = [];
+  S.score = 0; S.shown = 0; S.over = false; S.nw = []; S.req = REQ ? makeReq(S.night) : null; S.reqAt = null; S.startTotal = S.total; S.firstWord = true; S.target = targetFor(S.night); S.words = maxWords(); S.retunes = maxRetunes(); S.path = [];
   if (S.grid.length === NN && S.night > 1) ensureHot(); else fillGrid(true);   // the glass keeps its letters from night to night; a new run starts fresh
   S.phase = "play"; INSPECT.on = false; KNOB.on = false; dialFlash = null; nightCard = 170; if (INTRO && !HOW.on && (!location.hash.startsWith("#test-") || location.hash.includes("intro-"))) { nightHold = true; introT = 0; nightCard = 16; } log(`Night ${S.night}: beam ${S.target} signal to the tower in ${S.words} words.`); if (S.night === 1 && !HOW.on) log(TAPW() ? "Stuck? Tap the right knob to retune: all new letters." : btn("Stuck? Press {Y} to retune: all new letters."));
 }
@@ -596,9 +614,10 @@ function send() {
   if (!canAct() || !S.path.length) return;
   if (!isValid()) { const short = S.path.length < 3; dialFlash = { text: short ? "TOO SHORT" : "NO SIGNAL", bad: true, t: 70 }; if (PLAYLOG.run && !HOW.on) PLAYLOG.run.fails++; shake = 6; staticKick = .4; Sound.fail(); log(short ? "Too short." : `${pathWord()}: no signal.`); return; }
   const sc = scoreOf(S.path), used = [...S.path], hits = partHits(S.path); sc.red = used.some(i => S.grid[i].hot) ? 1 : 0; sc.gold = used.some(i => S.grid[i].wild) ? 1 : 0; plWord(sc);
-  if (S.nw) S.nw.push({ w: sc.word, p: sc.pts, tags: [...(sc.red ? ["RED x" + (2 + has("heat"))] : []), ...Object.entries(hits).filter(([id]) => id !== "heat" && id !== "gold").map(([id, v]) => (HIT_NAME[id] || id.toUpperCase()) + " " + v.toUpperCase())] });
+  if (S.nw) S.nw.push({ w: sc.word, p: sc.pts, tags: [...(reqMet(used) ? ["REQUEST x3"] : []), ...(sc.red ? ["RED x" + (2 + has("heat"))] : []), ...Object.entries(hits).filter(([id]) => id !== "heat" && id !== "gold").map(([id, v]) => (HIT_NAME[id] || id.toUpperCase()) + " " + v.toUpperCase())] });
   if (sc.tap) { S.tap = sc.tap; tapFlash = 40; log(`Center Tap charged to ${S.tap}.`); }
-  if (S.words > BASE_WORDS) log("Spare battery spent."); S.words -= 1; S.firstWord = false; if (sc.pts > S.best.pts) S.best = { word: sc.word, pts: sc.pts };
+  const reqHit = reqMet(used); if (reqHit) { S.req.done = true; S.req.doneT = frame; sc.req = 1; }
+  if (reqHit) log("Request played! x3, and the lamp stays lit."); else { if (S.words > BASE_WORDS) log("Spare battery spent."); S.words -= 1; } S.firstWord = false; if (sc.pts > S.best.pts) S.best = { word: sc.word, pts: sc.pts };
   const big = sc.len >= 6 || sc.pts >= 60; busy++;
   const gch = GOLD_STYLE ? gkLetterOf(used) : null, gall = GOLD_STYLE === 5 && gch != null;   // (Workshop gold looks: the gold key leaves as the letter it stood for, in gold)
   const letters = used.map(i => { const t = S.grid[i], wk = !!(t.wild && gch); return { ch: wk ? gch : t.ch, wk, gold: wk || gall, red: wk && !!t.hot, ...tileC(i) }; });
@@ -930,7 +949,7 @@ function draw() {
   if (POP === 1 || POP === 5) popScoreShadow();   // (under every light: lamps, glows and letters all draw after it)
   ctx.save(); ctx.translate(sx * FINE, 0); drawRain(); drawDial(); drawLamps(); drawKeyLetters(); drawGlows(); drawFlyers(); ctx.restore();
   if (overT > 0) { ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(255,40,24,${.42 * overT * (.6 + .4 * Math.sin(frame / 2))})`; ctx.fillRect(0, 0, CVW, CVH); ctx.restore(); overT = Math.max(0, overT - .012); }
-  drawScoreDrums(); if (POP === 2 || POP === 5) popRims(); if (POP === 3) popKeylines();
+  drawScoreDrums(); drawReqSlip(); if (POP === 2 || POP === 5) popRims(); if (POP === 3) popKeylines();
   drawBarText(); if (nightCard > 0 && S.phase === "play" && !HOW.on) { if (INTRO) { drawIntro(); introT++; if (!nightHold) nightCard--; } else { drawNightCard(); nightCard--; } }
   if (S.phase === "title" || S.phase === "shop" || S.phase === "swap" || S.phase === "trade" || S.phase === "over" || S.phase === "melt" || S.phase === "upgrade" || S.phase === "report") {
     octx.clearRect(0, 0, W, H); octx.imageSmoothingEnabled = false;
@@ -1045,6 +1064,54 @@ function drawScoreDrums(top) {
     const sh = ctx.createLinearGradient(0, wy, 0, wy + dh); sh.addColorStop(0, "rgba(0,0,0,.55)"); sh.addColorStop(.3, "rgba(0,0,0,0)"); sh.addColorStop(.7, "rgba(0,0,0,0)"); sh.addColorStop(1, "rgba(0,0,0,.6)"); ctx.fillStyle = sh; ctx.fillRect(dx, wy, 24, dh); ctx.restore(); }
   if (k > 0) { ctx.globalCompositeOperation = "lighter"; bloom(x + w / 2, y + h / 2, w * .7, "255,190,90", .35 * k); }
   ctx.restore(); }
+/* Workshop req 4 (Chris 2026-11-15): a shadowy caller in a fedora and trench coat slips in from the right side of the window,
+   outside on the fire escape, slides an index card under the sash and slips away. The card stays on the sill: REQUEST stamped in
+   red, the request pencilled on its lines. The caller is drawn behind the rain (drawCaller, from drawRain); the card in the room.
+   CALLER times in frames from when the night's goal plaque goes. */
+const CALLER = { inEnd: 80, reach0: 118, card0: 128, card1: 160, let0: 172, let1: 186, out0: 200, out1: 260, x0: 116, x1: 50, y: 112, push: 22,
+  smoke: [], box: null };   // push: how far his hand slides the card down (world px); his cigarette tips come from the atlas (points.caller: tip in his hand, tipR in his mouth)
+const reqT = () => { if (REQ !== 4 || !S.req || S.phase !== "play" || HOW.on) return -1; if (S.reqAt == null) { if (nightHold || nightCard > 16) return -1; S.reqAt = frame; } return frame - S.reqAt; };
+// close to the glass, he leans in from the side: smoking, then he reaches down to slide the card under the sash with the cigarette
+// in his mouth (it burns bright while he holds it there), then he leans back out of sight
+function drawCaller(panes) { const t = reqT(), C2 = CALLER; C2.box = null; if (t < 0) return; const e = (u) => u < .5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2;
+  ctx.save(); ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over"; if (RS >= 1) ctx.imageSmoothingEnabled = false;
+  ctx.beginPath(); panes.forEach(([px, py, pw, ph]) => ctx.rect(px, py, pw, ph)); ctx.clip();
+  if (t <= C2.out1) {
+    const x = Math.round(t < C2.inEnd ? C2.x0 + (C2.x1 - C2.x0) * e(t / C2.inEnd) : t < C2.out0 ? C2.x1 : C2.x1 + (C2.x0 - C2.x1) * e((t - C2.out0) / (C2.out1 - C2.out0)));
+    const reach = t >= C2.reach0 && t < C2.let1, y = C2.y + (t > C2.inEnd && t < C2.out0 ? Math.round(Math.sin((t - C2.inEnd) / 30)) : 0), r = R(reach ? "caller_reach" : "caller");
+    C2.box = [x - 2, y - 2, x + r[2] + 2, y + r[3]];   // (the city lights behind him don't glow through)
+    ctx.drawImage(atlasImg, r[0], r[1], r[2], r[3], FX(L.winX + x), FX(L.winY + y), FX(r[2]), FX(r[3]));
+    if (reach) {   // his forearm (cut at the elbow) on the top of the card, lowering with it as he slides it down under the sash
+      const dy = Math.round(C2.push * (t < C2.card0 ? 0 : t < C2.card1 ? e((t - C2.card0) / (C2.card1 - C2.card0)) : t < C2.let0 ? 1 : t < C2.let1 ? 1 - e((t - C2.let0) / (C2.let1 - C2.let0)) : 0));
+      const [hx, hy] = (P("caller") || {}).hand || [17, 63], h = R("caller_hand");
+      ctx.drawImage(atlasImg, h[0], h[1], h[2], h[3], FX(L.winX + x + hx), FX(L.winY + y + hy + dy), FX(h[2]), FX(h[3])); }
+    // the cigarette's tip glows: a slow pulse, a hard draw now and then, and burning bright the whole time it's in his mouth
+    const cp = P("caller") || {}, [tx, ty] = (reach ? cp.tipR : cp.tip) || [22, 54], X = FX(L.winX + x + tx), Y = FX(L.winY + y + ty);
+    const drag = reach ? .75 + .25 * Math.sin((t - C2.reach0) / 5) : Math.max(0, Math.sin((t - 40) / 22)) ** 8, glow = .55 + .45 * drag + .08 * Math.sin(frame / 3);
+    ctx.fillStyle = `rgba(255,${Math.round(110 + 110 * drag)},${Math.round(40 + 60 * drag)},${Math.min(1, glow)})`; ctx.fillRect(X, Y, FINE, FINE);
+    ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(X + FINE / 2, Y + FINE / 2, 7 + 10 * drag, "255,120,40", .35 + .45 * drag); ctx.restore();
+    if (frame % 6 === 0) C2.smoke.push({ x: L.winX + x + tx + .5, y: L.winY + y + ty, t: 0, s: Math.random() * 6 }); }
+  // smoke: soft gray wisps drifting up, swaying, fading (they outlive him a little)
+  for (const p of C2.smoke) { p.t++; const u = p.t / 120; if (u >= 1) continue; const sx = p.x - u * 6 + Math.sin(p.t / 14 + p.s) * 2.5, sy = p.y - u * 34;
+    ctx.fillStyle = `rgba(200,212,214,${.2 * (1 - u) * Math.min(1, p.t / 8)})`; const rr2 = FINE * (.6 + u * 1.8); ctx.beginPath(); ctx.arc(FX(sx), FX(sy), rr2, 0, 6.283); ctx.fill(); }
+  C2.smoke = C2.smoke.filter(p => p.t < 120); ctx.restore(); }
+function drawReqSlip() { const t = reqT(); if (t < CALLER.card0) return; const C2 = CALLER, [, , cw, ch] = R("reqcard"), met = reqMet(S.path), wx = L.winX + 34, rest = Math.min(L.winY + 206, Math.floor(scoreDrumBox().y / FINE) - ch - 3);   // (above the RUN counter on small screens)
+  if (t === C2.card0) Sound.paper();
+  const u0 = Math.min(1, (t - C2.card0) / (C2.card1 - C2.card0)), u = u0 < .5 ? 2 * u0 * u0 : 1 - (-2 * u0 + 2) ** 2 / 2, y = Math.round(rest - ch + ch * u), clipY = FX(rest);   // (in step with his hand)
+  ctx.save(); ctx.beginPath(); ctx.rect(0, clipY, CVW, CVH); ctx.clip();
+  ctx.fillStyle = "rgba(6,3,2,.45)"; ctx.fillRect(FX(wx + 2), FX(y + 3), FX(cw), FX(ch)); { const r = R("reqcard"); ctx.drawImage(atlasImg, r[0], r[1], cw, ch, FX(wx), FX(y), FX(cw), FX(ch)); }
+  if (met) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(FX(wx + cw / 2), FX(y + ch / 2), FX(cw) * .75, "255,80,50", .26 + .16 * Math.sin(frame / 4)); ctx.restore(); }
+  if (S.req.done) { const a = Math.min(1, (frame - (S.req.doneT || 0)) / 12), z = 1 + 1.5 * (1 - a), cx = FX(wx + cw / 2), cy = FX(y + ch / 2) + 10, pw = textW("PLAYED", "key") + 24, phh = glyphCv("key", "P", C.ink).height + 14;
+    ctx.save(); ctx.globalAlpha = a * .9; ctx.translate(cx, cy); ctx.scale(Math.min(1, (FX(cw) - 10) / pw) * z, Math.min(1, (FX(cw) - 10) / pw) * z);
+    ctx.strokeStyle = "#c0281a"; ctx.lineWidth = 4; ctx.strokeRect(-pw / 2, -phh / 2, pw, phh); ftext("PLAYED", 0, -phh / 2 + 7, "key", "#c0281a", "c"); ctx.restore(); }
+  // the stamp: REQUEST in red, in a red box, over the header line on the right
+  const k = TK > 1 ? 1 / TK : 1, sw = textW("REQUEST", "ink") * k + 12, sx = FX(wx + cw) - 8 - sw, sy = FX(y) + 6, sh2 = 14 * TK * k + 8, red = met && (frame >> 3) & 1 ? "#e8301a" : "rgba(176,38,24,.88)";
+  ctx.strokeStyle = red; ctx.lineWidth = 2; ctx.strokeRect(sx, sy, sw, sh2);
+  ctx.save(); ctx.translate(sx + 6, sy + 4); ctx.scale(k, k); ftext("REQUEST", 0, 0, "ink", red, "l"); ctx.restore();
+  // the request, pencilled on the lines
+  const lines = S.req.card || [S.req.short], kw = Math.min(k, (FX(cw) - 20) / Math.max(...lines.map(l => textW(l, "ink"))));
+  if (!S.req.done) lines.forEach((l, i) => { ctx.save(); ctx.translate(FX(wx + cw / 2), FX(y) + 38 + i * 26 * kw); ctx.scale(kw, kw); ftext(l, 0, 0, "ink", "#2a2c48", "c"); ctx.restore(); });
+  ctx.restore(); }
 function drawBeacon() {
   const b = L.beacon, pulse = [0, 1, 2, 3, 3, 2, 1, 0][(frame >> 3) & 7];
   disc(wctx, b.x, b.y, 1 + (pulse >> 1), C.redHot);
@@ -1119,8 +1186,9 @@ function drawDial() {
     if (gain) ftextDot(gain, x0 + (cols - num.length - 1 - gain.length) * 18, y0, pv);
     const keeps = PACE !== 3 || !paceNeed() || target >= paceNeed();   // (pace look 3: a sendable word below pace stays amber)
     ftextDot(num, x0 + (cols - num.length) * 18, y0, ok && keeps ? C.hot : S.path.length ? C.amber : C.dotDim);
+    if (REQ === 2 && reqMet(S.path) && (frame >> 3) & 1) ftextDot("REQ", x0 + (cols - num.length - 4) * 18, y0, "#ff4630");
   }
-  else if (!dialFlash) { const msg = S.phase === "title" ? `  ${tipNow()} *` : S.phase === "play" ? (PACE === 3 && paceNeed() ? `  NEED ${paceNeed()} A WORD * ${S.target - S.shown} TO GO * ${S.words} WORD${S.words === 1 ? "" : "S"} LEFT *` : `  ${freqFor(S.night).toFixed(1)} FM * NIGHT ${S.night} * REACH ${S.target} * SCORE ${S.total} *`) : `  ${freqFor(S.night).toFixed(1)} FM *`;
+  else if (!dialFlash) { const msg = S.phase === "title" ? `  ${tipNow()} *` : S.phase === "play" ? (REQ === 2 && S.req ? `  REQUEST: ${S.req.text} *  ${S.target - S.shown} TO GO *` : PACE === 3 && paceNeed() ? `  NEED ${paceNeed()} A WORD * ${S.target - S.shown} TO GO * ${S.words} WORD${S.words === 1 ? "" : "S"} LEFT *` : `  ${freqFor(S.night).toFixed(1)} FM * NIGHT ${S.night} * REACH ${S.target} * SCORE ${S.total} *`) : `  ${freqFor(S.night).toFixed(1)} FM *`;
     const full = msg.repeat(3), off = (marquee >> 3) % msg.length, sub = (marquee & 7) * 18 / 8; s = full.substr(off, cols + 1); ftextDot(s, x0 - sub, y0, C.amber); s = ""; dialVal = 0; }
   if (s && !(blink && dialFlash && dialFlash.t < 40 && (dialFlash.t >> 3) & 1)) ftextDot(s.slice(0, cols), x0, y0, col);
   ctx.restore();
@@ -1145,6 +1213,7 @@ function drawRain() {
   for (const s of rainS) { s.y += s.v; s.x += s.v * .22; if (s.y > 1.05) { s.y = -.05; s.x = Math.random() * 1.1 - .1; } if (s.x > 1.05) s.x -= 1.1; }
   for (const d of rainD) { if (d.hold > 0) d.hold--; else { d.v = Math.min(.012, d.v + .0006); d.y += d.v; if (Math.random() < .02) { d.hold = 20 + Math.random() * 120; d.v = 0; } }
     if (d.y > 1.02) { d.y = -.02; d.x = Math.random(); d.r = 1.5 + Math.random() * 2.2; d.hold = Math.random() * 120; } }
+  drawCaller(panes);
   const rx = FX(L.radioX + 8);   // on narrow screens the radio covers part of the window: no rain on the radio
   // the rain shows full on clear glass (the tall panes and the plain glass at each end of the stained strip, Chris 2026-11-14) and
   // only faintly over the stained glass itself
@@ -1875,7 +1944,7 @@ function drawGlows() {
   bloom(FX(b.x), FX(b.y), 46 + prog * 60 + beaconFlash * 2, "255,60,40", (.25 + .55 * prog) * pulse + beaconFlash / 50);
   bloom(FX(b.x), FX(b.y), 20, "255,200,170", .5 + beaconFlash / 40);
   if (goldFlash > 0) { bloom(FX(b.x), FX(b.y), 70 + goldFlash * 3, GK.rgb, goldFlash / 44); bloom(FX(b.x), FX(b.y), 30, "255,244,190", goldFlash / 44); }   // a word that used the gold key lands gold
-  for (const [x, y, n, kind] of P("window_lights") || []) { if (kind !== "warm") continue; const big = n > 40;
+  for (const [x, y, n, kind] of P("window_lights") || []) { if (kind !== "warm") continue; const big = n > 40, cb = CALLER.box; if (cb && !big && x >= cb[0] && x <= cb[2] && y >= cb[1] && y <= cb[3]) continue;
     bloom(FX(L.winX + x), FX(L.winY + y), big ? FX(22) : 10 + Math.sqrt(n) * 3, "255,190,90", big ? .18 : Math.min(.35, .08 + n * .02)); }
   bloom(FX(W - 20), FX(SCENE_H - 30), FX(220), "255,150,60", .16 + .03 * Math.sin(frame / 50));     // the unseen lamp, breathing
   const lit = S.phase === "title" ? titleFX.lamps : Math.min(6, S.words);
@@ -1933,7 +2002,7 @@ function drawIntro() {
   if (INTRO !== 3) { ctx.fillStyle = `rgba(6,3,2,${(INTRO === 4 ? .94 : .6) * e})`; ctx.fillRect(0, 0, CVW, CVH); }
   ctx.globalAlpha = e;
   if (INTRO === 1) {   // a big brass plaque, the goal stamped large
-    const w = Math.min(W - 24, 250), hh = Math.ceil((30 + kh + 10 + ih + 8 + (kh + 8) * 2 + 2 + lh * 2 + 4 + ih + 26) / FINE), x = Math.round(W / 2 - w / 2), y = Math.round((L.barY - hh) / 2 - (1 - e) * 30);
+    const rq = S.req ? wrap(S.req.text, "ink", FX(Math.min(W - 24, 250)) - 60) : [], w = Math.min(W - 24, 250), hh = Math.ceil((30 + kh + 10 + ih + 8 + (kh + 8) * 2 + 2 + lh * 2 + 4 + ih + 26 + (rq.length ? 14 + lh * (rq.length + 1) : 0)) / FINE), x = Math.round(W / 2 - w / 2), y = Math.round((L.barY - hh) / 2 - (1 - e) * 30);
     ctx.fillStyle = "rgba(8,4,2,.45)"; ctx.fillRect(FX(x + 4), FX(y + 5), FX(w), FX(hh)); ctx.drawImage(shinyPlateCv(w, hh, introT - 30), FX(x), FX(y), FX(w), FX(hh));
     let yy = FX(y) + 30; ftext(`NIGHT ${S.night}`, CX, yy, "key", C.ink, "c", { under: C.brassHi, uy: 3 }); yy += kh + 10;
     ftext("BEAM", CX, yy, "ink", C.ink, "c", { under: C.brassHi, uy: 2 }); yy += ih + 8;
@@ -1941,6 +2010,8 @@ function drawIntro() {
     ftext("SIGNAL TO THE TOWER", CX, yy, "ink", C.ink, "c", { under: C.brassHi, uy: 2 }); yy += lh + 4;
     ftext(`IN ${F.words}  ·  ${F.ret}`, CX, yy, "ink", C.ink, "c", { under: C.brassHi, uy: 2 }); yy += lh;
     ftext(`ABOUT ${F.per} A WORD`, CX, yy, "ink", C.inkSoft, "c", { under: C.brassHi, uy: 2 });
+    if (rq.length) { yy += lh + 14; ctx.fillStyle = "rgba(90,40,16,.45)"; ctx.fillRect(CX - FX(w) / 2 + 40, yy - 8, FX(w) - 80, 2); ftext("LISTENER REQUEST", CX, yy, "ink", C.ink, "c", { under: C.brassHi, uy: 2 }); yy += lh;
+      rq.forEach(l => { ftext(l, CX, yy, "ink", C.inkRed, "c", { under: C.brassHi, uy: 2 }); yy += lh; }); }
     if (blink) ftext(F.prompt, CX, FX(y + hh) + 22, "key", C.gold, "c", { outline: C.dark });
   } else if (INTRO === 2) {   // a parchment ledger: the night's terms, one per ruled line
     const w = Math.min(W - 24, 230), hh = Math.ceil((36 + kh + 18 + (kh + 14) + 3 * (glyphCv("ink3", "N", C.ink).height + 14) + 30) / FINE), x = Math.round(W / 2 - w / 2), y = Math.round((L.barY - hh) / 2 - (1 - e) * 24);
@@ -1982,13 +2053,19 @@ function drawBarText() {
   // the log: typed ink, newest at the bottom, older lines fade, a cursor blinks after the last letter
   const lw = FX(L.log.w) - 52 - ADV.ink, lines = [];
   S.log.forEach((e, k) => { if (e.n === 0) return; wrap("> " + e.s.slice(0, e.n), "ink", lw).forEach(s => lines.push({ s, age: S.log.length - 1 - k })); });
-  const lh = Math.round(22 * TK), rows = TK > 1 ? 2 : 3, show = lines.slice(-rows), top = FX(by + L.log.y) + Math.round((FX(L.log.h) - rows * lh) / 2) + 4;
-  show.forEach((ln, k) => ftext(ln.s, FX(L.log.x) + 26, top + k * lh, "ink", ln.age >= 2 ? C.inkSoft : C.ink));
+  const pin = REQ === 3 && S.req && S.phase === "play" ? 1 : 0;
+  const lh = Math.round(22 * TK), rows = TK > 1 ? 2 : 3, show = lines.slice(-(rows - pin)), top = FX(by + L.log.y) + Math.round((FX(L.log.h) - rows * lh) / 2) + 4;
+  if (pin) { const met = reqMet(S.path), t = "REQUEST: " + S.req.text, px = FX(L.log.x) + 26;
+    if (met) { ctx.fillStyle = `rgba(220,50,20,${.18 + .12 * Math.sin(frame / 4)})`; ctx.fillRect(px - 8, top - 4, lw + 16, lh); }
+    ctx.fillStyle = C.inkRed; ctx.beginPath(); ctx.arc(px + 6, top + 8 * TK, 5 * TK, 0, 6.283); ctx.fill();
+    ftext(wrap(t, "ink", lw - 24)[0], px + 18 * TK, top, "ink", met && (frame >> 3) & 1 ? "#e02a10" : C.inkRed);
+    ctx.fillStyle = "rgba(150,40,26,.35)"; ctx.fillRect(px, top + lh - 3, lw, 2); }
+  show.forEach((ln, k) => ftext(ln.s, FX(L.log.x) + 26, top + (k + pin) * lh, "ink", ln.age >= 2 ? C.inkSoft : C.ink));
   if (show.length && (frame >> 4) & 1) { const last = show[show.length - 1]; ctx.fillStyle = C.ink; ctx.fillRect(Math.min(FX(L.log.x + L.log.w) - 26 - 10 * TK, FX(L.log.x) + 26 + last.s.length * ADV.ink), top + (show.length - 1) * lh + 12 * TK, 10 * TK, 2 * TK); }
   // stamped plates: dark letters with a light edge under them
   const [, , pw, ph] = R("plate"), pc = FX(L.plateX + pw / 2), opt = { under: C.brassHi, ux: 0, uy: 2 };
   const left = S.target - S.shown, pn = paceNeed(), alt = (PACE === 1 || PACE === 5) && pn && (frame % 300) >= 160;
-  const t1 = S.phase === "title" ? "SIGNAL" : alt ? `${pn} A WORD` : left > 0 ? `${left} TO GO` : "LOCKED", t2 = S.phase === "title" ? "LEXICON" : PACE === 4 && pn ? `${pn} A WORD` : `NIGHT ${S.night}`;
+  const t1 = S.phase === "title" ? "SIGNAL" : alt ? `${pn} A WORD` : left > 0 ? `${left} TO GO` : "LOCKED", t2 = S.phase === "title" ? "LEXICON" : PACE === 4 && pn ? `${pn} A WORD` : REQ === 1 && S.req ? S.req.short : `NIGHT ${S.night}`;
   const tg = S.phase !== "title" && TOGO, sc0 = String(Math.min(S.shown, S.target)), tt = String(S.target), py0 = FX(by + L.plateY0), mid = Math.round((FX(ph) - 14 * TK) / 2) - 1;
   if (tg === 1 || tg === 5) ftext(`${sc0} / ${tt}`, pc, py0 + mid, "ink", C.ink, "c", opt);
   else if (tg === 2) { const a1 = sc0, a2 = " / " + tt, w1 = textW(a1, "key"), w2 = textW(a2, "ink"), x1 = pc - (w1 + w2) / 2, kh = glyphCv("key", "0", C.ink).height;
@@ -2001,6 +2078,9 @@ function drawBarText() {
     ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(pc, py + ph2 / 2, pw2 * .5, "255,170,80", .18); ctx.restore(); }
   else ftext(t1, pc, py0 + mid, "ink", C.ink, "c", opt);
   if (tg === 5) { ftext(left > 0 ? `${left} TO GO` : "LOCKED", pc, FX(by + L.plateY1) + mid, "ink", C.ink, "c", opt); } else
+  if (REQ === 1 && S.req && S.phase !== "title") { const met = reqMet(S.path); if (met) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(pc, FX(by + L.plateY1 + ph / 2), FX(pw) * .6, "255,70,40", .35 + .2 * Math.sin(frame / 4)); ctx.restore(); }
+    const tw2 = textW(t2, "ink"), dx = pc - tw2 / 2 - 14 * TK; ctx.fillStyle = met && (frame >> 3) & 1 ? "#ff4630" : "#8a1a10"; ctx.beginPath(); ctx.arc(dx, FX(by + L.plateY1) + mid + 7 * TK, 5 * TK, 0, 6.283); ctx.fill();   // the request lamp
+    ftext(t2, pc + 8 * TK, FX(by + L.plateY1) + mid, "ink", met && (frame >> 3) & 1 ? "#e02a10" : C.inkRed, "c", opt); } else
   ftext(t2, pc, FX(by + L.plateY1) + Math.round((FX(ph) - 14 * TK) / 2) - 1, "ink", C.ink, "c", opt);
   // counters on the part slots
   const [, , sw, sh] = R("slot");
@@ -2211,6 +2291,8 @@ const TIPS = [
   "EVERY LAMP STILL LIT WHEN A NIGHT CLEARS PAYS YOUR BEST WORD AGAIN",
   "AN UNUSED RETUNE PAYS A BONUS AT THE END OF THE NIGHT, AND MORE IN LATER NIGHTS",
   "FALL JUST SHORT OF A NIGHT? TRADE ONE COPY OF A STACKED PART TO PUSH ON",
+  "EACH NIGHT A CALLER SLIPS A REQUEST UNDER THE WINDOW. FILL IT FOR X3, AND THE WORD KEEPS ITS LAMP",
+  "THE REQUEST CARD GLOWS WHEN YOUR TRACED WORD WOULD FILL IT",
   "THE BRASS MARK ON THE TUBE SHOWS WHERE YOUR NEXT WORD SHOULD REACH TO KEEP PACE",
   "THE TOP PLATE SHOWS YOUR SIGNAL AGAINST THE NIGHT'S TARGET",
   "A TRADE NEEDS THREE-QUARTERS OF THE NIGHT'S TARGET AND A PART WITH TWO OR MORE COPIES",
@@ -2584,7 +2666,7 @@ const HOW_CARDS = [
     setup() { S.score = S.shown = 18; S.words = 3; }, steps: [...[[30, 12], [58, 13], [86, 14], [114, 15]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(15))]] },
   { title: "STUCK? RETUNE", keys: ["Y"], len: 270, text: "Press {Y}[[, tap the right knob,| or]] move right past the bottom rows onto the knob and press {A}, to swap every letter for new ones, once a night. The small light under that knob shows you still have it. Keep it and it pays a bonus when the night clears, and more in later nights.",
     setup() {}, steps: [[80, () => retune()]] },
-  { title: "RADIO PARTS", keys: [], len: 260, text: "Clear a night to fit one of three radio parts. They sit in the slots below and light up when they help. [[Tap a slot, or press|Press]] down past the bottom row to read what a part does. Copies of a part stack, and when a night falls just short you can trade one copy to push on. That's the basics!",
+  { title: "RADIO PARTS", keys: [], len: 260, text: "Clear a night to fit one of three radio parts. They sit in the slots below and light up when they help. [[Tap a slot, or press|Press]] down past the bottom row to read what a part does. Copies of a part stack, and when a night falls just short you can trade one copy to push on. Each night a caller slips a request card under the window: a word that fills it scores x3 and keeps its lamp. That's the basics!",
     setup() { S.parts = ["battery", "echo"]; S.words = maxWords(); HOW.shop = true; nightClear(); HOW.shop = false; }, steps: [[70, () => { shopFocus = 1; Sound.click(); }], [140, () => { shopFocus = 2; Sound.click(); }], [210, () => { shopFocus = 0; Sound.click(); }]] },
 ];
 HOW_CARDS.forEach(c => { c.steps = c.steps.map(([t, f]) => [t, typeof f === "number" ? () => tapTile(f) : f]); });
@@ -3204,6 +3286,7 @@ const Sound = (() => {
     tick() { if (!ac) return; const t = ac.currentTime; if (t - lastTick < .04) return; lastTick = t; osc("square", 2400, t, .001, .02, .015); },
     type() { if (!ac) return; const t = ac.currentTime; if (t - lastType < .03) return; lastType = t; noise(t, .025, .05, "bandpass", 3000 + Math.random() * 1500, 3); },
     click() { if (!ac) return; osc("triangle", 900, ac.currentTime, .002, .1, .05); },
+    paper() { if (!ac) return; const t = ac.currentTime; noise(t, .22, .05, "bandpass", 2600, 1.2); noise(t + .16, .08, .04, "bandpass", 1500, 2); },   // a card slid under the sash
     thud(n) { if (!ac) return; const t = ac.currentTime; osc("sine", 90, t, .002, .5, .18, sfx, 42); noise(t, .08, .25, "lowpass", 900, 1, sfx); osc("square", 160, t, .001, .05 * n, .04); },
     send(big) { if (!ac) return; const t = ac.currentTime; noise(t, .9, .14, "bandpass", 500, 2, sfx, 5000); osc("sine", 220, t, .02, .08, .8, sfx, 1200); if (big) noise(t + .1, .9, .12, "highpass", 2500, .7); },
     beacon(big) { if (!ac) return; const t = ac.currentTime, ch = chordNow(); ch.concat(ch.map(m => m + 12)).slice(0, big ? 8 : 5).forEach((m, k) => osc("square", m2f(m + 12), t + k * .05, .003, .06, .5)); if (big) osc("sawtooth", 110, t, .01, .14, .9, sfx, 660); },
@@ -3440,7 +3523,7 @@ async function boot() {
   if (location.hash.startsWith("#test-intro")) { newRun(); S.night = 3; S.parts.push("battery", "amp"); S.total = 140; startNight(); }   // the night intro on night 3 with a battery (#test-intro-N)
   if (location.hash.startsWith("#test-shop-gold")) { newRun(); S.parts.push("amp", "coil"); nightClear(); S.phase = "shop"; shopChoices[1] = PART.gold; }
   if (location.hash.startsWith("#test-trade")) { newRun(); S.night = 4; S.parts.push("amp", "amp", "coil", "battery", "battery", "echo"); startNight(); nightHold = 0; S.score = S.shown = Math.round(S.target * .8); S.words = 0; nightLost(); }
-  if (/^#test-(pace|togo)/.test(location.hash)) { newRun(); S.night = 4; S.parts.push("amp", "coil"); startNight(); setTimeout(() => { nightHold = 0; S.score = S.shown = /near/.test(location.hash) ? 185 : 70; S.words = 3; S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); usingButtons = !/redpop/.test(location.hash); if (/redpop/.test(location.hash)) { S.grid.forEach(t => t.hot = false); S.grid[H5(6)].hot = true; S.cursor = -1; } if (!/idle/.test(location.hash)) { S.path = [0, 1, 2]; S.cursor = S.path[S.path.length - 1]; } }, 400); }
+  if (/^#test-(pace|togo)/.test(location.hash)) { newRun(); S.night = 4; S.parts.push("amp", "coil"); startNight(); setTimeout(() => { nightHold = 0; S.score = S.shown = /near/.test(location.hash) ? 185 : 70; S.words = 3; S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); usingButtons = !/redpop|idle/.test(location.hash); if (/idle/.test(location.hash)) S.cursor = -1; if (REQ) S.req = { kind: "letter", ch: "K", text: "A WORD WITH K", short: "K WORD", card: ["A WORD", "WITH K"] }; S.reqAt = /met/.test(location.hash) ? frame - 400 : null; if (/met/.test(location.hash)) { S.path = [H5(8), H5(9), H5(10), H5(11)]; S.cursor = H5(11); } if (/redpop/.test(location.hash)) { S.grid.forEach(t => t.hot = false); S.grid[H5(6)].hot = true; S.cursor = -1; } if (!/idle|met/.test(location.hash)) { S.path = [0, 1, 2]; S.cursor = S.path[S.path.length - 1]; } }, 400); }
   if (location.hash === "#test-swap") { newRun(); S.parts.push("amp", "amp", "coil", "echo", "owl", "short"); nightClear(); const k = shopChoices.findIndex(c => !S.parts.includes(c.id)); if (k >= 0) choosePart(k); }
   if (location.hash.startsWith("#test-shop-tap")) { newRun(); S.parts.push("amp", "coil"); nightClear(); S.phase = "shop"; shopChoices[1] = PART.tap; }
   if (/^#test-word-tap/.test(location.hash)) setTimeout(() => { S.parts = ["amp", "tap", "coil"]; S.tap = 12; S.path = [6, 12, 18]; S.cursor = 18; }, 320);

@@ -171,8 +171,10 @@ the same batch.
 - Red key (Workshop redkey-r1, Chris picked 1, 2026-11-15): its red glow is bigger and breathes slowly (REDPOP 1), and the red scan
   runs quicker (frame * .42). #redpop-N shows the other looks (drawn in paGlassVar, the glass the game uses, and the glow pass;
   #test-togo-3-idle-redpop-N puts the red key on the second row's G). Videos for a Workshop round: a -step hash + LEXSTEP, ffmpeg.
-- Listener requests (in progress, Workshop req-r1): a hard side goal each night (makeReq, reqMet, S.req; REQ 0 = off until decided;
-  #req-N picks where it shows; #test-togo-3-met-req-N traces LINK for A WORD WITH K). The intro plaque lists it. Payout undecided.
+- Listener requests (ON, Chris 2026-11-15): a hard side goal each night (makeReq, reqMet, S.req; REQ 4 = the caller at the window;
+  #req-N picks where it shows; #test-togo-3-met-req-N traces LINK for A WORD WITH K). The intro plaque lists it. Payout (Chris: Encore): the word that fills it scores x3 (in scoreOf) and keeps its
+  lamp (send() skips the word count); the card is stamped PLAYED. One a night; it can only be filled once the card has landed.
+  The sim models it (REQ=0 turns it off): bots fill about half, runs score 55-80% more, about half a night further.
   Chris picked the window (req-r1: 4): a close-up PixelLab silhouette caller in a fedora, smoking (src/caller_pixellab.png, sprite
   "caller"; his reaching pose src/caller_reach_pixellab.png, "caller_reach", an edit of the same picture so they line up, cigarette
   in his mouth) leans in from the right side of the window, its tip glowing (bright while he reaches) with smoke wisps, a PixelLab index card (src/reqcard_pixellab.png, sprite "reqcard", its stamp box wiped in build.py)

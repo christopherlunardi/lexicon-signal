@@ -111,7 +111,7 @@
     },
     {
      "id": "r2",
-     "status": "open",
+     "status": "decided",
      "question": "The caller and the card: right look?",
      "found": "PixelLab art: a silhouette in a fedora and trench coat (outside on the fire escape, behind the rain) and a cream index card. He slides in from the right, the card slides out under the sash, he slips away. The game stamps REQUEST and pencils the request on the card. It plays once at the start of each night, after the goal plaque. Pick 1 to keep it as is, or leave notes.",
      "options": [
@@ -143,7 +143,8 @@
        ],
        "play": "play.html#test-togo-3-idle-req-4"
       }
-     ]
+     ],
+     "chosen": "1"
     }
    ]
   },

@@ -527,6 +527,7 @@ function scoreOf(p) {
   // (Chris 2026-11-13, from the balance sim) coil x2, x2.5, x3...; crystal x2, x3...; echo first word x3, x4...; owl last word x3, x5, x7...
   if (has("coil") && len >= 5) mult *= coilX(); if (has("short") && len <= 4) mult *= 1 + has("short"); if (has("echo") && used === 0) mult *= 2 + has("echo"); if (has("owl") && S.words === 1) mult *= owlX();
   if (reds) mult *= 2 + has("heat");
+  if (reqMet(p)) mult *= 3;   // the listener request: the word that fills it scores x3 (and keeps its lamp)
   const tap = has("tap") && p.includes(TAP_I) ? (S.tap || 0) + len : 0;   // the Center Tap: charge up first, then score the charge, flat
   return { word, len, signal, boost, mult, tap, pts: Math.round(signal * boost * mult) + tap };
 }
@@ -560,7 +561,7 @@ const playWhere = () => document.body.classList.contains("pwa") ? "webapp" : doc
 function plStart() { if (HOW.on) return; PLAYLOG.run = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), at: Date.now(), build: window.LEX_BUILD || 0, where: playWhere(),
     screen: innerWidth + "x" + innerHeight, input: usingTouch ? "touch" : usingButtons ? "buttons" : "mouse", words: [], nights: [], fails: 0, retunes: 0, end: "" }; PLAYLOG.last = Date.now(); }
 function plWord(sc) { const r = PLAYLOG.run; if (!r || HOW.on) return; const now = Date.now();
-  r.words.push({ n: S.night, w: sc.word, p: sc.pts, len: sc.len, m: sc.mult, red: sc.red, gold: sc.gold, left: S.words, rt: S.retunes, s: Math.round((now - PLAYLOG.last) / 100) / 10 }); PLAYLOG.last = now; plSave(); }   // (saved after every word, so a run left mid-night still counts: 2026-11-15)
+  r.words.push({ n: S.night, w: sc.word, p: sc.pts, len: sc.len, m: sc.mult, red: sc.red, gold: sc.gold, req: sc.req ? 1 : 0, left: S.words, rt: S.retunes, s: Math.round((now - PLAYLOG.last) / 100) / 10 }); PLAYLOG.last = now; plSave(); }   // (saved after every word, so a run left mid-night still counts: 2026-11-15)
 function plNight(offered) { const r = PLAYLOG.run; if (!r || HOW.on) return; r.nights.push({ n: S.night, target: S.target, score: S.score, over: !!S.over, wordsLeft: S.words, offered: offered.map(p => p.id), picked: null, parts: S.parts.slice() }); plSave(); }
 function plPick(id) { const r = PLAYLOG.run; if (!r) return; const nn = r.nights[r.nights.length - 1]; if (nn) nn.picked = id; }
 function plEnd(how) { const r = PLAYLOG.run; if (!r || r.end) return; r.end = how; r.total = S.total; r.reached = S.night; r.parts = S.parts.slice(); plSave(); PLAYLOG.run = null; }
@@ -573,7 +574,8 @@ function plShare() { let txt = "[]"; try { txt = localStorage.getItem("lexsig.ru
 /* ---- Listener requests (Chris 2026-11-15: a hard side goal each night that pays big). A caller asks for a kind of word; a word that
    fills it is shown as it's traced. Workshop req-r1: where the request shows. #req-N: 1 the lower plate, 2 the dial, 3 pinned at the
    top of the log, 4 a paper slip tucked in the window frame. Off (0) in the game until it's decided. ---- */
-let REQ = 0; { const m = location.hash.match(/req-(\d)/); if (m) REQ = Math.min(4, +m[1]); }
+let REQ = 4; {   // (Chris 2026-11-15: the caller at the window; a filled request scores x3 and keeps its lamp)
+ const m = location.hash.match(/req-(\d)/); if (m) REQ = Math.min(4, +m[1]); }
 const REQ_LETTERS = "JXZKVWYBFH";
 function makeReq(n) { const r = Math.random(), k = Math.min(3, Math.floor(n / 4));
   if (r < .3) { const ch = REQ_LETTERS[Math.floor(Math.random() * (4 + 2 * k))]; return { kind: "letter", ch, text: `A WORD WITH ${ch}`, short: `${ch} WORD`, card: ["A WORD", "WITH " + ch] }; }
@@ -582,13 +584,13 @@ function makeReq(n) { const r = Math.random(), k = Math.min(3, Math.floor(n / 4)
   if (r < .8) return { kind: "red", len: 5, text: "5+ LETTERS THROUGH THE RED KEY", short: "RED 5+", card: ["RED KEY", "5+ LONG"] };
   if (r < .9) return { kind: "vowels", n: 4, text: "A WORD WITH 4 VOWELS", short: "4 VOWELS", card: ["4 VOWELS"] };
   return { kind: "ends", text: "STARTS AND ENDS WITH ONE LETTER", short: "SAME ENDS", card: ["STARTS &", "ENDS ALIKE"] }; }
-function reqMet(p) { const q = S.req; if (!q || !p || p.length < 3 || !isValid(p)) return false; const W2 = pathWord(p).toUpperCase();
+function reqMet(p) { const q = S.req; if (!q || q.done || HOW.on || (REQ === 4 && (S.reqAt == null || frame - S.reqAt < CALLER.card1)) || !p || p.length < 3 || !isValid(p)) return false; const W2 = pathWord(p).toUpperCase();
   if (q.kind === "letter") return W2.includes(q.ch); if (q.kind === "len") return W2.length >= q.len; if (q.kind === "double") return /(.)\1/.test(W2);
   if (q.kind === "red") return W2.length >= q.len && p.some(i => S.grid[i].hot); if (q.kind === "vowels") return [...W2].filter(c => "AEIOU".includes(c)).length >= q.n;
   if (q.kind === "ends") return W2[0] === W2[W2.length - 1]; return false; }
 function newRun() { S = fresh("play"); log("On the air."); plStart(); startNight(); }
 function startNight() {
-  S.score = 0; S.shown = 0; S.over = false; S.nw = []; S.req = REQ ? makeReq(S.night) : null; S.startTotal = S.total; S.firstWord = true; S.target = targetFor(S.night); S.words = maxWords(); S.retunes = maxRetunes(); S.path = [];
+  S.score = 0; S.shown = 0; S.over = false; S.nw = []; S.req = REQ ? makeReq(S.night) : null; S.reqAt = null; S.startTotal = S.total; S.firstWord = true; S.target = targetFor(S.night); S.words = maxWords(); S.retunes = maxRetunes(); S.path = [];
   if (S.grid.length === NN && S.night > 1) ensureHot(); else fillGrid(true);   // the glass keeps its letters from night to night; a new run starts fresh
   S.phase = "play"; INSPECT.on = false; KNOB.on = false; dialFlash = null; nightCard = 170; if (INTRO && !HOW.on && (!location.hash.startsWith("#test-") || location.hash.includes("intro-"))) { nightHold = true; introT = 0; nightCard = 16; } log(`Night ${S.night}: beam ${S.target} signal to the tower in ${S.words} words.`); if (S.night === 1 && !HOW.on) log(TAPW() ? "Stuck? Tap the right knob to retune: all new letters." : btn("Stuck? Press {Y} to retune: all new letters."));
 }
@@ -614,9 +616,10 @@ function send() {
   if (!canAct() || !S.path.length) return;
   if (!isValid()) { const short = S.path.length < 3; dialFlash = { text: short ? "TOO SHORT" : "NO SIGNAL", bad: true, t: 70 }; if (PLAYLOG.run && !HOW.on) PLAYLOG.run.fails++; shake = 6; staticKick = .4; Sound.fail(); log(short ? "Too short." : `${pathWord()}: no signal.`); return; }
   const sc = scoreOf(S.path), used = [...S.path], hits = partHits(S.path); sc.red = used.some(i => S.grid[i].hot) ? 1 : 0; sc.gold = used.some(i => S.grid[i].wild) ? 1 : 0; plWord(sc);
-  if (S.nw) S.nw.push({ w: sc.word, p: sc.pts, tags: [...(sc.red ? ["RED x" + (2 + has("heat"))] : []), ...Object.entries(hits).filter(([id]) => id !== "heat" && id !== "gold").map(([id, v]) => (HIT_NAME[id] || id.toUpperCase()) + " " + v.toUpperCase())] });
+  if (S.nw) S.nw.push({ w: sc.word, p: sc.pts, tags: [...(reqMet(used) ? ["REQUEST x3"] : []), ...(sc.red ? ["RED x" + (2 + has("heat"))] : []), ...Object.entries(hits).filter(([id]) => id !== "heat" && id !== "gold").map(([id, v]) => (HIT_NAME[id] || id.toUpperCase()) + " " + v.toUpperCase())] });
   if (sc.tap) { S.tap = sc.tap; tapFlash = 40; log(`Center Tap charged to ${S.tap}.`); }
-  if (S.words > BASE_WORDS) log("Spare battery spent."); S.words -= 1; S.firstWord = false; if (sc.pts > S.best.pts) S.best = { word: sc.word, pts: sc.pts };
+  const reqHit = reqMet(used); if (reqHit) { S.req.done = true; S.req.doneT = frame; sc.req = 1; }
+  if (reqHit) log("Request played! x3, and the lamp stays lit."); else { if (S.words > BASE_WORDS) log("Spare battery spent."); S.words -= 1; } S.firstWord = false; if (sc.pts > S.best.pts) S.best = { word: sc.word, pts: sc.pts };
   const big = sc.len >= 6 || sc.pts >= 60; busy++;
   const gch = GOLD_STYLE ? gkLetterOf(used) : null, gall = GOLD_STYLE === 5 && gch != null;   // (Workshop gold looks: the gold key leaves as the letter it stood for, in gold)
   const letters = used.map(i => { const t = S.grid[i], wk = !!(t.wild && gch); return { ch: wk ? gch : t.ch, wk, gold: wk || gall, red: wk && !!t.hot, ...tileC(i) }; });
@@ -1100,13 +1103,16 @@ function drawReqSlip() { const t = reqT(); if (t < CALLER.card0) return; const C
   ctx.save(); ctx.beginPath(); ctx.rect(0, clipY, CVW, CVH); ctx.clip();
   ctx.fillStyle = "rgba(6,3,2,.45)"; ctx.fillRect(FX(wx + 2), FX(y + 3), FX(cw), FX(ch)); { const r = R("reqcard"); ctx.drawImage(atlasImg, r[0], r[1], cw, ch, FX(wx), FX(y), FX(cw), FX(ch)); }
   if (met) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(FX(wx + cw / 2), FX(y + ch / 2), FX(cw) * .75, "255,80,50", .26 + .16 * Math.sin(frame / 4)); ctx.restore(); }
+  if (S.req.done) { const a = Math.min(1, (frame - (S.req.doneT || 0)) / 12), z = 1 + 1.5 * (1 - a), cx = FX(wx + cw / 2), cy = FX(y + ch / 2) + 10, pw = textW("PLAYED", "key") + 24, phh = glyphCv("key", "P", C.ink).height + 14;
+    ctx.save(); ctx.globalAlpha = a * .9; ctx.translate(cx, cy); ctx.scale(Math.min(1, (FX(cw) - 10) / pw) * z, Math.min(1, (FX(cw) - 10) / pw) * z);
+    ctx.strokeStyle = "#c0281a"; ctx.lineWidth = 4; ctx.strokeRect(-pw / 2, -phh / 2, pw, phh); ftext("PLAYED", 0, -phh / 2 + 7, "key", "#c0281a", "c"); ctx.restore(); }
   // the stamp: REQUEST in red, in a red box, over the header line on the right
   const k = TK > 1 ? 1 / TK : 1, sw = textW("REQUEST", "ink") * k + 12, sx = FX(wx + cw) - 8 - sw, sy = FX(y) + 6, sh2 = 14 * TK * k + 8, red = met && (frame >> 3) & 1 ? "#e8301a" : "rgba(176,38,24,.88)";
   ctx.strokeStyle = red; ctx.lineWidth = 2; ctx.strokeRect(sx, sy, sw, sh2);
   ctx.save(); ctx.translate(sx + 6, sy + 4); ctx.scale(k, k); ftext("REQUEST", 0, 0, "ink", red, "l"); ctx.restore();
   // the request, pencilled on the lines
   const lines = S.req.card || [S.req.short], kw = Math.min(k, (FX(cw) - 20) / Math.max(...lines.map(l => textW(l, "ink"))));
-  lines.forEach((l, i) => { ctx.save(); ctx.translate(FX(wx + cw / 2), FX(y) + 38 + i * 26 * kw); ctx.scale(kw, kw); ftext(l, 0, 0, "ink", "#2a2c48", "c"); ctx.restore(); });
+  if (!S.req.done) lines.forEach((l, i) => { ctx.save(); ctx.translate(FX(wx + cw / 2), FX(y) + 38 + i * 26 * kw); ctx.scale(kw, kw); ftext(l, 0, 0, "ink", "#2a2c48", "c"); ctx.restore(); });
   ctx.restore(); }
 function drawBeacon() {
   const b = L.beacon, pulse = [0, 1, 2, 3, 3, 2, 1, 0][(frame >> 3) & 7];
@@ -2287,6 +2293,8 @@ const TIPS = [
   "EVERY LAMP STILL LIT WHEN A NIGHT CLEARS PAYS YOUR BEST WORD AGAIN",
   "AN UNUSED RETUNE PAYS A BONUS AT THE END OF THE NIGHT, AND MORE IN LATER NIGHTS",
   "FALL JUST SHORT OF A NIGHT? TRADE ONE COPY OF A STACKED PART TO PUSH ON",
+  "EACH NIGHT A CALLER SLIPS A REQUEST UNDER THE WINDOW. FILL IT FOR X3, AND THE WORD KEEPS ITS LAMP",
+  "THE REQUEST CARD GLOWS WHEN YOUR TRACED WORD WOULD FILL IT",
   "THE BRASS MARK ON THE TUBE SHOWS WHERE YOUR NEXT WORD SHOULD REACH TO KEEP PACE",
   "THE TOP PLATE SHOWS YOUR SIGNAL AGAINST THE NIGHT'S TARGET",
   "A TRADE NEEDS THREE-QUARTERS OF THE NIGHT'S TARGET AND A PART WITH TWO OR MORE COPIES",
@@ -2660,7 +2668,7 @@ const HOW_CARDS = [
     setup() { S.score = S.shown = 18; S.words = 3; }, steps: [...[[30, 12], [58, 13], [86, 14], [114, 15]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(15))]] },
   { title: "STUCK? RETUNE", keys: ["Y"], len: 270, text: "Press {Y}[[, tap the right knob,| or]] move right past the bottom rows onto the knob and press {A}, to swap every letter for new ones, once a night. The small light under that knob shows you still have it. Keep it and it pays a bonus when the night clears, and more in later nights.",
     setup() {}, steps: [[80, () => retune()]] },
-  { title: "RADIO PARTS", keys: [], len: 260, text: "Clear a night to fit one of three radio parts. They sit in the slots below and light up when they help. [[Tap a slot, or press|Press]] down past the bottom row to read what a part does. Copies of a part stack, and when a night falls just short you can trade one copy to push on. That's the basics!",
+  { title: "RADIO PARTS", keys: [], len: 260, text: "Clear a night to fit one of three radio parts. They sit in the slots below and light up when they help. [[Tap a slot, or press|Press]] down past the bottom row to read what a part does. Copies of a part stack, and when a night falls just short you can trade one copy to push on. Each night a caller slips a request card under the window: a word that fills it scores x3 and keeps its lamp. That's the basics!",
     setup() { S.parts = ["battery", "echo"]; S.words = maxWords(); HOW.shop = true; nightClear(); HOW.shop = false; }, steps: [[70, () => { shopFocus = 1; Sound.click(); }], [140, () => { shopFocus = 2; Sound.click(); }], [210, () => { shopFocus = 0; Sound.click(); }]] },
 ];
 HOW_CARDS.forEach(c => { c.steps = c.steps.map(([t, f]) => [t, typeof f === "number" ? () => tapTile(f) : f]); });
