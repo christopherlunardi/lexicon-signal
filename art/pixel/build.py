@@ -218,8 +218,9 @@ def main():
     imgs["iconL_gold"] = gold; fa = np.asarray(gold); hw, hh = max(1, fa.shape[1] // 2), max(1, fa.shape[0] // 2)
     gpal = np.unique(fa[..., :3][fa[..., 3] > 0].reshape(-1, 3), axis=0).astype(float)
     imgs["icon_gold"] = Image.fromarray(pix.mode_shrink(fa[..., :3].astype(float), fa[..., 3] > 0, hw, hh, gpal), "RGBA")
-    # the Red Key's slot icon (2026-11-15, keys as their own slots): the Gold Key's picture turned red, its tag's "?" wiped. A stand-in
-    # until Chris has one painted (src/redkey_icon_fixed.png, magenta keyed, is used instead when it exists)
+    # the Red Key's slot icon (2026-11-15, keys as their own slots): src/redkey_icon.png (ChatGPT, Chris: a short diagonal key with a
+    # tuning-knob bow round a red pilot lamp) shrunk by k-centroid to its 51 px grid (kdown.py) as src/redkey_icon_fixed.png, magenta
+    # keyed. Without it, a stand-in: the Gold Key's picture turned red, its tag's "?" wiped
     import colorsys
     if os.path.exists(SRC + "redkey_icon_fixed.png"):
         ri = np.asarray(Image.open(SRC + "redkey_icon_fixed.png").convert("RGBA")).copy(); mg = (ri[..., 0] > 170) & (ri[..., 1] < 110) & (ri[..., 2] > 170); ri[..., 3] = np.where(mg, 0, 255)
