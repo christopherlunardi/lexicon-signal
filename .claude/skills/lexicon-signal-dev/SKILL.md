@@ -171,15 +171,18 @@ the same batch.
 - Red key (Workshop redkey-r1, Chris picked 1, 2026-11-15): its red glow is bigger and breathes slowly (REDPOP 1), and the red scan
   runs quicker (frame * .42). #redpop-N shows the other looks (drawn in paGlassVar, the glass the game uses, and the glow pass;
   #test-togo-3-idle-redpop-N puts the red key on the second row's G). Videos for a Workshop round: a -step hash + LEXSTEP, ffmpeg.
-- Listener requests (ON, Chris 2026-11-15): a hard side goal each night (makeReq, reqMet, S.req; REQ 4 = the caller at the window;
-  #req-N picks where it shows; #test-togo-3-met-req-N traces LINK for A WORD WITH K). The intro plaque lists it. Payout (Chris: Encore): the word that fills it scores x3 (in scoreOf) and keeps its
-  lamp (send() skips the word count); the card is stamped PLAYED. One a night; it can only be filled once the card has landed.
-  The sim models it (REQ=0 turns it off): bots fill about half, runs score 55-80% more, about half a night further.
-  Chris picked the window (req-r1: 4): a close-up PixelLab silhouette caller in a fedora, smoking (src/caller_pixellab.png, sprite
-  "caller"; his reaching pose src/caller_reach_pixellab.png, "caller_reach", an edit of the same picture so they line up, cigarette
-  in his mouth) leans in from the right side of the window, its tip glowing (bright while he reaches) with smoke wisps, a PixelLab index card (src/reqcard_pixellab.png, sprite "reqcard", its stamp box wiped in build.py)
-  slides out under the sash and stays on the sill; the game stamps REQUEST and pencils req.card on it. CALLER times; drawCaller (in
-  drawRain, behind the rain, city lights under him skipped), drawReqSlip, Sound.paper. Workshop req-r2 has the videos.
+- Song requests (ON, Chris 2026-11-15; REQ 4): the caller asks for one 4-letter word (REQ_WORDS, our own list: MOON, RAIN, JAZZ...).
+  It stays, night after night, until it is spelled; then a new caller brings the next at the start of a night (startNight; an open
+  one's card is already on the sill). The glass helps build it: its letters are dropped on at random when the card comes (reqSeed),
+  REQ_BIAS (0.15) of new keys are one of its letters, its keys get a red line, a retune keeps them in place. Spelling it (reqMet:
+  the exact word, only once the card has landed): x3 in scoreOf and it keeps its lamp (send()); the card is stamped PLAYED. The intro
+  plaque says PLEASE PLAY <word>. Sim (tools/balance, REQ=0 off, SEED=0 no drop-in, RB=bias): a bot that never plans for it plays one
+  every 4-5 nights; heavier bias crowds the glass and lowers scores. The caller: a close-up PixelLab silhouette in a fedora, smoking
+  (src/caller_pixellab.png); his reaching frame is PixelLab's edit painted over by Chris (src/bench/caller_reach.png), split in
+  build.py: the forearm (cut at the elbow) is its own sprite "caller_hand" that lowers on the card's top as it slides under the
+  sash; his coat is filled in behind it. Cigarette tips in points.caller (tip, tipR), glowing, bright while he reaches, with smoke.
+  CALLER times; drawCaller (in drawRain, behind the rain; city lights under him skipped); drawReqSlip (src/reqcard_pixellab.png,
+  its stamp box wiped); Sound.paper. #test-togo-3-met-req-4 puts LINK on the glass as the request, traced.
 - Shine (Chris 2026-11-15): prominent brass plates outside play get the title buttons' hard-striped light sweep every SHINE_PER
   frames (shinyPlateCv): the night intro plaque and every big title plate on a sheet (edgePlate with key lettering: DEAD AIR, the
   night report, PAUSED, HIGH SCORES...). Any new plate of that kind uses shinyPlateCv too.

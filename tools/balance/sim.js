@@ -19,7 +19,9 @@ const round5 = (v) => Math.max(5, Math.round(v / 5) * 5);
 const WT = Object.entries(WEIGHTS), WTOT = WT.reduce((a, [, w]) => a + w, 0);
 let rnd = Math.random; const V = Object.fromEntries((process.env.V || '').split(',').filter(Boolean).map(k => [k, 1]));
 function pickLetter() { let r = rnd() * WTOT; for (const [k, w] of WT) if ((r -= w) <= 0) return k; return "E"; }
-const tile = () => ({ ch: pickLetter(), hot: false, wild: false });
+// an open song request leans new keys toward its letters (REQ_BIAS of them are one of its letters, picked at random)
+let REQ_W = null; const REQ_BIAS = +(process.env.RB ?? .15);
+const tile = () => ({ ch: REQ_W && rnd() < REQ_BIAS ? REQ_W[(rnd() * REQ_W.length) | 0] : pickLetter(), hot: false, wild: false });
 
 function mk(parts) { const S = { parts: parts.slice(), night: 1, total: 0, melt: 0, grid: [] }; return S; }
 const has = (S, id) => S.parts.filter(p => p === id).length;
@@ -48,14 +50,11 @@ function findAll(S) { const out = new Map(), path = [], seen = new Uint8Array(NN
   return [...out].map(([word, p]) => ({ word, path: p })); }
 // one word's points, exactly as scoreOf in the game
 // listener requests (Chris 2026-11-15): one a night; the word that fills it scores x3 and keeps its lamp. Off with REQ=0.
-const REQ_LETTERS = "jxzkvwybfh";
-function makeReq(n) { const r = rnd(), k = Math.min(3, Math.floor(n / 4));
-  if (r < .3) return { kind: "letter", ch: REQ_LETTERS[Math.floor(rnd() * (4 + 2 * k))] }; if (r < .5) return { kind: "len", len: 6 + Math.min(2, Math.floor(n / 5)) };
-  if (r < .65) return { kind: "double" }; if (r < .8) return { kind: "red", len: 5 }; if (r < .9) return { kind: "vowels", n: 4 }; return { kind: "ends" }; }
-function reqMet(S, p, w) { const q = S.req; if (!q || q.done) return false;
-  if (q.kind === "letter") return w.includes(q.ch); if (q.kind === "len") return w.length >= q.len; if (q.kind === "double") return /(.)\1/.test(w);
-  if (q.kind === "red") return w.length >= q.len && p.some(i => S.grid[i].hot); if (q.kind === "vowels") return [...w].filter(c => "aeiou".includes(c)).length >= q.n;
-  return w[0] === w[w.length - 1]; }
+const REQ_WORDS = ["MOON", "RAIN", "BLUE", "JAZZ", "SONG", "STAR", "KISS", "DAWN", "TUNE", "HUSH", "GLOW", "DRUM", "HORN", "SWAY", "SOUL", "LOVE", "ROSE", "MIST", "SNOW", "WIND", "LAMP", "GOLD", "WAVE", "ECHO", "NOTE", "BEAT", "HOME", "TIDE", "HAZE", "DUSK"];
+function makeReq() { return { word: REQ_WORDS[(rnd() * REQ_WORDS.length) | 0], done: false, nights: 0 }; }
+function reqMet(S, p, w) { const q = S.req; return !!q && !q.done && w.toUpperCase() === q.word; }
+// a retune keeps the request's letters in place and refreshes the rest
+function retuneKeep(S) { const keep = S.req && !S.req.done ? S.grid.map(t => S.req.word.includes(t.ch) ? t : null) : []; fillGrid(S); keep.forEach((t, i) => { if (t) { t.hot = false; S.grid[i] = t; } }); ensureHot(S); }
 function scoreOf(S, p, word) { const tiles = p.map(i => S.grid[i]), len = word.length, used = maxWords(S) - S.words, reds = tiles.filter(t => t.hot).length, h = (id) => has(S, id);
   let signal = 2 + tiles.reduce((s, t) => s + VALUES[t.ch], 0);
   signal += 3 * h("treble") * tiles.filter(t => VALUES[t.ch] >= 3).length + h("vowel") * tiles.filter(t => VOWELS.has(t.ch)).length;
@@ -76,20 +75,20 @@ function nightBonus(S) { const wl = Math.max(0, S.words), rl = Math.max(0, S.ret
 // a chance that falls with length, then sends the best of what it spotted.
 const SPOT = { 3: .55, 4: .45, 5: .32, 6: .2, 7: .12 };
 function candidates(S, bot) { let c = findAll(S);
-  if (bot.kind === "player") c = c.filter(w => (ZIPF.get(w.word) || 0) >= bot.z && rnd() < (SPOT[Math.min(7, w.word.length)] * bot.eye));
+  if (bot.kind === "player") c = c.filter(w => reqMet(S, w.path, w.word) || ((ZIPF.get(w.word) || 0) >= bot.z && rnd() < (SPOT[Math.min(7, w.word.length)] * bot.eye)));   // (the request word is marked on the glass: always seen)
   return c.map(w => ({ ...w, pts: scoreOf(S, w.path, w.word) })); }
 function playNight(S, bot, st) {
   S.target = targetFor(S.night); S.score = 0; S.nightBest = 0; S.words = maxWords(S); S.retunes = maxRetunes(S); if (S.night === 1) fillGrid(S); else ensureHot(S);
-  S.req = process.env.REQ === "0" ? null : makeReq(S.night);
+  if (process.env.REQ !== "0" && (!S.req || S.req.done)) { S.req = makeReq(); if (process.env.SEED !== "0") { const free = S.grid.map((t, i) => i).filter(i => !S.grid[i].hot && !S.grid[i].wild); for (const c of S.req.word) { const k = free.splice((rnd() * free.length) | 0, 1)[0]; S.grid[k].ch = c; } } } if (S.req) S.req.nights++; REQ_W = S.req && !S.req.done ? S.req.word : null;
   while (S.words > 0) {
     let c = candidates(S, bot); c.sort((a, b) => b.pts - a.pts); let best = c[0];
     const need = S.target - S.score, per = need / S.words;
     // retune when nothing on the glass gets close to what each word needs (a kept retune is worth a little with the knob)
-    if (S.retunes > 0 && (!best || best.pts < per * .55)) { S.retunes--; fillGrid(S); st.retunes++; continue; }
+    if (S.retunes > 0 && (!best || best.pts < per * .55)) { S.retunes--; retuneKeep(S); st.retunes++; continue; }
     if (!best) { S.words = 0; break; }
     // a finisher: if a word clears the night, send the one that clears it (the biggest; overdrive helps)
     if (has(S, "tap") && best.path.includes(12)) S.tap = (S.tap || 0) + best.word.length; S.score += best.pts; S.total += best.pts; S.nightBest = Math.max(S.nightBest, best.pts); st.words.push(best.word.length); st.pts.push(best.pts); (st.byNight[S.night] = st.byNight[S.night] || []).push(best.pts / S.target);
-    const used = best.path; if (reqMet(S, best.path, best.word)) { S.req.done = true; st.reqs = (st.reqs || 0) + 1; } else S.words--; collapse(S, used);
+    const used = best.path; if (reqMet(S, best.path, best.word)) { S.req.done = true; REQ_W = null; st.reqs = (st.reqs || 0) + 1; (st.reqWait = st.reqWait || []).push(S.req.nights); } else S.words--; collapse(S, used);
     if (S.score >= S.target) { S.over = S.score >= S.target * OVERDRIVE; const b = nightBonus(S); S.total += b; st.bonus += b; return true; }
   }
   return false; }
