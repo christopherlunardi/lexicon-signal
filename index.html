@@ -469,14 +469,20 @@ const PARTS = [
   // Center Tap (Chris 2026-11-14): the middle key of the glass holds a charge that lasts the whole run. A word through it scores the
   // charge as flat points, then adds its own length to the charge. Icon: its own picture (src/tap_icon.png).
   // (renamed the Green Key, 2026-11-15: keys are colored keys; id stays "tap" so old play logs still read. Icon: src/greenkey_icon.png)
+  /* the Blue Key (Chris 2026-11-15, on trial: only offered with #blue-on in the address or from the dev panel). Every word that
+     doesn't use it freezes one more key beside it; a word through it pays x2 plus x1 for every frozen key; a word that touches the
+     ice without it shatters the ice. Frozen keys and the blue key hold their place (letters above fall past them). The ice melts
+     each night (and on a retune). BLUE_STYLE (Workshop topic "blue") picks how the frost looks. */
+  { id:"blue",    name:"Blue Key",          desc:"Words that miss the blue key freeze the keys around it. A word through it pays x2, +1 per frozen key. Touch the ice without it and it breaks.", key:true, icon:"bluekey", trial:true },
   { id:"tap",     name:"Green Key",         desc:"The middle key turns green: words through it add their letters to its charge, then score it.", key:true, icon:"greenkey" },
 ];
 // each key's ladder: what level 1, 2, 3... adds (past the end, the last step's "more" line repeats)
 const KEY_LADDER = {
   red: ["Red key words x3", "Red key words +5 signal", "A second red key on the glass", "Red key words x4"],
   gold: ["A gold key on the glass: any letter", "The gold letter is worth 3 signal", "A second gold key on the glass"],
+  blue: ["A blue key on the glass: words that miss it freeze the keys beside it", "The frost can spread to the corners too", "Every frozen key pays x2 more, not x1", "Slip onto the ice and only half of it breaks"],
   tap: ["The green key charges: each word through it adds its letters, then scores the charge", "The green key charges twice as fast", "The green key pays its charge twice"] };
-const KEY_MORE = { red: "Red key words one more x", gold: "Gold letters +2 signal", tap: "The green key charges faster" };
+const KEY_MORE = { blue: "Every frozen key pays one more x", red: "Red key words one more x", gold: "Gold letters +2 signal", tap: "The green key charges faster" };
 const keyLv = (id) => has(id);
 // the level a player sees: the red key comes free on the glass, so it shows as level 1 (one lamp) before any copy (Chris 2026-11-15)
 const showLv = (id, n) => n + (id === "red" ? 1 : 0);
@@ -484,11 +490,22 @@ const keyStep = (id, lv) => lv <= KEY_LADDER[id].length ? KEY_LADDER[id][lv - 1]
 const redX = () => { const v = keyLv("red"); return 2 + (v >= 1) + (v >= 4) + Math.max(0, v - 4); };
 const redSig = () => keyLv("red") >= 2 ? 5 : 0, redN = () => keyLv("red") >= 3 ? 2 : 1;
 const goldN = () => { const v = keyLv("gold"); return v >= 3 ? 2 : v >= 1 ? 1 : 0; }, goldSig = () => { const v = keyLv("gold"); return v >= 2 ? 3 + 2 * Math.max(0, v - 3) : 0; };
+const BLUE_ON = /blue-on|test-blue/.test(location.hash);   // (the Blue Key is on trial: the picker only offers it with #blue-on)
+const iceN = () => S.grid.filter(t => t && t.ice).length, blueAt = () => S.grid.findIndex(t => t && t.blue);
+const blueX = () => { const v = keyLv("blue"); return 2 + iceN() * (v >= 3 ? 2 : 1) + iceN() * Math.max(0, v - 4); };
+const blueNb = (b) => Array.from({ length: NN }, (_, j) => j).filter(j => j !== b && Math.abs(j % N - b % N) <= 1 && Math.abs(((j / N) | 0) - ((b / N) | 0)) <= 1 && (keyLv("blue") >= 2 || j % N === b % N || ((j / N) | 0) === ((b / N) | 0)));
+let iceFx = [];   // ice shards: cash-in (bright) and shatter (gray)
+function blueAfter(used) { if (!has("blue")) return; const ub = used.some(i => S.grid[i].blue), ui = used.some(i => S.grid[i].ice);
+  if (ub) { const n = iceN(), bx = blueX(); S.grid.forEach((t, i) => { if (t.ice) { t.ice = false; iceFx.push({ i, t: 0, cash: true }); } }); if (n) log(`The ice paid x${bx}.`); }
+  else if (ui) { const ic = S.grid.map((t, i) => t.ice ? i : -1).filter(i => i >= 0), keep = keyLv("blue") >= 4 ? ic.filter(() => Math.random() < .5) : [];
+    ic.forEach(i => { if (!keep.includes(i)) { S.grid[i].ice = false; iceFx.push({ i, t: 0, cash: false }); } }); log(keep.length ? "Half the ice broke." : "The ice broke!"); Sound.fail(); shake = Math.max(shake, 3); }
+  else { const b = blueAt(); if (b >= 0) { const nb = blueNb(b).filter(j => !S.grid[j].ice); if (nb.length) { const j = nb[(Math.random() * nb.length) | 0]; S.grid[j].ice = true; S.grid[j].iceT = frame; log(`Frost spreads: ${iceN()} frozen.`); } } } }
+const melt = () => S.grid.forEach(t => { if (t) t.ice = false; });
 const tapAdd = (len) => { const v = keyLv("tap"); return len * (1 + (v >= 2) + Math.max(0, v - 3)); }, tapPay = () => keyLv("tap") >= 3 ? 2 : 1;
 const PART = Object.fromEntries(PARTS.map(p => [p.id, p]));
 const TAP_I = 12;
 const GLASS_R = 6;   // the main glass is rounded into its brass bezel (build.py frames.bezel: ring radius 14, 8 thick)   // the middle of the 5x5 glass
-const HIT_NAME = { red: "RED KEY", hat: "REQUEST", tap: "GREEN", amp: "AMP", knob: "KNOB", treble: "TREBLE", vowel: "VOWELS", short: "CRYSTAL", coil: "COIL", echo: "PILOT", meter: "METER", owl: "OWL", gold: "GOLD" };
+const HIT_NAME = { blue: "BLUE KEY", red: "RED KEY", hat: "REQUEST", tap: "GREEN", amp: "AMP", knob: "KNOB", treble: "TREBLE", vowel: "VOWELS", short: "CRYSTAL", coil: "COIL", echo: "PILOT", meter: "METER", owl: "OWL", gold: "GOLD" };
 // a mystery part keeps its secret until you've fitted one (remembered on this device from then on)
 let HAT_KNOWN = false; try { HAT_KNOWN = localStorage.getItem("lexsig.hatKnown") === "1"; } catch (e) {}
 const hatKnown = () => HAT_KNOWN || has("hat") > 0;
@@ -525,7 +542,8 @@ const vowelCount = () => S.grid.filter(t => VOWELS.has(t.ch)).length;
 function ensureHot() { let g = 0;   // one red key is always on the glass; with the Gold Key, one gold wildcard key too
   // (the gold key can be the red key too, Chris 2026-11-13: then it's any letter AND doubles the word)
   while (S.grid.filter(t => t.hot).length < redN() && g++ < 99) S.grid[(Math.random() * NN) | 0].hot = true;
-  g = 0; while (S.grid.filter(t => t.wild).length < goldN() && g++ < 99) { const t = S.grid[(Math.random() * NN) | 0]; t.wild = true; t.ch = "?"; } }
+  g = 0; while (S.grid.filter(t => t.wild).length < goldN() && g++ < 99) { const t = S.grid[(Math.random() * NN) | 0]; t.wild = true; t.ch = "?"; }
+  if (has("blue") && !S.grid.some(t => t.blue)) { const f = S.grid.map((t, i) => i).filter(i => !S.grid[i].ice && !S.grid[i].hot && !S.grid[i].wild && !(has("tap") && i === TAP_I)); if (f.length) { const t = S.grid[f[(Math.random() * f.length) | 0]]; t.blue = true; t.blueT = frame; } } }
 function fillGrid(dropIn) {
   S.grid = Array.from({ length: NN }, newTile);
   let g = 0; while (vowelCount() < 6 && g++ < 50) S.grid[(Math.random() * NN) | 0].ch = "AEIOU"[(Math.random() * 5) | 0];
@@ -536,9 +554,12 @@ function fillGrid(dropIn) {
 function collapse(used) {
   const step = L.th + L.gap, usedSet = new Set(used), hold = PA() ? (GF.lift ? 24 : 12) : 0;   // the round-2 looks let the letters lift off first
   for (let col = 0; col < N; col++) {
-    const keep = []; for (let row = N - 1; row >= 0; row--) { const i = row * N + col; if (!usedSet.has(i)) keep.push({ t: S.grid[i], from: row }); }
-    const k = N - keep.length;
-    for (let j = 0; j < N; j++) { const row = N - 1 - j, i = row * N + col;
+    // frozen keys and the blue key hold their place: the letters above fall past them (Blue Key, 2026-11-15)
+    const pin = (i) => !usedSet.has(i) && S.grid[i] && (S.grid[i].ice || S.grid[i].blue);
+    const keep = []; for (let row = N - 1; row >= 0; row--) { const i = row * N + col; if (!usedSet.has(i) && !pin(i)) keep.push({ t: S.grid[i], from: row }); }
+    const cells = []; for (let row = N - 1; row >= 0; row--) if (!pin(row * N + col)) cells.push(row);
+    const k = cells.length - keep.length;
+    for (let j = 0; j < cells.length; j++) { const row = cells[j], i = row * N + col;
       if (j < keep.length) { const { t, from } = keep[j]; t.yOff += (from - row) * step; t.vy = 0; t.wait = 4 + col * 2 + hold; S.grid[i] = t; }
       else { const t = newTile(), n = j - keep.length; t.yOff = -(k - n) * step - 14 - (k - n) * 5; t.wait = 10 + col * 2 + hold; S.grid[i] = t; } }
   }
@@ -561,6 +582,7 @@ function scoreOf(p) {
   // (Chris 2026-11-13, from the balance sim) coil x2, x2.5, x3...; crystal x2, x3...; echo first word x3, x4...; owl last word x3, x5, x7...
   if (has("coil") && len >= 5) mult *= coilX(); if (has("short") && len <= 4) mult *= 1 + has("short"); if (has("echo") && used === 0) mult *= 2 + has("echo"); if (has("owl") && S.words === 1) mult *= owlX();
   if (reds) mult *= redX();
+  if (tiles.some(t => t.blue)) mult *= blueX();
   const charge = has("tap") && p.includes(TAP_I) ? (S.tap || 0) + tapAdd(len) : 0, tap = charge * tapPay();   // the Center Tap: charge up first, then score the charge, flat (twice from level 3)
   const req = reqMet(p) ? Math.round(signal * boost * (reqX() - 1)) : 0;   // a filled request pays x4..x8 of the word's own signal, added on: it doesn't multiply the other parts' multipliers (Chris 2026-11-15: echo x red x request made one word worth 1134)
   return { word, len, signal, boost, mult, tap, charge, reqB: req, pts: Math.round(signal * boost * mult) + tap + req };
@@ -579,6 +601,7 @@ function partHits(p) {
   if (meterB()) hits.meter = "+" + meterB();
   if (n("owl") && S.words === 1) hits.owl = "x" + owlX();
   if (reds) hits.red = "x" + redX();
+  if (tiles.some(t => t.blue)) hits.blue = "x" + blueX();
   if (n("gold") && tiles.some(t => t.wild)) hits.gold = "?";
   if (n("hat") && reqMet(p)) hits.hat = "x" + reqX();
   return hits;
@@ -662,6 +685,7 @@ function newRun() { S = fresh("play"); log("On the air."); plStart(); startNight
 function startNight() {
   S.score = 0; S.shown = 0; S.over = false; S.over2 = false; S.picks = 1; S.nw = []; S.startTotal = S.total; S.firstWord = true; S.target = targetFor(S.night); S.words = maxWords(); S.retunes = maxRetunes(); S.path = [];
   if (S.carry > 0 && !HOW.on) { S.score = Math.min(S.carry, round5(S.target * CARRY_MAX)); log(`Overdrive carried over: ${S.score} already in the tube.`); } S.carry = 0;
+  if (S.grid.length === NN) melt();
   if (S.grid.length === NN && S.night > 1) ensureHot(); else fillGrid(true);   // the glass keeps its letters from night to night; a new run starts fresh
   // a song request: a new one (and a new caller) when none is open; an open one stays on the sill, its card already there
   if (REQ && !HOW.on && has("hat")) { if (!S.req || S.req.done) { S.req = makeReq(); S.reqAt = null; } else S.reqAt = frame - 10000; S.req.nights++; }
@@ -698,6 +722,7 @@ function send() {
   const gch = GOLD_STYLE ? gkLetterOf(used) : null, gall = GOLD_STYLE === 5 && gch != null;   // (Workshop gold looks: the gold key leaves as the letter it stood for, in gold)
   const letters = used.map(i => { const t = S.grid[i], wk = !!(t.wild && gch); return { ch: wk ? gch : t.ch, wk, gold: wk || gall, red: wk && !!t.hot, ...tileC(i) }; });
   dialFlash = { text: sc.word.toUpperCase() + " +" + sc.pts, t: 100 };
+  blueAfter(used);
   S.path = []; pathSound = 0; collapse(used); Sound.send(big); sendT = 0;
   letters.forEach((l, k) => { const t0 = PA() ? (GF.lift ? -16 - k * 4 : -10 - k * 3) : -k * 4, pv = letters[Math.max(0, k - 1)]; ghosts.push({ ch: l.ch, x: l.x, y: l.y, px: pv.x, py: pv.y, k, t: 0, gold: l.gold, wk: l.wk, red: l.red });
     flyers.push({ ch: l.ch, k, t0, ax: l.x, ay: l.y, cx: (l.x + L.beacon.x) / 2, cy: Math.min(l.y, L.beacon.y) - 90 - Math.random() * 30, t: t0, dur: 46 + k * 2, last: k === letters.length - 1, gold: l.gold });
@@ -730,7 +755,7 @@ function nightClear() {
   const bag = PARTS.filter(p => !p.key); shopChoices = [];   // every part stacks, so any part can come up
   while (shopChoices.length < (S.over ? 4 : 3) && bag.length) shopChoices.push(bag.splice((Math.random() * bag.length) | 0, 1)[0]);
   // a key now and then (KEY_ODDS, plus KEY_ODDS_UP for every night in a row without one), always after an overdrive
-  const keys = PARTS.filter(p => p.key && (S.parts.includes(p.id) || p.id === "red" || keyCount() < KEY_SLOTS));
+  const keys = PARTS.filter(p => p.key && (!p.trial || BLUE_ON) && (S.parts.includes(p.id) || p.id === "red" || keyCount() < KEY_SLOTS));
   if (keys.length && (S.over || Math.random() < KEY_ODDS + (S.keyDry || 0) * KEY_ODDS_UP)) { shopChoices[(Math.random() * shopChoices.length) | 0] = keys[(Math.random() * keys.length) | 0]; S.keyDry = 0; }
   else S.keyDry = (S.keyDry || 0) + 1;
   shopFocus = 0;
@@ -1913,7 +1938,7 @@ function paGlassVar({ G, tiles, ok, low }) {
     if (frame >= t.flN) { t.flE = frame + 2 + Math.random() * 10; t.flN = frame + 40 + Math.random() * (Math.random() < .3 ? 120 : 700); }
     const fl = t.flE > frame ? .68 + .27 * hsh(frame >> 1, t.seed * 7) : 1;   // the whole letter dips gently, never single dots
     if (GOLD_STYLE && (t.wild || (gkNow.gild && o.on))) { gkKey(o, P, w0, h0, ox, oy, ok, low, fl, lockT); continue; }
-    const warm = GF.warm ? gvWarm(t) : GV_REST, scr = !GF.warm && land > .4, grn = o.i === TAP_I && GREEN_STYLE >= 2 && greenOn();   // (the green key's letter glows green)
+    const warm = GF.warm ? gvWarm(t) : GV_REST, scr = !GF.warm && land > .4, grn = o.i === TAP_I && GREEN_STYLE >= 2 && greenOn(), blu = !!t.blue, frz = !!t.ice && BLUE_STYLE === 4;   // (the green key's letter glows green; the blue key's letter is cold blue; style 4 turns frozen letters blue)
     let la = Math.min(1, (1 - low * .35 * (1 - lit)) * fl) * warm[0]; if (GF.lock && !o.on) la *= 1 - .42 * lockK;   // word lock: the rest of the glass dips while a real word is traced
     ctx.globalAlpha = 1; ctx.drawImage(gvBase(P, GS, o.dots, w0, h0), x - 4, y - 4);
     if (hot && lit <= .03) { const pr = .5 + .5 * Math.sin(frame / 14 + o.i);   // (Workshop redkey: the red key at rest)
@@ -1933,10 +1958,10 @@ function paGlassVar({ G, tiles, ok, low }) {
       const H = dotSpr(P.hot); ctx.globalAlpha = 1; for (let r = 0; r < 7; r++) for (let c = 1; c < 8; c++) if (hsh(c + r * 9 + (frame >> 1) * 3.1, t.seed * 17) < .42) ctx.drawImage(H, mx + c * 6, my + r * 6, 6, 6);
     } else if (lit > .5) { const a = wave ? fl : 1;
       if (GF.deep) { ctx.globalAlpha = a; ctx.drawImage(gvGlow(o.ch, "rgba(255,196,120,.6)"), mx - 14, my - 14); }
-      ctx.globalAlpha = a; ctx.drawImage(gvLet(o.ch, t.wild ? "#fff2a8" : hot ? "#ff9a7e" : grn ? "#c8ffd6" : P.hot), mx, my);
+      ctx.globalAlpha = a; ctx.drawImage(gvLet(o.ch, t.wild ? "#fff2a8" : hot ? "#ff9a7e" : grn ? "#c8ffd6" : blu ? "#e2f4ff" : frz ? "#cfe6ff" : P.hot), mx, my);
     } else { const a = Math.min(1, la + (GF.warm ? 0 : land));
       if (GF.deep) { ctx.globalAlpha = a; ctx.drawImage(gvGlow(o.ch, "rgba(255,120,24,.6)"), mx - 14, my - 14); }
-      ctx.globalAlpha = a; ctx.drawImage(gvLet(o.ch, t.wild ? "#ffcf3a" : grn ? "#5cff8a" : P.on), mx, my);
+      ctx.globalAlpha = a; ctx.drawImage(gvLet(o.ch, t.wild ? "#ffcf3a" : grn ? "#5cff8a" : blu ? "#7cc8ff" : frz ? (hot ? "#ff8a70" : "#8fc4f0") : P.on), mx, my);
       if (warm[1] > 0 && !grn) { ctx.globalAlpha = warm[1]; ctx.drawImage(gvLet(o.ch, P.hot), mx, my); } }
     if (hot && HOT_STYLE === 5 && REDPOP === 4) { const scan = ((frame * .42 + o.i * 3) % 10) - 1.5, R = gvAll("#ff4630"), RH = gvAll("#ffb09a");   // brighter scan with a fading trail
       for (let r = 0; r < 7; r++) { const d = scan - r; if (d < -1 || d >= 3.5) continue; ctx.globalAlpha = d < 0 ? 1 + d : d < 1 ? 1 : (3.5 - d) / 2.5 * .7; ctx.drawImage(d < 1 ? RH : R, 0, r * 6, 54, 6, mx, my + r * 6, 54, 6); } }
@@ -1980,6 +2005,40 @@ function drawTapRing() { if (!has("tap") || !["play", "report", "shop", "swap", 
   const txt = String(S.tap || 0), cw = Math.max(26, textW(txt, "ink") + 14), ch = Math.round(22 * TK), cx = x + w - cw + 10, cy = y - ch + 8;
   ctx.fillStyle = "#1a0e04"; ctx.beginPath(); ctx.roundRect(cx, cy, cw, ch, 6); ctx.fill(); ctx.strokeStyle = "#e8b030"; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
   ftext(txt, cx + cw / 2, cy + Math.round((ch - 14 * TK) / 2), "ink", f > 0 ? "#fff6c8" : "#ffd24a", "c"); }
+/* the Blue Key's frost (Workshop topic "blue", round 1). BLUE_STYLE 1 frost wash (a pale icy film and crystals in the corners),
+   2 ice block (a clear block of ice with a bright edge and a highlight), 3 rime (white frost grows in from the corners, no film),
+   4 blue letters (frozen letters turn icy blue, a small crystal), 5 frost web (a light film, and frost lines join each frozen key to
+   the blue key). The blue key itself: a cold blue letter, a blue glow, and what it pays now on a small chip (x2 + the frozen keys). */
+let BLUE_STYLE = 1; { const m = location.hash.match(/blue-(\d)/); if (m) BLUE_STYLE = Math.min(5, +m[1]); }
+function frostCorner(cx, cy, dx, dy, len, a) {   // a little frost sprig: a stem and its side shoots, from a corner inward
+  ctx.strokeStyle = `rgba(235,248,255,${a})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + dx * len, cy + dy * len);
+  for (let k = 1; k <= 3; k++) { const px = cx + dx * len * k / 4, py = cy + dy * len * k / 4, s2 = len * (.4 - k * .08); ctx.moveTo(px, py); ctx.lineTo(px + dx * s2, py); ctx.moveTo(px, py); ctx.lineTo(px, py + dy * s2); } ctx.stroke(); }
+function drawIce(tiles) {
+  if (!has("blue") && !iceFx.length) return; const BS = BLUE_STYLE, b = tiles.find(o => o.t.blue);
+  ctx.save(); ctx.lineCap = "round";
+  if (BS === 5 && b) for (const o of tiles) if (o.t.ice) { ctx.strokeStyle = "rgba(190,230,255,.55)"; ctx.lineWidth = 3; ctx.setLineDash([6, 5]); ctx.lineDashOffset = -frame * .3; ctx.beginPath(); ctx.moveTo(b.cx, b.cy); ctx.lineTo(o.cx, o.cy); ctx.stroke(); ctx.setLineDash([]); }
+  for (const o of tiles) { const t = o.t; if (!t.ice) continue; const age = Math.min(1, (frame - (t.iceT || 0)) / 24), x = o.x + 3, y = o.y + 3, w = o.w - 6, h = o.hh - 6;
+    if (BS === 1 || BS === 5) { ctx.fillStyle = `rgba(170,215,255,${(BS === 5 ? .14 : .22) * age})`; ctx.beginPath(); ctx.roundRect(x, y, w, h, 7); ctx.fill();
+      ctx.strokeStyle = `rgba(210,238,255,${.6 * age})`; ctx.lineWidth = 2; ctx.stroke();
+      const L2 = Math.min(w, h) * .2 * age; frostCorner(x + 4, y + 4, 1, 1, L2, .85); frostCorner(x + w - 4, y + h - 4, -1, -1, L2 * .8, .7); }
+    if (BS === 2) { const gr = ctx.createLinearGradient(x, y, x + w, y + h); gr.addColorStop(0, `rgba(225,245,255,${.42 * age})`); gr.addColorStop(.5, `rgba(150,205,250,${.2 * age})`); gr.addColorStop(1, `rgba(90,150,220,${.32 * age})`);
+      ctx.fillStyle = gr; ctx.beginPath(); ctx.roundRect(x, y, w, h, 5); ctx.fill(); ctx.strokeStyle = `rgba(235,250,255,${.85 * age})`; ctx.lineWidth = 3; ctx.stroke();
+      ctx.strokeStyle = `rgba(255,255,255,${.55 * age})`; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(x + 8, y + h * .55); ctx.lineTo(x + w * .45, y + 8); ctx.stroke(); }
+    if (BS === 3) { const grow = Math.min(1, (frame - (t.iceT || 0)) / 90), L2 = Math.min(w, h) * (.12 + .14 * grow) * age; frostCorner(x + 3, y + 3, 1, 1, L2, .95); frostCorner(x + w - 3, y + 3, -1, 1, L2 * .75, .85); frostCorner(x + 3, y + h - 3, 1, -1, L2 * .75, .85); frostCorner(x + w - 3, y + h - 3, -1, -1, L2, .95); }
+    if (BS === 4) { frostCorner(x + 4, y + 4, 1, 1, Math.min(w, h) * .16 * age, .8); }
+  }
+  if (b) { const txt = "x" + blueX(), cw = Math.max(30, textW(txt, "ink") + 14), ch = Math.round(22 * TK), cx = b.x + b.w - cw + 6, cy = b.y - ch + 10;
+    ctx.fillStyle = `rgba(80,160,255,${.16 + .05 * Math.sin(frame / 12)})`; ctx.beginPath(); ctx.roundRect(b.x + 4, b.y + 4, b.w - 8, b.hh - 8, 7); ctx.fill();   // (no ring: the ring is the green key's)
+    frostCorner(b.x + 7, b.y + 7, 1, 1, Math.min(b.w, b.hh) * .16, .9); frostCorner(b.x + b.w - 7, b.y + b.hh - 7, -1, -1, Math.min(b.w, b.hh) * .16, .9);
+    ctx.fillStyle = "#06101c"; ctx.beginPath(); ctx.roundRect(cx, cy, cw, ch, 6); ctx.fill(); ctx.strokeStyle = "#3a8ad0"; ctx.lineWidth = 2; ctx.stroke();
+    ftext(txt, cx + cw / 2, cy + Math.round((ch - 14 * TK) / 2), "ink", "#a8dcff", "c"); }
+  iceFx = iceFx.filter(f => f.t < 34); for (const f of iceFx) { f.t++; const c = tileC(f.i), cx = FX(c.x), cy = FX(c.y), k = f.t / 34;
+    for (let j = 0; j < 8; j++) { const an = j * .785 + f.i, d = (f.cash ? 30 : 16) * k, fy = f.cash ? 0 : 40 * k * k; ctx.fillStyle = f.cash ? `rgba(220,245,255,${1 - k})` : `rgba(150,170,190,${1 - k})`;
+      ctx.save(); ctx.translate(cx + Math.cos(an) * d, cy + Math.sin(an) * d + fy); ctx.rotate(an + k * 3); ctx.fillRect(-4, -2, 8, 4); ctx.restore(); } }
+  ctx.restore(); }
+function blueGlow() { if (!has("blue") || S.phase === "title") return; const b = blueAt(); if (b < 0) return; const c = tileC(b), t = S.grid[b];
+  bloom(FX(c.x), FX(c.y + (t.yOff || 0)), 56, "90,170,255", .2 + .05 * Math.sin(frame / 14) + .03 * iceN());
+  if (BLUE_STYLE === 4 || BLUE_STYLE === 1) S.grid.forEach((t2, i) => { if (t2.ice) { const c2 = tileC(i); bloom(FX(c2.x), FX(c2.y), 40, "140,200,255", .08); } }); }
 function drawGreenKey(p, x, y, w, h, on, f) { const k = greenK(), GS = GREEN_STYLE, GR = "#5cff8a", GD = "#1f9a48";
   ctx.save();
   if (GS === 1) { ctx.strokeStyle = on || f > 0 ? "#d8ffe2" : GR; ctx.lineWidth = 3; ctx.shadowColor = "#30ff70"; ctx.shadowBlur = 8 + 10 * f + (on ? 6 : 0) + 3 * Math.sin(frame / 14); ctx.beginPath(); ctx.roundRect(x, y, w, h, 8); ctx.stroke(); ctx.shadowBlur = 0; }
@@ -2000,6 +2059,7 @@ function drawPlayArea() {
   const tiles = []; for (let i = 0; i < NN; i++) { const t = S.grid[i]; if (!t || t.ch === " ") continue; const p = tileXY(i), x = FX(p.x), y = FX(p.y + t.yOff), w = FX(L.tw), hh = FX(L.th), k = S.path.indexOf(i);
     tiles.push({ t, i, x, y, w, hh, cx: x + w / 2, cy: y + hh / 2, on: k >= 0, k, hv: i === cand, v: VALUES[t.ch], dots: Math.min(4, Math.ceil(VALUES[t.ch] / 2)), ch: t.ch }); }
   PA_DRAW[KS - 6]({ G, tiles, ok, low, last, play });
+  drawIce(tiles);
   if (KS !== 10) for (const o of tiles) if (o.t.hot) { ctx.strokeStyle = (frame >> 3) & 1 ? "#ff3a2e" : "#ff8060"; ctx.lineWidth = 3; ctx.shadowColor = "#ff3a2e"; ctx.shadowBlur = 14; rr(ctx, o.x - 1, o.y - 2, o.w + 1, o.hh + 2, 9); ctx.stroke(); ctx.shadowBlur = 0; }
   if (play && usingButtons) { const o = tiles.find(o => o.i === S.cursor); if (o) { const c = PA_CUR[KS - 6]; c ? paCursor(o, c[0], c[1]) : curScope(o); } }
   // the glass itself: a recessed pane with a soft slanted reflection; its rim pulses red on the last word
@@ -2076,7 +2136,7 @@ function drawGlows() {
   const prog = S.phase === "play" ? Math.min(1, S.shown / S.target) : .5;   // the tower burns brighter as the night's signal fills
   bloom(FX(b.x), FX(b.y), 46 + prog * 60 + beaconFlash * 2, "255,60,40", (.25 + .55 * prog) * pulse + beaconFlash / 50);
   bloom(FX(b.x), FX(b.y), 20, "255,200,170", .5 + beaconFlash / 40);
-  if (S.phase !== "title") greenGlow();   // the green key's glow
+  if (S.phase !== "title") { greenGlow(); blueGlow(); }   // the green and blue keys' glows
   if (goldFlash > 0) { bloom(FX(b.x), FX(b.y), 70 + goldFlash * 3, GK.rgb, goldFlash / 44); bloom(FX(b.x), FX(b.y), 30, "255,244,190", goldFlash / 44); }   // a word that used the gold key lands gold
   for (const [x, y, n, kind] of P("window_lights") || []) { if (kind !== "warm") continue; const big = n > 40, cb = CALLER.box; if (cb && !big && x >= cb[0] && x <= cb[2] && y >= cb[1] && y <= cb[3]) continue;
     bloom(FX(L.winX + x), FX(L.winY + y), big ? FX(22) : 10 + Math.sqrt(n) * 3, "255,190,90", big ? .18 : Math.min(.35, .08 + n * .02)); }
@@ -2238,7 +2298,7 @@ function slotState(id, n) {
   if (id === "meter") st.armed = play && meterB() > 0;
   if (id === "echo") { const used = maxWords() - S.words; st.armed = play && used === 0; st.spent = play && used > 0; }
   if (id === "owl") st.armed = play && S.words === 1;
-  if (id === "red" || id === "gold") st.armed = play;
+  if (id === "red" || id === "gold" || id === "blue") st.armed = play;
   if (PART[id] && PART[id].key) { st.pips = st.lit = showLv(id, n); }   // a lamp per level (the red key starts with one)
   return st;
 }
@@ -3664,6 +3724,8 @@ async function boot() {
   // test hook: #test-shop opens the part picker after night 1 (for screenshots)
   if (location.hash === "#test-shop") { newRun(); S.parts.push("amp", "coil"); nightClear(); S.phase = "shop"; }
   // keys (2026-11-15): #test-keys = red key level 2, a gold key, three parts; #test-over2 = a double overdrive's picker; #test-carry = the night after an overdrive
+  if (/^#test-blue/.test(location.hash)) { newRun(); setTimeout(() => { S.parts.push("blue"); if (/-green/.test(location.hash)) S.parts.push("tap"); S.grid.forEach(t => { t.blue = false; t.hot = false; }); S.grid[11].blue = true; S.cursor = 0;
+      if (/-red/.test(location.hash)) S.grid[6].hot = true; else S.grid[20].hot = true; S.words = 6; }, 300); }   // blue key at row 2, column 1: frost reaches the red key (-red) and the green middle key (-green)
   if (/^#test-green/.test(location.hash)) { newRun(); setTimeout(() => { S.parts.push("tap"); S.tap = /full/.test(location.hash) ? 60 : 14; S.cursor = 0;
     if (/-red/.test(location.hash)) { S.grid.forEach(t => t.hot = false); S.grid[TAP_I].hot = true; } }, 300); }   // -red: the red key is the green key too   // the green key's looks: #test-green-N (-full: a big charge)
   if (/^#test-keys/.test(location.hash)) { newRun(); setTimeout(() => { S.parts.push("red", "red", "gold", "amp", "coil", "hat"); ensureHot(); }, 300); }
