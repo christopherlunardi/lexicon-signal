@@ -1961,7 +1961,7 @@ let tapFlash = 0;
    GREEN_STYLE: 0 the old gold ring, 1 green ring, 2 green letter + soft glow, 3 charge level (green light rises in the key as the
    charge grows), 4 magic eye (a little tuning eye in the key's corner opens as it charges), 5 breathing (a green glow that breathes
    faster and brighter as it charges). The charge chip shows the number in every style. */
-let GREEN_STYLE = 1; { const m = location.hash.match(/green-(\d)/); if (m) GREEN_STYLE = Math.min(5, +m[1]); }
+let GREEN_STYLE = 1;   // (Chris picked 1, the green ring, 2026-11-15) { const m = location.hash.match(/green-(\d)/); if (m) GREEN_STYLE = Math.min(5, +m[1]); }
 const greenOn = () => has("tap") && GREEN_STYLE > 0 && S.grid[TAP_I];
 const greenK = () => 1 - 1 / (1 + (S.tap || 0) / 25);   // how full the charge looks: 0 empty, about .5 at 25, toward 1
 function greenGlow() { if (!greenOn() || !["play", "report", "shop", "swap", "upgrade", "melt"].includes(S.phase)) return; const c = tileC(TAP_I), t = S.grid[TAP_I], k = greenK(), f = tapFlash / 40, cx = FX(c.x), cy = FX(c.y + (t.yOff || 0));

@@ -211,7 +211,7 @@ the same batch.
   has one painted (src/redkey_icon_fixed.png, now Chris's: a short diagonal key, tuning-knob bow round a red pilot lamp, kdown 51x51).
   Keys are colored keys (Chris 2026-11-15), each with its own silhouette so they read apart at slot size: gold tall and lacy, red
   short, round and diagonal; the Center Tap is now the GREEN KEY (id still "tap"; src/greenkey_icon.png drawn lying flat, kdown 64x32,
-  transposed upright as greenkey_icon_fixed.png). Its look on the glass is Workshop topic "green" (GREEN_STYLE 1..5, #green-N,
+  transposed upright as greenkey_icon_fixed.png). Its look on the glass is Workshop topic "green" (decided: 1, the green ring; GREEN_STYLE 1..5, #green-N,
   #test-green[-red][-full]); the middle key can also be the red key, so its look must never copy or hide the red key's.
   Tests: #test-keys, #test-keyup (melter on keys).
 - Overdrive (2026-11-15): 1.5x = four cards with a key guaranteed ("OVERDRIVE: KEY GUARANTEED"); 2x (OVERDRIVE2) = pick two

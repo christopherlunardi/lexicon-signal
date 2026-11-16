@@ -6,7 +6,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "How should the Green Key look on the glass?",
      "found": "The Green Key is the middle key: words through it add to its charge (the small green number), then score it. Each video: the key sits, gets charged (a word lands at about 1.5 s), then a word is traced through it. The second video of each shows it when the red key lands on the middle key too: both looks have to show and not get in each other's way.",
      "options": [
@@ -130,7 +130,8 @@
        ],
        "play": "play.html#test-green-green-5"
       }
-     ]
+     ],
+     "decided": "1"
     }
    ]
   },
