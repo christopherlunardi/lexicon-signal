@@ -296,7 +296,7 @@ the same batch.
   night's target and each unused retune a sixth, rounded to 5 (nightBonus; night 1: 10 and 5, night 5: 40 and 25), added to the run
   [Since 2026-11-16 each lamp still lit pays a third of the night's target (Chris): paying the night's best word again (2026-11-14 to
   11-16) let one huge first word (red, Pilot Lamp, saved-up blue ice) earn thousands in lamps. The report row reads N EACH; the Night
-  Owl's unused last word pays a third of the target x3. Retunes still pay a sixth of the target.]
+  Owl's unused last word pays a third of the target x3. An unused retune pays half the target (Chris 2026-11-16).]
   [Night Owl Clock: when words are left, the unused last word pays the word bonus times the clock (x3, x4 with two...). It is not a
   lamp: the report shows it as a word line under the words header, above the folding list and always in view
   ("NIGHT OWL: LAST WORD UNUSED   10 X3 +30"), and the night score starts with it. Card: "even if left over" (Chris 2026-11-13).]

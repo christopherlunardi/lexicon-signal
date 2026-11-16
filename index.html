@@ -546,8 +546,8 @@ const KEY_ODDS = .25, KEY_ODDS_UP = .15, CARRY_MAX = .25;   // finish a night wi
 // the night's target (Chris 2026-11-15): 50, then x1.6 a night to night 5, then x1.4 (was 40, x1.8, x1.5: a wall at nights 5-7)
 // (2026-11-15, keys: x1.45 after night 5; the overdrive carry, guaranteed keys and double picks added about a night and a half in the sim)
 const targetFor = (n) => { let t = 50; for (let k = 2; k <= n; k++) t *= k <= 5 ? 1.6 : 1.45; return Math.round(t / 5) * 5; };
-// an unused retune pays a share of the target that grows (Chris 2026-11-15): a sixth to night 3, a quarter to night 6, a third after
-const retuneShare = (n) => n <= 3 ? 1 / 6 : n <= 6 ? 1 / 4 : 1 / 3;
+// an unused retune pays half the night's target (Chris 2026-11-16; before: a sixth to night 3, a quarter to night 6, a third after)
+const retuneShare = (n) => 1 / 2;
 const freqFor = (n) => +(88.1 + ((n - 1) * 1.9) % 19.8).toFixed(1);
 let S = null, uid = 0;
 const has = (id) => S.parts.filter(p => p === id).length;
@@ -2638,7 +2638,7 @@ const TIPS = [
   "EVERY POINT COUNTS TOWARD YOUR RUN SCORE. HOW HIGH CAN YOU GO?",
   "YOUR RUN SCORE SITS IN THE BOTTOM LEFT CORNER",
   "EVERY LAMP STILL LIT WHEN A NIGHT CLEARS PAYS A THIRD OF ITS TARGET",
-  "AN UNUSED RETUNE PAYS A BONUS AT THE END OF THE NIGHT, AND MORE IN LATER NIGHTS",
+  "AN UNUSED RETUNE PAYS HALF THE NIGHT'S TARGET WHEN THE NIGHT CLEARS",
   "SOMEONE LEFT A HAT ON YOUR DOORSTEP. FIT IT AND SEE WHO COMES CALLING",
   "WITH THE STRANGER'S HAT, A CALLER SLIPS REQUESTS UNDER THE WINDOW. FILL ONE AND ITS SIGNAL PAYS X4 TO X8 MORE, AND THE WORD KEEPS ITS LAMP",
   "A REQUEST WAITS ON THE SILL UNTIL YOU FILL IT, THEN THE CALLER BRINGS THE NEXT ONE. TAP THE CARD TO READ IT UP CLOSE",
@@ -3020,7 +3020,7 @@ const HOW_CARDS = [
     setup() {}, steps: [...[[30, 8], [58, 9], [86, 10], [114, 11]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(11))]] },
   { title: "FILL THE TUBE", keys: [], len: 380, text: "Fill the signal tube before the lamps go dark. Every word you send uses one lamp. Longer words and letters with more dots fill it faster. When the lamp at the end of the tube lights, the word you've spelled will fill it; when it burns red, it's overdrive: four cards with a key guaranteed, and the extra signal starts the next night. Every lamp still lit when it fills pays a third of the night's target, so finishing in fewer words pays.",
     setup() { S.score = S.shown = 18; S.words = 3; }, steps: [...[[30, 12], [58, 13], [86, 14], [114, 15]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(15))]] },
-  { title: "STUCK? RETUNE", keys: ["Y"], len: 270, text: "Press {Y}[[, tap the right knob,| or]] move right past the bottom rows onto the knob and press {A}, to swap every letter for new ones, once a night. The small light under that knob shows you still have it. Keep it and it pays a bonus when the night clears, and more in later nights.",
+  { title: "STUCK? RETUNE", keys: ["Y"], len: 270, text: "Press {Y}[[, tap the right knob,| or]] move right past the bottom rows onto the knob and press {A}, to swap every letter for new ones, once a night. The small light under that knob shows you still have it. Keep it and it pays half the night's target when the night clears.",
     setup() {}, steps: [[80, () => retune()]] },
   { title: "RADIO PARTS", keys: [], len: 260, text: "Clear a night to fit one of three radio parts. Parts go in the plain slots, keys in the velvet ones. Copies of a part stack; each copy of a key takes it up a level, and the red key is your first. [[Tap a slot, or press|Press]] down past the bottom row to read one. One part is a mystery. That's the basics!",
     setup() { S.parts = ["battery", "echo"]; S.words = maxWords(); HOW.shop = true; nightClear(); HOW.shop = false; }, steps: [[70, () => { shopFocus = 1; Sound.click(); }], [140, () => { shopFocus = 2; Sound.click(); }], [210, () => { shopFocus = 0; Sound.click(); }]] },
