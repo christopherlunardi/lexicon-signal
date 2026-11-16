@@ -294,9 +294,9 @@ the same batch.
   #test-report, #test-report-long (16 words).
 - Leftover bonus (Chris 2026-11-13): when a night clears, each word (lit lamp, spare battery words too) left pays a quarter of the
   night's target and each unused retune a sixth, rounded to 5 (nightBonus; night 1: 10 and 5, night 5: 40 and 25), added to the run
-  [Since 2026-11-14 each lamp still lit pays the night's BEST WORD again (S.nw max), not a quarter of the target: with the fixed bonus,
-  stopping just short to fit one more word paid better than finishing (Chris). The report row reads BEST WORD N EACH. Retunes still
-  pay a sixth of the target. In the sim this raised run scores about a third; leftovers are about half of all score.]
+  [Since 2026-11-16 each lamp still lit pays a third of the night's target (Chris): paying the night's best word again (2026-11-14 to
+  11-16) let one huge first word (red, Pilot Lamp, saved-up blue ice) earn thousands in lamps. The report row reads N EACH; the Night
+  Owl's unused last word pays a third of the target x3. Retunes still pay a sixth of the target.]
   [Night Owl Clock: when words are left, the unused last word pays the word bonus times the clock (x3, x4 with two...). It is not a
   lamp: the report shows it as a word line under the words header, above the folding list and always in view
   ("NIGHT OWL: LAST WORD UNUSED   10 X3 +30"), and the night score starts with it. Card: "even if left over" (Chris 2026-11-13).]
