@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 168;</script><script>
+<script>window.LEX_BUILD = 169;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -445,13 +445,13 @@ const VOWELS = new Set(["A","E","I","O","U"]), HARD = new Set(["Qu","X","Z","J"]
 const PARTS = [
   { id:"amp",     name:"Tube Amp",          desc:"Every word scores as if it were 1 letter longer." },
   { id:"battery", name:"Spare Battery",     desc:"+1 word every night." },
-  { id:"knob",    name:"Fine Tuning Knob",  desc:"+1 retune a night. Each retune you keep: words score 1 letter longer." },
+  { id:"knob",    name:"Fine Tuning Knob",  desc:"+1 retune a night. Each one you keep: words score 1 letter longer." },
   { id:"coil",    name:"Long Wave Coil",    desc:"Words of 5+ letters x2 (x2.5, x3...)." },
   { id:"short",   name:"Shortwave Crystal", desc:"Words of 3 or 4 letters x2 (x3...)." },
   // the Pilot Lamp (was the Echo Tube, Chris 2026-11-15: two tubes looked alike): the light that comes on first, the old Red Lamp picture
   { id:"echo",    name:"Pilot Lamp",        desc:"First word each night x3 (x4...).", icon:"carrier" },
   // the Signal Meter (Chris 2026-11-15): builds up over the night. Every word sent this night adds +1 boost (per copy) to the words after
-  { id:"meter",   name:"Signal Meter",      desc:"Each word you send makes the rest of the night's words score 1 letter longer." },
+  { id:"meter",   name:"Signal Meter",      desc:"Each word you send makes later ones score 1 letter longer." },
   { id:"owl",     name:"Night Owl Clock",   desc:"Last word each night x3 (x5...), even if left over." },
   { id:"treble",  name:"Treble Slider",     desc:"+3 signal per letter worth 3+." },
   { id:"vowel",   name:"Vowel Antenna",     desc:"Vowels +1 signal each." },
@@ -471,15 +471,15 @@ const PARTS = [
      doesn't use it freezes one more key beside it; a word through it pays x2 plus x1 for every frozen key; a word that touches the
      ice without it shatters the ice. Frozen keys and the blue key hold their place (letters above fall past them). The ice melts
      each night (and on a retune). BLUE_STYLE (Workshop topic "blue") picks how the frost looks. */
-  { id:"blue",    name:"Blue Key",          desc:"Missing it freezes a key beside it. Through it: x2, +1 per frozen key. Touch the ice and it breaks.", key:true, icon:"bluekey", trial:true },
-  { id:"tap",     name:"Green Key",         desc:"The middle key turns green: words through it add their letters to its charge, then score it.", key:true, icon:"greenkey" },
+  { id:"blue",    name:"Blue Key",          desc:"Miss it and ice spreads. Through it: x2, +1 per frozen key.", key:true, icon:"bluekey", trial:true },
+  { id:"tap",     name:"Green Key",         desc:"Words through the green middle key build its charge, then score it.", key:true, icon:"greenkey" },
 ];
 // each key's ladder: what level 1, 2, 3... adds (past the end, the last step's "more" line repeats)
 const KEY_LADDER = {
   red: ["Red key words x3", "Red key words +5 signal", "A second red key on the glass", "Red key words x4"],
   gold: ["A gold key on the glass: any letter", "The gold letter is worth 3 signal", "A second gold key on the glass"],
-  blue: ["A blue key on the glass: words that miss it freeze the keys beside it", "The frost can spread to the corners too", "Every frozen key pays x2 more, not x1", "Slip onto the ice and only half of it breaks"],
-  tap: ["The green key charges: each word through it adds its letters, then scores the charge", "The green key charges twice as fast", "The green key pays its charge twice"] };
+  blue: ["A blue key that freezes the keys around it", "The frost can spread to the corners too", "Every frozen key pays x2 more, not x1", "Slip onto the ice and only half of it breaks"],
+  tap: ["The green key starts charging", "The green key charges twice as fast", "The green key pays its charge twice"] };
 const KEY_MORE = { blue: "Every frozen key pays one more x", red: "Red key words one more x", gold: "Gold letters +2 signal", tap: "The green key charges faster" };
 const keyLv = (id) => has(id);
 // the level a player sees: the red key comes free on the glass, so it shows as level 1 (one lamp) before any copy (Chris 2026-11-15)
