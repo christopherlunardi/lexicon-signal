@@ -113,6 +113,9 @@ function nightBonus(S) { const wl = Math.max(0, S.words), rl = Math.max(0, S.ret
 const SPOT = { 3: .55, 4: .45, 5: .32, 6: .2, 7: .12 };
 function candidates(S, bot) { let c = findAll(S);
   if (bot.kind === "player") c = c.filter(w => reqMet(S, w.path, w.word) || ((ZIPF.get(w.word) || 0) >= bot.z && rnd() < (SPOT[Math.min(7, w.word.length)] * bot.eye)));   // (the request word is marked on the glass: always seen)
+  // "human" (2026-11-16, calibrated on Chris's own runs): knows common words (zipf >= z) and now and then an odd one (rare), spots
+  // each with a chance by length (spot), and doesn't always send the very best one it saw (greedy)
+  if (bot.kind === "human") c = c.filter(w => { const z = ZIPF.get(w.word) || 0; if (reqMet(S, w.path, w.word)) return true; if (z < bot.z && !(rnd() < bot.rare)) return false; return rnd() < (bot.spot[Math.min(7, w.word.length)] || 0); });
   return c.map(w => ({ ...w, pts: scoreOf(S, w.path, w.word) })); }
 function playNight(S, bot, st) {
   S.target = targetFor(S.night); S.score = Math.min(S.carry || 0, CARRY ? round5(S.target * CARRY) : 0); S.carry = 0; S.nightBest = 0; S.nwc = 0; if (S.grid.length) melt(S); S.words = maxWords(S); S.retunes = maxRetunes(S); if (S.night === 1) fillGrid(S); else ensureHot(S);
@@ -121,17 +124,17 @@ function playNight(S, bot, st) {
   while (S.words > 0) {
     let c = candidates(S, bot); c.sort((a, b) => b.pts - a.pts);
     if (iceN(S)) { const safe = c.filter(w => w.path.some(i => S.grid[i].blue) || !w.path.some(i => S.grid[i].ice)); if (safe.length) c = safe; }
-    let best = c[0];
+    let best = c[0]; if (bot.kind === "human" && c.length > 1 && rnd() > bot.greedy) best = c[1 + ((rnd() * Math.min(3, c.length - 1)) | 0)];
     const need = S.target - S.score, per = need / S.words;
     // retune when nothing on the glass gets close to what each word needs (a kept retune is worth a little with the knob)
-    if (S.retunes > 0 && (!best || best.pts < per * .55)) { S.retunes--; if (process.env.KEEP) retuneKeep(S); else fillGrid(S); st.retunes++; continue; }
+    if (S.retunes > 0 && (!best || best.pts < per * (bot.rt ?? .55))) { S.retunes--; if (process.env.KEEP) retuneKeep(S); else fillGrid(S); st.retunes++; continue; }
     if (!best) { S.words = 0; break; }
     // a finisher: if a word clears the night, send the one that clears it (the biggest; overdrive helps)
-    if (has(S, "tap") && best.path.includes(12)) S.tap = (S.tap || 0) + tapAdd(S, best.word.length); S.score += best.pts; S.total += best.pts; S.nwc = (S.nwc || 0) + 1; S.nightBest = Math.max(S.nightBest, best.pts); st.words.push(best.word.length); st.pts.push(best.pts); (st.byNight[S.night] = st.byNight[S.night] || []).push(best.pts / S.target);
+    if (has(S, "tap") && best.path.includes(12)) S.tap = (S.tap || 0) + tapAdd(S, best.word.length); S.score += best.pts; S.total += best.pts; S.nwc = (S.nwc || 0) + 1; S.nightBest = Math.max(S.nightBest, best.pts); st.words.push(best.word.length); (st.wz = st.wz || []).push(ZIPF.get(best.word) || 0); st.wpn = st.wpn || {}; st.wpn[S.night] = (st.wpn[S.night] || 0) + 1; st.pts.push(best.pts); (st.byNight[S.night] = st.byNight[S.night] || []).push(best.pts / S.target);
     const used = best.path; if (reqMet(S, best.path, best.word)) { S.req.done = true; S.reqN = (S.reqN || 0) + 1; REQ_W = null; st.reqs = (st.reqs || 0) + 1; (st.reqWait = st.reqWait || []).push(S.req.nights); if (S.req.kind) ((st.kindWait = st.kindWait || {})[S.req.kind] = st.kindWait[S.req.kind] || []).push(S.req.nights); } else S.words--;
     if (has(S, "blue")) { const ub = used.some(i => S.grid[i].blue), ui = used.some(i => S.grid[i].ice); if (ub || ui) melt(S); if (!ub && !ui) blueSpread(S); }
     collapse(S, used);
-    if (S.score >= S.target) { S.over = S.score >= S.target * OVERDRIVE; S.over2 = S.score >= S.target * 2; S.carry = S.score - S.target; const b = nightBonus(S); S.total += b; st.bonus += b; return true; }
+    if (S.score >= S.target) { (st.nightRatio = st.nightRatio || []).push([S.night, S.score / S.target, S.words]); S.over = S.score >= S.target * OVERDRIVE; S.over2 = S.score >= S.target * 2; S.carry = S.score - S.target; const b = nightBonus(S); S.total += b; st.bonus += b; return true; }
   }
   return false; }
 function shop(S, pickFn) { const bag = PARTS.slice(), ch = []; while (ch.length < (S.over ? 4 : 3)) ch.push(bag.splice((rnd() * bag.length) | 0, 1)[0]);

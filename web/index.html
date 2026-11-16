@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 169;</script><script>
+<script>window.LEX_BUILD = 170;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -2221,7 +2221,7 @@ function drawIntro() {
   if (INTRO !== 3) { ctx.fillStyle = `rgba(6,3,2,${(INTRO === 4 ? .94 : .6) * e})`; ctx.fillRect(0, 0, CVW, CVH); }
   ctx.globalAlpha = e;
   if (INTRO === 1) {   // a big brass plaque, the goal stamped large
-    const rq = S.req ? wrap(S.req.text, "ink", FX(Math.min(W - 24, 250)) - 60) : [], w = Math.min(W - 24, 250), hh = Math.ceil((30 + kh + 10 + ih + 8 + (kh + 8) * 2 + 2 + lh * 2 + 4 + ih + 26 + (rq.length ? 14 + lh * (rq.length + 1) : 0)) / FINE), x = Math.round(W / 2 - w / 2), y = Math.round((L.barY - hh) / 2 - (1 - e) * 30);
+    const rq = [], w = Math.min(W - 24, 250), hh = Math.ceil((30 + kh + 10 + ih + 8 + (kh + 8) * 2 + 2 + lh * 2 + 4 + ih + 26 + (rq.length ? 14 + lh * (rq.length + 1) : 0)) / FINE), x = Math.round(W / 2 - w / 2), y = Math.round((L.barY - hh) / 2 - (1 - e) * 30);
     ctx.fillStyle = "rgba(8,4,2,.45)"; ctx.fillRect(FX(x + 4), FX(y + 5), FX(w), FX(hh)); ctx.drawImage(shinyPlateCv(w, hh, introT - 30), FX(x), FX(y), FX(w), FX(hh));
     let yy = FX(y) + 30; ftext(`NIGHT ${S.night}`, CX, yy, "key", C.ink, "c", { under: C.brassHi, uy: 3 }); yy += kh + 10;
     ftext("BEAM", CX, yy, "ink", C.ink, "c", { under: C.brassHi, uy: 2 }); yy += ih + 8;
@@ -2229,6 +2229,7 @@ function drawIntro() {
     ftext("SIGNAL TO THE TOWER", CX, yy, "ink", C.ink, "c", { under: C.brassHi, uy: 2 }); yy += lh + 4;
     ftext(`IN ${F.words}  ·  ${F.ret}`, CX, yy, "ink", C.ink, "c", { under: C.brassHi, uy: 2 }); yy += lh;
     ftext(`ABOUT ${F.per} A WORD`, CX, yy, "ink", C.inkSoft, "c", { under: C.brassHi, uy: 2 });
+    // (no request on the plaque: it comes on the caller's card after, Chris 2026-11-16)
     if (rq.length) { yy += lh + 14; ctx.fillStyle = "rgba(90,40,16,.45)"; ctx.fillRect(CX - FX(w) / 2 + 40, yy - 8, FX(w) - 80, 2); ftext("LISTENER REQUEST", CX, yy, "ink", C.ink, "c", { under: C.brassHi, uy: 2 }); yy += lh;
       rq.forEach(l => { ftext(l, CX, yy, "ink", C.inkRed, "c", { under: C.brassHi, uy: 2 }); yy += lh; }); }
     if (blink) ftext(F.prompt, CX, FX(y + hh) + 22, "key", C.gold, "c", { outline: C.dark });
