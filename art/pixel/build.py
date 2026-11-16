@@ -363,8 +363,7 @@ def main():
     if os.path.exists(SRC + "clasp_wings.png"): imgs["bar_clasp"] = Image.open(SRC + "clasp_wings.png").convert("RGBA")
     # listener requests (Chris 2026-11-15): PixelLab's cream index card (src/reqcard_pixellab.png). Its painted stamp box is wiped
     # (each reddish pixel there that differs from its row takes its row's paper or ruling colour from x=30) so the game stamps REQUEST itself, and the card
-    # gets a dark brown edge. The caller: PixelLab's silhouette in a fedora and trench coat (src/caller_pixellab.png), turned to face
-    # left (he comes in from the right side of the window), cropped to the figure.
+    # gets a dark brown edge.
     if os.path.exists(SRC + "reqcard_pixellab.png"):
         rc = np.asarray(Image.open(SRC + "reqcard_pixellab.png").convert("RGBA")).copy()
         for y_ in range(2, 21):
@@ -374,8 +373,15 @@ def main():
         m_ = rc[..., 3] > 0; ring = np.zeros_like(m_)
         for dy_, dx_ in ((-1, 0), (1, 0), (0, -1), (0, 1)): ring |= np.roll(np.roll(m_, dy_, 0), dx_, 1)
         rc[ring & ~m_] = (73, 50, 28, 255); imgs["reqcard"] = Image.fromarray(rc)
+    # the caller (Chris 2026-11-15, close-up 3 of PixelLab's second batch): src/caller_pixellab.png smoking, facing left, and
+    # src/caller_reach_pixellab.png (PixelLab's edit of the same picture: cigarette in his mouth, his hand reaching down), so the
+    # two line up. Both are cut to the same box; the thin white line PixelLab left along the edges is dropped.
     if os.path.exists(SRC + "caller_pixellab.png"):
-        cl = Image.open(SRC + "caller_pixellab.png").convert("RGBA"); imgs["caller"] = cl.crop(cl.getbbox()).transpose(Image.FLIP_LEFT_RIGHT)
+        CB = (3, 16, 88, 120)
+        for nm_, fn_ in (("caller", "caller_pixellab.png"), ("caller_reach", "caller_reach_pixellab.png")):
+            if os.path.exists(SRC + fn_):
+                ca_ = np.asarray(Image.open(SRC + fn_).convert("RGBA")).copy(); ca_[(ca_[..., 0] > 200) & (ca_[..., 1] > 200) & (ca_[..., 2] > 200)] = 0
+                imgs[nm_] = Image.fromarray(ca_).crop(CB)
     # the bar's top-middle clasp on the Pixel Bench (Chris 2026-11-14): what he paints (src/bench/bar_clasp.png) is used exactly as sent
     if os.path.exists(SRC + "bench/bar_clasp.png"): imgs["bar_clasp"] = Image.open(SRC + "bench/bar_clasp.png").convert("RGBA")
     elif not os.path.exists(SRC + "clasp_wings.png"):
