@@ -163,7 +163,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 164;</script><script>
+<script>window.LEX_BUILD = 165;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -3247,7 +3247,7 @@ function velvet(w, h) { const k = w + "x" + h; if (velvetCache[k]) return velvet
   x.putImageData(id, 0, 0); return (velvetCache[k] = cv); }
 /* the key slots' velvet tone (Chris 2026-11-16: the deepened red sank into the cherry wood around it). VELVET: 0 as it was (deepened
    red), 1 brighter crimson, 2 wine (red turned toward plum), 3 midnight blue, 4 bottle green. #velvet-N */
-let VELVET = 0; { const m = location.hash.match(/velvet-(\d)/); if (m) VELVET = Math.min(4, +m[1]); }
+let VELVET = 1;   // (Chris picked 1, brighter crimson, 2026-11-16) { const m = location.hash.match(/velvet-(\d)/); if (m) VELVET = Math.min(4, +m[1]); }
 function velvetTone(c, x, y, w, h) { c.save();
   if (VELVET === 0) { c.fillStyle = "rgba(12,2,6,.42)"; c.fillRect(x, y, w, h); }
   if (VELVET === 1) { c.globalCompositeOperation = "color"; c.fillStyle = "rgb(200,20,60)"; c.fillRect(x, y, w, h); c.globalCompositeOperation = "screen"; c.fillStyle = "rgba(60,0,20,1)"; c.fillRect(x, y, w, h); }

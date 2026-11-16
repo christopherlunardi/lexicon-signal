@@ -40,7 +40,7 @@ the same batch.
   are 9-sliced from the log box, the bar is made taller by repeating its plain middle rows. Narrow (4:3) screens tuck the window
   behind the radio's left edge (beacon still visible).
 - Slots (Chris 2026-11-15): 3 velvet KEY slots, a small gap (SLOT_KG), then 3 part slots (KEY_SLOTS, PART_SLOTS), on every screen.
-  The velvet is painted into the bar art (buildBar: velvetRegion, deepened so a red key reads). partSlots() lists keys first (the red
+  The velvet is painted into the bar art (buildBar: velvetRegion + velvetTone; VELVET 1, brighter crimson, Chris 2026-11-16: the deepened red sank into the cherry wood; #velvet-N shows the others). partSlots() lists keys first (the red
   key always, even at level 0) then parts; slotBox(k) maps the k-th entry onto its group (slotPos/slotPX). Use slotAt()/slotBox(),
   never L.slotX + k * L.slotStep. Copies of one part stack in its slot (x2, x3).
   Wide screens: log | plates | 6 slots in one row. Narrow: log and plates on top, the slots centered in a row under them.
