@@ -2009,7 +2009,7 @@ function drawTapRing() { if (!has("tap") || !["play", "report", "shop", "swap", 
    2 ice block (a clear block of ice with a bright edge and a highlight), 3 rime (white frost grows in from the corners, no film),
    4 blue letters (frozen letters turn icy blue, a small crystal), 5 frost web (a light film, and frost lines join each frozen key to
    the blue key). The blue key itself: a cold blue letter, a blue glow, and what it pays now on a small chip (x2 + the frozen keys). */
-let BLUE_STYLE = 1; { const m = location.hash.match(/blue-(\d)/); if (m) BLUE_STYLE = Math.min(5, +m[1]); }
+let BLUE_STYLE = 4;   // (Chris picked 4, blue letters, 2026-11-16) { const m = location.hash.match(/blue-(\d)/); if (m) BLUE_STYLE = Math.min(5, +m[1]); }
 function frostCorner(cx, cy, dx, dy, len, a) {   // a little frost sprig: a stem and its side shoots, from a corner inward
   ctx.strokeStyle = `rgba(235,248,255,${a})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + dx * len, cy + dy * len);
   for (let k = 1; k <= 3; k++) { const px = cx + dx * len * k / 4, py = cy + dy * len * k / 4, s2 = len * (.4 - k * .08); ctx.moveTo(px, py); ctx.lineTo(px + dx * s2, py); ctx.moveTo(px, py); ctx.lineTo(px, py + dy * s2); } ctx.stroke(); }

@@ -6,7 +6,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "How should the Blue Key's frost look on the glass?",
      "found": "The Blue Key (on trial, not in the picker yet): every word that misses it freezes a key beside it; a word through it pays x2, +1 per frozen key; a word that touches the ice without it breaks the ice. Frozen keys hold their place and letters above fall past them. In each 7-second video: four words freeze four keys (the red key and the green middle key sit next to the blue one, so you can see them frozen), then a word goes through the blue key and cashes in (the ice bursts, the blue key moves), two more keys freeze, then a word touches the ice without the blue key and the ice breaks.",
      "options": [
@@ -90,7 +90,8 @@
        ],
        "play": "play.html#test-blue-red-green-blue-5"
       }
-     ]
+     ],
+     "decided": "4"
     }
    ]
   },
