@@ -6,7 +6,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "Where should the night's listener request show while you play?",
      "found": "The request is announced on the night intro plaque in every option (last picture). This is where it stays while you play. The example: A WORD WITH K, with LINK traced. Payout is still to be decided (see chat).",
      "options": [
@@ -105,6 +105,43 @@
         }
        ],
        "play": "play.html#test-togo-3-met-req-4"
+      }
+     ],
+     "chosen": "4"
+    },
+    {
+     "id": "r2",
+     "status": "open",
+     "question": "The caller and the card: right look?",
+     "found": "PixelLab art: a silhouette in a fedora and trench coat (outside on the fire escape, behind the rain) and a cream index card. He slides in from the right, the card slides out under the sash, he slips away. The game stamps REQUEST and pencils the request on the card. It plays once at the start of each night, after the goal plaque. Pick 1 to keep it as is, or leave notes.",
+     "options": [
+      {
+       "id": "1",
+       "title": "Caller drop-off",
+       "note": "Videos on desk and phone, a close-up of the card, and the card glowing when your traced word (LINK) fills the request.",
+       "images": [
+        {
+         "src": "img/req-r2/caller-desk.mp4",
+         "label": "Desk video"
+        },
+        {
+         "src": "img/req-r2/caller-phone.mp4",
+         "label": "Phone video"
+        },
+        {
+         "src": "img/req-r2/card-close.jpg",
+         "label": "The card"
+        },
+        {
+         "src": "img/req-r2/met-desk.jpg",
+         "label": "Word fills it"
+        },
+        {
+         "src": "img/req-r2/met-phone.jpg",
+         "label": "Phone, word fills it"
+        }
+       ],
+       "play": "play.html#test-togo-3-idle-req-4"
       }
      ]
     }

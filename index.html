@@ -576,12 +576,12 @@ function plShare() { let txt = "[]"; try { txt = localStorage.getItem("lexsig.ru
 let REQ = 0; { const m = location.hash.match(/req-(\d)/); if (m) REQ = Math.min(4, +m[1]); }
 const REQ_LETTERS = "JXZKVWYBFH";
 function makeReq(n) { const r = Math.random(), k = Math.min(3, Math.floor(n / 4));
-  if (r < .3) { const ch = REQ_LETTERS[Math.floor(Math.random() * (4 + 2 * k))]; return { kind: "letter", ch, text: `A WORD WITH ${ch}`, short: `${ch} WORD` }; }
-  if (r < .5) { const len = 6 + Math.min(2, Math.floor(n / 5)); return { kind: "len", len, text: `A WORD OF ${len}+ LETTERS`, short: `${len}+ LETTERS` }; }
-  if (r < .65) return { kind: "double", text: "A WORD WITH A DOUBLE LETTER", short: "DOUBLE" };
-  if (r < .8) return { kind: "red", len: 5, text: "5+ LETTERS THROUGH THE RED KEY", short: "RED 5+" };
-  if (r < .9) return { kind: "vowels", n: 4, text: "A WORD WITH 4 VOWELS", short: "4 VOWELS" };
-  return { kind: "ends", text: "STARTS AND ENDS WITH ONE LETTER", short: "SAME ENDS" }; }
+  if (r < .3) { const ch = REQ_LETTERS[Math.floor(Math.random() * (4 + 2 * k))]; return { kind: "letter", ch, text: `A WORD WITH ${ch}`, short: `${ch} WORD`, card: ["A WORD", "WITH " + ch] }; }
+  if (r < .5) { const len = 6 + Math.min(2, Math.floor(n / 5)); return { kind: "len", len, text: `A WORD OF ${len}+ LETTERS`, short: `${len}+ LETTERS`, card: [`${len} LETTERS`, "OR MORE"] }; }
+  if (r < .65) return { kind: "double", text: "A WORD WITH A DOUBLE LETTER", short: "DOUBLE", card: ["A DOUBLE", "LETTER"] };
+  if (r < .8) return { kind: "red", len: 5, text: "5+ LETTERS THROUGH THE RED KEY", short: "RED 5+", card: ["RED KEY", "5+ LONG"] };
+  if (r < .9) return { kind: "vowels", n: 4, text: "A WORD WITH 4 VOWELS", short: "4 VOWELS", card: ["4 VOWELS"] };
+  return { kind: "ends", text: "STARTS AND ENDS WITH ONE LETTER", short: "SAME ENDS", card: ["STARTS &", "ENDS ALIKE"] }; }
 function reqMet(p) { const q = S.req; if (!q || !p || p.length < 3 || !isValid(p)) return false; const W2 = pathWord(p).toUpperCase();
   if (q.kind === "letter") return W2.includes(q.ch); if (q.kind === "len") return W2.length >= q.len; if (q.kind === "double") return /(.)\1/.test(W2);
   if (q.kind === "red") return W2.length >= q.len && p.some(i => S.grid[i].hot); if (q.kind === "vowels") return [...W2].filter(c => "AEIOU".includes(c)).length >= q.n;
@@ -1063,14 +1063,33 @@ function drawScoreDrums(top) {
     const sh = ctx.createLinearGradient(0, wy, 0, wy + dh); sh.addColorStop(0, "rgba(0,0,0,.55)"); sh.addColorStop(.3, "rgba(0,0,0,0)"); sh.addColorStop(.7, "rgba(0,0,0,0)"); sh.addColorStop(1, "rgba(0,0,0,.6)"); ctx.fillStyle = sh; ctx.fillRect(dx, wy, 24, dh); ctx.restore(); }
   if (k > 0) { ctx.globalCompositeOperation = "lighter"; bloom(x + w / 2, y + h / 2, w * .7, "255,190,90", .35 * k); }
   ctx.restore(); }
-// Workshop req 4: the request on a paper slip tucked into the bottom of the window frame
-function drawReqSlip() { if (REQ !== 4 || !S.req || S.phase !== "play" || HOW.on) return; const ww = R("window")[2], wh = R("window")[3], lines = wrap(S.req.text, "ink", FX(ww - 26) - 24), lh = Math.round(22 * TK);
-  const w = ww - 14, h = Math.ceil((30 + lh * (lines.length + 1)) / FINE), x = L.winX + 7, y = L.winY + wh - h - 4, met = reqMet(S.path);
-  ctx.fillStyle = "rgba(6,3,2,.5)"; ctx.fillRect(FX(x + 2), FX(y + 3), FX(w), FX(h)); ctx.drawImage(panelCv("logbox", w, h), FX(x), FX(y), FX(w), FX(h));
-  if (met) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(FX(x + w / 2), FX(y + h / 2), FX(w) * .7, "255,70,40", .3 + .2 * Math.sin(frame / 4)); ctx.restore(); }
-  let yy = FX(y) + 14; ftext("REQUEST LINE", FX(x + w / 2), yy, "ink", C.inkSoft, "c"); yy += lh;
-  lines.forEach(l => { ftext(l, FX(x + w / 2), yy, "ink", met && (frame >> 3) & 1 ? "#e02a10" : C.inkRed, "c"); yy += lh; });
-  ctx.fillStyle = "#8a1a10"; ctx.beginPath(); ctx.arc(FX(x + w / 2), FX(y) + 4, 6, 0, 6.283); ctx.fill(); ctx.fillStyle = "#ff8a70"; ctx.fillRect(FX(x + w / 2) - 2, FX(y) + 1, 2, 2); }
+/* Workshop req 4 (Chris 2026-11-15): a shadowy caller in a fedora and trench coat slips in from the right side of the window,
+   outside on the fire escape, slides an index card under the sash and slips away. The card stays on the sill: REQUEST stamped in
+   red, the request pencilled on its lines. The caller is drawn behind the rain (drawCaller, from drawRain); the card in the room.
+   CALLER times in frames from when the night's goal plaque goes. */
+const CALLER = { inEnd: 50, crouch: 70, card0: 80, card1: 108, out0: 100, out1: 150, x0: 116, x1: 60, y: 131 };
+const reqT = () => { if (REQ !== 4 || !S.req || S.phase !== "play" || HOW.on) return -1; if (S.reqAt == null) { if (nightHold || nightCard > 16) return -1; S.reqAt = frame; } return frame - S.reqAt; };
+function drawCaller(panes) { const t = reqT(), C2 = CALLER; C2.box = null; if (t < 0 || t > C2.out1) return; const e = (u) => u < .5 ? 2 * u * u : 1 - (-2 * u + 2) ** 2 / 2;
+  const x = t < C2.inEnd ? C2.x0 + (C2.x1 - C2.x0) * e(t / C2.inEnd) : t < C2.out0 ? C2.x1 : C2.x1 + (C2.x0 + 4 - C2.x1) * e((t - C2.out0) / (C2.out1 - C2.out0));
+  const dy = t > C2.crouch - 10 && t < C2.out0 + 10 ? Math.round(3 * Math.sin(Math.min(1, (t - C2.crouch + 10) / 20) * Math.PI / 2) * (t > C2.out0 ? 1 - (t - C2.out0) / 10 : 1)) : 0;
+  const bob = t < C2.inEnd || t > C2.out0 ? Math.round(Math.abs(Math.sin(t / 5))) : 0;
+  ctx.save(); ctx.beginPath(); panes.forEach(([px, py, pw, ph]) => ctx.rect(px, py, pw, ph)); ctx.clip();
+  const r = R("caller"); C2.box = [Math.round(x) - 2, C2.y + dy + bob - 2, Math.round(x) + r[2] + 2, C2.y + dy + bob + r[3]];   // (the city lights behind him don't glow through)
+  ctx.drawImage(atlasImg, r[0], r[1], r[2], r[3], FX(L.winX + Math.round(x)), FX(L.winY + C2.y + dy + bob), FX(r[2]), FX(r[3])); ctx.restore(); }
+function drawReqSlip() { const t = reqT(); if (t < CALLER.card0) return; const C2 = CALLER, [, , cw, ch] = R("reqcard"), met = reqMet(S.path), wx = L.winX + Math.round((R("window")[2] - cw) / 2), rest = Math.min(L.winY + 206, Math.floor(scoreDrumBox().y / FINE) - ch - 3);   // (above the RUN counter on small screens)
+  if (t === C2.card0) Sound.paper();
+  const u = Math.min(1, (t - C2.card0) / (C2.card1 - C2.card0)), y = Math.round(rest - ch + ch * (1 - (1 - u) ** 3)), clipY = FX(rest);
+  ctx.save(); ctx.beginPath(); ctx.rect(0, clipY, CVW, CVH); ctx.clip();
+  ctx.fillStyle = "rgba(6,3,2,.45)"; ctx.fillRect(FX(wx + 2), FX(y + 3), FX(cw), FX(ch)); { const r = R("reqcard"); ctx.drawImage(atlasImg, r[0], r[1], cw, ch, FX(wx), FX(y), FX(cw), FX(ch)); }
+  if (met) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(FX(wx + cw / 2), FX(y + ch / 2), FX(cw) * .75, "255,80,50", .26 + .16 * Math.sin(frame / 4)); ctx.restore(); }
+  // the stamp: REQUEST in red, in a red box, over the header line on the right
+  const k = TK > 1 ? 1 / TK : 1, sw = textW("REQUEST", "ink") * k + 12, sx = FX(wx + cw) - 8 - sw, sy = FX(y) + 6, sh2 = 14 * TK * k + 8, red = met && (frame >> 3) & 1 ? "#e8301a" : "rgba(176,38,24,.88)";
+  ctx.strokeStyle = red; ctx.lineWidth = 2; ctx.strokeRect(sx, sy, sw, sh2);
+  ctx.save(); ctx.translate(sx + 6, sy + 4); ctx.scale(k, k); ftext("REQUEST", 0, 0, "ink", red, "l"); ctx.restore();
+  // the request, pencilled on the lines
+  const lines = S.req.card || [S.req.short], kw = Math.min(k, (FX(cw) - 20) / Math.max(...lines.map(l => textW(l, "ink"))));
+  lines.forEach((l, i) => { ctx.save(); ctx.translate(FX(wx + cw / 2), FX(y) + 38 + i * 26 * kw); ctx.scale(kw, kw); ftext(l, 0, 0, "ink", "#2a2c48", "c"); ctx.restore(); });
+  ctx.restore(); }
 function drawBeacon() {
   const b = L.beacon, pulse = [0, 1, 2, 3, 3, 2, 1, 0][(frame >> 3) & 7];
   disc(wctx, b.x, b.y, 1 + (pulse >> 1), C.redHot);
@@ -1172,6 +1191,7 @@ function drawRain() {
   for (const s of rainS) { s.y += s.v; s.x += s.v * .22; if (s.y > 1.05) { s.y = -.05; s.x = Math.random() * 1.1 - .1; } if (s.x > 1.05) s.x -= 1.1; }
   for (const d of rainD) { if (d.hold > 0) d.hold--; else { d.v = Math.min(.012, d.v + .0006); d.y += d.v; if (Math.random() < .02) { d.hold = 20 + Math.random() * 120; d.v = 0; } }
     if (d.y > 1.02) { d.y = -.02; d.x = Math.random(); d.r = 1.5 + Math.random() * 2.2; d.hold = Math.random() * 120; } }
+  drawCaller(panes);
   const rx = FX(L.radioX + 8);   // on narrow screens the radio covers part of the window: no rain on the radio
   // the rain shows full on clear glass (the tall panes and the plain glass at each end of the stained strip, Chris 2026-11-14) and
   // only faintly over the stained glass itself
@@ -1902,7 +1922,7 @@ function drawGlows() {
   bloom(FX(b.x), FX(b.y), 46 + prog * 60 + beaconFlash * 2, "255,60,40", (.25 + .55 * prog) * pulse + beaconFlash / 50);
   bloom(FX(b.x), FX(b.y), 20, "255,200,170", .5 + beaconFlash / 40);
   if (goldFlash > 0) { bloom(FX(b.x), FX(b.y), 70 + goldFlash * 3, GK.rgb, goldFlash / 44); bloom(FX(b.x), FX(b.y), 30, "255,244,190", goldFlash / 44); }   // a word that used the gold key lands gold
-  for (const [x, y, n, kind] of P("window_lights") || []) { if (kind !== "warm") continue; const big = n > 40;
+  for (const [x, y, n, kind] of P("window_lights") || []) { if (kind !== "warm") continue; const big = n > 40, cb = CALLER.box; if (cb && !big && x >= cb[0] && x <= cb[2] && y >= cb[1] && y <= cb[3]) continue;
     bloom(FX(L.winX + x), FX(L.winY + y), big ? FX(22) : 10 + Math.sqrt(n) * 3, "255,190,90", big ? .18 : Math.min(.35, .08 + n * .02)); }
   bloom(FX(W - 20), FX(SCENE_H - 30), FX(220), "255,150,60", .16 + .03 * Math.sin(frame / 50));     // the unseen lamp, breathing
   const lit = S.phase === "title" ? titleFX.lamps : Math.min(6, S.words);
@@ -3242,6 +3262,7 @@ const Sound = (() => {
     tick() { if (!ac) return; const t = ac.currentTime; if (t - lastTick < .04) return; lastTick = t; osc("square", 2400, t, .001, .02, .015); },
     type() { if (!ac) return; const t = ac.currentTime; if (t - lastType < .03) return; lastType = t; noise(t, .025, .05, "bandpass", 3000 + Math.random() * 1500, 3); },
     click() { if (!ac) return; osc("triangle", 900, ac.currentTime, .002, .1, .05); },
+    paper() { if (!ac) return; const t = ac.currentTime; noise(t, .22, .05, "bandpass", 2600, 1.2); noise(t + .16, .08, .04, "bandpass", 1500, 2); },   // a card slid under the sash
     thud(n) { if (!ac) return; const t = ac.currentTime; osc("sine", 90, t, .002, .5, .18, sfx, 42); noise(t, .08, .25, "lowpass", 900, 1, sfx); osc("square", 160, t, .001, .05 * n, .04); },
     send(big) { if (!ac) return; const t = ac.currentTime; noise(t, .9, .14, "bandpass", 500, 2, sfx, 5000); osc("sine", 220, t, .02, .08, .8, sfx, 1200); if (big) noise(t + .1, .9, .12, "highpass", 2500, .7); },
     beacon(big) { if (!ac) return; const t = ac.currentTime, ch = chordNow(); ch.concat(ch.map(m => m + 12)).slice(0, big ? 8 : 5).forEach((m, k) => osc("square", m2f(m + 12), t + k * .05, .003, .06, .5)); if (big) osc("sawtooth", 110, t, .01, .14, .9, sfx, 660); },
@@ -3478,7 +3499,7 @@ async function boot() {
   if (location.hash.startsWith("#test-intro")) { newRun(); S.night = 3; S.parts.push("battery", "amp"); S.total = 140; startNight(); }   // the night intro on night 3 with a battery (#test-intro-N)
   if (location.hash.startsWith("#test-shop-gold")) { newRun(); S.parts.push("amp", "coil"); nightClear(); S.phase = "shop"; shopChoices[1] = PART.gold; }
   if (location.hash.startsWith("#test-trade")) { newRun(); S.night = 4; S.parts.push("amp", "amp", "coil", "battery", "battery", "echo"); startNight(); nightHold = 0; S.score = S.shown = Math.round(S.target * .8); S.words = 0; nightLost(); }
-  if (/^#test-(pace|togo)/.test(location.hash)) { newRun(); S.night = 4; S.parts.push("amp", "coil"); startNight(); setTimeout(() => { nightHold = 0; S.score = S.shown = /near/.test(location.hash) ? 185 : 70; S.words = 3; S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); usingButtons = !/redpop|idle/.test(location.hash); if (/idle/.test(location.hash)) S.cursor = -1; if (REQ) S.req = { kind: "letter", ch: "K", text: "A WORD WITH K", short: "K WORD" }; if (/met/.test(location.hash)) { S.path = [H5(8), H5(9), H5(10), H5(11)]; S.cursor = H5(11); } if (/redpop/.test(location.hash)) { S.grid.forEach(t => t.hot = false); S.grid[H5(6)].hot = true; S.cursor = -1; } if (!/idle|met/.test(location.hash)) { S.path = [0, 1, 2]; S.cursor = S.path[S.path.length - 1]; } }, 400); }
+  if (/^#test-(pace|togo)/.test(location.hash)) { newRun(); S.night = 4; S.parts.push("amp", "coil"); startNight(); setTimeout(() => { nightHold = 0; S.score = S.shown = /near/.test(location.hash) ? 185 : 70; S.words = 3; S.grid.forEach(t => { t.yOff = 0; t.vy = 0; t.wait = 0; }); "RATEDOGSLINKMUSE".split("").forEach((ch, i) => S.grid[H5(i)].ch = ch); usingButtons = !/redpop|idle/.test(location.hash); if (/idle/.test(location.hash)) S.cursor = -1; if (REQ) S.req = { kind: "letter", ch: "K", text: "A WORD WITH K", short: "K WORD", card: ["A WORD", "WITH K"] }; S.reqAt = /met/.test(location.hash) ? frame - 400 : null; if (/met/.test(location.hash)) { S.path = [H5(8), H5(9), H5(10), H5(11)]; S.cursor = H5(11); } if (/redpop/.test(location.hash)) { S.grid.forEach(t => t.hot = false); S.grid[H5(6)].hot = true; S.cursor = -1; } if (!/idle|met/.test(location.hash)) { S.path = [0, 1, 2]; S.cursor = S.path[S.path.length - 1]; } }, 400); }
   if (location.hash === "#test-swap") { newRun(); S.parts.push("amp", "amp", "coil", "echo", "owl", "short"); nightClear(); const k = shopChoices.findIndex(c => !S.parts.includes(c.id)); if (k >= 0) choosePart(k); }
   if (location.hash.startsWith("#test-shop-tap")) { newRun(); S.parts.push("amp", "coil"); nightClear(); S.phase = "shop"; shopChoices[1] = PART.tap; }
   if (/^#test-word-tap/.test(location.hash)) setTimeout(() => { S.parts = ["amp", "tap", "coil"]; S.tap = 12; S.path = [6, 12, 18]; S.cursor = 18; }, 320);

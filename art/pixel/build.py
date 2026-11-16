@@ -361,6 +361,21 @@ def main():
         json.dump([{"file": "img/stained.png", "group": "To do: frames under the rivets", "label": "The window's stained glass (everything inside the wood, 98 x 33)", "w": 98, "h": 33, "key": "stained"}], open(ROOT_ART + "bench/manifest.json", "w"), indent=1)
     # the bar's clasp (Chris 2026-11-14): PixelLab's winged brass piece (src/clasp_wings.png, trimmed to the wings' shape)
     if os.path.exists(SRC + "clasp_wings.png"): imgs["bar_clasp"] = Image.open(SRC + "clasp_wings.png").convert("RGBA")
+    # listener requests (Chris 2026-11-15): PixelLab's cream index card (src/reqcard_pixellab.png). Its painted stamp box is wiped
+    # (each reddish pixel there that differs from its row takes its row's paper or ruling colour from x=30) so the game stamps REQUEST itself, and the card
+    # gets a dark brown edge. The caller: PixelLab's silhouette in a fedora and trench coat (src/caller_pixellab.png), turned to face
+    # left (he comes in from the right side of the window), cropped to the figure.
+    if os.path.exists(SRC + "reqcard_pixellab.png"):
+        rc = np.asarray(Image.open(SRC + "reqcard_pixellab.png").convert("RGBA")).copy()
+        for y_ in range(2, 21):
+            for x_ in range(37, 62):
+                q = rc[y_, x_]
+                if q[3] and int(q[0]) - int(q[1]) > 14 and abs(rc[y_, 30].astype(int) - q.astype(int)).sum() > 24: rc[y_, x_] = rc[y_, 30]
+        m_ = rc[..., 3] > 0; ring = np.zeros_like(m_)
+        for dy_, dx_ in ((-1, 0), (1, 0), (0, -1), (0, 1)): ring |= np.roll(np.roll(m_, dy_, 0), dx_, 1)
+        rc[ring & ~m_] = (73, 50, 28, 255); imgs["reqcard"] = Image.fromarray(rc)
+    if os.path.exists(SRC + "caller_pixellab.png"):
+        cl = Image.open(SRC + "caller_pixellab.png").convert("RGBA"); imgs["caller"] = cl.crop(cl.getbbox()).transpose(Image.FLIP_LEFT_RIGHT)
     # the bar's top-middle clasp on the Pixel Bench (Chris 2026-11-14): what he paints (src/bench/bar_clasp.png) is used exactly as sent
     if os.path.exists(SRC + "bench/bar_clasp.png"): imgs["bar_clasp"] = Image.open(SRC + "bench/bar_clasp.png").convert("RGBA")
     elif not os.path.exists(SRC + "clasp_wings.png"):
