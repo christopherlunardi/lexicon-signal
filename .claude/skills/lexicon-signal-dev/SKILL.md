@@ -168,7 +168,7 @@ the same batch.
   of a non-rare part opens the trade screen (phase "trade", drawTrade, nightLost): left/right picks among stackable slots, A trades one
   copy and the night counts (next night, no part, no bonus), B or the GIVE UP plate ends the run. Unlimited trades doubled runs in
   the sim; the three-quarter rule gives about one a run. #test-trade. The play log notes picked "trade:<id>" and run.trades.
-- Pace mark (Workshop pace-r1, Chris picked 2, 2026-11-15): a brass mark on the tube where this word should reach to keep pace
+- Pace mark: REMOVED 2026-11-17 (PACE = 0; Chris: the tube already previews the word). It was (Workshop pace-r1, picked 2, 2026-11-15): a brass mark on the tube where this word should reach to keep pace
   (paceNeed = what's left / words left), the cells up to it outlined; it lights when the traced word gets there. PACE 2 (#pace-N
   shows the other looks). The night intro plaque says ABOUT N A WORD.
 - Red key (Workshop redkey-r1, Chris picked 1, 2026-11-15): its red glow is bigger and breathes slowly (REDPOP 1), and the red scan

@@ -169,7 +169,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 199;</script><script>
+<script>window.LEX_BUILD = 200;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -1209,7 +1209,8 @@ function scoreShow() { return !HOW.on && barShow > .9 && ["play", "shop", "swap"
    between "85 TO GO" and "21 A WORD"; 2 a pace mark on the tube where this word should reach; 3 the dial says what a word needs and
    the traced word's number turns hot once it keeps pace; 4 the lower plate says "21 A WORD" (the night stays on the dial);
    5 the plate taking turns and the tube mark together. ---- */
-let PACE = 2; { const m = location.hash.match(/pace-(\d)/); if (m) PACE = Math.min(5, +m[1]); }   // Chris picked 2, the mark on the tube (2026-11-15)
+// 0 = no pace hint (Chris 2026-11-17: the tube already shows what the traced word adds, the mark was one thing too many)
+let PACE = 0; { const m = location.hash.match(/pace-(\d)/); if (m) PACE = Math.min(5, +m[1]); }   // Chris picked 2, the mark on the tube (2026-11-15)
 /* ---- Workshop "to go" round 2 (Chris 2026-11-15: the plate is the place; show what you have against the target, nicely).
    #togo-N: 0 as now (135 TO GO); 1 stamped 70 / 205; 2 the score big, "/ 205" small; 3 a lit window in the plate with 70 / 205;
    4 the same window in the dial's dot lettering; 5 70 / 205 on the top plate and 135 TO GO on the lower one. ---- */
@@ -2645,7 +2646,6 @@ const TIPS = [
   "FROM THE BOTTOM ROWS, PRESS LEFT PAST THE FIRST COLUMN TO REACH THE REQUEST CARD, THEN {A} TO READ IT",
   "EVERY EXTRA STRANGER'S HAT ADDS +2 TO EACH REQUEST",
   "AS YOU TRACE, THE REQUEST CARD LIGHTS THE LETTERS YOUR WORD MATCHES",
-  "THE BRASS MARK ON THE TUBE SHOWS WHERE YOUR NEXT WORD SHOULD REACH TO KEEP PACE",
   "THE TOP PLATE SHOWS YOUR SIGNAL AGAINST THE NIGHT'S TARGET",
   "AFTER EACH NIGHT A REPORT SHOWS EVERY WORD AND WHAT HELPED IT",
   "TAP THE LEFT KNOB TO PAUSE",
