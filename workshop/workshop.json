@@ -3136,6 +3136,68 @@
      "decided": "1"
     }
    ]
+  },
+  {
+   "id": "bonus",
+   "title": "Value dots that tell the truth",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "How should a key show what your parts add to its letter?",
+     "found": "Each key's amber dots show what its letter is worth. These add what your parts give it: the Vowel Antenna (+1 a copy on vowels) and the Treble Slider (+5 a copy on letters worth 3+). The pictures have two Vowel Antennas and a Treble Slider fitted, so vowels show two extra dots. They're drawn as a few plain squares, so they cost nothing to run.",
+     "options": [
+      {
+       "id": "1",
+       "title": "White dots, square on top",
+       "note": "Each Vowel Antenna adds a white dot above a vowel's value dots; the Treble Slider puts a bigger cream square at the top of that column on letters worth 3+.",
+       "images": [
+        {
+         "src": "img/bonus-r1/bonus-1-close.jpg",
+         "label": "Close up"
+        },
+        {
+         "src": "img/bonus-r1/bonus-1.jpg",
+         "label": "Whole screen"
+        }
+       ],
+       "play": "play.html#test-bonus-bonus-1"
+      },
+      {
+       "id": "2",
+       "title": "Teal dots, square in the corner",
+       "note": "The same extra dots in teal, and the Treble Slider's square in the key's top left corner.",
+       "images": [
+        {
+         "src": "img/bonus-r1/bonus-2-close.jpg",
+         "label": "Close up"
+        },
+        {
+         "src": "img/bonus-r1/bonus-2.jpg",
+         "label": "Whole screen"
+        }
+       ],
+       "play": "play.html#test-bonus-bonus-2"
+      },
+      {
+       "id": "3",
+       "title": "Corner marks",
+       "note": "Everything parts add sits in the key's top left corner: a small dot per Vowel Antenna, then the Treble Slider's bigger square.",
+       "images": [
+        {
+         "src": "img/bonus-r1/bonus-3-close.jpg",
+         "label": "Close up"
+        },
+        {
+         "src": "img/bonus-r1/bonus-3.jpg",
+         "label": "Whole screen"
+        }
+       ],
+       "play": "play.html#test-bonus-bonus-3"
+      }
+     ]
+    }
+   ]
   }
  ]
 }
