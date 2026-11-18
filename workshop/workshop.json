@@ -2732,7 +2732,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "How should the game warn you that you're on your last word and still short?",
      "found": "Every option starts the same way: once the turn before it is over, the dial flashes LAST WORD in (three quick blinks, then it holds, then blinks out), and while you play it scrolls LAST WORD * NEED 113. That's the new dial rule for everything important: it flashes in, centered; extras scroll. Each video starts with two words left, drops to the last word, then a word is traced.",
      "options": [
@@ -2800,6 +2800,31 @@
        ],
        "play": "play.html#test-danger-danger-4"
       }
+     ],
+     "decided": "2"
+    },
+    {
+     "id": "r2",
+     "status": "open",
+     "question": "Fading signal, with more glitching on the letters: right amount?",
+     "found": "Now in the game (build 203). A few keys at a time glitch for a few frames: a key drops out, a key tears with bright and dark lines, or a key splits red and blue. Keys in the word you're tracing (and the key under the cursor) never glitch, so it stays playable.",
+     "options": [
+      {
+       "id": "1",
+       "title": "More glitching",
+       "note": "The dial's LAST WORD flash here uses look 1 of the dial topic.",
+       "images": [
+        {
+         "src": "img/danger-r2/danger-2b.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/danger-r2/danger-2b.jpg",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-danger-danger-2"
+      }
      ]
     }
    ]
@@ -2810,7 +2835,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "What should happen when the last lamp goes out and the night is lost?",
      "found": "Each takes about six seconds and any press skips it. The videos run on into the game over screen (the sheet, option 1 of the next topic). Sounds: pops, a falling whine, hiss, thuds.",
      "options": [
@@ -2862,6 +2887,31 @@
        ],
        "play": "play.html#test-danger-loss-3"
       }
+     ],
+     "decided": "1"
+    },
+    {
+     "id": "r2",
+     "status": "open",
+     "question": "Power down into the sign-off log, over the dark room: right?",
+     "found": "Now in the game (build 203). After the power-down the room stays nearly black with the tower's red light blinking, the dial stays dead, and the sign-off log prints up over it.",
+     "options": [
+      {
+       "id": "1",
+       "title": "Power down, then sign-off",
+       "note": "",
+       "images": [
+        {
+         "src": "img/loss-r2/loss-final.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/loss-r2/loss-final.jpg",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-danger-loss-1"
+      }
      ]
     }
    ]
@@ -2872,7 +2922,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "Which game over screen, and which title (GAME OVER, OFF THE AIR, SIGN-OFF or DEAD AIR)?",
      "found": "All three show the run score (with NEW HIGH SCORE when it is one), nights cleared, words sent, best word, longest word and everything that was on your radio, then NEW RUN and MAIN MENU (left / right and A, or tap). The buttons wake once the numbers are in, so you can't press through by accident. Any title can go on any layout.",
      "options": [
@@ -2923,6 +2973,101 @@
         }
        ],
        "play": "play.html#test-gover-gover-3"
+      }
+     ],
+     "decided": "3"
+    }
+   ]
+  },
+  {
+   "id": "dialfx",
+   "title": "Dial attention",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "How should the dial grab your eye for important warnings and news?",
+     "found": "Only important messages get this (LAST WORD, OVERDRIVE, and later ones like it); everyday ones (word scores, TOO SHORT) just flash in. Each video: LAST WORD (a warning, red), then OVERDRIVE (good news, amber).",
+     "options": [
+      {
+       "id": "1",
+       "title": "Lit flash",
+       "note": "The whole dial flashes lit (red for warnings, amber for good news) with dark letters, three times, then holds.",
+       "images": [
+        {
+         "src": "img/dialfx-r1/dialfx-1.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/dialfx-r1/dialfx-1.jpg",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-danger-danger-2-dialfx-1"
+      },
+      {
+       "id": "2",
+       "title": "Glow",
+       "note": "A big glow pulses around the dial and onto the radio while the message shows.",
+       "images": [
+        {
+         "src": "img/dialfx-r1/dialfx-2.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/dialfx-r1/dialfx-2.jpg",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-danger-danger-2-dialfx-2"
+      },
+      {
+       "id": "3",
+       "title": "Scan line",
+       "note": "A bright scan line sweeps across and writes the message in, then it holds.",
+       "images": [
+        {
+         "src": "img/dialfx-r1/dialfx-3.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/dialfx-r1/dialfx-3.jpg",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-danger-danger-2-dialfx-3"
+      },
+      {
+       "id": "4",
+       "title": "Rim light",
+       "note": "The dial's rim lights up and pulses, and the radio gives a small jolt.",
+       "images": [
+        {
+         "src": "img/dialfx-r1/dialfx-4.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/dialfx-r1/dialfx-4.jpg",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-danger-danger-2-dialfx-4"
+      },
+      {
+       "id": "5",
+       "title": "Lit flash and glow",
+       "note": "Options 1 and 2 together.",
+       "images": [
+        {
+         "src": "img/dialfx-r1/dialfx-5.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/dialfx-r1/dialfx-5.jpg",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-danger-danger-2-dialfx-5"
       }
      ]
     }

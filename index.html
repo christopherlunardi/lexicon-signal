@@ -773,7 +773,7 @@ function arrive() {
   beams.push({ t: 0, dur: 24, big, hits, gold: gold && GOLD_STYLE >= 4 }); Sound.beacon(big); log(`${sc.word} +${sc.pts}${sc.mult > 1 ? " x" + sc.mult : ""}`);
   if (HOW.on) {}   // (the how-to-play demo never clears the night or ends the run)
   else if (S.score >= S.target) { S.over = S.score >= S.target * OVERDRIVE;
-    if (S.over) { overT = 1; shake = 8; Sound.full(); Sound.beacon(true); dialFlash = { text: "OVERDRIVE", t: 140 }; log(`Overdrive! ${S.score} of ${S.target}.`); }
+    if (S.over) { overT = 1; shake = 8; Sound.full(); Sound.beacon(true); dialFlash = { text: "OVERDRIVE", t: 150, big: true }; log(`Overdrive! ${S.score} of ${S.target}.`); }
     S.ending = frame; busy++; setTimeout(() => { busy--; nightClear(); }, S.over ? 2300 : 1700); }
   else if (S.words <= 0) { S.ending = frame; busy++; setTimeout(() => { busy--; nightLost(); }, 1400); }
   else log(`${S.target - S.score} to go, ${S.words} word${S.words === 1 ? "" : "s"} left.`);
@@ -1113,7 +1113,7 @@ function update() {
   const thudCols = new Set();
   if (S && S.blueSpread && S.phase === "play" && !pending && !flyers.length && !moving()) blueSpread();
   if (!inDanger()) dangerT = 0; else if (dangerT > 0 || (!pending && !flyers.length && !moving() && !busy)) { dangerT++;
-    if (dangerT === 1 || (dangerT % 720 === 0 && !S.path.length)) { dialFlash = { text: "LAST WORD", bad: true, t: 120 }; Sound.warn(); }
+    if (dangerT === 1 || (dangerT % 720 === 0 && !S.path.length)) { dialFlash = { text: "LAST WORD", bad: true, t: 150, big: true }; Sound.warn(); }
     if (DANGER === 3 && dangerT % 64 === 1) Sound.beat(); }
   if (S.phase === "dying") lossUpdate();
   if (S.phase === "over") overT2++;
@@ -1156,7 +1156,7 @@ function draw() {
   ctx.save(); ctx.translate(sx * FINE, 0); drawRain(); drawDial(); drawLamps(); drawKeyLetters(); drawGlows(); drawFlyers(); ctx.restore();
   if (overT > 0) { ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(255,40,24,${.42 * overT * (.6 + .4 * Math.sin(frame / 2))})`; ctx.fillRect(0, 0, CVW, CVH); ctx.restore(); overT = Math.max(0, overT - .012); }
   drawScoreDrums(); drawReqSlip(); if (POP === 2 || POP === 5) popRims(); if (POP === 3) popKeylines();
-  drawBarText(); drawReqZoom(); drawDanger(); drawLoss(sx); if (nightCard > 0 && S.phase === "play" && !HOW.on) { if (INTRO) { drawIntro(); introT++; if (!nightHold) nightCard--; } else { drawNightCard(); nightCard--; } }
+  drawBarText(); drawReqZoom(); drawDanger(); LAST_SX = sx; drawLoss(sx); if (nightCard > 0 && S.phase === "play" && !HOW.on) { if (INTRO) { drawIntro(); introT++; if (!nightHold) nightCard--; } else { drawNightCard(); nightCard--; } }
   if (S.phase === "title" || S.phase === "shop" || S.phase === "swap" || S.phase === "trade" || S.phase === "over" || S.phase === "melt" || S.phase === "upgrade" || S.phase === "report") {
     octx.clearRect(0, 0, W, H); octx.imageSmoothingEnabled = false;
     if (S.phase === "title") drawTitle(); else if (S.phase === "shop") drawShop(); else if (S.phase === "swap") drawSwap(); else if (S.phase === "trade") drawTrade(); else if (S.phase === "melt") drawMelt(); else if (S.phase === "report") drawReport(); else if (S.phase === "upgrade") drawUpgrade(); else drawOver();
@@ -1226,8 +1226,8 @@ function scoreShow() { return !HOW.on && barShow > .9 && ["play", "shop", "swap"
    5 the plate taking turns and the tube mark together. ---- */
 // the end of a run (Workshop topics "danger", "loss" and "gover", 2026-11-18): DANGER = the last-word warning, LOSS = the losing
 // animation, GOVER = the game over screen. #danger-N, #loss-N and #gover-N pick one.
-let DANGER = 1, LOSS = 1, GOVER = 1;
-{ const h = location.hash; let m; if ((m = h.match(/danger-(\d)/))) DANGER = +m[1]; if ((m = h.match(/loss-(\d)/))) LOSS = +m[1]; if ((m = h.match(/gover-(\d)/))) GOVER = +m[1]; }
+let DANGER = 2, LOSS = 1, GOVER = 3, DIALFX = 1;   // (Chris picked 2026-11-18: DANGER 2 fading signal, LOSS 1 power down, GOVER 3 the sign-off log)
+{ const h = location.hash; let m; if ((m = h.match(/danger-(\d)/))) DANGER = +m[1]; if ((m = h.match(/loss-(\d)/))) LOSS = +m[1]; if ((m = h.match(/gover-(\d)/))) GOVER = +m[1]; if ((m = h.match(/dialfx-(\d)/))) DIALFX = +m[1]; }
 let dangerT = 0, lossT = 0, beaconKill = 0, overSel = 0, overT2 = 0, lossOrd = [], lossCols = [], OVERUI = [];
 // the last word, with the tube still short: the warning runs (it starts once the turn before it is over)
 const inDanger = () => S.phase === "play" && !HOW.on && S.words === 1 && S.score < S.target && !S.ending;
@@ -1419,6 +1419,10 @@ function drawBarLive() {
 // ---------- fine layer ----------
 const FX = (x) => Math.round(x * FINE);
 const dialDots = new Map();
+function dialAttention(d, age, rgb) { const cx = FX(d.x + d.w / 2), cy = FX(d.y + d.h / 2), fade = Math.min(1, age / 4) * Math.max(0, Math.min(1, (dialFlash.t - 10) / 30));
+  if (DIALFX === 2 || DIALFX === 5) { const pu = .55 + .45 * Math.sin(age * .35); ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(cx, cy, FX(d.w) * .75, rgb, .55 * pu * fade); bloom(cx, cy, FX(d.w) * 1.3, rgb, .22 * pu * fade); ctx.restore(); }
+  if (DIALFX === 4) { const pu = .5 + .5 * Math.sin(age * .4); ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.strokeStyle = `rgba(${rgb},${.85 * pu * fade})`; ctx.lineWidth = 4; ctx.strokeRect(FX(d.x) - 6, FX(d.y) - 6, FX(d.w) + 12, FX(d.h) + 12);
+    ctx.strokeStyle = `rgba(${rgb},${.3 * pu * fade})`; ctx.lineWidth = 12; ctx.strokeRect(FX(d.x) - 8, FX(d.y) - 8, FX(d.w) + 16, FX(d.h) + 16); ctx.restore(); if (age === 1) shake = Math.max(shake, 5); } }
 function drawDial() {
   // lit dot-matrix display: every dot position faintly visible, lit dots bright with a dim halo
   const d = L.dial, cols = Math.floor((FX(d.w) - 8 + 3) / 18), x0 = FX(d.x) + Math.floor((FX(d.w) - (cols * 18 - 3)) / 2), y0 = FX(d.y) + Math.round((FX(d.h) - 21) / 2);
@@ -1430,6 +1434,7 @@ function drawDial() {
     if (!g) { g = document.createElement("canvas"); g.width = cols * 18; g.height = 21; const x = g.getContext("2d"); x.fillStyle = lit ? C.dotDim : C.dotOff; for (let cx = 0; cx < cols * 6; cx++) for (let r = 0; r < 7; r++) if (cx % 6 < 5) x.fillRect(cx * 3, r * 3, 2, 2); dialDots.set(key, g); }
     ctx.drawImage(g, x0, y0); }
   let s = "", col = C.amber, blink = false;
+  if (S.phase === "over" && LOSS === 1 && !HOW.on) { ctx.restore(); return; }   // (the dial stays dead after the power-down)
   if (S.phase === "dying") { const q = lossDial(cols); if (q) ftextDot(q.s.slice(0, cols), x0 + Math.max(0, Math.floor((cols - q.s.length) / 2)) * 18, y0, q.col); ctx.restore(); return; }
   if (dialFlash) { s = dialFlash.text; col = dialFlash.bad ? C.redHot : C.hot; blink = true; dialVal = 0; }
   else if (live) {
@@ -1452,9 +1457,16 @@ function drawDial() {
     const full = msg.repeat(3), off = (marquee >> 3) % msg.length, sub = (marquee & 7) * 18 / 8; s = full.substr(off, cols + 1); ftextDot(s, x0 - sub, y0, C.amber); s = ""; dialVal = 0; }
   // the dial scrolls the extras; anything important flashes in, centered (Chris 2026-11-18): three quick blinks, a steady hold, then it blinks out
   if (s && dialFlash) { if (dialFlash.t0 == null) dialFlash.t0 = dialFlash.t; const age = dialFlash.t0 - dialFlash.t, on = age < 18 ? ((age / 3) | 0) % 2 === 0 : !(dialFlash.t < 40 && (dialFlash.t >> 3) & 1);
-    if (on) ftextDot(s.slice(0, cols), x0 + Math.max(0, Math.floor((cols - s.length) / 2)) * 18, y0, col); }
+    const tx = x0 + Math.max(0, Math.floor((cols - s.length) / 2)) * 18, big = dialFlash.big, rgb = dialFlash.bad ? "255,60,40" : "255,190,90";
+    // important messages draw the eye up to the dial (Workshop topic "dialfx"): 1 the field flashes lit with dark letters, 2 a glow round
+    // the dial, 3 a bright scan line writes the message in, 4 the dial's rim lights and it jolts, 5 the lit flash and the glow together
+    if (big && (DIALFX === 1 || DIALFX === 5) && age < 36 && ((age / 4) | 0) % 2 === 0) { ctx.fillStyle = `rgb(${rgb})`; ctx.fillRect(FX(d.x), FX(d.y), FX(d.w), FX(d.h)); ftextDot(s.slice(0, cols), tx, y0, "#1a0805"); }
+    else if (big && DIALFX === 3 && age < 24) { const sx = FX(d.x) + FX(d.w) * age / 24; ctx.save(); ctx.beginPath(); ctx.rect(FX(d.x), FX(d.y), sx - FX(d.x), FX(d.h)); ctx.clip(); ftextDot(s.slice(0, cols), tx, y0, col); ctx.restore();
+      ctx.fillStyle = `rgba(${rgb},.9)`; ctx.fillRect(sx - 4, FX(d.y), 8, FX(d.h)); ctx.fillStyle = "rgba(255,250,235,.9)"; ctx.fillRect(sx - 1, FX(d.y), 2, FX(d.h)); }
+    else if (on) ftextDot(s.slice(0, cols), tx, y0, col); }
   else if (s) ftextDot(s.slice(0, cols), x0, y0, col);
   ctx.restore();
+  if (dialFlash && dialFlash.big && dialFlash.t0 != null) dialAttention(d, dialFlash.t0 - dialFlash.t, dialFlash.bad ? "255,60,40" : "255,190,90");
 }
 const T35 = ["111101101101111", "010110010010111", "111001111100111", "111001011001111", "101101111001001", "111100111001111", "111100111101111", "111001010010010", "111101111101111", "111101111001111"];
 function tinyNum(n, x, y, col) { String(n).split("").forEach((d, k) => { const b = T35[+d]; ctx.fillStyle = col; for (let i = 0; i < 15; i++) if (b[i] === "1") ctx.fillRect(x - (String(n).length - 1 - k) * 8 + (i % 3) * 2, y + ((i / 3) | 0) * 2, 2, 2); }); }
@@ -3565,14 +3577,23 @@ function drawShop() {
 const NOISE = [];
 function noiseCv(k) { if (!NOISE[k]) { const c = document.createElement("canvas"); c.width = 160; c.height = 100; const x = c.getContext("2d"), im = x.createImageData(160, 100);
     for (let i = 0; i < im.data.length; i += 4) { const v = (Math.random() * 255) | 0; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; } x.putImageData(im, 0, 0); NOISE[k] = c; } return NOISE[k]; }
-let dangerDim = -1, vigCv = null, crtCv = null;
+let dangerDim = -1, vigCv = null, crtCv = null, GLITCH = [], LAST_SX = 0;
+// behind the game over screen: after the power-down the room stays nearly black with the tower's red light blinking (Chris 2026-11-18)
+function overBackdrop(a) { if (LOSS !== 1 || HOW.on) { ctx.fillStyle = `rgba(4,2,1,${a})`; ctx.fillRect(0, 0, CVW, CVH); return; }
+  ctx.fillStyle = "rgba(2,1,1,.9)"; ctx.fillRect(0, 0, CVW, CVH);
+  if ((frame >> 4) & 1) { ctx.save(); ctx.globalCompositeOperation = "lighter"; const b = L.beacon; bloom(FX(b.x + LAST_SX), FX(b.y), 70, "255,60,40", .63); bloom(FX(b.x + LAST_SX), FX(b.y), 16, "255,200,170", .72); ctx.restore(); } }
 // the last-word warning on the glass: 2 fading signal (static, a torn line now and then, a key that drops out), 4 a lighter static
 function dangerGlass(G, tiles) { if (!dangerT || !(DANGER === 2 || DANGER === 4)) return; const f = Math.min(1, dangerT / 40);
   ctx.save(); ctx.globalAlpha = (DANGER === 2 ? .17 : .08) * f * (.7 + .3 * Math.random()); ctx.globalCompositeOperation = "screen"; ctx.imageSmoothingEnabled = false; ctx.drawImage(noiseCv((frame >> 1) & 3), G.x, G.y, G.w, G.h); ctx.restore();
   if (DANGER !== 2) return;
   if (Math.random() < .06) { ctx.fillStyle = `rgba(255,230,200,${.22 * f})`; ctx.fillRect(G.x, G.y + Math.random() * G.h, G.w, 2 + Math.random() * 4); }
-  if (frame % 9 === 0) dangerDim = tiles.length ? tiles[(Math.random() * tiles.length) | 0].i : -1;
-  const o = tiles.find(o => o.i === dangerDim); if (o && frame % 9 < 4) { ctx.fillStyle = `rgba(6,3,2,${.6 * f})`; ctx.fillRect(o.x, o.y, o.w, o.hh); } }
+  // the letters glitch (Chris 2026-11-18: more, but still playable): a few keys at a time, a few frames each, never the keys in your word
+  if (frame % 5 === 0) { GLITCH = GLITCH.filter(g => frame < g.end); const free = tiles.filter(o => !o.on && o.i !== S.cursor && !GLITCH.some(g => g.i === o.i));
+    for (let n = Math.random() < .5 ? 1 : 2; n > 0 && free.length && GLITCH.length < 3; n--) { const o = free.splice((Math.random() * free.length) | 0, 1)[0]; GLITCH.push({ i: o.i, end: frame + 3 + ((Math.random() * 4) | 0), kind: (Math.random() * 3) | 0 }); } }
+  for (const g of GLITCH) { if (frame >= g.end) continue; const o = tiles.find(o => o.i === g.i); if (!o) continue;
+    if (g.kind === 0) { ctx.fillStyle = `rgba(6,3,2,${.62 * f})`; ctx.fillRect(o.x, o.y, o.w, o.hh); }
+    else if (g.kind === 1) { for (let k = 0; k < 3; k++) { const y = o.y + Math.random() * o.hh; ctx.fillStyle = k & 1 ? `rgba(6,3,2,${.7 * f})` : `rgba(255,220,170,${.35 * f})`; ctx.fillRect(o.x - 3 + Math.random() * 6, y, o.w, 2 + Math.random() * 3); } }
+    else { ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(255,40,30,${.22 * f})`; ctx.fillRect(o.x - 4, o.y, o.w, o.hh); ctx.fillStyle = `rgba(40,200,255,${.16 * f})`; ctx.fillRect(o.x + 4, o.y, o.w, o.hh); ctx.restore(); } } }
 function vignetteCv() { if (!vigCv) { vigCv = document.createElement("canvas"); vigCv.width = 320; vigCv.height = 200; const x = vigCv.getContext("2d"), g = x.createRadialGradient(160, 100, 50, 160, 100, 200);
     g.addColorStop(0, "rgba(140,0,0,0)"); g.addColorStop(.35, "rgba(140,0,0,0)"); g.addColorStop(1, "rgba(190,10,10,1)"); x.fillStyle = g; x.fillRect(0, 0, 320, 200); } return vigCv; }
 // 3 heartbeat: the edges of the screen pulse dark red, two beats at a time
@@ -3628,7 +3649,7 @@ function drawOver() { const CX = FX(W / 2), ih = glyphCv("ink", "N", C.ink).heig
   const iconH = 44;
   if (GOVER === 1) {   // a parchment sheet like the night report: GAME OVER
     const w = Math.min(W - 24, 300), inner = 30 + kh + 16 + (12 + ih + 10 + 56 + 28) + 10 + ih + 18 + st.length * rowH + 10 + iconH + 26, hh = Math.ceil(inner / FINE), y = Math.max(6, Math.round((H - hh - 46) / 2)), x = Math.round(W / 2 - w / 2);
-    ctx.fillStyle = "rgba(6,3,2,.6)"; ctx.fillRect(0, 0, CVW, CVH); ctx.drawImage(panelCv("logbox", w, hh), FX(x), FX(y), FX(w), FX(hh));
+    overBackdrop(.6); ctx.drawImage(panelCv("logbox", w, hh), FX(x), FX(y), FX(w), FX(hh));
     const X0 = FX(x) + 34, X1 = FX(x + w) - 34; let yy = FX(y) + 30;
     ftext("GAME OVER", CX, yy, "key", C.inkRed, "c", { under: C.brassHi, uy: 3 }); yy += kh + 16;
     yy += scoreDisplay(X0, yy, X1 - X0, "RUN SCORE", fmtNum(S.total), C.amber, rk, nb && (frame >> 3) & 1 ? C.hot : C.gold) + 10;
@@ -3637,7 +3658,7 @@ function drawOver() { const CX = FX(W / 2), ih = glyphCv("ink", "N", C.ink).heig
     overButtons(W / 2, y + hh + 8);
   } else if (GOVER === 2) {   // a brass plaque bolted over the dark radio: OFF THE AIR
     const w = Math.min(W - 24, 290), inner = 30 + kh + 14 + ih + 8 + kh * 2 + 14 + ih + 16 + st.length * rowH + 8 + iconH + 24, hh = Math.ceil(inner / FINE), y = Math.max(6, Math.round((H - hh - 46) / 2)), x = Math.round(W / 2 - w / 2);
-    ctx.fillStyle = "rgba(4,2,1,.82)"; ctx.fillRect(0, 0, CVW, CVH);
+    overBackdrop(.82);
     ctx.fillStyle = "rgba(8,4,2,.5)"; ctx.fillRect(FX(x + 4), FX(y + 5), FX(w), FX(hh)); ctx.drawImage(shinyPlateCv(w, hh, overT2 - 20), FX(x), FX(y), FX(w), FX(hh));
     const X0 = FX(x) + 36, X1 = FX(x + w) - 36; let yy = FX(y) + 30;
     ftext("OFF THE AIR", CX, yy, "key", C.inkRed, "c", { under: C.brassHi, uy: 3 }); yy += kh + 14;
@@ -3650,7 +3671,7 @@ function drawOver() { const CX = FX(W / 2), ih = glyphCv("ink", "N", C.ink).heig
   } else {   // a printed station log that feeds up out of the bar: SIGN-OFF
     const w = Math.min(W - 40, 220), paper = "#efe5c9", ink = "#2b1a10", soft = "rgba(43,26,16,.45)";
     const inner = 26 + ih + 10 + kh + 10 + ih + 6 + kh * 2 + 10 + ih + 16 + st.length * rowH + 8 + ih + 10 + iconH + 16 + ih + 40, hh = Math.ceil(inner / FINE), top = L.barY - Math.min(hh, overT2 * 4), x = Math.round(W / 2 - w / 2);
-    ctx.fillStyle = "rgba(4,2,1,.75)"; ctx.fillRect(0, 0, CVW, CVH);
+    overBackdrop(.75);
     ctx.save(); ctx.beginPath(); ctx.rect(0, 0, CVW, FX(L.barY)); ctx.clip();
     ctx.fillStyle = "rgba(0,0,0,.4)"; ctx.fillRect(FX(x + 4), FX(top + 4), FX(w), FX(hh));
     ctx.fillStyle = paper; ctx.beginPath(); ctx.moveTo(FX(x), FX(top + 4)); for (let k = 0; k <= 22; k++) ctx.lineTo(FX(x + w * k / 22), FX(top + (k & 1 ? 0 : 4))); ctx.lineTo(FX(x + w), FX(top + hh + 40)); ctx.lineTo(FX(x), FX(top + hh + 40)); ctx.closePath(); ctx.fill();
