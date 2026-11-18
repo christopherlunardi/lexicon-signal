@@ -3287,7 +3287,7 @@ function drawShopTokens(G, geo) { SHOPUI = { reroll: null, banish: null, tokens:
 function meltLamps(cx, cy, r, step, lit, flash) { for (let k = 0; k < MELT_N; k++) { const x = cx + (k - (MELT_N - 1) / 2) * step, on = k < lit;
     ctx.fillStyle = "#140a05"; ctx.beginPath(); ctx.arc(x, cy, r + 3, 0, 6.283); ctx.fill(); ctx.fillStyle = on ? (k === lit - 1 && flash ? "#fff6d8" : "#ff8a24") : "#3a1f10"; ctx.beginPath(); ctx.arc(x, cy, r, 0, 6.283); ctx.fill();
     if (on) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(x, cy, r * 4, "255,140,40", .4); ctx.restore(); } } }
-function drawMeltPlate() { if (!meltOpen()) return; const m = meltPlate(), on = !TOKM.open && !TOKM.banish && shopFocus === shopChoices.length + Math.max(0, plateKinds().indexOf("melt")), r = R("iconL_melter"), ih = m.h - 8, s = ih / r[3];
+function drawMeltPlate() { if (!meltOpen() || TOKM.open) return;   // (hidden while the reroll / banish menu is open, Chris 2026-11-17) const m = meltPlate(), on = !TOKM.open && !TOKM.banish && shopFocus === shopChoices.length + Math.max(0, plateKinds().indexOf("melt")), r = R("iconL_melter"), ih = m.h - 8, s = ih / r[3];
   ctx.save();
   if (on) { ctx.globalCompositeOperation = "lighter"; bloom(FX(m.x + m.w / 2), FX(m.y + m.h / 2), FX(m.w) * .6, "255,170,70", .3); ctx.globalCompositeOperation = "source-over"; }
   ctx.drawImage(pushPlateCv(m.w, on, frame), FX(m.x), FX(m.y), FX(m.w), FX(m.h));
