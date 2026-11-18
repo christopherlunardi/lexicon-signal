@@ -22,6 +22,9 @@
 }
 @media (prefers-color-scheme:dark){ :root{color-scheme:dark} }
 [hidden]{display:none!important}
+/* the page that hosts the game pads the top and bottom of the page by the phone's safe areas; the shell already keeps clear of them itself
+   (--st/--sb below), so that padding is taken off here or the console sits a notch too low (Chris 2026-11-18) */
+:root{padding:0!important}
 html,body{height:100%;margin:0}
 body{background:var(--shell);color:var(--ink);font-family:var(--ui);overflow:hidden;
   padding-left:max(16px, env(safe-area-inset-left, 0px));padding-right:max(16px, env(safe-area-inset-right, 0px));box-sizing:border-box}
