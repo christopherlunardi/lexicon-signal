@@ -2725,6 +2725,208 @@
      "chosen": "1"
     }
    ]
+  },
+  {
+   "id": "danger",
+   "title": "Last-word warning",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "How should the game warn you that you're on your last word and still short?",
+     "found": "Every option starts the same way: once the turn before it is over, the dial flashes LAST WORD in (three quick blinks, then it holds, then blinks out), and while you play it scrolls LAST WORD * NEED 113. That's the new dial rule for everything important: it flashes in, centered; extras scroll. Each video starts with two words left, drops to the last word, then a word is traced.",
+     "options": [
+      {
+       "id": "1",
+       "title": "Red tube",
+       "note": "The empty part of the signal tube glows red and pulses, and the last battery lamp blinks red.",
+       "images": [
+        {
+         "src": "img/danger-r1/danger-1.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/danger-r1/danger-1.jpg",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-danger-danger-1"
+      },
+      {
+       "id": "2",
+       "title": "Fading signal",
+       "note": "Static creeps over the glass, a torn line flicks across it now and then, and a key drops out for a moment: the radio is losing the station.",
+       "images": [
+        {
+         "src": "img/danger-r1/danger-2.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/danger-r1/danger-2.jpg",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-danger-danger-2"
+      },
+      {
+       "id": "3",
+       "title": "Heartbeat",
+       "note": "The edges of the screen pulse dark red in a double beat, with a low thump you can hear (the video has no sound).",
+       "images": [
+        {
+         "src": "img/danger-r1/danger-3.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/danger-r1/danger-3.jpg",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-danger-danger-3"
+      },
+      {
+       "id": "4",
+       "title": "Red tube, light static",
+       "note": "Option 1's red tube with a lighter version of option 2's static on the glass.",
+       "images": [
+        {
+         "src": "img/danger-r1/danger-4.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/danger-r1/danger-4.jpg",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-danger-danger-4"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "loss",
+   "title": "Losing",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "What should happen when the last lamp goes out and the night is lost?",
+     "found": "Each takes about six seconds and any press skips it. The videos run on into the game over screen (the sheet, option 1 of the next topic). Sounds: pops, a falling whine, hiss, thuds.",
+     "options": [
+      {
+       "id": "1",
+       "title": "Power down",
+       "note": "The glass keys die one by one with little pops, the dial garbles into static and goes flat, the tube drains, then the room goes dark except the tower's red light blinking outside.",
+       "images": [
+        {
+         "src": "img/loss-r1/loss-1.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/loss-r1/loss-1.jpg",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-danger-loss-1"
+      },
+      {
+       "id": "2",
+       "title": "Signal lost",
+       "note": "The dial flashes SIGNAL LOST, the tower's red light stutters and goes out, static floods the screen, then the picture squeezes to a bright line and a dot like an old set switching off.",
+       "images": [
+        {
+         "src": "img/loss-r1/loss-2.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/loss-r1/loss-2.jpg",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-danger-loss-2"
+      },
+      {
+       "id": "3",
+       "title": "Letters fall",
+       "note": "The dial goes to a red flat line and every key drops out of the glass, one column at a time with a thud, then the room dims.",
+       "images": [
+        {
+         "src": "img/loss-r1/loss-3.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/loss-r1/loss-3.jpg",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-danger-loss-3"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "gover",
+   "title": "Game over screen",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "Which game over screen, and which title (GAME OVER, OFF THE AIR, SIGN-OFF or DEAD AIR)?",
+     "found": "All three show the run score (with NEW HIGH SCORE when it is one), nights cleared, words sent, best word, longest word and everything that was on your radio, then NEW RUN and MAIN MENU (left / right and A, or tap). The buttons wake once the numbers are in, so you can't press through by accident. Any title can go on any layout.",
+     "options": [
+      {
+       "id": "1",
+       "title": "Game over sheet",
+       "note": "A parchment sheet like the night report, titled GAME OVER: the run score lit big, how the night ended, the run's numbers and every key and part you had (with x2, x3 for copies and LV2 and up for keys).",
+       "images": [
+        {
+         "src": "img/gover-r1/gover-1.jpg",
+         "label": "Computer"
+        },
+        {
+         "src": "img/gover-r1/gover-1-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-gover-gover-1"
+      },
+      {
+       "id": "2",
+       "title": "Off the air plaque",
+       "note": "A brass plaque over the dark radio, titled OFF THE AIR, the run score stamped big.",
+       "images": [
+        {
+         "src": "img/gover-r1/gover-2.jpg",
+         "label": "Computer"
+        },
+        {
+         "src": "img/gover-r1/gover-2-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-gover-gover-2"
+      },
+      {
+       "id": "3",
+       "title": "Sign-off log",
+       "note": "A printed station log feeds up out of the bar like a receipt, titled SIGN-OFF, ending with THANKS FOR LISTENING.",
+       "images": [
+        {
+         "src": "img/gover-r1/gover-3.jpg",
+         "label": "Computer"
+        },
+        {
+         "src": "img/gover-r1/gover-3-phone.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#test-gover-gover-3"
+      }
+     ]
+    }
+   ]
   }
  ]
 }
