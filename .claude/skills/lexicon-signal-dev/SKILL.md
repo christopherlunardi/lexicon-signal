@@ -647,6 +647,6 @@ the same batch.
 - Part card text (Chris 2026-11-18): STACK[id] = { v(n), t(v) } says what a part does with n copies; no "(x3...)" lists. The picker
   (partDesc) shows the value with one more copy and what you have now beside it: "Words of 3 or 4 letters x3 (now x2)." Reading a
   fitted part (partNow) shows what it does now. A new stacking part needs a STACK entry.
-- bonus-r1 (decided 3, corner marks, 2026-11-18): bonusMarks draws in a key's top left corner one dot if the Vowel Antenna lifts the
-  letter and a bigger square if the Treble Slider does (letters worth 3+). No counts (Chris kept it simple). `#test-bonus-bonus-N`.
+- bonus-r1 (decided 3, corner marks, 2026-11-18): bonusMarks draws in a key's top left corner one square if a part lifts the letter
+  (Vowel Antenna, or Treble Slider on letters worth 3+); more copies burn it brighter (amber to white, glow from 3, pulse from 5). No counts. `#test-bonus-bonus-N`.
 
