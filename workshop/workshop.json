@@ -3152,7 +3152,7 @@
      "id": "r2",
      "status": "open",
      "question": "Fault lines with sound, and a louder loss: does every case sound and look right?",
-     "found": "This video has the game's real sound (turn it up). In order: a word through the blue key with no ice (a small two-note chime, x2); two misses (a cold tink as a key freezes at the end of each turn); a word through the blue key with ice (the ice bursts with a glassy shatter and a run of rising notes, one more note for each frozen key); then a word on the ice without the blue key (the crack, a sad falling two-note drop, the glass flinches red, the multiplier you had falls off in a red struck-out plate, and the key reforms with a soft chime). Once all eight keys are frozen, each miss gives a higher tink as the frost deepens.",
+     "found": "This video has the game's real sound: tap Play with sound under it (videos start muted). In order: a word through the blue key with no ice (a small two-note chime, x2); two misses (a cold tink as a key freezes at the end of each turn); a word through the blue key with ice (the ice bursts with a glassy shatter and a run of rising notes, one more note for each frozen key); then a word on the ice without the blue key (the crack, a sad falling two-note drop, the glass flinches red, the multiplier you had falls off in a red struck-out plate, and the key reforms with a soft chime). Once all eight keys are frozen, each miss gives a higher tink as the frost deepens.",
      "options": [
       {
        "id": "1",
@@ -3168,7 +3168,8 @@
          "label": "The break"
         }
        ],
-       "play": "play.html#test-icelook-icelook-2"
+       "play": "play.html#test-icelook-icelook-2",
+       "sound": true
       }
      ]
     }

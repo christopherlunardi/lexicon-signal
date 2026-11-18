@@ -674,5 +674,6 @@ the same batch.
 - Videos WITH SOUND (Chris wants sound in Workshop videos): tools/record_with_sound.py shows how. Before the page loads, an init script
   swaps AudioContext for an OfflineAudioContext behind a Proxy whose currentTime is a virtual clock (window.__vt), advanced by 2/60 with
   every LEXSTEP(2); at the end window.__wav(t0, t1) renders the audio to a WAV that ffmpeg muxes in (-c:a aac -shortest). Call
-  Sound.ensure() through __lex after load. Use it for any video where sound matters.
+  Sound.ensure() through __lex after load. Use it for any video where sound matters, and give that Workshop option "sound": true
+  (the page then shows a Play with sound button; videos otherwise play muted).
 
