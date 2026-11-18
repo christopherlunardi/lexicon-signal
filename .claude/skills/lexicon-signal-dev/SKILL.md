@@ -635,7 +635,7 @@ the same batch.
 - Picked 2026-11-18: DANGER 2 fading signal (+ letter glitches, GLITCH), LOSS 1 power down, GOVER 3 sign-off log over the dark room
   (overBackdrop: nearly black, beacon blinking, dial dead), DIALFX 2 glow (dialAttention, drawn in drawGlows so it falls over the
   glass; bloom sprites only). Important dial messages carry big: true (LAST WORD, OVERDRIVE).
-- power-r1 (open, 2026-11-18): a new run's night 1 starts powered off (S.powerOff: tiles parked above the glass with a huge wait,
+- power-r1 (decided 1, warm-up, 2026-11-18): a new run's night 1 starts powered off (S.powerOff: tiles parked above the glass with a huge wait,
   lamps and dial off) until the plaque is gone, then POWER 1..3 (warm-up, tune in, lamp cascade) and the letters fall in.
   `#test-power-intro-power-N`. Test hashes without "power" skip it.
 

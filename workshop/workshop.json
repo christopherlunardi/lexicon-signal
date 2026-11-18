@@ -3080,7 +3080,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "How should the radio switch on at the start of a run?",
      "found": "A new run now starts with the radio off: the glass dark, no lamps, the dial dead, under the NIGHT 1 plaque. Once you press A the radio powers on and the letters fall in (the falling sound you like stays). Only on night 1; later nights keep their letters. In each video the plaque shows, A is pressed, then the power-up.",
      "options": [
@@ -3132,7 +3132,8 @@
        ],
        "play": "play.html#test-power-intro-power-3"
       }
-     ]
+     ],
+     "decided": "1"
     }
    ]
   }
