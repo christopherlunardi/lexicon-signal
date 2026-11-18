@@ -677,3 +677,17 @@ the same batch.
   Sound.ensure() through __lex after load. Use it for any video where sound matters, and give that Workshop option "sound": true
   (the page then shows a Play with sound button; videos otherwise play muted).
 
+- icerest-r1 (open, 2026-11-18): how the frozen keys and the blue key look at rest. ICE_REST 0 as before (blue letters, a sprig), 1 frosted
+  panes (+ a sheen crossing now and then), 2 rime (corner sprigs and an edge fringe, thicker the more the blue key holds: iceRestLv;
+  a snow crystal on the blue key), 3 frost veins (a vein from each frozen key to the blue key along linkPts, the same lines as the
+  fault-line cracks, with a drifting bead; in the game for now), 4 ice blocks (+ a level meter on the blue key's right edge, one
+  segment per key it can reach), 5 cold light (the dot fields glow blue). `#icerest-N`; `#test-icerest[-full][-over]-icerest-N`
+  (-full: all eight frozen, S.blueDeep 3; -over: green middle key frozen, red and gold keys beside the ice, corner marks).
+  Code: iceRestDraw (the frozen keys) and iceRestBlue (the blue key), called from drawIce before iceLookDraw, the chip, the green ring
+  and the corner marks; blueGlow grows the blue key's light with irCharge (heat = frozen / reachable, dk = S.blueDeep / 4). Pictures
+  are made once per key size (irSpr; `knock` clears the top left corner for the corner marks). Rules kept by every look: stay inside
+  the key (only the veins cross the gap), half strength on a key that is also red / gold / green (irSoft), fade on a picked key
+  (t.lit) and under the danger veil (iceMood.d), grow in from the edges when a key freezes (irGrow, t.iceT), and ice waiting to
+  shatter keeps its look and its blue letter (iceFx entries with t below 0). Recorder: the steps in the round's "found" text, built on
+  tools/record_with_sound.py (rest, a miss, all frozen + deepened, a trace over the ice and let go); stills are close-ups of the glass.
+  Delete the frame folders after encoding: a 13 s recording is about 500 MB of frames and the disk filled up once.

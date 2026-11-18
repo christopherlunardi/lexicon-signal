@@ -3174,6 +3174,170 @@
      ]
     }
    ]
+  },
+  {
+   "id": "icerest",
+   "title": "Blue key: ice at rest",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "How should the frozen keys and the blue key look at rest, when your word isn't touching them?",
+     "found": "The rules are unchanged; this is only the resting look. Each video has the game's sound (tap Play with sound): the board at rest with three frozen keys, a word that misses the blue key (one more key freezes at the end of the turn), then everything the blue key can reach frozen and the frost deepened three times (x13), then a trace over the ice without the blue key and letting go, to show the hand-over to the fault-line cracks and back. In every look the blue key's glow grows with what it holds, new ice grows in from the key's edges, ice about to shatter keeps its look until it goes, and a picked key shows its normal lit look. Nothing is drawn in a key's top left corner (the corner marks), frost on a key that is also the red, gold or green key is halved, and the red key, the gold key, the green ring and both chips are drawn on top: see each Overlap still (green middle key frozen, red and gold keys beside the ice, corner marks). Frame time at 640x480 with all eight frozen: every look within about half a millisecond of option 0.",
+     "options": [
+      {
+       "id": "0",
+       "title": "As it is now",
+       "note": "Frozen keys: blue letters and one small frost sprig in the top left corner (it sits under a corner mark when there is one). The blue key: a blue tint, two sprigs, its glow and the x chip.",
+       "images": [
+        {
+         "src": "img/icerest-r1/icerest-0.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/icerest-r1/icerest-0.jpg",
+         "label": "A few frozen"
+        },
+        {
+         "src": "img/icerest-r1/icerest-0-full.jpg",
+         "label": "All frozen, deepened"
+        },
+        {
+         "src": "img/icerest-r1/icerest-0-overlap.jpg",
+         "label": "Overlap"
+        }
+       ],
+       "play": "play.html#test-icerest-icerest-0",
+       "sound": true
+      },
+      {
+       "id": "1",
+       "title": "Frosted panes",
+       "note": "Each frozen key sits under a pale pane of frosted glass with a couple of glints; every few seconds a soft sheen crosses the ice from left to right. The blue key gets a deeper blue pane that brightens as it holds more. Deepened frost: a white frosted edge and specks on every pane.",
+       "images": [
+        {
+         "src": "img/icerest-r1/icerest-1.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/icerest-r1/icerest-1.jpg",
+         "label": "A few frozen"
+        },
+        {
+         "src": "img/icerest-r1/icerest-1-full.jpg",
+         "label": "All frozen, deepened"
+        },
+        {
+         "src": "img/icerest-r1/icerest-1-overlap.jpg",
+         "label": "Overlap"
+        }
+       ],
+       "play": "play.html#test-icerest-icerest-1",
+       "sound": true
+      },
+      {
+       "id": "2",
+       "title": "Rime",
+       "note": "White frost sprigs grow out of the corners and a fringe creeps along the edges. It is thicker on every frozen key the more the blue key holds (a few keys: light; all eight: heavy; deepened: heaviest, with glints twinkling). The blue key carries a small snow crystal in its bottom left corner that grows with it.",
+       "images": [
+        {
+         "src": "img/icerest-r1/icerest-2.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/icerest-r1/icerest-2.jpg",
+         "label": "A few frozen"
+        },
+        {
+         "src": "img/icerest-r1/icerest-2-full.jpg",
+         "label": "All frozen, deepened"
+        },
+        {
+         "src": "img/icerest-r1/icerest-2-overlap.jpg",
+         "label": "Overlap"
+        }
+       ],
+       "play": "play.html#test-icerest-icerest-2",
+       "sound": true
+      },
+      {
+       "id": "3",
+       "title": "Frost veins",
+       "note": "A thin frost vein joins every frozen key to the blue key, and now and then a bead of light drifts along it into the blue key, so you can see the ice is the blue key's. Frozen keys get a light blue film. When you trace over the ice, the fault-line cracks run along the same veins; through the blue key, they light up. Deepened frost: the veins turn white and thicker and the beads come more often. This is the one in the game for now.",
+       "images": [
+        {
+         "src": "img/icerest-r1/icerest-3.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/icerest-r1/icerest-3.jpg",
+         "label": "A few frozen"
+        },
+        {
+         "src": "img/icerest-r1/icerest-3-full.jpg",
+         "label": "All frozen, deepened"
+        },
+        {
+         "src": "img/icerest-r1/icerest-3-overlap.jpg",
+         "label": "Overlap"
+        }
+       ],
+       "play": "play.html#test-icerest-icerest-3",
+       "sound": true
+      },
+      {
+       "id": "4",
+       "title": "Ice blocks",
+       "note": "Frozen keys become beveled blocks of ice, lit from the top left. The blue key gets a small level meter on its right edge: one segment for each key it can freeze, filling from the bottom; deepened frost turns the segments white one by one.",
+       "images": [
+        {
+         "src": "img/icerest-r1/icerest-4.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/icerest-r1/icerest-4.jpg",
+         "label": "A few frozen"
+        },
+        {
+         "src": "img/icerest-r1/icerest-4-full.jpg",
+         "label": "All frozen, deepened"
+        },
+        {
+         "src": "img/icerest-r1/icerest-4-overlap.jpg",
+         "label": "Overlap"
+        }
+       ],
+       "play": "play.html#test-icerest-icerest-4",
+       "sound": true
+      },
+      {
+       "id": "5",
+       "title": "Cold light",
+       "note": "No frost drawn at all: the frozen keys' own dot fields glow cold blue, the blue key brightest, breathing slowly outward from the blue key. Deepened frost: the fields turn paler and brighter.",
+       "images": [
+        {
+         "src": "img/icerest-r1/icerest-5.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/icerest-r1/icerest-5.jpg",
+         "label": "A few frozen"
+        },
+        {
+         "src": "img/icerest-r1/icerest-5-full.jpg",
+         "label": "All frozen, deepened"
+        },
+        {
+         "src": "img/icerest-r1/icerest-5-overlap.jpg",
+         "label": "Overlap"
+        }
+       ],
+       "play": "play.html#test-icerest-icerest-5",
+       "sound": true
+      }
+     ]
+    }
+   ]
   }
  ]
 }

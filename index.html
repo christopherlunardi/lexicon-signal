@@ -2159,7 +2159,7 @@ function paGlassVar({ G, tiles, ok, low }) {
     if (frame >= t.flN) { t.flE = frame + 2 + Math.random() * 10; t.flN = frame + 40 + Math.random() * (Math.random() < .3 ? 120 : 700); }
     const fl = t.flE > frame ? .68 + .27 * hsh(frame >> 1, t.seed * 7) : 1;   // the whole letter dips gently, never single dots
     if (GOLD_STYLE && (t.wild || (gkNow.gild && o.on))) { gkKey(o, P, w0, h0, ox, oy, ok, low, fl, lockT); continue; }
-    const warm = GF.warm ? gvWarm(t) : GV_REST, scr = !GF.warm && land > .4, grn = o.i === TAP_I && GREEN_STYLE >= 2 && greenOn(), blu = !!t.blue && !blueHid(t), frz = !!t.ice && BLUE_STYLE === 4;   // (the green key's letter glows green; the blue key's letter is cold blue; style 4 turns frozen letters blue)
+    const warm = GF.warm ? gvWarm(t) : GV_REST, scr = !GF.warm && land > .4, grn = o.i === TAP_I && GREEN_STYLE >= 2 && greenOn(), blu = !!t.blue && !blueHid(t), frz = (!!t.ice || (ICE_REST > 0 && iceFx.length > 0 && iceFx.some(f => f.i === o.i && !f.cash && !f.key && f.t < 0))) && BLUE_STYLE === 4;   // (the green key's letter glows green; the blue key's letter is cold blue; style 4 turns frozen letters blue)
     let la = Math.min(1, (1 - low * .35 * (1 - lit)) * fl) * warm[0]; if (GF.lock && !o.on) la *= 1 - .42 * lockK;   // word lock: the rest of the glass dips while a real word is traced
     ctx.globalAlpha = 1; ctx.drawImage(gvBase(P, GS, o.dots, w0, h0), x - 4, y - 4);
     if (hot && lit <= .03) { const pr = .5 + .5 * Math.sin(frame / 14 + o.i);   // (Workshop redkey: the red key at rest)
@@ -2234,6 +2234,114 @@ let BLUE_STYLE = 4;   // (Chris picked 4, blue letters, 2026-11-16) { const m = 
 function frostCorner(cx, cy, dx, dy, len, a) {   // a little frost sprig: a stem and its side shoots, from a corner inward
   ctx.strokeStyle = `rgba(235,248,255,${a})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + dx * len, cy + dy * len);
   for (let k = 1; k <= 3; k++) { const px = cx + dx * len * k / 4, py = cy + dy * len * k / 4, s2 = len * (.4 - k * .08); ctx.moveTo(px, py); ctx.lineTo(px + dx * s2, py); ctx.moveTo(px, py); ctx.lineTo(px, py + dy * s2); } ctx.stroke(); }
+/* ICE_REST (Workshop topic "icerest", 2026-11-18): how the frozen keys and the blue key look at rest, while no traced word touches
+   them. 0 as before (blue letters and a small frost sprig). 1 frosted panes: a pale film with glints on each frozen key, a slow
+   sheen crossing the ice. 2 rime: white frost grows in from the edges, thicker on every frozen key the more the blue key holds, and
+   a snow crystal on the blue key that grows with it. 3 frost veins: a thin vein joins every frozen key to the blue key, and a bead
+   of light drifts along it into the blue key now and then. 4 ice blocks: beveled blocks of ice, and a small level meter on the blue
+   key's right edge (one segment per key it can freeze). 5 cold light: the frozen keys' dot fields glow cold blue, breathing outward
+   from the blue key. In all of them the blue key's own light grows with what it holds, and frost that has deepened (S.blueDeep)
+   turns whiter. The traced word's looks (ICE_LOOK) draw over these and the rest look eases under them (iceMood), so nothing pops.
+   Everything stays inside its own key, except the veins, which only cross the gap between the blue key and its ice; nothing sits in
+   a key's top left corner (the corner marks), and a frozen key that is also the red, gold or green key gets half of it. */
+let ICE_REST = 3;
+{ const m = location.hash.match(/icerest-(\d)/); if (m) ICE_REST = Math.min(5, +m[1]); }
+const IRC = {};
+let iceRestLv = 0;
+// a rest look's picture, made once per key size
+function irSpr(key, w, h, fn, knock) { const k = key + "|" + w + "|" + h; let c = IRC[k]; if (c) return c;
+  c = IRC[k] = document.createElement("canvas"); c.width = w; c.height = h; const x = c.getContext("2d"); x.lineCap = "round"; fn(x, w, h);
+  // keep the top left corner clear for the corner marks
+  if (knock) { x.globalCompositeOperation = "destination-out"; const g = x.createRadialGradient(9, 8, 5, 9, 8, 15); g.addColorStop(0, "rgba(0,0,0,.92)"); g.addColorStop(1, "rgba(0,0,0,0)"); x.fillStyle = g; x.fillRect(0, 0, 26, 24); }
+  return c; }
+const irRand = (seed) => { let sd = seed % 2147483647; return () => (sd = (sd * 16807 + 11) % 2147483647) / 2147483647; };
+const irLine = (x, a, b, c, d) => { x.beginPath(); x.moveTo(a, b); x.lineTo(c, d); x.stroke(); };
+// look 1: a pane of frosted glass (blue: the blue key's own, deeper pane), and the extra frost on it once the frost has deepened
+const irPane = (blue) => (x, w, h) => { const g = x.createLinearGradient(0, 0, w, h);
+  if (blue) { g.addColorStop(0, "rgba(120,190,255,.44)"); g.addColorStop(.5, "rgba(60,140,250,.24)"); g.addColorStop(1, "rgba(50,120,240,.36)"); }
+  else { g.addColorStop(0, "rgba(176,220,255,.32)"); g.addColorStop(.5, "rgba(112,178,246,.15)"); g.addColorStop(1, "rgba(92,158,238,.26)"); }
+  x.fillStyle = g; x.beginPath(); x.roundRect(3, 3, w - 6, h - 6, 7); x.fill();
+  x.strokeStyle = "rgba(255,255,255,.6)"; x.lineWidth = 3; irLine(x, w - 7, 9, w - 12, 20);
+  x.strokeStyle = "rgba(255,255,255,.38)"; x.lineWidth = 2; irLine(x, w - 8, 25, w - 11, 31); irLine(x, 7, h - 9, 10, h - 17); };
+const irPaneDeep = (x, w, h) => { const rnd = irRand(4211);
+  for (const [lw, a] of [[7, .1], [4, .18], [1.5, .5]]) { x.strokeStyle = `rgba(240,250,255,${a})`; x.lineWidth = lw; x.beginPath(); x.roundRect(4, 4, w - 8, h - 8, 6); x.stroke(); }
+  for (let k = 0; k < 16; k++) { const e = (rnd() * 4) | 0, u = rnd(), dp = 6 + rnd() * 5, px = e === 0 ? dp : e === 1 ? w - dp - 2 : 6 + u * (w - 14), py = e < 2 ? 6 + u * (h - 14) : e === 2 ? dp : h - dp - 2;
+    x.fillStyle = `rgba(245,252,255,${.4 + .4 * rnd()})`; x.fillRect(Math.round(px), Math.round(py), 2, 2); } };
+// look 2: rime. Frost sprigs grow out of the corners (a stem and its side shoots) and a fringe creeps along the edges between them;
+// stage 1..4 = how far it has grown. (v 4 is the blue key's: its bottom left corner is kept for the snow crystal.)
+const irRime = (stage, v) => (x, w, h) => { const rnd = irRand(977 * (v + 3) + stage * 131), sc = [.5, .72, .95, 1.2][stage - 1], dens = [.22, .45, .75, 1][stage - 1];
+  const sprig = (cx, cy, dx, dy, len) => { x.strokeStyle = "rgba(232,246,255,.85)"; x.lineWidth = 2; irLine(x, cx, cy, cx + dx * len, cy + dy * len); x.strokeStyle = "rgba(222,242,255,.62)"; x.lineWidth = 1.5; x.beginPath();
+    for (let k = 1; k <= 4; k++) { const px = cx + dx * len * k / 5, py = cy + dy * len * k / 5, s2 = len * (.62 - k * .1) * (.7 + .6 * rnd()); x.moveTo(px, py); x.lineTo(px + dx * s2, py); x.moveTo(px, py); x.lineTo(px, py + dy * s2); } x.stroke(); };
+  sprig(w - 4, 4, -1, 1, 13 * sc * (.85 + .3 * rnd())); if (v !== 4) sprig(4, h - 4, 1, -1, 13 * sc * (.85 + .3 * rnd())); sprig(w - 4, h - 4, -1, -1, 15 * sc * (.85 + .3 * rnd()));
+  for (let e = 0; e < 4; e++) { const hz = e < 2, span = (hz ? w : h) - 12;
+    for (let s = 0; s <= span; s += 2.5 + rnd() * 2) { const u = s / span, cn = Math.pow(Math.abs(u - .5) * 2, 1.5), px = hz ? 6 + s : e === 2 ? 3 : w - 3, py = hz ? (e === 0 ? 3 : h - 3) : 6 + s, len = (1.5 + 3.5 * rnd() + (hz ? 2 : 4) * cn) * sc, lean = (rnd() - .5) * .9;
+      if (rnd() > dens * (.3 + .7 * cn)) continue;
+      const ax = hz ? lean : e === 2 ? 1 : -1, ay = hz ? (e === 0 ? 1 : -1) : lean; x.strokeStyle = `rgba(232,246,255,${.45 + .4 * rnd()})`; x.lineWidth = 1.5; irLine(x, px, py, px + ax * len, py + ay * len); } }
+  if (stage === 4) { x.fillStyle = "rgba(232,246,255,.08)"; x.beginPath(); x.roundRect(3, 3, w - 6, h - 6, 7); x.fill(); } };
+// look 4: a block of ice, lit from the top left
+const irBlock = (x, w, h) => { const a = 2, b = 7, quad = (c, p) => { x.fillStyle = c; x.beginPath(); x.moveTo(p[0], p[1]); x.lineTo(p[2], p[3]); x.lineTo(p[4], p[5]); x.lineTo(p[6], p[7]); x.closePath(); x.fill(); };
+  x.fillStyle = "rgba(150,205,250,.1)"; x.fillRect(b, b, w - 2 * b, h - 2 * b);
+  quad("rgba(235,248,255,.5)", [a, a, w - a, a, w - b, b, b, b]); quad("rgba(190,225,255,.32)", [a, a, b, b, b, h - b, a, h - a]);
+  quad("rgba(30,80,150,.5)", [a, h - a, b, h - b, w - b, h - b, w - a, h - a]); quad("rgba(70,130,200,.38)", [w - a, a, w - a, h - a, w - b, h - b, w - b, b]);
+  x.strokeStyle = "rgba(255,255,255,.4)"; x.lineWidth = 2; irLine(x, w - 20, 10, w - 10, 20); irLine(x, w - 13, 10, w - 10, 13); };
+function irGrow(o, age) { const dp = age * Math.min(o.w, o.hh) / 2 + 1; ctx.save(); ctx.beginPath(); ctx.rect(o.x, o.y, o.w, o.hh); ctx.rect(o.x + dp, o.y + dp, o.w - 2 * dp, o.hh - 2 * dp); ctx.clip("evenodd"); }
+const irSoft = (o) => o.t.hot || o.t.wild || (has("tap") && o.i === TAP_I) ? .5 : 1;
+// how full the blue key is: n frozen keys of the ones it can reach, and how far the frost has deepened past that
+function irCharge(bi) { const n = iceN(), reach = bi >= 0 ? blueNb(bi).length : 8, deep = S.blueDeep || 0; return { n, reach, deep, heat: Math.min(1, n / reach), dk: Math.min(1, deep / 4) }; }
+// the frozen keys at rest
+function iceRestDraw(tiles, b) { const IR = ICE_REST, m = iceMood, d = m.d, r = m.r, q = irCharge(b ? b.i : -1), dk = q.dk, list = [];
+  iceRestLv += (1 + 2 * q.heat + dk - iceRestLv) * (iceRestLv ? .04 : 1);
+  for (const o of tiles) if (o.t.ice && !o.fall) list.push(o);
+  // ice that is about to shatter keeps its rest look (shaking with its cracks) until it goes
+  for (const f of iceFx) if (!f.cash && !f.key && f.t < 0) { const o = tiles.find(u => u.i === f.i); if (o && !o.t.ice) { const jx = Math.round((hsh(frame, f.i) * 2 - 1) * 2), jy = Math.round((hsh(frame, f.i + 9) * 2 - 1) * 2); list.push({ ...o, x: o.x + jx, y: o.y + jy, cx: o.cx + jx, cy: o.cy + jy, ghost: true }); } }
+  const bOn = b && !blueHid(b.t), s0 = Math.max(1, Math.min(4, Math.floor(iceRestLv))), sF = Math.min(1, iceRestLv - s0), wave = Math.sin(frame / 38 - .9);
+  for (const o of list) { const t = o.t, a0 = frame - (t.iceT || 0), age = o.ghost || a0 < 0 ? 1 : Math.min(1, a0 / 50), sf = irSoft(o), vis = (1 - .75 * (t.lit || 0)) * sf * (1 - .3 * d), mx = o.x + Math.round((o.w - 54) / 2), my = o.y + Math.round((o.hh - 42) / 2);
+    if (age < 1) irGrow(o, age);
+    if (IR === 1) { ctx.globalAlpha = vis; ctx.drawImage(irSpr("pane", o.w, o.hh, irPane(false)), o.x, o.y); if (dk > 0) { ctx.globalAlpha = vis * dk; ctx.drawImage(irSpr("paneD", o.w, o.hh, irPaneDeep), o.x, o.y); } }
+    if (IR === 2) { const v = o.i % 4; ctx.globalAlpha = vis; ctx.drawImage(irSpr("rime" + s0 + v, o.w, o.hh, irRime(s0, v), true), o.x, o.y); if (s0 < 4 && sF > .02) { ctx.globalAlpha = vis * sF; ctx.drawImage(irSpr("rime" + (s0 + 1) + v, o.w, o.hh, irRime(s0 + 1, v), true), o.x, o.y); } }
+    if (IR === 3) { ctx.globalAlpha = vis; ctx.fillStyle = `rgba(${dk > 0 ? "170,216,255" : "110,180,250"},${.13 + .07 * dk})`; ctx.beginPath(); ctx.roundRect(o.x + 3, o.y + 3, o.w - 6, o.hh - 6, 7); ctx.fill(); }
+    if (IR === 4) { ctx.globalAlpha = vis; ctx.drawImage(irSpr("block", o.w, o.hh, irBlock, true), o.x, o.y); if (dk > 0) { ctx.globalAlpha = vis * dk; ctx.drawImage(irSpr("paneD", o.w, o.hh, irPaneDeep), o.x, o.y); } }
+    if (IR === 5) { ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = vis * (.26 + .07 * wave); ctx.drawImage(gvAll("#3f96ee"), mx, my); if (dk > 0) { ctx.globalAlpha = vis * .11 * dk; ctx.drawImage(gvAll("#d6ecff"), mx, my); } ctx.globalCompositeOperation = "source-over"; }
+    ctx.globalAlpha = 1; if (age < 1) ctx.restore(); }
+  // look 1: now and then a sheen crosses the ice, left to right
+  if (IR === 1 && bOn) { const u = (frame % 420) / 80; if (u < 1) { const sx = b.x - b.w - 30 + (3 * b.w + 80) * u; ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.lineWidth = 6;
+      for (const o of [...list, b]) { const e0 = sx - (o.cy - b.cy) * .28; if (e0 < o.x + 6 || e0 > o.x + o.w - 6 + 14) continue; const c0 = Math.max(o.x + 6, Math.min(o.x + o.w - 6, e0)), c1 = Math.max(o.x + 6, Math.min(o.x + o.w - 6, e0 - 14));
+        ctx.strokeStyle = `rgba(230,246,255,${.34 * Math.sin(u * 3.1416) * irSoft(o) * (1 - d)})`; ctx.beginPath(); ctx.moveTo(c0, o.y + 6); ctx.lineTo(c1, o.y + o.hh - 6); ctx.stroke(); }
+      ctx.restore(); } }
+  // look 2: a glint on the rime now and then, more often the deeper the frost
+  if (IR === 2 && list.length && iceRestLv > 1.6) { const per = dk > 0 ? 34 : 60, sl = (frame / per) | 0, ph = (frame % per) / per, o = list[(hsh(sl, 7) * list.length) | 0], right = hsh(sl, 3) < .5, gx = right ? o.x + o.w - 7 : o.x + 7, gy = o.y + o.hh * (right ? .2 + .65 * hsh(sl, 5) : .55 + .3 * hsh(sl, 5)), gl = 5 * Math.sin(ph * 3.1416);
+    if (ph < .6 && !o.t.lit) { ctx.strokeStyle = `rgba(255,255,255,${.9 * (1 - d)})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(gx - gl, gy); ctx.lineTo(gx + gl, gy); ctx.moveTo(gx, gy - gl); ctx.lineTo(gx, gy + gl); ctx.stroke(); } }
+  // look 3: the veins. The traced word's cracks (danger) and light (reward) run along the same lines and take their place
+  if (IR === 3 && bOn) { const va = (1 - d) * (1 - .85 * r), per = dk > 0 ? 210 : 330, dark = `rgba(3,10,22,${.55 * va})`, pale = `rgba(${dk > 0 ? "206,236,255" : "150,205,250"},${(.62 + .3 * dk) * va})`, done = [];
+    if (va >= .02) { for (const o of list) { if (o.ghost) continue; const a0 = frame - (o.t.iceT || 0), age = a0 < 0 ? 1 : Math.min(1, a0 / 50), pts = linkPts(b, o); if (age >= 1) { done.push(pts, o.i); continue; }
+        // a new vein grows from its frozen key to the blue key
+        ctx.globalAlpha = age; linkPath(pts, age); ctx.strokeStyle = dark; ctx.lineWidth = 6; ctx.stroke(); ctx.strokeStyle = pale; ctx.lineWidth = 2 + dk; ctx.stroke(); ctx.globalAlpha = 1; }
+      // (the settled veins are one path: two strokes for all of them)
+      if (done.length) { ctx.beginPath(); for (let k = 0; k < done.length; k += 2) { const pts = done[k]; ctx.moveTo(pts[0][0], pts[0][1]); for (let n = 1; n < 6; n++) ctx.lineTo(pts[n][0], pts[n][1]); }
+        ctx.strokeStyle = dark; ctx.lineWidth = 6; ctx.stroke(); ctx.strokeStyle = pale; ctx.lineWidth = 2 + dk; ctx.stroke();
+        // each ends in a node on the blue key, and now and then a bead of light drifts along it into the blue key
+        ctx.fillStyle = `rgba(214,240,255,${.9 * va})`; ctx.beginPath(); for (let k = 0; k < done.length; k += 2) { const h0 = done[k][0]; ctx.moveTo(h0[0] + 2.5, h0[1]); ctx.arc(h0[0], h0[1], 2.5, 0, 6.283); } ctx.fill();
+        for (let k = 0; k < done.length; k += 2) { const pts = done[k], cyc = (frame + done[k + 1] * 53) % per; if (cyc >= 70) continue; const f = (1 - cyc / 70) * 5, n = Math.min(4, f | 0), p0 = pts[n], p1 = pts[n + 1], gx = p0[0] + (p1[0] - p0[0]) * (f - n), gy = p0[1] + (p1[1] - p0[1]) * (f - n), ga = Math.sin(cyc / 70 * 3.1416) * va;
+          ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(235,248,255,${.85 * ga})`; ctx.beginPath(); ctx.arc(gx, gy, 3, 0, 6.283); ctx.fill(); bloom(gx, gy, 13, "140,200,255", .6 * ga); ctx.restore(); } } } } }
+// the blue key at rest (born: fading in on a new key)
+function iceRestBlue(b, born) { const IR = ICE_REST, m = iceMood, d = m.d, q = irCharge(b.i), heat = q.heat, dk = q.dk, t = b.t, sf = t.hot || t.wild ? .5 : 1, vis = born * sf * (1 - .75 * (t.lit || 0)), br = .5 + .5 * Math.sin(frame / 38);
+  const mx = b.x + Math.round((b.w - 54) / 2), my = b.y + Math.round((b.hh - 42) / 2);
+  if (IR === 1) { ctx.globalAlpha = vis * (.62 + .38 * heat) * (1 - .4 * d); ctx.drawImage(irSpr("paneB", b.w, b.hh, irPane(true)), b.x, b.y); if (dk > 0) { ctx.globalAlpha = vis * dk; ctx.drawImage(irSpr("paneD", b.w, b.hh, irPaneDeep), b.x, b.y); } }
+  else if (IR === 5) { ctx.globalCompositeOperation = "lighter"; ctx.globalAlpha = vis * (.3 + .14 * heat + .06 * br) * (1 - .5 * d); ctx.drawImage(gvAll("#2f80ff"), mx, my); if (dk > 0) { ctx.globalAlpha = vis * .1 * dk; ctx.drawImage(gvAll("#d6ecff"), mx, my); } ctx.globalCompositeOperation = "source-over"; }
+  else { ctx.globalAlpha = born; ctx.fillStyle = `rgba(80,160,255,${(.16 + .1 * heat + .04 * br) * sf * (1 - d * .5)})`; ctx.beginPath(); ctx.roundRect(b.x + 4, b.y + 4, b.w - 8, b.hh - 8, 7); ctx.fill(); }
+  if (IR === 2) { const s0 = Math.max(1, Math.min(4, Math.floor(iceRestLv))), sF = Math.min(1, iceRestLv - s0), cx = b.x + 8, cy = b.y + b.hh - 10, R = 4 + 3 * heat;
+    ctx.globalAlpha = vis * (1 - .3 * d); ctx.drawImage(irSpr("rime" + s0 + "4", b.w, b.hh, irRime(s0, 4), true), b.x, b.y); if (s0 < 4 && sF > .02) { ctx.globalAlpha = vis * sF * (1 - .3 * d); ctx.drawImage(irSpr("rime" + (s0 + 1) + "4", b.w, b.hh, irRime(s0 + 1, 4), true), b.x, b.y); }
+    // the snow crystal: six arms that lengthen with the ice, barbs once the frost has deepened
+    ctx.globalAlpha = born * (1 - .5 * d); ctx.fillStyle = "rgba(4,14,30,.6)"; ctx.beginPath(); ctx.arc(cx, cy, R + 2, 0, 6.283); ctx.fill();
+    ctx.strokeStyle = dk > 0 ? "#ffffff" : "#cfeaff"; ctx.lineWidth = 2; ctx.beginPath(); for (let k = 0; k < 3; k++) { const an = k * 1.0472 + .5236, ax = Math.cos(an) * R, ay = Math.sin(an) * R; ctx.moveTo(cx - ax, cy - ay); ctx.lineTo(cx + ax, cy + ay); } ctx.stroke();
+    if (dk > 0) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(cx, cy, 12 + 5 * dk, "170,220,255", (.35 + .15 * br) * dk); ctx.restore(); } }
+  if (IR === 3) { const fl = Math.min(b.w, b.hh) * .16 * (.3 + .7 * born); ctx.globalAlpha = born; frostCorner(b.x + b.w - 7, b.y + b.hh - 7, -1, -1, fl, .9 * (1 - .6 * d)); }
+  // look 4, the level meter: one segment for each key it can freeze, filling from the bottom; deepened frost turns them white, bottom first
+  if (IR === 4) { const n = q.reach, top = blueAt() < N, pit = Math.min(6, Math.floor(34 / n)), hgt = n * pit + 1, x0 = b.x + b.w - 12, y0 = top ? b.y + 5 : b.y + b.hh - 4 - hgt;
+    ctx.globalAlpha = born * (1 - .4 * d); ctx.fillStyle = "rgba(3,10,22,.72)"; ctx.fillRect(x0 - 1, y0, 8, hgt);
+    for (let k = 0; k < n; k++) { const on = k < q.n, wh = on && k < q.deep; ctx.fillStyle = wh ? "#ffffff" : on ? "#9fd6ff" : "rgba(70,130,200,.34)"; ctx.fillRect(x0, y0 + hgt - (k + 1) * pit, 6, pit - 1); }
+    if (q.n) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(x0 + 3, y0 + hgt - q.n * pit / 2, 8 + q.n * pit / 2, "140,200,255", (.2 + .1 * br) * (1 + dk)); ctx.restore(); } }
+  ctx.globalAlpha = 1; }
 function drawIce(tiles) {
   if (!has("blue") && !iceFx.length && !hopFx.length) return;
   hopFx = hopFx.filter(h => h.t < 46); for (const h of hopFx) { h.t++; const i = S.grid.indexOf(h.to); if (i < 0) continue; const d = tileC(i), k = Math.min(1, h.t / 26), e = 1 - (1 - k) * (1 - k);
@@ -2244,7 +2352,8 @@ function drawIce(tiles) {
     ctx.restore(); } const BS = BLUE_STYLE, b = tiles.find(o => o.t.blue);
   ctx.save(); ctx.lineCap = "round";
   if (BS === 5 && b) for (const o of tiles) if (o.t.ice) { ctx.strokeStyle = "rgba(190,230,255,.55)"; ctx.lineWidth = 3; ctx.setLineDash([6, 5]); ctx.lineDashOffset = -frame * .3; ctx.beginPath(); ctx.moveTo(b.cx, b.cy); ctx.lineTo(o.cx, o.cy); ctx.stroke(); ctx.setLineDash([]); }
-  for (const o of tiles) { const t = o.t; if (!t.ice) continue; const age = Math.min(1, (frame - (t.iceT || 0)) / 24), x = o.x + 3, y = o.y + 3, w = o.w - 6, h = o.hh - 6;
+  const REST = ICE_REST > 0 && BS === 4; if (REST) iceRestDraw(tiles, b);
+  for (const o of tiles) { const t = o.t; if (!t.ice || REST) continue; const age = Math.min(1, (frame - (t.iceT || 0)) / 24), x = o.x + 3, y = o.y + 3, w = o.w - 6, h = o.hh - 6;
     if (BS === 1 || BS === 5) { ctx.fillStyle = `rgba(170,215,255,${(BS === 5 ? .14 : .22) * age})`; ctx.beginPath(); ctx.roundRect(x, y, w, h, 7); ctx.fill();
       ctx.strokeStyle = `rgba(210,238,255,${.6 * age})`; ctx.lineWidth = 2; ctx.stroke();
       const L2 = Math.min(w, h) * .2 * age; frostCorner(x + 4, y + 4, 1, 1, L2, .85); frostCorner(x + w - 4, y + h - 4, -1, -1, L2 * .8, .7); }
@@ -2258,9 +2367,10 @@ function drawIce(tiles) {
   if (b && !blueHid(b.t)) { const d = iceMood.d, r = iceMood.r, IL = ICE_LOOK, v4 = keyLv("blue") >= 4, born = blueMove && blueMove.to === b.t ? Math.min(1, (blueMove.t - BM_SHOW) / 22) : 1, tw = .5 + .5 * Math.sin(frame * .3);
     // the chip: what the blue key pays now. Danger: it trembles with the key, struck out (look 3: it blinks what you'd drop to, look 4: it goes dark). Reward: it lights up.
     const warn = d > .3 && !v4, drop = warn && IL === 3 && (frame >> 3) & 1, txt = "x" + (drop ? 2 : blueX()), sc = 1 + (IL === 3 ? .22 : .1) * r * (.6 + .4 * tw), cw = Math.round(Math.max(30, textW(txt, "ink") + 14) * sc), ch = Math.round(22 * TK * sc), cx = b.x + b.w - cw + 6, cy = blueAt() < N ? b.y + b.hh - 10 : b.y - ch + 10;
+    if (REST) iceRestBlue(b, born);
     ctx.globalAlpha = born;
-    ctx.fillStyle = `rgba(80,160,255,${(.16 + .05 * Math.sin(frame / 12)) * (1 - d * (IL === 4 ? .9 : .5))})`; ctx.beginPath(); ctx.roundRect(b.x + 4, b.y + 4, b.w - 8, b.hh - 8, 7); ctx.fill();
-    const fl = Math.min(b.w, b.hh) * .16 * (.3 + .7 * born); frostCorner(b.x + 7, b.y + 7, 1, 1, fl, .9 * (1 - .6 * d)); frostCorner(b.x + b.w - 7, b.y + b.hh - 7, -1, -1, fl, .9 * (1 - .6 * d));
+    if (!REST) { ctx.fillStyle = `rgba(80,160,255,${(.16 + .05 * Math.sin(frame / 12)) * (1 - d * (IL === 4 ? .9 : .5))})`; ctx.beginPath(); ctx.roundRect(b.x + 4, b.y + 4, b.w - 8, b.hh - 8, 7); ctx.fill();
+      const fl = Math.min(b.w, b.hh) * .16 * (.3 + .7 * born); frostCorner(b.x + 7, b.y + 7, 1, 1, fl, .9 * (1 - .6 * d)); frostCorner(b.x + b.w - 7, b.y + b.hh - 7, -1, -1, fl, .9 * (1 - .6 * d)); }
     if (IL === 4 && d > .02) ctx.globalAlpha = born * (1 - .5 * d);
     ctx.fillStyle = r > .3 ? (IL === 4 ? "#0a2440" : "#e6f6ff") : "#06101c"; ctx.beginPath(); ctx.roundRect(cx, cy, cw, ch, 6); ctx.fill(); ctx.strokeStyle = r > .3 ? "#ffffff" : warn && IL === 3 ? "#ff7a50" : warn ? "#8094a8" : "#3a8ad0"; ctx.lineWidth = 2; ctx.stroke();
     ftext(txt, cx + cw / 2, cy + Math.round((ch - 14 * TK) / 2), "ink", r > .3 ? (IL === 4 ? "#ffffff" : "#06203a") : warn && IL === 3 ? "#ff8a60" : warn ? "#9aa8b6" : "#a8dcff", "c");
@@ -2396,8 +2506,10 @@ function iceFxDraw() { const IL = ICE_LOOK, W2 = FX(L.tw), H2 = FX(L.th);
       bloom(x1, y1, 80, "140,200,255", .7 * (1 - land) * (IL === 4 && land < .5 && ((q.t >> 2) & 1) ? .15 : 1)); }
     ctx.restore(); } }
 function blueGlow() { if (!has("blue") || S.phase === "title") return; const b = blueAt(); if (b < 0) return; const c = tileC(b), t = S.grid[b], m = iceMood, lk = ICE_LOOK === 4 ? 1 : .4;
-  if (!blueHid(t)) bloom(FX(c.x), FX(c.y + (t.yOff || 0)), 56, "90,170,255", (.2 + .05 * Math.sin(frame / 14) + .03 * iceN()) * (1 - .85 * lk * m.d) * (blueMove && blueMove.to === t ? clamp01((blueMove.t - BM_SHOW) / 22) : 1));
-  if (BLUE_STYLE === 4 || BLUE_STYLE === 1) S.grid.forEach((t2, i) => { if (t2.ice) { const c2 = tileC(i); bloom(FX(c2.x), FX(c2.y), 40, "140,200,255", .08 * (1 - lk * m.d)); } }); }
+  // (the rest looks: the blue key's light grows with what it holds, slowly breathing; look 5 lights the frozen keys more)
+  const IR = BLUE_STYLE === 4 ? ICE_REST : 0, q = IR ? irCharge(b) : null, rad = IR ? 56 + 16 * q.heat + 8 * q.dk : 56, ga = IR ? .2 + .04 * Math.sin(frame / 38) + .03 * q.n + .05 * q.dk : .2 + .05 * Math.sin(frame / 14) + .03 * iceN();
+  if (!blueHid(t)) bloom(FX(c.x), FX(c.y + (t.yOff || 0)), rad, "90,170,255", ga * (1 - .85 * lk * m.d) * (blueMove && blueMove.to === t ? clamp01((blueMove.t - BM_SHOW) / 22) : 1));
+  if (BLUE_STYLE === 4 || BLUE_STYLE === 1) { const ia = IR === 5 ? .13 + .04 * q.dk + .03 * Math.sin(frame / 38 - .9) : .08; S.grid.forEach((t2, i) => { if (t2.ice) { const c2 = tileC(i); bloom(FX(c2.x), FX(c2.y), 40, "140,200,255", ia * (1 - lk * m.d)); } }); } }
 function drawGreenKey(p, x, y, w, h, on, f) { const k = greenK(), GS = GREEN_STYLE, GR = "#5cff8a", GD = "#1f9a48";
   ctx.save();
   if (GS === 1) { const col = on || f > 0 ? "#d8ffe2" : GR, bl = Math.round(8 + 10 * f + (on ? 6 : 0) + 3 * Math.sin(frame / 14)), P = Math.ceil(64 / RS);   // (cached by glow size)
@@ -4420,6 +4532,14 @@ async function boot() {
       "CATSERIDEROHESTWARMSLIPED".split("").forEach((c, i) => { const t = S.grid[i]; t.ch = c; t.yOff = 0; t.vy = 0; t.wait = 0; t.blue = t.hot = t.wild = t.ice = false; }); S.grid[11].ch = "N"; S.grid[11].blue = true;
       for (const i of over ? [5, 6, 10, 16, 12] : [5, 6, 10, 16]) { S.grid[i].ice = true; S.grid[i].iceT = -99; }
       if (over) { S.grid[6].hot = true; S.grid[17].wild = true; S.grid[17].ch = "?"; S.tap = 14; } else S.grid[23].hot = true; }, 300); }
+  // the rest looks (Workshop icerest): #test-icerest-icerest-N = the blue key (row 2, column 1) with three frozen keys, settled, letters fixed.
+  // -full: all eight frozen and the frost deepened three times. -over: the overlaps (the green middle key frozen, the red and gold keys beside the ice, corner marks).
+  if (/^#test-icerest/.test(location.hash)) { newRun(); setTimeout(() => { const h = location.hash, over = /-over/.test(h), full = /-full/.test(h); S.parts.push("blue"); if (over) S.parts.push("tap", "gold", "vowel", "treble");
+      nightCard = 0; nightHold = false; powerT = -1; S.cursor = 0; S.words = 6; S.keyNew = { red: true, gold: true, blue: true };
+      "CATSERIDEROHESTWARMSLIPED".split("").forEach((c, i) => { const t = S.grid[i]; t.ch = c; t.yOff = 0; t.vy = 0; t.wait = 0; t.blue = t.hot = t.wild = t.ice = false; }); S.grid[11].ch = "N"; S.grid[11].blue = true;
+      for (const i of full ? [5, 6, 7, 10, 12, 15, 16, 17] : over ? [5, 6, 10, 16, 12] : [5, 6, 16]) { S.grid[i].ice = true; S.grid[i].iceT = -99; }
+      if (full) S.blueDeep = 3;
+      if (over) { S.grid[7].hot = true; S.grid[17].wild = true; S.grid[17].ch = "?"; S.tap = 14; } else S.grid[23].hot = true; }, 300); }
   if (/^#test-green/.test(location.hash)) { newRun(); setTimeout(() => { S.parts.push("tap"); S.tap = /full/.test(location.hash) ? 60 : 14; S.cursor = 0;
     if (/-red/.test(location.hash)) { S.grid.forEach(t => t.hot = false); S.grid[TAP_I].hot = true; } }, 300); }   // -red: the red key is the green key too   // the green key's looks: #test-green-N (-full: a big charge)
   if (/^#test-reroll/.test(location.hash)) { newRun(); S.parts.push("amp", "coil", "echo"); S.score = Math.round(S.target * 1.6); S.over = true; nightClear(); S.phase = "shop"; if (/melt/.test(location.hash)) S.melt = 2; }   // reroll / banish looks: #test-reroll[-melt]-reroll-N
