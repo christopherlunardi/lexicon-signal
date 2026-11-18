@@ -642,4 +642,6 @@ the same batch.
 - Dev mode on the web app (Retroid): hold Select 1.5 s to get the dev code box once (or open the game once with #dev); after that
   holding Select opens the dev panel, as everywhere else. Pressing Select alone still does nothing.
 - Key glows fade out above the glass (paGlows vis), so letters falling in never light the wood above it.
+- Dev panel actions added 2026-11-18: OVERDRIVE, +1 REROLL / BANISH, LAST WORD, GAME OVER SCREEN, POWER UP (LOSE NIGHT plays the
+  power-down). Keep DEV_ACTIONS, HOW_CARDS and TIPS true whenever a rule changes (Chris asked to keep them up to date).
 

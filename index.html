@@ -2676,6 +2676,10 @@ const titleGlass = { ready: false };
 /* Tips shown scrolling on the dial of the title screen, one at a time in random order. KEEP THIS LIST TRUE TO THE GAME: whenever a
    rule, number, control or part changes, fix the tips it touches, drop the ones that no longer hold and add tips for new things. */
 const TIPS = [
+  "EVERY WORD THAT MISSES THE BLUE KEY FREEZES A KEY AROUND IT. A WORD THROUGH IT PAYS X2, +1 FOR EACH FROZEN KEY",
+  "USE A FROZEN KEY WITHOUT THE BLUE KEY AND THE ICE BREAKS",
+  "A RETUNE GIVES THE FROZEN KEYS NEW LETTERS BUT KEEPS THE ICE",
+  "ON YOUR LAST WORD THE SIGNAL STARTS TO FADE: MAKE IT COUNT",
   "THE BLUE KEY'S ICE KEEPS FROM NIGHT TO NIGHT: SAVE IT UP FOR ONE BIG WORD",
   "ONCE THE BLUE KEY HAS FROZEN ALL IT CAN, EVERY WORD THAT MISSES IT ADDS X1 MORE",
   "TRACE TOUCHING LETTERS IN ANY OF 8 DIRECTIONS",
@@ -3082,11 +3086,11 @@ const HOW_CARDS = [
     setup() {}, steps: [[30, 4], [62, 1], [94, 2], [140, 15], [200, 3]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])) },
   { title: "SEND IT", keys: ["A", "X"], len: 330, text: "Press {A} on the last letter again, or {X} from anywhere[[, or tap the last letter again|]], to send the word. Its letters fly to the tower and the signal comes back down into the tube.",
     setup() {}, steps: [...[[30, 8], [58, 9], [86, 10], [114, 11]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(11))]] },
-  { title: "FILL THE TUBE", keys: [], len: 380, text: "Fill the signal tube before the lamps go dark. Every word you send uses one lamp. Longer words and letters with more dots fill it faster. When the lamp at the end of the tube lights, the word you've spelled will fill it; when it burns red, it's overdrive: four cards with a key guaranteed, and the extra signal starts the next night. Every lamp still lit when it fills pays a third of the night's target, so finishing in fewer words pays.",
+  { title: "FILL THE TUBE", keys: [], len: 470, text: "Fill the signal tube before the lamps go dark. Every word you send uses one lamp. Longer words and letters with more dots fill it faster. When the lamp at the end of the tube lights, the word you've spelled will fill it; when it burns red, it's overdrive: four cards with a new key and a key level among them, a reroll, and the extra signal (up to a quarter) starts the next night; twice the target and you pick two. Every lamp still lit when it fills pays a third of the night's target, so finishing in fewer words pays. If the lamps all go dark first, the run is over.",
     setup() { S.score = S.shown = 18; S.words = 3; }, steps: [...[[30, 12], [58, 13], [86, 14], [114, 15]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(15))]] },
   { title: "STUCK? RETUNE", keys: ["Y"], len: 270, text: "Press {Y}[[, tap the right knob,| or]] move right past the bottom rows onto the knob and press {A}, to swap every letter for new ones, once a night. The small light under that knob shows you still have it. Keep it and it pays half the night's target when the night clears.",
     setup() {}, steps: [[80, () => retune()]] },
-  { title: "RADIO PARTS", keys: [], len: 260, text: "Clear a night to fit one of three radio parts. Parts go in the plain slots, keys in the velvet ones. Copies of a part stack; each copy of a key takes it up a level, and the red key is your first. [[Tap a slot, or press|Press]] down past the bottom row to read one. One part is a mystery. That's the basics!",
+  { title: "RADIO PARTS", keys: [], len: 330, text: "Clear a night to fit one of three radio parts. Parts go in the plain slots, keys in the velvet ones. Copies of a part stack; each copy of a key takes it up a level, and the red key is your first. [[Tap a slot, or press|Press]] down past the bottom row to read one. One part is a mystery. Don't like the cards? The REROLL / BANISH plate deals new ones, or bans one for the run: you start with 3 and earn one each overdrive. That's the basics!",
     setup() { S.parts = ["battery", "echo"]; S.words = maxWords(); HOW.shop = true; nightClear(); HOW.shop = false; }, steps: [[70, () => { shopFocus = 1; Sound.click(); }], [140, () => { shopFocus = 2; Sound.click(); }], [210, () => { shopFocus = 0; Sound.click(); }]] },
 ];
 HOW_CARDS.forEach(c => { c.steps = c.steps.map(([t, f]) => [t, typeof f === "number" ? () => tapTile(f) : f]); });
@@ -4039,6 +4043,9 @@ const DEV_ACTIONS = [
   ["WIN NIGHT", () => { devPlay(); S.score = S.shown = S.target; nightClear(); }], ["LOSE NIGHT", () => { devPlay(); gameOver(); }],
   ["NEXT NIGHT", () => { devPlay(); S.night++; startNight(); }], ["NIGHT BACK", () => { devPlay(); S.night = Math.max(1, S.night - 1); startNight(); }],
   ["NEW LETTERS", () => { devPlay(); fillGrid(true); }], ["PART PICKER", () => { devPlay(); nightClear(); }],
+  ["OVERDRIVE", () => { devPlay(); S.score = S.shown = Math.ceil(S.target * OVERDRIVE); S.over = true; nightClear(); }], ["+1 REROLL / BANISH", () => { S.tokens = (S.tokens || 0) + 1; }],
+  ["LAST WORD", () => { devPlay(); S.words = 1; S.score = S.shown = Math.min(S.score, Math.floor(S.target / 2)); }], ["GAME OVER SCREEN", () => { devPlay(); overNow(); }],
+  ["POWER UP", () => { devPlay(); S.night = 1; startNight(); }],
   ["NEW RUN", () => { newRun(); barShow = 1; }], ["TITLE SCREEN", () => { S.phase = "title"; titleT = 0; titleSkip = false; }],
   ["STUDIO INTRO", () => { studioStart(); }], [() => "SOUND " + (Sound.muted() ? "OFF" : "ON"), () => { Sound.ensure(); Sound.toggle(); }],
 ];
