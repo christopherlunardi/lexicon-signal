@@ -2255,14 +2255,15 @@ function drawPlayArea() {
 const PA_RGB = ["255,130,40", "120,255,170", "255,120,40", "255,180,80", "255,150,50"], PA_BASE = [.07, .04, .03, .02, .13];   // dot glass glows brighter (Chris: letters not bright enough in play)
 function paGlows(okNow) {
   const g = L.glass, rgb = PA_RGB[KS - 6];
-  S.grid.forEach((t, i) => { if (!t || t.ch === " ") return; const c = tileC(i), lit = t.lit || 0, hot = okNow && lit > .5;
+  // a key's glow fades out once it is above the glass, so letters falling in don't light the wood above (Chris 2026-11-18)
+  S.grid.forEach((t, i) => { if (!t || t.ch === " ") return; const c = tileC(i), lit = t.lit || 0, hot = okNow && lit > .5, vis = clamp01((c.y + t.yOff - g.y) / (L.th / 2) + 1); if (vis <= 0) return; const ga0 = ctx.globalAlpha; ctx.globalAlpha = ga0 * vis;
     if (t.wild && KS === 10) { if (GOLD_STYLE) gkGlow(t, c); else bloom(FX(c.x), FX(c.y + t.yOff), 52, "255,210,70", .3 * (.8 + .2 * Math.sin(frame / 7))); }
     else if (gkNow.gild && lit > .5) bloom(FX(c.x), FX(c.y + t.yOff), 58, GK.rgb, .24);
     if (t.hot && KS === 10 && !(GOLD_STYLE && t.wild)) { const big = REDPOP === 1 || REDPOP === 6, br2 = .8 + .2 * Math.sin(frame / 9 + i);
       bloom(FX(c.x), FX(c.y + t.yOff), [0, 46, 56, 50, 30, 44][HOT_STYLE] * (big ? 1.7 : 1), "255,60,40", [0, .32, .3, .26, .14, .22][HOT_STYLE] * (big ? 2.6 * (.65 + .35 * Math.sin(frame / 22 + i)) : br2));
       if (REDPOP === 5) { const u = ((frame + i * 37) % 150) / 50; if (u < 1) { const kw = FX(L.tw) * (1 + .5 * u), kh2 = FX(L.th) * (1 + .5 * u); ctx.save(); ctx.globalAlpha = .7 * (1 - u); ctx.strokeStyle = "#ff5038"; ctx.shadowColor = "#ff3020"; ctx.shadowBlur = 10; ctx.lineWidth = 3; rr(ctx, FX(c.x) - kw / 2, FX(c.y + t.yOff) - kh2 / 2, kw, kh2, 8); ctx.stroke(); ctx.restore(); } } }
     const gk = GF.any ? gvGlowK(t, lit > .5) : GV_ONE;
-    bloom(FX(c.x), FX(c.y + t.yOff), 40 + 20 * lit, hot ? "255,225,160" : GF.side ? "255,128,34" : rgb, PA_BASE[KS - 6] * gk[0] + (KS === 9 ? .42 : .3) * lit + .22 * (t.land || 0) * gk[1]); });
+    bloom(FX(c.x), FX(c.y + t.yOff), 40 + 20 * lit, hot ? "255,225,160" : GF.side ? "255,128,34" : rgb, PA_BASE[KS - 6] * gk[0] + (KS === 9 ? .42 : .3) * lit + .22 * (t.land || 0) * gk[1]); ctx.globalAlpha = ga0; });
   if (sendT < 18) bloom(FX(g.x + g.w / 2), FX(g.y + g.h / 2), FX(g.w) * .9, KS === 7 ? "255,216,128" : "255,190,110", .32 * (1 - sendT / 18));   // the glass flares as a word leaves
   if (arriveT < 26) bloom(FX(g.x) + 14, FX(g.y) + FX(g.h) * .3, 170, "255,70,50", .2 * (1 - arriveT / 26));   // and catches the beacon's answer
 }
@@ -4093,7 +4094,8 @@ window.addEventListener("keydown", (e) => {
 }, true);
 // holding SELECT about a second and a half opens the panel (once dev mode is on); a short press is still the sound switch
 let selHold = null, selLong = false;
-function selectDown() { selLong = false; clearTimeout(selHold); selHold = setTimeout(() => { if (DEV.on && !DEV.open) { selLong = true; DEV.openPanel(); } }, 1500); }
+// hold Select: the dev panel; where dev mode isn't on yet (the web app on a Retroid), the code box asks for the dev code once (Chris 2026-11-18)
+function selectDown() { selLong = false; clearTimeout(selHold); selHold = setTimeout(() => { if (DEV.on && !DEV.open) { selLong = true; DEV.openPanel(); } else if (!DEV.on && !$("devCode")) { selLong = true; devCodePrompt(); } }, 1500); }
 function selectUp() { clearTimeout(selHold); if (selLong) { selLong = false; return true; } return false; }
 // the way in by hand on a phone: press and hold the name above the screen about a second, or tap it five times quickly
 function devHooks() {
@@ -4105,7 +4107,9 @@ function devHooks() {
   devCheck(); document.addEventListener("visibilitychange", () => { if (!document.hidden) devCheck(); });
 }
 async function devCheck() {
-  if (DEV.on) return; if (location.protocol === "file:" || /dev/.test(location.hash)) return devInstall();
+  if (DEV.on) return; if (location.protocol === "file:") return devInstall();
+  if (/^#dev$/.test(location.hash)) { try { localStorage.setItem("lexsig.devkey", DEV_HASH); } catch (e) {} return devInstall(); }   // (opening the game once with #dev turns dev mode on for good on that device)
+  if (/dev/.test(location.hash)) return devInstall();
   try { if (localStorage.getItem("lexsig.devkey") === DEV_HASH) return devInstall(); } catch (e) {}
   for (let i = 0; i < 40 && !(window.claude && window.claude.use); i++) await new Promise(r => setTimeout(r, 750));   // a phone can take a while to hand the page its claude.ai link
   try { const u = window.claude && (await window.claude.use("user")); if (u && (await u.isOwner())) { try { localStorage.setItem("lexsig.devkey", DEV_HASH); } catch (_) {} devInstall(); } } catch (e) {}

@@ -6,7 +6,8 @@ part; every run builds a different radio. One HTML page, played:
 - from the artifact link on his phone (on-screen d-pad, A/B, Select/Start in the studio's handheld shell),
 - in a browser with keys, mouse or any controller (controller and keyboard come first; touch and mouse also work),
 - on his Retroid Pocket 2S (640x480) and phones as an installed offline web app from GitHub Pages (https://christopherlunardi.github.io/lexicon-signal/),
-  the main way to play there now; the older Android launcher app (Pocket 2S / Pocket 6) is kept until Chris says to retire it.
+  the main way to play there now. The old Android launcher app was retired (Chris, 2026-11-18): no more Android builds or app work;
+  `android/` stays in the repo for reference only.
 
 Read the workflow in `.claude/skills/lexicon-signal-dev/SKILL.md` before changing anything, and keep it up to date.
 
@@ -29,7 +30,7 @@ Read the workflow in `.claude/skills/lexicon-signal-dev/SKILL.md` before changin
 - `words.js` the word list, made by `tools/words.py` from `tools/wordlists/` (ENABLE + SCOWL size 70 + our own extra.txt); keep SCOWL-Copyright.txt with it.
 - `art/pixel/` the pixel art: sources in `src/`, `build.py` makes the palette, sprites, icons, fonts and `atlas.png`/`atlas.json`.
 - `web/` the installable web app for GitHub Pages, made by `tools/web.py` (with `tools/web/pwa.js` and `sw.js`); never edit web/ by hand.
-- `android/` the Retroid app (downloads the newest dist/lexicon-signal.html itself); `tools/release.py` makes dist/.
+- `android/` the retired Retroid app (reference only); `tools/release.py` still makes dist/ and the build number.
 - `art/bench/` the Pixel Bench (Chris's pixel touch-up page, https://claude.ai/artifact/9VAQd2RwmbaReh6yxaFVuD): build.py writes the framed
   pieces as they are under the rivets to `art/bench/img/` + `manifest.json`. When Chris sends a fix: read ArtifactData collection `edits`
   (name, source, asset id, note), fetch the PNG with Artifact read `path: <asset id>`, save it exactly as painted (no resizing or

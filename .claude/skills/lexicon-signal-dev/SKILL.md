@@ -638,4 +638,8 @@ the same batch.
 - power-r1 (decided 1, warm-up, 2026-11-18): a new run's night 1 starts powered off (S.powerOff: tiles parked above the glass with a huge wait,
   lamps and dial off) until the plaque is gone, then POWER 1..3 (warm-up, tune in, lamp cascade) and the letters fall in.
   `#test-power-intro-power-N`. Test hashes without "power" skip it.
+- The Android launcher app is retired (Chris 2026-11-18): the Retroids play the GitHub Pages web app. Don't build or change android/.
+- Dev mode on the web app (Retroid): hold Select 1.5 s to get the dev code box once (or open the game once with #dev); after that
+  holding Select opens the dev panel, as everywhere else. Pressing Select alone still does nothing.
+- Key glows fade out above the glass (paGlows vis), so letters falling in never light the wood above it.
 
