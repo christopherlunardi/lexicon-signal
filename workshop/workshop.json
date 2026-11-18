@@ -3314,6 +3314,116 @@
      "decided": "3"
     }
    ]
+  },
+  {
+   "id": "icecrack",
+   "title": "Blue key: cracking ice",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "How should the ice and the blue key show what your word will do to them, and how should they break?",
+     "found": "New rule, in the game now: use a frozen key without the blue key and all the ice breaks, and the blue key breaks too. It comes back on another plain key (never the red, gold or green key, never in the word you just sent) and starts over at x2 with no ice. At blue key level 4 the blue key holds its place and half the ice stays. Each video: a word over the ice without the blue key (danger), let go, a word through the blue key (reward), that word sent (the ice pays), some ice built back, then a word over the ice without the blue key sent (it all breaks and the blue key moves). The Overlap still shows danger (left) and reward (right) with a red key on the ice, the green middle key frozen, a gold key next door and corner marks: all of those are drawn on top and stay readable.",
+     "options": [
+      {
+       "id": "1",
+       "title": "Hairline cracks",
+       "note": "Danger: thin white cracks creep in from the edges of every frozen key and the blue key, and they tremble (the blue key most); its x chip is struck out. Reward: the same cracks fill with light and glints twinkle. Break: gray shards drop, the blue key bursts and a comet of light carries it to its new key.",
+       "images": [
+        {
+         "src": "img/icecrack-r1/icecrack-1.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/icecrack-r1/icecrack-1.jpg",
+         "label": "Danger"
+        },
+        {
+         "src": "img/icecrack-r1/icecrack-1-reward.jpg",
+         "label": "Reward"
+        },
+        {
+         "src": "img/icecrack-r1/icecrack-1-overlap.jpg",
+         "label": "Overlap"
+        }
+       ],
+       "play": "play.html#test-icelook-icelook-1"
+      },
+      {
+       "id": "2",
+       "title": "Fault lines",
+       "note": "Danger: jagged cracks run from each frozen key across to the blue key, flickering, so you see it all hangs together. Reward: the lines turn into light with beads running into the blue key. Cash-in: the beads rush in before the burst. Break: a crack races across the glass to where the blue key reforms.",
+       "images": [
+        {
+         "src": "img/icecrack-r1/icecrack-2.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/icecrack-r1/icecrack-2.jpg",
+         "label": "Danger"
+        },
+        {
+         "src": "img/icecrack-r1/icecrack-2-reward.jpg",
+         "label": "Reward"
+        },
+        {
+         "src": "img/icecrack-r1/icecrack-2-overlap.jpg",
+         "label": "Overlap"
+        }
+       ],
+       "play": "play.html#test-icelook-icelook-2"
+      },
+      {
+       "id": "3",
+       "title": "Pressure",
+       "note": "The loudest. Danger: heavy cracks, a hard shake, flakes dropping off, the keys darken and the chip blinks the x2 you'd fall back to. Reward: the ice fills up with light, the chip swells and lights up. Break: a white flash and chunky shards; the blue key's shards fly over and fit back together. In the game now.",
+       "images": [
+        {
+         "src": "img/icecrack-r1/icecrack-3.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/icecrack-r1/icecrack-3.jpg",
+         "label": "Danger"
+        },
+        {
+         "src": "img/icecrack-r1/icecrack-3-reward.jpg",
+         "label": "Reward"
+        },
+        {
+         "src": "img/icecrack-r1/icecrack-3-overlap.jpg",
+         "label": "Overlap"
+        }
+       ],
+       "play": "play.html#test-icelook-icelook-3"
+      },
+      {
+       "id": "4",
+       "title": "Lights",
+       "note": "The calm one. Danger: the ice and the blue key go dark and dull with gray cracks, like the light is dying. Reward: they blaze and a sheen runs over each key. Break: the ice crumbles down as dust; the blue key's light goes out and stutters on at its new key.",
+       "images": [
+        {
+         "src": "img/icecrack-r1/icecrack-4.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/icecrack-r1/icecrack-4.jpg",
+         "label": "Danger"
+        },
+        {
+         "src": "img/icecrack-r1/icecrack-4-reward.jpg",
+         "label": "Reward"
+        },
+        {
+         "src": "img/icecrack-r1/icecrack-4-overlap.jpg",
+         "label": "Overlap"
+        }
+       ],
+       "play": "play.html#test-icelook-icelook-4"
+      }
+     ]
+    }
+   ]
   }
  ]
 }

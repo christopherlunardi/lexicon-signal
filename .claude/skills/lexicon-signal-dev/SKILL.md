@@ -248,7 +248,7 @@ the same batch.
   #test-green[-red][-full]); the middle key can also be the red key, so its look must never copy or hide the red key's.
   BLUE KEY (2026-11-15; in the normal picker since 2026-11-16, BLUE_ON true): words that miss it freeze one more key
   beside it (blueAfter, blueNb: 4 sides at L1, 8 from L2); a word through it pays x(2 + frozen keys) (blueX; x2 per frozen key from L3);
-  a word touching the ice without it shatters the ice (half from L4). Frozen keys and the blue key are pinned in collapse() (letters
+  a word touching the ice without it breaks all the ice and the blue key, which moves to another key and starts over (from L4 the key holds and half the ice stays; see the 2026-11-18 note at the end). Frozen keys and the blue key are pinned in collapse() (letters
   above fall past them); the frost spreads to all eight keys around it from level 1 (level 2: two keys a miss); the ice keeps from night to night and through a retune (a retune gives the frozen keys new letters but keeps the squares and the multiplier) (Chris 2026-11-16: planning); a miss freezes at the end of the turn (Chris: a turn is over when everything it caused is over; blueSpread runs once no letters fly or fall; a key still falling freezes when it lands, iceSoon), so used neighbors can freeze too; letters falling past frozen keys are drawn first and clipped out of the frozen squares (fallClip), so they pass behind the ice; once every key it can reach is frozen, each miss adds +1 more (S.blueDeep, reset when cashed or broken). Key placement (Chris 2026-11-16, ensureHot/place): a key's first appearance in a run lands on a plain key; after that a returning key
   may land on another key (red inside the blue key: both pay) but never on ice, and blue never on the green middle key. Frost spreads only to the blue key's
   neighbors; when it reaches the red or gold key, that key hops to an open key (keyHop, hopFx: a bright arc and a ring where it lands,
@@ -655,3 +655,15 @@ the same batch.
 - endlamp-r1 (decided 3, 2026-11-18): the tube's end lamp is bigger with a strong glow, pings when it lights, and a band of light runs
   along the tube into it while the traced word will clear (orange-red for overdrive). ENDL 0..4, `#test-endl-endl-N`.
 
+- Blue key break rule (Chris 2026-11-18): a word that uses a frozen key without the blue key breaks ALL the ice and the blue key too;
+  the blue key comes back on another plain key (never red / gold / green, never a key of that word; blueAfter picks one that isn't
+  beside the old spot or above a leaving letter when it can) and starts over at x2 (no ice, S.blueDeep 0). Level 4: the blue key
+  holds and half the ice (rounded down, never the used keys) stays, S.blueDeep halves. blueMove carries the broken key to its new
+  place (hidden there until BM_SHOW: blueHid); iceFx entries wait with t below 0 so the break runs outward from the used key.
+- icecrack-r1 (open, 2026-11-18): how the ice shows what the traced word will do. iceMood.d = danger (path has ice, no blue key),
+  iceMood.r = reward (path has the blue key); iceMoodStep makes the frozen keys and the blue key tremble, iceLookDraw draws the
+  cracks (crackSet: cached lines in each key's edge band, clear of the letter and the top left corner marks), iceFxDraw the breaks,
+  the cash-in and the move. ICE_LOOK 1 hairline, 2 fault lines, 3 pressure (in the game for now), 4 lights; `#icelook-N`,
+  `#test-icelook[-over][-lv4]-icelook-N` (-over: red key on ice, green key frozen, gold key beside, corner marks). Everything is
+  drawn in drawIce, before the red outline, green ring, chips and corner marks, so those stay on top. Recorder steps: set S.path
+  for traces, call send() for sends, LEXSTEP(2) per video frame.
