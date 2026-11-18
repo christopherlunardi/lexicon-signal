@@ -176,7 +176,10 @@ const $ = (id) => document.getElementById(id);
 if (!CanvasRenderingContext2D.prototype.roundRect) CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {   // (older WebViews lack it)
   r = Math.max(0, Math.min(typeof r === "number" ? r : (r && r[0]) || 0, Math.abs(w) / 2, Math.abs(h) / 2));
   this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r); this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath(); return this; };
-const DICT = new Set((window.LEX_WORDS || "").split(" "));
+// the word list comes in groups, most common first, split by " | " (tools/words.py). tierOf(w) says which group (0 most common): the gold
+// key picks the most common word it can (Chris 2026-11-18). Each group stays a sorted array (searched by halves) sharing its strings with DICT.
+const LEXG = (window.LEX_WORDS || "").split(" | ").map(g => g.split(" ")), DICT = new Set(LEXG.flat());
+function tierOf(w) { for (let g = 0; g < LEXG.length; g++) { const a = LEXG[g]; let lo = 0, hi = a.length - 1; while (lo <= hi) { const m = (lo + hi) >> 1; if (a[m] === w) return g; if (a[m] < w) lo = m + 1; else hi = m - 1; } } return 9; }
 const cv = $("screen"), ctx = cv.getContext("2d", { alpha: false }); window.__lexCtx = ctx;   // the screen: 2 fine pixels per world pixel (opaque: cheaper to put on screen)
 { const d = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, "imageSmoothingEnabled");
   if (d && d.set) Object.defineProperty(ctx, "imageSmoothingEnabled", { get() { return d.get.call(ctx); }, set(v) { d.set.call(ctx, !!v || RS < 1); } }); }
@@ -624,8 +627,10 @@ const ABC = "abcdefghijklmnopqrstuvwxyz";
 // the Gold Key's "?" stands for any letter: a word with it reads as the first real word it can make
 // (with a request open, a letter that also fills the request comes first: MO + gold key with "OW" wanted reads MOW, Chris 2026-11-16)
 function resolveWord(w, p) { const i = w.indexOf("?"); if (i < 0) return w;
-  if (p && typeof reqOpen === "function" && reqOpen()) for (const c of ABC) { const t = w.slice(0, i) + c + w.slice(i + 1); if (t.length >= 3 && DICT.has(t) && reqWordOk(t.toUpperCase(), p)) return t; }
-  for (const c of ABC) { const t = w.slice(0, i) + c + w.slice(i + 1); if (t.length >= 3 && DICT.has(t)) return t; } return w; }
+  // the most common word it can make (REPO, not PEPO); one that fills an open request comes first
+  const best = (ok) => { let b = null, bt = 99; for (const c of ABC) { const t = w.slice(0, i) + c + w.slice(i + 1); if (t.length >= 3 && DICT.has(t) && ok(t)) { const g = tierOf(t); if (g < bt) { b = t; bt = g; if (g === 0) break; } } } return b; };
+  if (p && typeof reqOpen === "function" && reqOpen()) { const r = best(t => reqWordOk(t.toUpperCase(), p)); if (r) return r; }
+  return best(() => true) || w; }
 const pathWord = (p = S.path) => resolveWord(p.map(i => S.grid[i].ch).join("").toLowerCase(), p);
 const adjacent = (a, b) => a !== b && Math.abs((a % N) - (b % N)) <= 1 && Math.abs(((a / N) | 0) - ((b / N) | 0)) <= 1;
 const isValid = (p = S.path) => { const w = pathWord(p); return w.length >= 3 && DICT.has(w); };

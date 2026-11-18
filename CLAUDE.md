@@ -28,6 +28,7 @@ Read the workflow in `.claude/skills/lexicon-signal-dev/SKILL.md` before changin
 ## Layout
 - `index.html` the whole game (shell, canvas, script). Written as a page body: the artifact host adds the doctype and head.
 - `words.js` the word list, made by `tools/words.py` from `tools/wordlists/` (ENABLE + SCOWL size 70 + our own extra.txt); keep SCOWL-Copyright.txt with it.
+  It's written in five groups, most common first (SCOWL sizes in `scowl-sizes.txt`); the gold key picks the most common word it can.
 - `art/pixel/` the pixel art: sources in `src/`, `build.py` makes the palette, sprites, icons, fonts and `atlas.png`/`atlas.json`.
 - `web/` the installable web app for GitHub Pages, made by `tools/web.py` (with `tools/web/pwa.js` and `sw.js`); never edit web/ by hand.
 - `android/` the retired Retroid app (reference only); `tools/release.py` still makes dist/ and the build number.

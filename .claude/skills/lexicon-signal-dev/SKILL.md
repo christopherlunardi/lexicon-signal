@@ -649,4 +649,7 @@ the same batch.
   fitted part (partNow) shows what it does now. A new stacking part needs a STACK entry.
 - bonus-r1 (decided 3, corner marks, 2026-11-18): bonusMarks draws in a key's top left corner one square if a part lifts the letter
   (Vowel Antenna, or Treble Slider on letters worth 3+); more copies burn it brighter (amber to white, glow from 3, pulse from 5). No counts. `#test-bonus-bonus-N`.
+- Gold key words (Chris 2026-11-18): resolveWord picks the most common word the gold letter can make (tierOf: words.js groups split by
+  " | ", most common first: SCOWL size 35, 40-50, 60, the other everyday lists, ENABLE only). A word that fills an open request wins.
+- Rerolls deal cards you weren't just shown wherever they can (makeOffers(true) leaves out the last deal's ids).
 
