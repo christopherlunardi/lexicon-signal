@@ -169,7 +169,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 210;</script><script>
+<script>window.LEX_BUILD = 211;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -1247,7 +1247,7 @@ function scoreShow() { return !HOW.on && barShow > .9 && ["play", "shop", "swap"
    5 the plate taking turns and the tube mark together. ---- */
 // the end of a run (Workshop topics "danger", "loss" and "gover", 2026-11-18): DANGER = the last-word warning, LOSS = the losing
 // animation, GOVER = the game over screen. #danger-N, #loss-N and #gover-N pick one.
-let DANGER = 2, LOSS = 1, GOVER = 3, DIALFX = 2, POWER = 1, BONUS = 1;   // (DIALFX 2 the glow, POWER 1 the warm-up: Chris 2026-11-18)   // (Chris picked 2026-11-18: DANGER 2 fading signal, LOSS 1 power down, GOVER 3 the sign-off log)
+let DANGER = 2, LOSS = 1, GOVER = 3, DIALFX = 2, POWER = 1, BONUS = 3;   // (BONUS 3, corner marks: Chris 2026-11-18)   // (DIALFX 2 the glow, POWER 1 the warm-up: Chris 2026-11-18)   // (Chris picked 2026-11-18: DANGER 2 fading signal, LOSS 1 power down, GOVER 3 the sign-off log)
 { const h = location.hash; let m; if ((m = h.match(/danger-(\d)/))) DANGER = +m[1]; if ((m = h.match(/loss-(\d)/))) LOSS = +m[1]; if ((m = h.match(/gover-(\d)/))) GOVER = +m[1]; if ((m = h.match(/dialfx-(\d)/))) DIALFX = +m[1]; if ((m = h.match(/power-(\d)/))) POWER = +m[1]; if ((m = h.match(/bonus-(\d)/))) BONUS = +m[1]; }
 /* the radio powers on (Workshop topic "power", 2026-11-18): a new run's glass waits dark, lamps and dial off, under the night 1
    plaque; once that's gone the radio comes on and the letters fall in. POWER 1 warm-up, 2 tune in, 3 lamp cascade. */
@@ -3626,12 +3626,17 @@ function noiseCv(k) { if (!NOISE[k]) { const c = document.createElement("canvas"
    Vowel Antenna: an extra dot per copy above the value dots. Treble Slider (+5 a copy on letters worth 3+): a bigger square.
    BONUS 1 white dots, the square at the top of the dot column; 2 teal dots, the square in the key's top left corner; 3 both as
    marks in the top left corner (dots in a row, then the square). */
+// tiny 3x5 digits (2 px dots) for the counts in a key's corner; returns the width drawn
+const MINI = { 0: "111101101101111", 1: "010110010010111", 2: "111001111100111", 3: "111001111001111", 4: "101101111001001", 5: "111100111001111", 6: "111100111101111", 7: "111001001001001", 8: "111101111101111", 9: "111101111001111" };
+function miniNum(n, x, y, col) { const s = String(n); ctx.fillStyle = col; [...s].forEach((d, k) => { const b = MINI[d]; for (let i = 0; i < 15; i++) if (b[i] === "1") ctx.fillRect(x + k * 8 + (i % 3) * 2, y + ((i / 3) | 0) * 2, 2, 2); }); return s.length * 8 - 2; }
 function bonusMarks(tiles) { const nv = has("vowel"), nt = has("treble"); if (!BONUS || (!nv && !nt)) return;
   const dotC = BONUS === 2 ? "#7fe6d8" : "#fff4d6", sqC = BONUS === 2 ? "#7fe6d8" : "#ffe9b0";
   for (const o of tiles) { const t = o.t; if (!t || t.wild || t.ch === " ") continue; const v = nv && VOWELS.has(t.ch) ? nv : 0, tr = nt && VALUES[t.ch] >= 3; if (!v && !tr) continue;
     const mx = o.x + Math.round((o.w - 54) / 2), my = o.y + Math.round((o.hh - 42) / 2), top = 7 - o.dots;
     ctx.save(); ctx.shadowColor = dotC; ctx.shadowBlur = 0;
-    if (BONUS === 3) { let x = o.x + 5; ctx.fillStyle = dotC; for (let k = 0; k < Math.min(3, v); k++) { ctx.fillRect(x, o.y + 6, 4, 4); x += 6; } if (tr) { ctx.fillStyle = sqC; ctx.fillRect(x + (v ? 2 : 0), o.y + 4, 8, 8); } }
+    // (corner marks, the pick: up to 3 vowel dots; from 4 copies one dot and the count, and a second Treble Slider puts its count by the square)
+    if (BONUS === 3) { let x = o.x + 5; ctx.fillStyle = dotC; if (v <= 3) for (let k = 0; k < v; k++) { ctx.fillRect(x, o.y + 6, 4, 4); x += 6; } else { ctx.fillRect(x, o.y + 6, 4, 4); x += 6; x += miniNum(v, x, o.y + 4, dotC) + 3; }
+      if (tr) { x += v ? 2 : 0; ctx.fillStyle = sqC; ctx.fillRect(x, o.y + 4, 8, 8); if (nt > 1) miniNum(nt, x + 10, o.y + 4, sqC); } }
     else { ctx.fillStyle = dotC; for (let k = 0; k < Math.min(v, top); k++) ctx.fillRect(mx + 49, my + (top - 1 - k) * 6 + 1, 4, 4);
       if (tr) { ctx.fillStyle = sqC; if (BONUS === 1) { const r = Math.max(0, top - 1 - v); ctx.fillRect(mx + 47, Math.min(my + r * 6 - 1, my - 2), 8, 8); } else ctx.fillRect(o.x + 5, o.y + 4, 8, 8); } }
     ctx.restore(); } }
@@ -4220,7 +4225,7 @@ async function boot() {
   { const m = location.hash.match(/^#test-shop-all-(\d)/); if (m) { newRun(); S.parts.push("amp", "coil"); S.over = true; nightClear(); S.phase = "shop"; shopChoices = PARTS.slice(+m[1] * 4, +m[1] * 4 + 4); } }
   // the end of a run (2026-11-18): #test-danger(-danger-N) = the last word on night 4, short of the target; #test-gover(-gover-N) = the game over screen
   if (/^#test-power/.test(location.hash)) { newRun(); }
-  if (/^#test-bonus/.test(location.hash)) { newRun(); setTimeout(() => { S.parts.push("vowel", "vowel", "treble"); nightCard = 0; nightHold = false; }, 300); }   // value dots that tell the truth: #test-bonus-bonus-N   // the power-up: #test-power-intro-power-N (with the night 1 plaque)
+  if (/^#test-bonus/.test(location.hash)) { newRun(); setTimeout(() => { S.parts.push("vowel", "vowel", "treble"); if (/many/.test(location.hash)) S.parts.push("vowel", "vowel", "vowel", "treble"); nightCard = 0; nightHold = false; }, 300); }   // value dots that tell the truth: #test-bonus-bonus-N   // the power-up: #test-power-intro-power-N (with the night 1 plaque)
   if (/^#test-danger/.test(location.hash)) { newRun(); S.night = 4; S.parts.push("red", "amp", "coil"); startNight(); setTimeout(() => { nightHold = false; nightCard = 0; S.score = S.shown = Math.round(S.target * .45); S.words = 1; }, 300); }
   if (/^#test-gover/.test(location.hash)) { newRun(); S.night = 6; S.parts.push("red", "blue", "blue", "echo", "meter", "battery", "battery", "battery"); S.total = 7250; S.best = { word: "perv", pts: 720 }; S.sent = 31; S.longest = "quartz"; S.score = 300; S.target = 475; overNow(); overT2 = 300; }
   if (/^#test-report/.test(location.hash)) { newRun(); S.parts.push("amp", "owl"); S.target = 30; S.score = 52; S.total = 214; S.startTotal = 162; S.over = true; S.night = 3;

@@ -3143,7 +3143,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "How should a key show what your parts add to its letter?",
      "found": "Each key's amber dots show what its letter is worth. These add what your parts give it: the Vowel Antenna (+1 a copy on vowels) and the Treble Slider (+5 a copy on letters worth 3+). The pictures have two Vowel Antennas and a Treble Slider fitted, so vowels show two extra dots. They're drawn as a few plain squares, so they cost nothing to run.",
      "options": [
@@ -3195,7 +3195,8 @@
        ],
        "play": "play.html#test-bonus-bonus-3"
       }
-     ]
+     ],
+     "decided": "3"
     }
    ]
   }
