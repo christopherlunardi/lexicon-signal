@@ -3321,7 +3321,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "How should the ice and the blue key show what your word will do to them, and how should they break?",
      "found": "New rule, in the game now: use a frozen key without the blue key and all the ice breaks, and the blue key breaks too. It comes back on another plain key (never the red, gold or green key, never in the word you just sent) and starts over at x2 with no ice. At blue key level 4 the blue key holds its place and half the ice stays. Each video: a word over the ice without the blue key (danger), let go, a word through the blue key (reward), that word sent (the ice pays), some ice built back, then a word over the ice without the blue key sent (it all breaks and the blue key moves). The Overlap still shows danger (left) and reward (right) with a red key on the ice, the green middle key frozen, a gold key next door and corner marks: all of those are drawn on top and stay readable.",
      "options": [
@@ -3421,7 +3421,8 @@
        ],
        "play": "play.html#test-icelook-icelook-4"
       }
-     ]
+     ],
+     "decided": "2"
     }
    ]
   }

@@ -667,3 +667,4 @@ the same batch.
   `#test-icelook[-over][-lv4]-icelook-N` (-over: red key on ice, green key frozen, gold key beside, corner marks). Everything is
   drawn in drawIce, before the red outline, green ring, chips and corner marks, so those stay on top. Recorder steps: set S.path
   for traces, call send() for sends, LEXSTEP(2) per video frame.
+- icecrack-r1 decided 2 (fault lines), Chris 2026-11-18: ICE_LOOK = 2.

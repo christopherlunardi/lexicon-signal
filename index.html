@@ -2270,7 +2270,8 @@ function drawIce(tiles) {
    reward the ice fills with light and the chip swells), 4 lights (the ice and the blue key go dark and dull; for a reward they
    blaze and a sheen runs over them). Everything stays in the keys' edge bands, clear of the letter, the top left corner (corner
    marks) and the other keys' outlines and chips, which are all drawn after this. Cheap lines and cached bloom sprites only. */
-let ICE_LOOK = 3; { const m = location.hash.match(/icelook-(\d)/); if (m) ICE_LOOK = Math.max(1, Math.min(4, +m[1])); }
+// (ICE_LOOK 2, fault lines: Chris 2026-11-18)
+let ICE_LOOK = 2; { const m = location.hash.match(/icelook-(\d)/); if (m) ICE_LOOK = Math.max(1, Math.min(4, +m[1])); }
 const CRK = {}, LNK = {};
 // a key's cracks, made once: lines that start on its edges and wander along the edge band (never over the letter or the top left corner)
 function crackSet(i, n) { const key = i + "|" + n; if (CRK[key]) return CRK[key]; let sd = (i * 7919 + n * 131 + 17) % 2147483647; const rnd = () => (sd = (sd * 16807 + 11) % 2147483647) / 2147483647;
