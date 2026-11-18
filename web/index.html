@@ -169,7 +169,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 207;</script><script>
+<script>window.LEX_BUILD = 208;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -3661,12 +3661,14 @@ function crtCollapse(p, t) { const cv0 = ctx.canvas, w = cv0.width, h = cv0.heig
 // the game over screen: the run's numbers, then NEW RUN or MAIN MENU (nothing takes a press until the numbers are in)
 const OVER_READY = 60;
 function overStats() { return [["NIGHTS CLEARED", String(S.night - 1)], ["WORDS SENT", String(S.sent || 0)], ["BEST WORD", S.best.word ? `${S.best.word.toUpperCase()} +${fmtNum(S.best.pts)}` : "-"], ["LONGEST WORD", S.longest ? S.longest.toUpperCase() : "-"]]; }
-function overChoose() { if (overT2 < OVER_READY) { overT2 = OVER_READY; return; } beaconKill = 0; if (overSel === 0) start(); else overToTitle(); }
-function overButtons(cx, y) { const bw = 104, bh = 22, gap = 12, x0 = Math.round(cx - bw - gap / 2), ready = overT2 >= OVER_READY;
-  OVERUI = ["NEW RUN", "MAIN MENU"].map((lab, i) => { const b = { x: x0 + i * (bw + gap), y, w: bw, h: bh }, on = ready && overSel === i;
+// NEW RUN, HIGH SCORES (the board opens over the screen; back closes it) or MAIN MENU (Chris 2026-11-18: the board from here too)
+function overChoose() { if (overT2 < OVER_READY) { overT2 = OVER_READY; return; } if (overSel === 1) { BOARD.on = true; Sound.click(); return; } beaconKill = 0; if (overSel === 0) start(); else overToTitle(); }
+function overButtons(cx, y) { const labs = ["NEW RUN", "HIGH SCORES", "MAIN MENU"], gap = 10, bw = Math.min(110, Math.floor((W - 24 - gap * 2) / 3)), bh = 22, x0 = Math.round(cx - (bw * 3 + gap * 2) / 2), ready = overT2 >= OVER_READY;
+  OVERUI = labs.map((lab, i) => { const b = { x: x0 + i * (bw + gap), y, w: bw, h: bh }, on = ready && overSel === i;
     ctx.save(); if (!ready) ctx.globalAlpha = .4;
     if (on) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(FX(b.x + bw / 2), FX(b.y + bh / 2), FX(bw) * .6, "255,170,70", .35); ctx.restore(); }
     ctx.drawImage(pushPlateCv(bw, on, frame), FX(b.x), FX(b.y), FX(bw), FX(bh));
+    const sc = Math.min(1, (FX(bw) - 16) / textW(lab, "ink")); ctx.translate(FX(b.x + bw / 2), 0); ctx.scale(sc, 1); ctx.translate(-FX(b.x + bw / 2), 0);
     ftext(lab, FX(b.x + bw / 2), FX(b.y) + Math.round((FX(bh) - 14 * TK) / 2) - 2, "ink", on ? "#3a1806" : C.ink, "c", { under: C.brassHi, uy: 2 }); ctx.restore(); return b; });
   if (ready) ftext(TAPW() ? "TAP ONE" : btn("LEFT / RIGHT   {A} CHOOSE"), FX(cx), FX(y + bh) + 8, "ink", C.gold, "c", { outline: C.dark }); }
 function overIcons(cx, y, h) { const sl = partSlots().filter(e => e.id && (e.n || PART[e.id].key)), box = h, gap = 16, tw = sl.length * box + (sl.length - 1) * gap; let x = cx - tw / 2;
@@ -3741,7 +3743,7 @@ function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ?
   usingButtons = true; Sound.ensure();
   if (S.phase === "report") { if (dy) reportScroll(dy); return; }
   if (S.phase === "dying") { lossSkip(); return; }
-  if (S.phase === "over") { if (dx || dy) { overSel ^= 1; Sound.click(); } return; }
+  if (S.phase === "over") { if (dx || dy) { overSel = (overSel + (dx || dy) + 3) % 3; Sound.click(); } return; }
   if (S.phase === "title" && TS === 6 && (dy || dx)) { dy = dy || dx; if (titleBusy()) return; titleSel = (titleSel + dy + TITLE_MENU.length) % TITLE_MENU.length; Sound.click(); return; }
   if (S.phase === "shop") { const n = shopChoices.length, pk = plateKinds().length;
     if (tokMenuKey(dk)) return;

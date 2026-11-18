@@ -629,7 +629,7 @@ the same batch.
   heartbeat, red tube + light static; `#test-danger-danger-N`), LOSS 1..3 (power down, signal lost, letters fall; phase "dying",
   any press skips; `#test-danger-loss-N`, the recorder sets S.words = 0 then calls nightLost()), GOVER 1..3 (GAME OVER sheet, OFF THE
   AIR plaque, SIGN-OFF station log; stats nights cleared, words sent, best and longest word (S.sent, S.longest), the keys and parts
-  with x2 / LV2 tags; NEW RUN | MAIN MENU, awake after OVER_READY frames; `#test-gover-gover-N`). Option 1 of each is live until Chris picks.
+  with x2 / LV2 tags; NEW RUN | HIGH SCORES | MAIN MENU, awake after OVER_READY frames; `#test-gover-gover-N`). Option 1 of each is live until Chris picks.
 - The dial rule (Chris 2026-11-18): the dial scrolls extras; anything important (dialFlash) flashes in, centered: three quick blinks,
   a steady hold on a lit field (red ones on a dark field), then it blinks out. New important messages use dialFlash, never the marquee.
 - Picked 2026-11-18: DANGER 2 fading signal (+ letter glitches, GLITCH), LOSS 1 power down, GOVER 3 sign-off log over the dark room
