@@ -1255,8 +1255,8 @@ function scoreShow() { return !HOW.on && barShow > .9 && ["play", "shop", "swap"
    5 the plate taking turns and the tube mark together. ---- */
 // the end of a run (Workshop topics "danger", "loss" and "gover", 2026-11-18): DANGER = the last-word warning, LOSS = the losing
 // animation, GOVER = the game over screen. #danger-N, #loss-N and #gover-N pick one.
-let DANGER = 2, LOSS = 1, GOVER = 3, DIALFX = 2, POWER = 1, BONUS = 3;   // (BONUS 3, corner marks: Chris 2026-11-18)   // (DIALFX 2 the glow, POWER 1 the warm-up: Chris 2026-11-18)   // (Chris picked 2026-11-18: DANGER 2 fading signal, LOSS 1 power down, GOVER 3 the sign-off log)
-{ const h = location.hash; let m; if ((m = h.match(/danger-(\d)/))) DANGER = +m[1]; if ((m = h.match(/loss-(\d)/))) LOSS = +m[1]; if ((m = h.match(/gover-(\d)/))) GOVER = +m[1]; if ((m = h.match(/dialfx-(\d)/))) DIALFX = +m[1]; if ((m = h.match(/power-(\d)/))) POWER = +m[1]; if ((m = h.match(/bonus-(\d)/))) BONUS = +m[1]; }
+let DANGER = 2, LOSS = 1, GOVER = 3, DIALFX = 2, POWER = 1, BONUS = 3, ENDL = 1;   // (BONUS 3, corner marks: Chris 2026-11-18)   // (DIALFX 2 the glow, POWER 1 the warm-up: Chris 2026-11-18)   // (Chris picked 2026-11-18: DANGER 2 fading signal, LOSS 1 power down, GOVER 3 the sign-off log)
+{ const h = location.hash; let m; if ((m = h.match(/danger-(\d)/))) DANGER = +m[1]; if ((m = h.match(/loss-(\d)/))) LOSS = +m[1]; if ((m = h.match(/gover-(\d)/))) GOVER = +m[1]; if ((m = h.match(/dialfx-(\d)/))) DIALFX = +m[1]; if ((m = h.match(/power-(\d)/))) POWER = +m[1]; if ((m = h.match(/bonus-(\d)/))) BONUS = +m[1]; if ((m = h.match(/endl-(\d)/))) ENDL = +m[1]; }
 /* the radio powers on (Workshop topic "power", 2026-11-18): a new run's glass waits dark, lamps and dial off, under the night 1
    plaque; once that's gone the radio comes on and the letters fall in. POWER 1 warm-up, 2 tune in, 3 lamp cascade. */
 let powerT = -1;
@@ -1274,6 +1274,7 @@ function powerUpdate() { if (!S.powerOff) return; if (powerT < 0) { if (S.phase 
 // how far on the radio is: lamps lit, glass light (0 dark .. 1 on), dial on
 function powerLamps() { const t = powerT; if (t < 0) return 0; if (POWER === 1) return Math.min(6, Math.max(0, Math.floor((t - 26) / 6) + 1)); if (POWER === 2) return t >= 60 ? 6 : 0; return Math.min(6, Math.max(0, Math.floor((t - 6) / 8) + 1)); }
 function powerGlass() { const t = powerT; if (t < 0) return 0; if (POWER === 1) return Math.min(1, t / 50); if (POWER === 2) return Math.min(1, t / 70); return Math.min(1, t / 60); }
+let endT = 0, endOD = false;
 let dangerT = 0, lossT = 0, beaconKill = 0, overSel = 0, overT2 = 0, lossOrd = [], lossCols = [], OVERUI = [];
 // the last word, with the tube still short: the warning runs (it starts once the turn before it is over)
 const inDanger = () => S.phase === "play" && !HOW.on && S.words === 1 && S.score < S.target && !S.ending;
@@ -2665,12 +2666,27 @@ function drawTube() {
   if (S.phase === "dying" && LOSS === 1) { const fr = Math.min(1, lossT / 70), x1 = G.ix + G.n * (G.cw + G.gap), xa = x1 - (x1 - G.ix) * fr; ctx.fillStyle = "rgba(10,5,2,.92)"; ctx.fillRect(xa, G.iy, x1 - xa, G.ih); }
   // the end lamp (Chris 2026-11-12): lights and pulses at the far end of the tube only while the traced word would fill it,
   // so a word that won't quite get there is easy to spot by the lamp staying dark
-  { const t = L.tube, ex = FX(t.x + t.w) - 14, ey = FX(L.barY + t.y + t.h / 2), p = .65 + .35 * Math.sin(frame / 5);
-    ctx.fillStyle = "#1a0d06"; ctx.beginPath(); ctx.arc(ex, ey, 11, 0, 6.283); ctx.fill();
-    ctx.fillStyle = "#8a6230"; ctx.beginPath(); ctx.arc(ex, ey, 9.5, 0, 6.283); ctx.fill();
-    ctx.fillStyle = odv ? `rgba(255,${Math.round(60 + 60 * p)},${Math.round(40 + 30 * p)},1)` : fills ? `rgba(255,${Math.round(220 + 30 * p)},${Math.round(150 + 90 * p)},1)` : "#3a1f10"; ctx.beginPath(); ctx.arc(ex, ey, 7, 0, 6.283); ctx.fill();
-    if (fills) { ctx.fillStyle = "rgba(255,255,245,.9)"; ctx.beginPath(); ctx.arc(ex - 2, ey - 2, 2.5, 0, 6.283); ctx.fill();
-      ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(ex, ey, odv ? 80 : 64, odv ? "255,70,40" : "255,200,110", .55 * p); ctx.restore(); } }
+  /* the end lamp made louder (Workshop topic "endlamp", 2026-11-18). ENDL 1 bigger and brighter; 2 a burst of sparks and a flare when it
+     lights, then a steady light streak; 3 the tube answers: a light runs along the tube into the lamp, over and over; 4 a lit tag over
+     the lamp says CLEAR or OVERDRIVE. endT counts frames since it lit (it lights with a soft ping). */
+  { const t = L.tube, ex = FX(t.x + t.w) - 14, ey = FX(L.barY + t.y + t.h / 2), p = .65 + .35 * Math.sin(frame / 5), on = fills && S.phase === "play";
+    if (on) { if (!endT || odv !== endOD) { endT = 0; endOD = odv; Sound.blip(odv ? 6 : 4); if (ENDL === 2) burst(t.x + t.w - 7, L.barY + t.y + t.h / 2, 14, odv ? C.redHot : C.gold); } endT++; } else endT = 0;
+    const big = ENDL === 1 || ENDL === 2 || ENDL === 3, R = big ? 10 : 7, rgb = odv ? "255,80,40" : "255,200,110", e = Math.min(1, endT / 8);
+    ctx.fillStyle = "#1a0d06"; ctx.beginPath(); ctx.arc(ex, ey, R + 4, 0, 6.283); ctx.fill();
+    ctx.fillStyle = "#8a6230"; ctx.beginPath(); ctx.arc(ex, ey, R + 2.5, 0, 6.283); ctx.fill();
+    ctx.fillStyle = odv ? (ENDL ? `rgb(255,${Math.round(110 + 70 * p)},${Math.round(60 + 40 * p)})` : `rgba(255,${Math.round(60 + 60 * p)},${Math.round(40 + 30 * p)},1)`) : fills ? `rgba(255,${Math.round(220 + 30 * p)},${Math.round(150 + 90 * p)},1)` : "#3a1f10"; ctx.beginPath(); ctx.arc(ex, ey, R, 0, 6.283); ctx.fill();
+    if (fills) { ctx.fillStyle = "rgba(255,255,245,.9)"; ctx.beginPath(); ctx.arc(ex - R * .3, ey - R * .3, R * .36, 0, 6.283); ctx.fill();
+      ctx.save(); ctx.globalCompositeOperation = "lighter";
+      if (ENDL === 0 || ENDL === 4) bloom(ex, ey, odv ? 80 : 64, rgb, .55 * p);
+      else { bloom(ex, ey, (odv ? 120 : 100) * (.8 + .2 * e), rgb, (odv ? 1 : .8) * p); bloom(ex, ey, 240, rgb, (odv ? .32 : .22) * p * e); }
+      if (ENDL === 2) { const f = Math.max(0, 1 - endT / 18); if (f > 0) { bloom(ex, ey, 60 + 140 * (1 - f), "255,250,235", .9 * f); }
+        const sw = 110 + 30 * p; ctx.fillStyle = `rgba(${rgb},${.35 * p})`; ctx.fillRect(ex - sw, ey - 1.5, sw * 2, 3); ctx.fillStyle = `rgba(255,250,235,${.5 * p})`; ctx.fillRect(ex - sw * .5, ey - .5, sw, 1); }
+      if (ENDL === 3) { const span = G.n * (G.cw + G.gap), u = (endT * 6) % (span + 60) - 30; for (let k = -2; k <= 2; k++) { const x = G.ix + u + k * (G.cw + G.gap); if (x < G.ix || x > G.ix + span) continue; ctx.fillStyle = `rgba(${rgb},${.55 * (1 - Math.abs(k) / 3)})`; ctx.fillRect(x, G.iy, G.cw, G.ih); } }
+      ctx.restore();
+      if (ENDL === 4) { const lab = odv ? "OVERDRIVE" : "CLEAR", tw = textW(lab, "ink") + 24, th = Math.round(14 * TK) + 12, x0 = Math.min(CVW - 8 - tw, ex - tw / 2), y0 = ey - 22 - th - (1 - e) * 10;
+        ctx.save(); ctx.globalAlpha = e; ctx.globalCompositeOperation = "lighter"; bloom(x0 + tw / 2, y0 + th / 2, tw * .8, rgb, .45 * p); ctx.restore();
+        ctx.save(); ctx.globalAlpha = e; ctx.fillStyle = "#1a0d06"; ctx.fillRect(x0 - 2, y0 - 2, tw + 4, th + 4); ctx.fillStyle = odv ? "#c8341f" : "#e9b45a"; ctx.fillRect(x0, y0, tw, th);
+          ftext(lab, x0 + tw / 2, y0 + 6, "ink", "#1a0805", "c"); ctx.restore(); } } }
   // the signal traveling down from the tower: a bright head with a fading tail
   for (const bm of beams) { const q = tubeHead(), b = L.beacon, cx = (b.x + q.x) / 2, cy = Math.min(b.y, q.y) - 30;
     for (let j = 10; j >= 0; j--) { const u = Math.max(0, Math.min(1, (bm.t - j * .8) / bm.dur)), e = u * u, x = (1 - e) ** 2 * b.x + 2 * (1 - e) * e * cx + e * e * q.x, y = (1 - e) ** 2 * b.y + 2 * (1 - e) * e * cy + e * e * q.y;
@@ -4235,6 +4251,7 @@ async function boot() {
   { const m = location.hash.match(/^#test-shop-all-(\d)/); if (m) { newRun(); S.parts.push("amp", "coil"); S.over = true; nightClear(); S.phase = "shop"; shopChoices = PARTS.slice(+m[1] * 4, +m[1] * 4 + 4); } }
   // the end of a run (2026-11-18): #test-danger(-danger-N) = the last word on night 4, short of the target; #test-gover(-gover-N) = the game over screen
   if (/^#test-power/.test(location.hash)) { newRun(); }
+  if (/^#test-endl/.test(location.hash)) { newRun(); setTimeout(() => { nightCard = 0; nightHold = false; S.score = S.shown = S.target - 12; }, 300); }   // the end lamp: #test-endl-endl-N
   if (/^#test-bonus/.test(location.hash)) { newRun(); setTimeout(() => { S.parts.push("vowel", "vowel", "treble"); if (/many/.test(location.hash)) S.parts.push("vowel", "vowel", "vowel", "treble"); nightCard = 0; nightHold = false; }, 300); }   // value dots that tell the truth: #test-bonus-bonus-N   // the power-up: #test-power-intro-power-N (with the night 1 plaque)
   if (/^#test-danger/.test(location.hash)) { newRun(); S.night = 4; S.parts.push("red", "amp", "coil"); startNight(); setTimeout(() => { nightHold = false; nightCard = 0; S.score = S.shown = Math.round(S.target * .45); S.words = 1; }, 300); }
   if (/^#test-gover/.test(location.hash)) { newRun(); S.night = 6; S.parts.push("red", "blue", "blue", "echo", "meter", "battery", "battery", "battery"); S.total = 7250; S.best = { word: "perv", pts: 720 }; S.sent = 31; S.longest = "quartz"; S.score = 300; S.target = 475; overNow(); overT2 = 300; }

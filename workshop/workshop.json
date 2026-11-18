@@ -3199,6 +3199,120 @@
      "decided": "3"
     }
    ]
+  },
+  {
+   "id": "endlamp",
+   "title": "End lamp",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "How should the lamp at the end of the tube show that your word will clear the night (or overdrive)?",
+     "found": "Each video: a 2-letter start, then a word that clears the night lights the lamp; the word is let go, then the same word on a night where it would overdrive (red). Every new look also pings when the lamp lights.",
+     "options": [
+      {
+       "id": "0",
+       "title": "As it is now",
+       "note": "The small lamp at the end of the tube lights warm when your word will clear the night, red for overdrive.",
+       "images": [
+        {
+         "src": "img/endlamp-r1/endlamp-0.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/endlamp-r1/endlamp-0.jpg",
+         "label": "Clear"
+        },
+        {
+         "src": "img/endlamp-r1/endlamp-0-od.jpg",
+         "label": "Overdrive"
+        }
+       ],
+       "play": "play.html#test-endl-endl-0"
+      },
+      {
+       "id": "1",
+       "title": "Bigger and brighter",
+       "note": "A bigger lamp with a much stronger glow that spills over the end of the bar, and a soft ping when it lights.",
+       "images": [
+        {
+         "src": "img/endlamp-r1/endlamp-1.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/endlamp-r1/endlamp-1.jpg",
+         "label": "Clear"
+        },
+        {
+         "src": "img/endlamp-r1/endlamp-1-od.jpg",
+         "label": "Overdrive"
+        }
+       ],
+       "play": "play.html#test-endl-endl-1"
+      },
+      {
+       "id": "2",
+       "title": "Spark and flare",
+       "note": "When it lights, sparks fly and a white flash bursts from the lamp, then a light streak runs across it like a lens flare.",
+       "images": [
+        {
+         "src": "img/endlamp-r1/endlamp-2.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/endlamp-r1/endlamp-2.jpg",
+         "label": "Clear"
+        },
+        {
+         "src": "img/endlamp-r1/endlamp-2-od.jpg",
+         "label": "Overdrive"
+        }
+       ],
+       "play": "play.html#test-endl-endl-2"
+      },
+      {
+       "id": "3",
+       "title": "The tube answers",
+       "note": "The bigger lamp, and a band of light runs along the tube into it, over and over, while your word will clear.",
+       "images": [
+        {
+         "src": "img/endlamp-r1/endlamp-3.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/endlamp-r1/endlamp-3.jpg",
+         "label": "Clear"
+        },
+        {
+         "src": "img/endlamp-r1/endlamp-3-od.jpg",
+         "label": "Overdrive"
+        }
+       ],
+       "play": "play.html#test-endl-endl-3"
+      },
+      {
+       "id": "4",
+       "title": "Lit tag",
+       "note": "The lamp as it is now, plus a small lit tag above it that says CLEAR, or OVERDRIVE in red.",
+       "images": [
+        {
+         "src": "img/endlamp-r1/endlamp-4.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/endlamp-r1/endlamp-4.jpg",
+         "label": "Clear"
+        },
+        {
+         "src": "img/endlamp-r1/endlamp-4-od.jpg",
+         "label": "Overdrive"
+        }
+       ],
+       "play": "play.html#test-endl-endl-4"
+      }
+     ]
+    }
+   ]
   }
  ]
 }
