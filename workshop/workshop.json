@@ -3181,7 +3181,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "How should the frozen keys and the blue key look at rest, when your word isn't touching them?",
      "found": "The rules are unchanged; this is only the resting look. Each video has the game's sound (tap Play with sound): the board at rest with three frozen keys, a word that misses the blue key (one more key freezes at the end of the turn), then everything the blue key can reach frozen and the frost deepened three times (x13), then a trace over the ice without the blue key and letting go, to show the hand-over to the fault-line cracks and back. In every look the blue key's glow grows with what it holds, new ice grows in from the key's edges, ice about to shatter keeps its look until it goes, and a picked key shows its normal lit look. Nothing is drawn in a key's top left corner (the corner marks), frost on a key that is also the red, gold or green key is halved, and the red key, the gold key, the green ring and both chips are drawn on top: see each Overlap still (green middle key frozen, red and gold keys beside the ice, corner marks). Frame time at 640x480 with all eight frozen: every look within about half a millisecond of option 0.",
      "options": [
@@ -3335,7 +3335,8 @@
        "play": "play.html#test-icerest-icerest-5",
        "sound": true
       }
-     ]
+     ],
+     "decided": "4"
     }
    ]
   }

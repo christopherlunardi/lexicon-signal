@@ -1217,6 +1217,7 @@ function draw() {
   if (HOW.on) { howStep(); drawHowCard(); }
   if (PAUSE.on) drawPause();
   if (BOARD.on) drawBoard();
+  if (MAN.on) drawManual();
   drawFinish();
 }
 /* ================= screen finish (Workshop "finish", 2026-11-13) =================
@@ -2244,7 +2245,7 @@ function frostCorner(cx, cy, dx, dy, len, a) {   // a little frost sprig: a stem
    turns whiter. The traced word's looks (ICE_LOOK) draw over these and the rest look eases under them (iceMood), so nothing pops.
    Everything stays inside its own key, except the veins, which only cross the gap between the blue key and its ice; nothing sits in
    a key's top left corner (the corner marks), and a frozen key that is also the red, gold or green key gets half of it. */
-let ICE_REST = 3;
+let ICE_REST = 4;   // (Chris picked ice blocks, 2026-11-18: keep it clear of the green key)
 { const m = location.hash.match(/icerest-(\d)/); if (m) ICE_REST = Math.min(5, +m[1]); }
 const IRC = {};
 let iceRestLv = 0;
@@ -2983,8 +2984,8 @@ let TS = 6; {   // default: radio close-up (Chris, 2026-11-12, still being tweak
 const LD = 14, LP = 6 * LD;   // logo letter cell and letter pitch, in fine pixels
 let titleT = 0, titleSkip = false, logoCv = null, logoSig = null, logoNeon = null;
 const titleFX = { lamps: 6, tube: null, bar: false };
-const TITLE_MENU = ["START", "HOW TO PLAY", "HIGH SCORES"]; let titleSel = 0, titleHits = [], titleSelL = -1, titleSelF = 0;
-function titleChoose(i) { const m = TITLE_MENU[i]; if (m === "HIGH SCORES") { BOARD.on = true; Sound.click(); return; } if (m === "HOW TO PLAY") howStart(); else if (m === "UPDATE APP") { try { LexNative.installApp(); } catch (e) {} } else start(); }
+const TITLE_MENU = ["START", "HOW TO PLAY", "MANUAL", "HIGH SCORES"]; let titleSel = 0, titleHits = [], titleSelL = -1, titleSelF = 0;
+function titleChoose(i) { const m = TITLE_MENU[i]; if (m === "HIGH SCORES") { BOARD.on = true; Sound.click(); return; } if (m === "HOW TO PLAY") howStart(); else if (m === "MANUAL") manOpen("title"); else if (m === "UPDATE APP") { try { LexNative.installApp(); } catch (e) {} } else start(); }
 const titleGlass = { ready: false };
 /* Tips shown scrolling on the dial of the title screen, one at a time in random order. KEEP THIS LIST TRUE TO THE GAME: whenever a
    rule, number, control or part changes, fix the tips it touches, drop the ones that no longer hold and add tips for new things. */
@@ -2995,6 +2996,8 @@ const TIPS = [
   "ON YOUR LAST WORD THE SIGNAL STARTS TO FADE: MAKE IT COUNT",
   "THE BLUE KEY'S ICE KEEPS FROM NIGHT TO NIGHT: SAVE IT UP FOR ONE BIG WORD",
   "ONCE THE BLUE KEY HAS FROZEN ALL IT CAN, EVERY WORD THAT MISSES IT ADDS X1 MORE",
+  "THE SERVICE MANUAL ON THE TITLE MENU EXPLAINS EVERY RULE, WITH WORKED EXAMPLES",
+  "PAUSE AND OPEN THE SERVICE MANUAL TO CHECK A RULE MID-RUN",
   "TRACE TOUCHING LETTERS IN ANY OF 8 DIRECTIONS",
   "A WORD NEEDS 3 LETTERS OR MORE",
   "EVERY LETTER PAST THE SECOND MULTIPLIES YOUR WORD: LONGER WORDS PAY MUCH MORE",
@@ -3393,17 +3396,15 @@ const HOW = { on: false, card: 0, t: 0, shop: false };
 const HOW_GRID = "DATEPROGSHLINKAMUSETBRCOY";   // 5x5: the old 4x4 demo board in the top left (D A T E / R O G S / L I N K / M U S E) plus a column and row   // (demo words are DOTE, RATE (not touching first), LINK, MUSE
 const howPick = (i4) => { const i = H5(i4); return [[0, () => { S.cursor = i; usingButtons = true; }], [12, () => tapTile(i)]]; };
 const HOW_CARDS = [
-  { title: "SPELL A WORD", keys: ["DPAD", "A"], len: 250, text: "Pick letters that touch: side to side or corner to corner. Three or more letters that make a real word light up and sweep with light.",
+  { title: "SPELL A WORD", keys: ["DPAD", "A"], len: 250, text: "Pick letters that touch: side to side or corner to corner, each one touching the last. Three or more letters that make a real word light up and sweep with light.",
     setup() {}, steps: [[30, 0], [62, 5], [94, 2], [126, 3]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])) },
-  { title: "LETTERS MUST TOUCH", keys: [], len: 290, text: "Each new letter has to touch the last one. A letter that doesn't touch won't join the word: pick one that does.",
-    setup() {}, steps: [[30, 4], [62, 1], [94, 2], [140, 15], [200, 3]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])) },
   { title: "SEND IT", keys: ["A", "X"], len: 330, text: "Press {A} on the last letter again, or {X} from anywhere[[, or tap the last letter again|]], to send the word. Its letters fly to the tower and the signal comes back down into the tube.",
     setup() {}, steps: [...[[30, 8], [58, 9], [86, 10], [114, 11]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(11))]] },
-  { title: "FILL THE TUBE", keys: [], len: 470, text: "Fill the signal tube before the lamps go dark. Every word you send uses one lamp. Longer words and letters with more dots fill it faster. When the lamp at the end of the tube lights, the word you've spelled will fill it; when it burns red, it's overdrive: four cards with a new key and a key level among them, a reroll, and the extra signal (up to a quarter) starts the next night; twice the target and you pick two. Every lamp still lit when it fills pays a third of the night's target, so finishing in fewer words pays. If the lamps all go dark first, the run is over.",
+  { title: "FILL THE TUBE", keys: [], len: 470, text: "Fill the signal tube before the lamps go dark. Every word you send uses one lamp. Longer words and letters with more dots fill it faster. The lamp at the end of the tube lights when your word will fill it. If the lamps all go dark first, the run is over.",
     setup() { S.score = S.shown = 18; S.words = 3; }, steps: [...[[30, 12], [58, 13], [86, 14], [114, 15]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(15))]] },
-  { title: "STUCK? RETUNE", keys: ["Y"], len: 270, text: "Press {Y}[[, tap the right knob,| or]] move right past the bottom rows onto the knob and press {A}, to swap every letter for new ones, once a night. The small light under that knob shows you still have it. Keep it and it pays half the night's target when the night clears.",
+  { title: "STUCK? RETUNE", keys: ["Y"], len: 270, text: "Press {Y}[[, tap the right knob,| or]] move right past the bottom rows onto the knob and press {A}, to swap every letter for new ones, once a night. The small light under that knob shows you still have it.",
     setup() {}, steps: [[80, () => retune()]] },
-  { title: "RADIO PARTS", keys: [], len: 330, text: "Clear a night to fit one of three radio parts. Parts go in the plain slots, keys in the velvet ones. Copies of a part stack; each copy of a key takes it up a level, and the red key is your first. [[Tap a slot, or press|Press]] down past the bottom row to read one. One part is a mystery. Don't like the cards? The REROLL / BANISH plate deals new ones, or bans one for the run: you start with 3 and earn one each overdrive. That's the basics!",
+  { title: "RADIO PARTS", keys: [], len: 330, text: "Clear a night to fit one of three radio parts: parts in the plain slots, keys in the velvet ones. That's all you need to play! Every rule, with examples, is in the Service Manual.",
     setup() { S.parts = ["battery", "echo"]; S.words = maxWords(); HOW.shop = true; nightClear(); HOW.shop = false; }, steps: [[70, () => { shopFocus = 1; Sound.click(); }], [140, () => { shopFocus = 2; Sound.click(); }], [210, () => { shopFocus = 0; Sound.click(); }]] },
 ];
 HOW_CARDS.forEach(c => { c.steps = c.steps.map(([t, f]) => [t, typeof f === "number" ? () => tapTile(f) : f]); });
@@ -3439,6 +3440,7 @@ function pauseItems() {
   const sure = (key, label, fn) => [PAUSE.sure === key ? btn("SURE? PRESS {A} AGAIN") : label, () => { if (PAUSE.sure !== key) { PAUSE.sure = key; return; } PAUSE.sure = null; fn(); }, key];
   const it = [["RESUME", () => pauseClose()],
     ["SOUND: " + (Sound.muted() ? "OFF" : "ON"), () => Sound.toggle()],
+    ["SERVICE MANUAL", () => manOpen("pause")],
     ["SCREEN COLOR: " + COLORS[colorMode][0], () => { colorMode = (colorMode + 1) % COLORS.length; applyColor(); try { localStorage.setItem("lexsig.colour", colorMode); } catch (e) {} }],
     sure("new", "NEW RUN", () => { pauseClose(); plEnd("quit"); start(); }),
     sure("title", "QUIT TO TITLE", () => { pauseClose(); plEnd("quit"); howExit(); titleSel = 0; }),
@@ -3493,7 +3495,7 @@ function overToTitle() { howExit(); titleSel = 0; }
 function howExit() { HOW.on = false; S = fresh("title"); fillGrid(false); S.grid.forEach(t => t.ch = " "); "LEXICONSIGNAL".split("").forEach((ch, k) => { S.grid[H5([0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13][k])].ch = ch; });
   titleT = 0; titleSkip = true; titleSel = 1; flyers = []; beams = []; busy = 0; pending = null; Sound.click(); }
 function howKey(k) { if (!HOW.on) return false;
-  if (k === "a" || k === "right") { if (HOW.card < HOW_CARDS.length - 1) howGo(HOW.card + 1); else howExit(); }
+  if (k === "a" || k === "right") { if (HOW.card < HOW_CARDS.length - 1) howGo(HOW.card + 1); else { howExit(); manOpen("title"); } }
   else if (k === "b" || k === "left") { if (HOW.card > 0) howGo(HOW.card - 1); else howExit(); }
   else if (k === "start" || k === "select") howExit();
   return true; }
@@ -3516,7 +3518,7 @@ function keyChip(x, y, k) {   // a button as it looks on the handheld (A and B r
 // The card never shrinks or covers the game (Chris): it pops up in a spot that doesn't matter for what's being shown (the wall
 // round the window, or over the log), sized to fit there, and the part of the screen it's about is ringed with light and pointed to.
 const HOW_AT = {   // per card: where the card goes on wide screens and on narrow ones, and what it points at
-  "SPELL A WORD": ["wall", "wall", ["glass"]], "LETTERS MUST TOUCH": ["wall", "wall", ["glass"]], "SEND IT": ["low", "low", ["glass", "tower"]],
+  "SPELL A WORD": ["wall", "wall", ["glass"]], "SEND IT": ["low", "low", ["glass", "tower"]],
   "FILL THE TUBE": ["wall", "wall", ["tube", "lamps"]], "STUCK? RETUNE": ["wall", "wall", ["glass", "knob"]], "RADIO PARTS": ["barup", "barup", ["slots"]] };
 function howTarget(k) { const g = L.glass, by = L.barY;
   if (k === "glass") return [g.x - 4, g.y - 4, g.w + 8, g.h + 8];
@@ -3565,11 +3567,260 @@ function drawHowCard() {
   let y = Y0 + th + 6; lines.forEach(s_ => { ftext(s_, X, y, "ink", C.ink, "l"); y += lh; });
   const last = HOW.card === n - 1; y += 10;
   ftext(TAPW() ? (HOW.card ? "TAP LEFT: BACK" : "TAP LEFT: TITLE") : btn(HOW.card ? "{B} BACK" : "{B} TITLE"), X, y, "ink", C.inkSoft, "l");
-  ftext((TAPW() ? "TAP RIGHT: " : btn("{A} ")) + (last ? "DONE" : "NEXT") + ((frame >> 4) & 1 ? " >" : "  >"), cx0 + cw - IN, y, "ink", C.inkRed, "r");
+  ftext((TAPW() ? "TAP RIGHT: " : btn("{A} ")) + (last ? "SERVICE MANUAL" : "NEXT") + ((frame >> 4) & 1 ? " >" : "  >"), cx0 + cw - IN, y, "ink", C.inkRed, "r");
   ctx.restore();
 }
 // a card's text for this player: [[touch words|button words]] picks the touch wording only when they're tapping, and {A} etc become the right buttons
 function howText(t) { return btn(t.replace(/\[\[([^|\]]*)\|?([^\]]*)\]\]/g, (m, tw, bw) => TAPW() ? tw : bw)).replace(/ +/g, " ").replace(/ ,/g, ","); }
+/* ---------- SERVICE MANUAL (title menu, the pause menu, and the end of How to Play; Chris 2026-11-18) ----------
+   How to Play stays short: just enough to play. The Service Manual holds every rule in depth, with worked examples, printed like an
+   old receiver's service booklet: cream paper, black and red ink, numbered sections, ruled tables and line drawings. Contents first
+   (up/down, A opens), then a section (up/down read, left/right turn the page, B back to the contents). Touch: tap a line, drag to
+   read, tap PREV / NEXT / CONTENTS. KEEP IT TRUE: the tables come from the game's own numbers (STACK, KEY_LADDER, VALUES, REQ_PAY,
+   targetFor), but the words are hand-written: every rule change updates the section it touches in the same batch. */
+// bigger print where the screen is small (a phone in the handheld shell, the Retroid): the body in the stamped size, heads in key letters
+let BK = "ink", HK = "ink3"; const MLH = () => Math.round((BK === "ink" ? 22 : 33) * TK);
+function manSize() { const big = (cv.getBoundingClientRect().width || CVW) / CVW < .62; BK = big ? "ink3" : "ink"; HK = big ? "key" : "ink3"; }
+const MAN = { on: false, sec: -1, sel: 0, y: 0, ty: 0, max: 0, from: "title", hits: [], drag: null, cache: null, view: 0 };
+const MP = { paper: "#ebe1c4", edge: "#cdbb8e", ink: "#2a2018", soft: "#6a5844", red: "#a3301c", rule: "rgba(42,32,24,.6)", faint: "rgba(42,32,24,.22)" };
+const manReq = () => hatKnown();
+const MAN_SECS = [
+  { t: "HOW A NIGHT WORKS", b: () => { const tg = Array.from({ length: 8 }, (_, i) => fmtNum(targetFor(i + 1))); return [
+    ["p", "Each night the radio has to beam a target amount of signal to the tower. You get one word per battery lamp: six lamps, so six words, plus one more for every Spare Battery. Every word you send pours its signal into the tube along the top of the bar."],
+    ["p", "Fill the tube and the night is cleared. If the last lamp goes dark before the tube is full, the run is over."],
+    ["h", "NIGHT TARGETS"],
+    ["tbl", [["NIGHTS 1 TO 4", tg.slice(0, 4).join(", ")], ["NIGHTS 5 TO 8", tg.slice(4).join(", ")], ["AFTER THAT", "Each night asks for x1.45 the last."]], [.38, .62]],
+    ["p", "The first five nights climb by x1.6 a night, then x1.45 a night."],
+    ["h", "THE GLASS"],
+    ["p", "The glass holds 25 keys, 5 by 5. Letters you send drop out, the keys above fall into place and new letters fall in from the top. The glass keeps its letters from one night to the next, so a good word left on the glass is still there tomorrow. A new run starts with a fresh glass."],
+    ["h", "THE TUBE'S END LAMP"],
+    ["p", "As you trace, the tube blinks the cells your word would fill. The round lamp at the tube's right end lights when the word you have traced would clear the night, and burns red when it would reach overdrive (section 4)."],
+    ["h", "THE LAST WORD"],
+    ["p", "On your last lamp the signal starts to fade and the dial warns you: LAST WORD. Make it count."]]; } },
+  { t: "TRACING AND SENDING", b: () => [
+    ["p", "Start on any key, then move to a key that touches it: left, right, up, down or corner to corner. Each new letter has to touch the one before it, and a key can only be used once in a word. A word needs 3 letters or more and has to be a real word. QU sits on one key and counts as two letters."],
+    ["fig", "trace", "FIG. 2  TRACING STAR. EACH LETTER TOUCHES THE LAST; CORNERS COUNT."],
+    ["p", "When what you have traced is a real word, its keys light up, a light sweeps across them and the dial lights warm with the word's score. Send it and its letters fly to the tower."],
+    ["note", "Sending something that isn't a word costs nothing: the dial says NO SIGNAL (or TOO SHORT) and you keep your lamp. A key that doesn't touch your last letter can't join the word: the dial says MUST TOUCH."],
+    ["h", "CONTROLS"],
+    ["tbl", [["ADD A LETTER", "A, or tap the key. Keyboard: arrows or WASD to move, then Space, Enter or Z."],
+      ["SEND THE WORD", "A on the last letter again, or X from anywhere. Tap the last letter again, or drag across the word and let go. Keyboard: V, or Space on the last letter."],
+      ["TAKE ONE BACK", "B, or tap the letter before the last. Keyboard: Backspace or X."],
+      ["RETUNE", "Y, or tap the right tuning knob. Keyboard: R or C."],
+      ["PAUSE", "Start, or tap the left knob. Keyboard: Esc or P."],
+      ["READ A SLOT", "Tap a slot, or press down past the bottom row of keys."]], [.32, .68]]] },
+  { t: "SCORING", b: () => { const g = {}; for (const [ch, v] of Object.entries(VALUES)) if (ch !== "?") (g[v] = g[v] || []).push(ch.toUpperCase()); return [
+    ["p", "Every word is worked out from three things:"],
+    ["list", ["SIGNAL: 2, plus what each letter is worth. Every word carries those 2, so short words still count.", "BOOST: the number of letters past the second. A 3-letter word has 1, a 5-letter word has 3.", "MULTIPLIERS: the x2s and x3s from keys and parts. They multiply each other."]],
+    ["p", "SCORE = SIGNAL x BOOST x MULTIPLIERS. Two things add on top afterwards: the green key's charge and a filled request."],
+    ["h", "LETTER VALUES"],
+    ["p", "Every key shows what its letter is worth as dots."],
+    ["tbl", Object.keys(g).sort((a, b) => a - b).map(v => [v + " SIGNAL", g[v].join(" ")]), [.32, .68]],
+    ["note", "The gold key is worth 0 until it reaches level 2 (section 7)."],
+    ["h", "WORKED EXAMPLES"],
+    ["ex", "STAR, NO PARTS", [["SIGNAL", "2 + 1+1+1+1 = 6"], ["BOOST", "4 LETTERS - 2 = 2"], ["SCORE", "6 x 2 = 12"]]],
+    ["ex", "QUEST", [["SIGNAL", "2 + 7+1+1+1 = 12"], ["BOOST", "5 LETTERS (QU IS 2) = 3"], ["SCORE", "12 x 3 = 36"]]],
+    ["ex", "JOKER THROUGH THE RED KEY, WITH A TUBE AMP AND A TREBLE SLIDER", [["SIGNAL", "2 + 6+1+4+1+1 = 15"], ["TREBLE SLIDER", "+5 FOR J, +5 FOR K = 25"], ["BOOST", "3, +1 FROM THE AMP = 4"], ["RED KEY", "x2"], ["SCORE", "25 x 4 x 2 = 200"]]],
+    ["h", "WHAT ADDS WHERE"],
+    ["tbl", [["TO SIGNAL", "Treble Slider, Vowel Antenna, the red key from level 2, the gold key from level 2."],
+      ["TO BOOST", "Tube Amp, Fine Tuning Knob (each retune still in hand), Signal Meter."],
+      ["MULTIPLIERS", "Long Wave Coil, Shortwave Crystal, Pilot Lamp, Night Owl Clock, the red key, the blue key."],
+      ["ON TOP", "The green key's charge, a filled request."]], [.32, .68]],
+    ["p", "Signal and boost add up inside themselves, then everything multiplies. So a part that adds signal and one that adds boost help each other more than two of the same kind."]]; } },
+  { t: "OVERDRIVE AND CARRY-OVER", b: () => [
+    ["p", "Clearing a night is only the start. Beam more than the target and the radio pays you for it."],
+    ["fig", "tube", "FIG. 4  HOW FULL THE TUBE GETS, AGAINST THE NIGHT'S TARGET."],
+    ["tbl", [["100%: CLEARED", "Pick 1 of 3 cards."], ["150%: OVERDRIVE", "Pick from 4 cards, two of them key cards (a new key, and a level for one you have). You also get +1 reroll / banish."], ["200%: DOUBLE OVERDRIVE", "All of that, and you pick two cards."]], [.4, .6]],
+    ["h", "CARRY-OVER"],
+    ["p", "Signal past the target isn't lost: the next night starts with it already in the tube, up to a quarter of that night's target."],
+    ["ex", "NIGHT 3 (TARGET 130), YOU BEAM 200", [["150% OF 130", "195: OVERDRIVE"], ["PAST THE TARGET", "70"], ["NIGHT 4 TARGET", "205"], ["A QUARTER OF IT", "51, ROUNDED TO 50"], ["NIGHT 4 STARTS WITH", "50 IN THE TUBE"]]]] },
+  { t: "LAMPS, RETUNES AND BONUSES", b: () => [
+    ["h", "RETUNING"],
+    ["p", "Once a night you can retune: every letter on the glass is swapped for new ones. It doesn't use a lamp. The small light under the right tuning knob shows you still have it, and each Fine Tuning Knob adds another."],
+    ["p", "Frozen keys keep their ice through a retune (only their letters change), and the blue key stays where it is."],
+    ["h", "LEFTOVERS PAY"],
+    ["p", "When a night clears, what you didn't need pays into your run score:"],
+    ["tbl", [["EACH LAMP STILL LIT", "A third of the night's target (once you've sent a word that night)."], ["EACH RETUNE NOT USED", "Half the night's target."], ["NIGHT OWL CLOCK", "With a lamp still lit, a third of the target again, times the clock's x."]], [.4, .6]],
+    ["ex", "NIGHT 2 (TARGET 80), CLEARED WITH 2 LAMPS AND THE RETUNE LEFT", [["2 LAMPS", "2 x 25 = 50"], ["THE RETUNE", "40"], ["BONUS", "90"]]],
+    ["p", "So clearing a night in fewer words, without retuning, pays well. (A third and a half are rounded to the nearest 5.)"],
+    ["h", "THE NIGHT REPORT"],
+    ["p", "After each night a report lists every word you sent, what it scored and what helped it, then the bonuses and your run score counting up."]] },
+  { t: "RADIO PARTS", b: () => [
+    ["p", "Clear a night and pick one of three cards. You have 3 plain slots for parts and 3 velvet slots for keys (section 7). Copies of a part stack in one slot, each copy adding the same again. A card for a part you have says what you'd have with one more, with what you have now in brackets."],
+    ["tbl", PARTS.filter(p => !p.key).map(p => { const f = STACK[p.id]; if (p.mystery && !hatKnown()) return [p.name.toUpperCase(), p.blurb]; return [p.name.toUpperCase(), f ? `${f.t(f.v(1))} With 2: ${f.v(2)}. With 3: ${f.v(3)}.` : p.desc]; }), [.34, .66]],
+    ["note", "The Fine Tuning Knob counts every retune still in hand, the radio's own too. The Signal Meter counts the words sent so far tonight. The Night Owl Clock pays on the word sent with one lamp left."],
+    ["p", "A part's slot lights up while your traced word would use it, and flashes with a tag when the word lands."],
+    ["h", "SLOTS FULL"],
+    ["p", "A new kind of part with all 3 plain slots full: pick one to take out (all its copies go). Keys work the same in their velvet slots, but the red key never comes out."],
+    ["h", "THE MELTER"],
+    ["p", "With your part slots full, the picker shows a MELT THEM plate. Melting throws the cards on offer into the melter and lights one of its five lamps. When the fifth lights it pours a molten upgrade: pick one of your keys and it goes up a level."],
+    ["h", "REROLL AND BANISH"],
+    ["p", `You start a run with 3 rerolls / banishes, shared, and every overdrive adds one. ${TAPW() ? "Tap" : btn("Press {Y} or pick")} the REROLL / BANISH plate in the picker. REROLL deals a fresh set of cards, steering clear of the ones you were just shown. BANISH takes the chosen card out of the run for good and deals another in its place.`],
+    ["h", "WHEN KEYS COME UP"],
+    ["p", "A key card turns up in about one picker in four, and every night without one makes the next more likely. A key card is either a new key or the next level of one you have. An overdrive always deals two key cards."]] },
+  { t: "KEYS", b: () => { const lv = (id, start) => { const L0 = KEY_LADDER[id], rows = start ? [["LEVEL 1", start]] : []; L0.forEach((s, i) => rows.push(["LEVEL " + (i + 1 + (start ? 1 : 0)), s + "."])); rows.push(["AFTER THAT", KEY_MORE[id] + ", each level."]); return ["tbl", rows, [.3, .7]]; }; return [
+    ["p", "Keys sit on the glass and change any word that goes through them. Each copy of a key takes it up a level; the card says what the next level brings. Tap a key's slot to read everything its levels give."],
+    ["h", "THE RED KEY"],
+    ["p", "On the glass from the start. Any word through it scores x2. With two red keys, a word through both still pays the red multiplier once."],
+    lv("red", "A red key on the glass: words through it x2."),
+    ["h", "THE GOLD KEY"],
+    ["p", "It can be any letter. When you send, the radio picks the most common word it can make (and one that fills a request, if one can). It's worth 0 signal until level 2."],
+    lv("gold"),
+    ["h", "THE GREEN KEY"],
+    ["p", "Always the middle key of the glass. Each word through it first adds its length to the charge, then scores the whole charge as flat signal, on top of everything else. The charge lasts the whole run."],
+    ["ex", "CAT, THEN STONE, THROUGH THE GREEN KEY", [["CAT", "CHARGE 0 + 3 = 3: +3"], ["STONE", "CHARGE 3 + 5 = 8: +8"]]],
+    lv("tap"),
+    ["h", "THE BLUE KEY"],
+    ["p", "Its frost spreads to the keys around it and a word through it cashes the ice in. Section 8 has it case by case."],
+    lv("blue")]; } },
+  { t: "THE BLUE KEY AND ICE", b: () => [
+    ["p", "The blue key rewards patience. Its frost reaches the 8 keys around it, corners included, and every frozen key raises what a word through it pays."],
+    ["fig", "ice", "FIG. 8  THE BLUE KEY (B) WITH THREE FROZEN KEYS (HATCHED). THE DASHED LINE IS AS FAR AS ITS FROST REACHES."],
+    ["h", "CASE BY CASE"],
+    ["tbl", [["A WORD THAT MISSES IT AND THE ICE", "When the turn is over (letters flown, keys landed), one key around it freezes; two from level 2. When every key around it is already frozen, the frost deepens instead: +1 to its multiplier."],
+      ["A WORD THROUGH IT", "Pays x2, +1 for every frozen key (+2 each from level 3), plus the deepened frost. Then the ice melts and it starts building again. The word may use frozen keys too."],
+      ["A WORD ON THE ICE WITHOUT IT", "All the ice breaks, and so does the blue key: it reforms on another key and starts over at x2. From level 4 the blue key holds and half the ice survives, with half the deepened frost."],
+      ["A RETUNE", "The ice stays and the frozen keys get new letters. The blue key stays put."],
+      ["A NEW NIGHT", "The ice and the deepened frost carry over."]], [.38, .62]],
+    ["ex", "BLUE KEY IN A CORNER, LEVEL 1: ALL 3 KEYS AROUND IT FROZEN, THEN THE FROST DEEPENED TWICE", [["BLUE KEY", "x2"], ["3 FROZEN KEYS", "+3"], ["DEEPENED TWICE", "+2"], ["A WORD THROUGH IT", "x7"]]],
+    ["h", "GOOD TO KNOW"],
+    ["list", ["The chip on the blue key always shows what a word through it would pay right now.", "Frozen keys and the blue key never fall: letters above drop past them.", "Frost never covers the red or gold key: when it reaches one, that key hops somewhere else. It can cover the green key.", "Taking the blue key out of its slot melts all the ice."]]] },
+  { t: () => manReq() ? "REQUESTS" : "[PAGES MISSING]", b: () => manReq() ? [
+    ["p", "With the Stranger's Hat fitted, a caller leaves a request card at the window. It waits on the sill, night after night, until a word fills it; then the next caller brings a new one at the start of a night. As you trace, the card lights the letters your word matches."],
+    ["p", TAPW() ? "Tap the card to read it up close." : btn("From the bottom rows, press left past the first column to reach the card, then {A} to read it.")],
+    ["p", "A word that fills a request keeps its lamp. It pays its plain score (signal x boost) again, several times over, added on top: it doesn't multiply the other multipliers."],
+    ["tbl", [["THE REQUEST", "PAYS"], ...[["LETTERS TOGETHER (2, LATER 3 OR 4)", "chunk"], ["A RARE LETTER", "letter"], ["A LONG WORD (5+ LETTERS, LATER 6+ AND 7+)", "long"], ["A DOUBLE LETTER, LIKE LL", "double"], ["4+ LETTERS THROUGH THE RED KEY (LATER 5+)", "red"], ["3 VOWELS OR MORE (LATER 4)", "vowels"], ["STARTS AND ENDS WITH THE SAME LETTER", "ends"], ["A SONG TITLE, SPELLED EXACTLY", "word"]].map(([a, k]) => [a, "x" + REQ_PAY[k]])], [.74, .26], true],
+    ["p", "Every extra Stranger's Hat adds +2 to every request."],
+    ["ex", "STAR FILLS 'SOMETHING WITH AR IN IT' (x5)", [["PLAIN SCORE", "SIGNAL 6 x BOOST 2 = 12"], ["THE REQUEST", "12 x 4 MORE = 48"], ["SCORE", "12 + 48 = 60"]]]] : [
+    ["p", "These pages have been torn out of the manual. Someone has pencilled a note in the margin: 'Ask the hat.'"],
+    ["note", "Fit the Stranger's Hat once and this section turns up again."]] },
+  { t: "THE END OF A RUN", b: () => [
+    ["p", "Your run score, in the bottom left corner, is every bit of signal you beamed plus every night's leftover bonus."],
+    ["p", "When the lamps go dark before the tube is full, the radio powers down and the run ends. The sign-off log shows how the run went and the parts and keys you had (x2 for copies, LV for key levels). From there you can start again, go back to the title, or see the high scores."],
+    ["p", "Your best ten runs on this device are kept under HIGH SCORES on the title menu."],
+    ["note", "Every run builds a different radio. Try parts you've never fitted, and banish the ones that don't suit you."]] },
+];
+const manTitle = (i) => { const t = MAN_SECS[i].t; return typeof t === "function" ? t() : t; };
+function manOpen(from) { MAN.on = true; MAN.from = from || "title"; MAN.sec = -1; MAN.sel = 0; MAN.y = MAN.ty = 0; MAN.cache = null; Sound.click(); }
+function manClose() { MAN.on = false; MAN.drag = null; Sound.click(); if (MAN.from === "pause") PAUSE.on = true; if (MAN.from === "title" && S.phase === "title") titleSel = Math.max(0, TITLE_MENU.indexOf("MANUAL")); }
+function manGo(i) { if (i < 0) { MAN.sel = Math.max(0, MAN.sec); MAN.sec = -1; MAN.y = MAN.ty = 0; } else { MAN.sec = i; MAN.y = MAN.ty = 0; } MAN.cache = null; Sound.click(); }
+function manScroll(d) { MAN.ty = Math.max(0, Math.min(MAN.max, MAN.ty + d)); }
+function manKey(k) { if (!MAN.on) return false; const step = MLH() * 3;
+  if (MAN.sec < 0) {
+    if (k === "up" || k === "down") { MAN.sel = (MAN.sel + (k === "up" ? MAN_SECS.length - 1 : 1)) % MAN_SECS.length; Sound.tickMove(); }
+    else if (k === "a" || k === "right") manGo(MAN.sel);
+    else if (k === "b" || k === "start" || k === "left") manClose();
+    return true; }
+  if (k === "up" || k === "down") manScroll(k === "up" ? -step : step);
+  else if (k === "right" || k === "a") manGo(MAN.sec < MAN_SECS.length - 1 ? MAN.sec + 1 : -1);
+  else if (k === "left") manGo(MAN.sec > 0 ? MAN.sec - 1 : -1);
+  else if (k === "b") manGo(-1);
+  else if (k === "start") manClose();
+  return true; }
+// touch: tap a contents line, drag to read, tap the footer's PREV / CONTENTS / NEXT
+function manDown(p) { MAN.drag = { y: p.y * FINE, x: p.x * FINE, s: MAN.ty, moved: false }; }
+function manMove(p) { const d = MAN.drag; if (!d) return; const dy = p.y * FINE - d.y; if (Math.abs(dy) > 12) d.moved = true; if (d.moved) { MAN.ty = Math.max(0, Math.min(MAN.max, d.s - dy)); MAN.y = MAN.ty; } }
+function manUp() { const d = MAN.drag; MAN.drag = null; if (!d || d.moved) return; const h = MAN.hits.find(r => d.x >= r.x0 && d.x <= r.x1 && d.y >= r.y0 && d.y <= r.y1); if (h) h.go(); }
+// the layout: each block measured once per width (cached), drawn from the top of the content
+function manBlocks() { if (MAN.sec >= 0) return [["sec", MAN.sec], ...MAN_SECS[MAN.sec].b()];
+  return [["cover"], ["toc"]]; }
+function manLayout(w) { const key = MAN.sec + "|" + BK + "|" + MAN.view + "|" + w + "|" + TK + "|" + TF_READY + "|" + TAPW() + "|" + manReq() + "|" + (S.parts || []).join(); if (MAN.cache && MAN.cache.key === key) return MAN.cache;
+  const lh = MLH(), gh = glyphCv(BK, "N", MP.ink).height, g3 = glyphCv(HK, "N", MP.ink).height, kh = glyphCv("key", "N", MP.ink).height, ops = []; let y = 0;
+  const add = (h, draw, gap) => { ops.push({ y, h, draw }); y += h + (gap ?? Math.round(14 * TK)); };
+  const para = (lines, x0, y0, col) => lines.forEach((s, i) => ftext(s, x0, y0 + i * lh, BK, col || MP.ink, "l"));
+  for (const b of manBlocks()) { const k = b[0];
+    if (k === "cover") { const f0 = Math.round(150 * TK), fig = MAN.view && lh * 4 + 38 + kh * 2 + 30 + f0 + 30 + g3 + 20 + 3 * Math.max(lh + 16, Math.round(34 * TK)) > MAN.view ? 0 : f0;   // (no drawing where the page is short, so the contents start in view)
+      add(lh + 8 + kh * 2 + 30 + lh * 2 + (fig ? 20 + fig + lh + 10 : 0), (X, Y) => { const cx = X + w / 2;
+        ftext("MODEL LS-5  NIGHT RECEIVER", cx, Y, BK, MP.red, "c");
+        ctx.save(); ctx.translate(cx, Y + lh + 8); ctx.scale(2, 2); ftext("SERVICE MANUAL", 0, 0, "key", MP.ink, "c"); ctx.restore();
+        let yy = Y + lh + 8 + kh * 2 + 30; ftext("EVERY RULE OF LEXICON SIGNAL, IN FULL,", cx, yy, BK, MP.soft, "c"); ftext("WITH WORKED EXAMPLES", cx, yy + lh, BK, MP.soft, "c");
+        yy += lh * 2 + 20; if (fig) manFig("radio", cx - fig * .9, yy, fig * 1.8, fig); if (fig) ftext("FIG. 1  THE LS-5 RECEIVER", cx, yy + fig + 8, BK, MP.soft, "c"); }, 24); }
+    else if (k === "toc") { const rh = Math.max(lh + 16, Math.round(34 * TK));
+      add(g3 + 14, (X, Y) => { ftext("CONTENTS", X, Y, HK, MP.red, "l"); ctx.fillStyle = MP.rule; ctx.fillRect(X, Y + g3 + 6, w, 2); }, 6);
+      MAN_SECS.forEach((s, i) => add(rh, (X, Y) => { const on = i === MAN.sel, col = on ? MP.red : MP.ink, ty = Y + Math.round((rh - gh) / 2), t = manTitle(i), n = String(i + 1) + ".";
+        if (on) { ctx.fillStyle = "rgba(163,48,28,.09)"; ctx.fillRect(X - 10, Y, w + 20, rh); const ax = X - 4 + ((frame >> 4) & 1) * 3; ctx.fillStyle = MP.red; ctx.beginPath(); ctx.moveTo(ax, Y + rh / 2 - 7); ctx.lineTo(ax + 10, Y + rh / 2); ctx.lineTo(ax, Y + rh / 2 + 7); ctx.fill(); }
+        ftext(n, X + 22 + textW("10.", BK), ty, BK, col, "r"); ftext(t, X + 22 + Math.round(lh * .7) + textW("10.", BK), ty, BK, col, "l");
+        const pg = String(i + 2), dx0 = X + 34 + Math.round(lh * .7) + textW("10.", BK) + textW(t, BK), dx1 = X + w - textW(pg, BK) - 12; ctx.fillStyle = on ? MP.red : MP.faint; for (let dx = dx0; dx < dx1; dx += 10) ctx.fillRect(dx, ty + gh - 3, 3, 3);
+        ftext(pg, X + w, ty, BK, col, "r"); MAN.hits.push({ x0: X - 10, x1: X + w + 10, y0: Y, y1: Y + rh, go: () => manGo(i), scroll: true }); }, 0)); }
+    else if (k === "sec") { const sz = BK === "ink" ? 1 : 1.5, th = Math.round(kh * sz); add(lh + th + 16, (X, Y) => { ftext("SECTION " + (b[1] + 1), X, Y, BK, MP.red, "l"); ctx.save(); ctx.translate(X, Y + lh); ctx.scale(sz, sz); ftext(manTitle(b[1]), 0, 0, "key", MP.ink, "l"); ctx.restore(); ctx.fillStyle = MP.rule; ctx.fillRect(X, Y + lh + th + 8, w, 3); ctx.fillRect(X, Y + lh + th + 14, w, 1); }, 20); }
+    else if (k === "h") add(g3 + 10, (X, Y) => { ftext(b[1], X, Y, HK, MP.red, "l"); ctx.fillStyle = MP.faint; ctx.fillRect(X, Y + g3 + 5, w, 2); }, 12);
+    else if (k === "p") { const L = wrap(b[1], BK, w); add(L.length * lh - (lh - gh), (X, Y) => para(L, X, Y)); }
+    else if (k === "note") { const L = wrap(b[1], BK, w - 34); add(lh + L.length * lh - (lh - gh) + 16, (X, Y) => { ctx.fillStyle = MP.red; ctx.fillRect(X, Y, 5, lh + L.length * lh - (lh - gh) + 16); ftext("NOTE", X + 20, Y + 8, BK, MP.red, "l"); para(L, X + 20, Y + 8 + lh); }); }
+    else if (k === "list") { const items = b[1].map(s => wrap(s, BK, w - 30)); add(items.reduce((s, L) => s + L.length * lh + 8, 0) - 8 - (lh - gh), (X, Y) => { let yy = Y; items.forEach(L => { ctx.fillStyle = MP.red; ctx.fillRect(X + 2, yy + Math.round(gh / 2) - 4, 8, 8); para(L, X + 26, yy); yy += L.length * lh + 8; }); }); }
+    else if (k === "tbl") { const fr = b[2] || [.35, .65], head = !!b[3], cw = fr.map(f => Math.round(w * f)), pad = 10;
+      const rows = b[1].map(r => r.map((c, j) => wrap(c, BK, cw[j] - 2 * pad))), rhs = rows.map(r => Math.max(...r.map(L => L.length)) * lh - (lh - gh) + 2 * pad);
+      add(rhs.reduce((a, c) => a + c, 0) + 2, (X, Y) => { let yy = Y; ctx.fillStyle = MP.rule; ctx.fillRect(X, yy, w, 2);
+        rows.forEach((r, i) => { let xx = X; r.forEach((L, j) => { para(L, xx + pad, yy + pad, head && !i ? MP.red : j === 0 ? MP.ink : MP.soft); xx += cw[j]; });
+          ctx.fillStyle = MP.faint; ctx.fillRect(X + cw[0] - 1, yy + 6, 1, rhs[i] - 12); yy += rhs[i]; ctx.fillStyle = i === rows.length - 1 ? MP.rule : head && !i ? MP.rule : MP.faint; ctx.fillRect(X, yy, w, i === rows.length - 1 || (head && !i) ? 2 : 1); }); }); }
+    else if (k === "ex") { const tl = wrap("EXAMPLE: " + b[1], BK, w - 36), lines = [];
+      for (const l of b[2]) { const a = l[0], r = l[1]; if (textW(a, BK) + textW(r, BK) + 40 <= w - 36) lines.push([a, r]); else { lines.push([a, ""]); lines.push(["", r]); } }
+      const h = 16 + tl.length * lh + 6 + lines.length * lh - (lh - gh) + 16;
+      add(h, (X, Y) => { ctx.strokeStyle = MP.rule; ctx.lineWidth = 2; ctx.strokeRect(X + 1, Y + 1, w - 2, h - 2); ctx.fillStyle = "rgba(163,48,28,.05)"; ctx.fillRect(X + 2, Y + 2, w - 4, h - 4);
+        para(tl, X + 18, Y + 16, MP.red); let yy = Y + 16 + tl.length * lh + 6; const last = lines.length - 1;
+        lines.forEach(([a, r], i) => { if (i === last && b[2].length > 1) { ctx.fillStyle = MP.faint; ctx.fillRect(X + 18, yy - 6, w - 36, 1); } ftext(a, X + 18, yy, BK, MP.soft, "l"); ftext(r, X + w - 18, yy, BK, i === last ? MP.red : MP.ink, "r"); yy += lh; }); }); }
+    else if (k === "fig") { const fh = Math.round((b[1] === "tube" ? 110 : 190) * TK * (BK === "ink" ? 1 : 1.25)), cap = wrap(b[2], BK, w - 20);
+      add(fh + 12 + cap.length * lh, (X, Y) => { manFig(b[1], X, Y, w, fh); para(cap, X + 10, Y + fh + 12, MP.soft); }); }
+  }
+  MAN.cache = { key, ops, h: y }; return MAN.cache; }
+// line drawings, printed in the manual's black and red
+function manFig(kind, X, Y, w, h) { const lw = Math.max(2, Math.round(2 * TK)); ctx.save(); ctx.lineWidth = lw; ctx.strokeStyle = MP.ink;
+  const keyAt = (x, y, s, ch, opt = {}) => { ctx.fillStyle = MP.paper; ctx.fillRect(x, y, s, s); ctx.strokeStyle = MP.ink; ctx.lineWidth = lw; ctx.strokeRect(x, y, s, s);
+    if (opt.ice) { ctx.save(); ctx.beginPath(); ctx.rect(x, y, s, s); ctx.clip(); ctx.strokeStyle = MP.faint; ctx.lineWidth = 2; for (let d = -s; d < s; d += 9) { ctx.beginPath(); ctx.moveTo(x + d, y + s); ctx.lineTo(x + d + s, y); ctx.stroke(); } ctx.restore(); }
+    if (opt.blue) { ctx.strokeRect(x + 5, y + 5, s - 10, s - 10); }
+    if (opt.on) { ctx.strokeStyle = MP.red; ctx.lineWidth = lw + 1; ctx.strokeRect(x - 3, y - 3, s + 6, s + 6); }
+    ftext(ch, x + s / 2, y + s / 2 - glyphCv("ink3", "N", MP.ink).height / 2, "ink3", opt.blue ? MP.red : MP.ink, "c"); };
+  if (kind === "trace") { const g = ["STAX", "OREN", "LIDM"], s = Math.min(Math.round(h / 3.8), 70), gap = Math.round(s * .28), gw = 4 * s + 3 * gap, x0 = X + Math.round((w - gw) / 2), y0 = Y + Math.round((h - (3 * s + 2 * gap)) / 2);
+    const path = [[0, 0], [1, 0], [2, 0], [1, 1]], c = ([cx, cy]) => [x0 + cx * (s + gap) + s / 2, y0 + cy * (s + gap) + s / 2];
+    g.forEach((row, r) => [...row].forEach((ch, cI) => keyAt(x0 + cI * (s + gap), y0 + r * (s + gap), s, ch, { on: path.some(([a, bb]) => a === cI && bb === r) })));
+    ctx.strokeStyle = MP.red; ctx.lineWidth = lw + 2; ctx.globalAlpha = .75; ctx.beginPath(); path.forEach((p, i) => { const [px, py] = c(p); if (i) ctx.lineTo(px, py); else ctx.moveTo(px, py); }); ctx.stroke(); ctx.globalAlpha = 1;
+    path.forEach((p, i) => { const [px, py] = c(p); ctx.fillStyle = MP.red; ctx.beginPath(); ctx.arc(px + s / 2 - 2, py - s / 2 + 2, 11 * TK, 0, 6.283); ctx.fill(); ftext(String(i + 1), px + s / 2 - 2, py - s / 2 + 2 - glyphCv("ink", "N", "#fff").height / 2, "ink", MP.paper, "c"); }); }
+  else if (kind === "ice") { const g = ["TREAD", "SNBLO", "MAKEI"], ice = [[1, 0], [2, 0], [3, 1]], s = Math.min(Math.round(h / 3.9), 66), gap = Math.round(s * .28), gw = 5 * s + 4 * gap, x0 = X + Math.round((w - gw) / 2), y0 = Y + Math.round((h - (3 * s + 2 * gap)) / 2);
+    g.forEach((row, r) => [...row].forEach((ch, cI) => keyAt(x0 + cI * (s + gap), y0 + r * (s + gap), s, cI === 2 && r === 1 ? "B" : ch, { ice: ice.some(([a, bb]) => a === cI && bb === r), blue: cI === 2 && r === 1 })));
+    ctx.strokeStyle = MP.red; ctx.lineWidth = lw; ctx.setLineDash([10, 7]); ctx.strokeRect(x0 + (s + gap) - gap / 2, y0 - gap / 2, 3 * s + 3 * gap, 3 * s + 3 * gap); ctx.setLineDash([]); }
+  else if (kind === "tube") { const tw = Math.min(w - 40, 900), x0 = X + Math.round((w - tw) / 2), th = Math.round(26 * TK), y0 = Y + 14, at = (f) => x0 + tw * f / 2;
+    ctx.strokeRect(x0, y0, tw, th); ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, at(1.6) - x0, th); ctx.clip(); ctx.strokeStyle = MP.faint; ctx.lineWidth = 2; for (let d = -th; d < tw; d += 9) { ctx.beginPath(); ctx.moveTo(x0 + d, y0 + th); ctx.lineTo(x0 + d + th, y0); ctx.stroke(); } ctx.restore();
+    [[0, "0"], [1, "100%"], [1.5, "150%"], [2, "200%"]].forEach(([f, lab], i) => { const x = Math.round(at(f)); ctx.fillStyle = f >= 1.5 ? MP.red : MP.ink; ctx.fillRect(x - 1, y0 - 8, 3, th + 16); ftext(lab, x, y0 + th + 16, "ink", f >= 1.5 ? MP.red : MP.ink, i === 0 ? "l" : i === 3 ? "r" : "c"); });
+    ftext("TARGET", at(1), y0 + th + 16 + MLH(), "ink", MP.soft, "c"); ftext("OVERDRIVE", at(1.5), y0 + th + 16 + MLH(), "ink", MP.red, "c"); }
+  else if (kind === "radio") { const rw = w * .62, rh = h * .9, x0 = X + (w - rw) / 2, y0 = Y + (h - rh) / 2, r = 18;
+    ctx.beginPath(); ctx.roundRect(x0, y0, rw, rh, r); ctx.stroke(); ctx.beginPath(); ctx.roundRect(x0 + 8, y0 + 8, rw - 16, rh - 16, r - 6); ctx.globalAlpha = .4; ctx.stroke(); ctx.globalAlpha = 1;
+    const gs = rh * .62, gx = x0 + rw / 2 - gs * .7, gy = y0 + rh * .13; ctx.strokeRect(gx, gy, gs * 1.4, gs); const cs = gs / 5.6;
+    for (let i = 0; i < 5; i++) for (let j = 0; j < 5; j++) { ctx.strokeStyle = (i === 2 && j === 2) ? MP.red : MP.faint; ctx.strokeRect(gx + gs * .2 + j * gs * .2, gy + cs * .3 + i * cs * 1.05, gs * .16, cs * .82); }
+    ctx.strokeStyle = MP.ink; [x0 + rw * .14, x0 + rw * .86].forEach(kx => { ctx.beginPath(); ctx.arc(kx, y0 + rh * .45, rh * .11, 0, 6.283); ctx.stroke(); ctx.beginPath(); ctx.moveTo(kx, y0 + rh * .45); ctx.lineTo(kx, y0 + rh * .36); ctx.stroke(); });
+    for (let i = 0; i < 6; i++) { ctx.beginPath(); ctx.arc(x0 + rw / 2 + (i - 2.5) * rh * .1, y0 + rh * .86, rh * .028, 0, 6.283); ctx.fillStyle = i < 4 ? MP.red : MP.paper; ctx.fill(); ctx.stroke(); } }
+  ctx.restore(); }
+// the printed page: cream paper with darker edges and a few old stains, a running head, the content (scrolling), and a footer
+function drawManual() { manSize();
+  MAN.hits = []; const pw = Math.min(CVW - 24, Math.round(1240 * Math.max(1, TK * .9))), ph = CVH - 24, px = Math.round((CVW - pw) / 2), py = 12, M = Math.round(Math.min(56, pw * .05)), lh = MLH(), gh = glyphCv(BK, "N", MP.ink).height;
+  ctx.save(); ctx.fillStyle = "rgba(6,4,10,.66)"; ctx.fillRect(0, 0, CVW, CVH); ctx.fillStyle = "rgba(0,0,0,.4)"; ctx.fillRect(px + 8, py + 10, pw, ph);
+  ctx.fillStyle = MP.paper; ctx.fillRect(px, py, pw, ph);
+  const eg = ctx.createRadialGradient(px + pw / 2, py + ph / 2, Math.min(pw, ph) * .35, px + pw / 2, py + ph / 2, Math.max(pw, ph) * .75); eg.addColorStop(0, "rgba(160,120,60,0)"); eg.addColorStop(1, "rgba(150,105,45,.38)"); ctx.fillStyle = eg; ctx.fillRect(px, py, pw, ph);
+  [[.82, .2, .07], [.12, .78, .05], [.6, .9, .04]].forEach(([fx, fy, fr]) => { const sx = px + pw * fx, sy = py + ph * fy, rr = pw * fr, sg = ctx.createRadialGradient(sx, sy, 0, sx, sy, rr); sg.addColorStop(0, "rgba(150,100,40,.10)"); sg.addColorStop(.8, "rgba(150,100,40,.05)"); sg.addColorStop(1, "rgba(150,100,40,0)"); ctx.fillStyle = sg; ctx.fillRect(sx - rr, sy - rr, rr * 2, rr * 2); });
+  ctx.strokeStyle = "rgba(120,80,30,.12)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px + pw * .9, py + ph * .82, pw * .045, .3, 5.6); ctx.stroke();   // (a coffee ring)
+  ctx.fillStyle = "#8a8478"; for (const yy of [.18, .82]) { ctx.fillRect(px + 14, py + ph * yy - 14, 4, 28); ctx.fillStyle = "#b8b2a4"; ctx.fillRect(px + 15, py + ph * yy - 13, 1, 26); ctx.fillStyle = "#8a8478"; }   // (staples)
+  const X = px + M, w = pw - 2 * M, headY = py + 18;
+  { const hl = "LEXICON SIGNAL LS-5   PAGE " + (MAN.sec + 2), hr = MAN.sec < 0 ? "SERVICE MANUAL" : "SEC. " + (MAN.sec + 1) + "  " + manTitle(MAN.sec); ftext(hl, X, headY, BK, MP.soft, "l"); if (textW(hl, BK) + textW(hr, BK) + 40 <= w) ftext(hr, X + w, headY, BK, MP.soft, "r"); }
+  ctx.fillStyle = MP.rule; ctx.fillRect(X, headY + gh + 8, w, 2); ctx.fillRect(X, headY + gh + 12, w, 1);
+  const footH = lh + 30, top = headY + gh + 26, bot = py + ph - footH, view = bot - top;
+  const lay = manLayout(w); MAN.max = Math.max(0, lay.h - view + 20); MAN.view = view;
+  if (MAN.sec < 0) { const rh = Math.max(lh + 16, Math.round(34 * TK)), toc = lay.ops.find((o, i) => i === 2 + MAN.sel); const fresh = MAN.selL !== MAN.sel + "|" + lay.key; if (toc && !MAN.drag && fresh) { MAN.selL = MAN.sel + "|" + lay.key; if (MAN.sel === 0) MAN.ty = Math.max(0, toc.y + rh + 10 - view); if (toc.y < MAN.ty) MAN.ty = toc.y - 10; if (toc.y + rh > MAN.ty + view) MAN.ty = toc.y + rh - view + 10; MAN.ty = Math.max(0, Math.min(MAN.max, MAN.ty)); } }
+  MAN.ty = Math.max(0, Math.min(MAN.max, MAN.ty)); MAN.y += (MAN.ty - MAN.y) * .35; if (Math.abs(MAN.ty - MAN.y) < .5) MAN.y = MAN.ty;
+  ctx.save(); ctx.beginPath(); ctx.rect(px, top - 6, pw, view + 6); ctx.clip(); const oy = top - Math.round(MAN.y);
+  for (const o of lay.ops) { if (oy + o.y + o.h < top - 10 || oy + o.y > bot + 10) continue; o.draw(X, oy + o.y); }
+  if (MAN.y < MAN.max - 4) { const fg = ctx.createLinearGradient(0, bot - 40, 0, bot); fg.addColorStop(0, "rgba(235,225,196,0)"); fg.addColorStop(1, "rgba(228,214,178,1)"); ctx.fillStyle = fg; ctx.fillRect(px, bot - 40, pw, 40); }   // (more below: the page fades out under the foot)
+  ctx.restore(); MAN.hits = MAN.hits.filter(h => !h.scroll || (h.y1 > top && h.y0 < bot));
+  // scroll marks: a thin bar in the right margin, and MORE at the foot while there's more to read
+  if (MAN.max > 0) { const bx = px + pw - Math.round(M / 2), sh = Math.max(30, view * view / lay.h), sy = top + (view - sh) * (MAN.y / MAN.max); ctx.fillStyle = MP.faint; ctx.fillRect(bx - 1, top, 2, view); ctx.fillStyle = MP.red; ctx.fillRect(bx - 3, sy, 6, sh); }
+  ctx.fillStyle = MP.rule; ctx.fillRect(X, bot + 6, w, 1);
+  const fy = bot + 18, tap = TAPW(), hit = (x0, x1, go) => MAN.hits.push({ x0, x1, y0: bot, y1: py + ph, go });
+  if (MAN.sec < 0) {
+    const l = tap ? "< CLOSE" : btn("{B} CLOSE"), r = tap ? "TAP A LINE TO OPEN" : btn("{A} OPEN");
+    ftext(l, X, fy, BK, MP.red, "l"); hit(px, px + pw / 3, manClose); ftext(r, X + w, fy, BK, MP.soft, "r"); }
+  else { const n = MAN_SECS.length, pv = MAN.sec > 0 ? "< " + (MAN.sec) + ". PREV" : "< CONTENTS", nx = MAN.sec < n - 1 ? "NEXT " + (MAN.sec + 2) + ". >" : "CONTENTS >";
+    ftext(pv, X, fy, BK, MP.red, "l"); hit(px, px + pw / 3, () => manGo(MAN.sec > 0 ? MAN.sec - 1 : -1));
+    ftext(tap ? "CONTENTS" : btn("{B} CONTENTS"), X + w / 2, fy, BK, MP.soft, "c"); hit(px + pw / 3, px + pw * 2 / 3, () => manGo(-1));
+    ftext(nx, X + w, fy, BK, MP.red, "r"); hit(px + pw * 2 / 3, px + pw, () => manGo(MAN.sec < n - 1 ? MAN.sec + 1 : -1));
+  }
+  ctx.restore(); }
 function drawTitleOld() {
   const w = Math.min(W - 48, 360), lh = Math.round(22 * TK), body = wrap("Spell words in the radio glass. Each word beams signal to the tower. Reach the night's target before the six lamps go dark.", "ink", FX(w) - 60);
   const h = Math.round((70 + body.length * lh + 16 + lh * 2 + 30) / FINE), x = Math.round(W / 2 - w / 2), y = Math.max(12, Math.round((SCENE_H - h) / 2) - 6);
@@ -4072,7 +4323,7 @@ const TAPW = () => usingTouch && !SHELL;
 const KEYNAME = { A: "Z", B: "X", X: "V", Y: "C", START: "ESC" };
 const BTN = (b) => INPUT === "keys" ? KEYNAME[b] : b;
 const btn = (t) => String(t).replace(/\{(A|B|X|Y|START)\}/g, (m, b) => BTN(b));
-function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ? "up" : "down"; if (devKey(dk)) return; if (pauseKey(dk)) return; if (boardKey(dk)) return; if (howKey(dk)) return; if (nightHold) return; dismissCard();
+function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ? "up" : "down"; if (devKey(dk)) return; if (pauseKey(dk)) return; if (manKey(dk)) return; if (boardKey(dk)) return; if (howKey(dk)) return; if (nightHold) return; dismissCard();
   usingButtons = true; Sound.ensure();
   if (S.phase === "report") { if (dy) reportScroll(dy); return; }
   if (S.phase === "dying") { lossSkip(); return; }
@@ -4100,11 +4351,11 @@ function titleBusy() { if (S.phase === "title" && !titleSkip && titleT < TITLE_L
 function start() { if (buildReady) return maybeReload(); Sound.ensure(); Sound.music(); newRun(); }   // (a new build waiting in the app loads first)
 // buttons (Chris 2026-11-12: a four-button game, Start pauses, Select doesn't mute): A pick / send, B back, X send the word, Y retune,
 // Start pause (and pick on menus), Select nothing (held: dev mode). Keyboard: Z/Space/Enter A, X/Backspace B, C/R retune (Y), V send (X), Esc/P pause.
-function pressA() { if (devKey("a")) return; if (lossSkip()) return; if (pauseKey("a")) return; if (boardKey("a")) return; if (howKey("a")) return; if (inspectKey("a")) return; if (knobKey("a")) return; if (cardKey("a")) return; if (tokMenuKey("a")) return; Sound.ensure(); usingButtons = true; if (dismissCard()) return; if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return overChoose(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "trade") return tradeConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
-function pressB() { if (devKey("b")) return; if (lossSkip()) return; if (pauseKey("b")) return; if (boardKey("b")) return; if (howKey("b")) return; if (inspectKey("a")) return; if (knobKey("b")) return; if (cardKey("b")) return; if (tokMenuKey("b")) return; if (nightHold) return void dismissCard(); if (S.phase === "melt") return meltDone(); if (S.phase === "swap") return swapCancel(); if (S.phase === "trade") return tradeGiveUp(); if (S.phase === "play") back(); }
-function pressX() { if (devKey("x")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play" && S.path.length) send(); else pressA(); }
-function pressY() { if (devKey("y")) return; if (PAUSE.on || HOW.on) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play") retune(); else if (S.phase === "report") reportToggle(); else if (S.phase === "shop" && REROLL_STYLE === 4 && !TOKM.banish) { if (TOKM.open) TOKM.open = false; else tokMenuOpen(); } }   // (Y opens the reroll / banish menu)
-function pressStart() { if (devKey("start")) return; if (pauseKey("start")) return; if (boardKey("start")) return; if (howKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return overChoose(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "trade") return tradeConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); if (S.phase === "play") pauseOpen(); }
+function pressA() { if (devKey("a")) return; if (manKey("a")) return; if (lossSkip()) return; if (pauseKey("a")) return; if (boardKey("a")) return; if (howKey("a")) return; if (inspectKey("a")) return; if (knobKey("a")) return; if (cardKey("a")) return; if (tokMenuKey("a")) return; Sound.ensure(); usingButtons = true; if (dismissCard()) return; if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return overChoose(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "trade") return tradeConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
+function pressB() { if (devKey("b")) return; if (manKey("b")) return; if (lossSkip()) return; if (pauseKey("b")) return; if (boardKey("b")) return; if (howKey("b")) return; if (inspectKey("a")) return; if (knobKey("b")) return; if (cardKey("b")) return; if (tokMenuKey("b")) return; if (nightHold) return void dismissCard(); if (S.phase === "melt") return meltDone(); if (S.phase === "swap") return swapCancel(); if (S.phase === "trade") return tradeGiveUp(); if (S.phase === "play") back(); }
+function pressX() { if (devKey("x")) return; if (PAUSE.on || HOW.on || MAN.on) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play" && S.path.length) send(); else pressA(); }
+function pressY() { if (devKey("y")) return; if (PAUSE.on || HOW.on || MAN.on) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play") retune(); else if (S.phase === "report") reportToggle(); else if (S.phase === "shop" && REROLL_STYLE === 4 && !TOKM.banish) { if (TOKM.open) TOKM.open = false; else tokMenuOpen(); } }   // (Y opens the reroll / banish menu)
+function pressStart() { if (devKey("start")) return; if (manKey("start")) return; if (pauseKey("start")) return; if (boardKey("start")) return; if (howKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return overChoose(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "trade") return tradeConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); if (S.phase === "play") pauseOpen(); }
 function pressSel() { if (devKey("select")) return; }   // Select does nothing by itself (held a moment: dev mode, once it's unlocked)
 window.addEventListener("keydown", (e) => {
   if (!e.ctrlKey && !e.metaKey && !e.altKey) { INPUT = "keys"; usingTouch = false; }
@@ -4116,7 +4367,7 @@ window.addEventListener("keydown", (e) => {
   if (dir) { e.preventDefault(); move(...dir); return; }
   if (k === " " || k === "Enter") { e.preventDefault(); pressA(); return; }
   if (k === "Backspace") { e.preventDefault(); pressB(); return; }
-  if (k === "Escape") { e.preventDefault(); if (PAUSE.on || HOW.on || S.phase !== "play" || S.path.length) pressB(); else pressStart(); return; }
+  if (k === "Escape") { e.preventDefault(); if (MAN.on || PAUSE.on || HOW.on || S.phase !== "play" || S.path.length) pressB(); else pressStart(); return; }
   if (k === "r" || k === "c") { e.preventDefault(); pressY(); return; }
   // the four face buttons on the bottom row too (Chris 2026-11-13): Z pick (A), X back (B), C retune (Y), V send (X)
   if (k === "z") { e.preventDefault(); pressA(); return; }
@@ -4130,6 +4381,7 @@ function keyAt(p, strict) { for (let i = 0; i < NN; i++) { const c = tileC(i), m
 let down = null, dragging = false;
 cv.addEventListener("pointerdown", (e) => {
   Sound.ensure(); usingButtons = false; e.preventDefault(); if (introPress()) return; const p = toWorld(e);
+  if (MAN.on) { manDown(p); try { cv.setPointerCapture(e.pointerId); } catch (er) {} return; }
   if (BOARD.on) { BOARD.on = false; Sound.click(); return; }
   if (PAUSE.on) { const fy = p.y * FINE, fx = p.x * FINE, hit = PAUSE.hits.find(r => fy >= r.y0 && fy <= r.y1 && fx >= r.x0 && fx <= r.x1);
     if (hit) { if (PAUSE.sel !== hit.i) PAUSE.sure = null; PAUSE.sel = hit.i; pauseKey("a"); } else pauseClose(); return; }
@@ -4161,6 +4413,7 @@ cv.addEventListener("pointerdown", (e) => {
   down = i; dragging = false; try { cv.setPointerCapture(e.pointerId); } catch (er) {}
 });
 cv.addEventListener("pointermove", (e) => {
+  if (MAN.on) { if (MAN.drag) manMove(toWorld(e)); return; }
   if (REPORT.drag && S.phase === "report") { if (!e.buttons && e.pointerType === "mouse") REPORT.drag = null; else { const lh = Math.round(23 * TK); REPORT.sT = Math.max(0, Math.min(REPORT.sMax || 0, REPORT.drag.s - (toWorld(e).y * FINE - REPORT.drag.y) / lh)); return; } }
   if (e.pointerType === "mouse") { hoverTile = keyAt(toWorld(e), false); if (hoverTile >= 0) usingButtons = false; }
   if (down === null) return; const i = keyAt(toWorld(e), true); if (i < 0) return;
@@ -4169,8 +4422,8 @@ cv.addEventListener("pointermove", (e) => {
   if (p.length >= 2 && i === p[p.length - 2]) { setPath(p.slice(0, -1)); return; }
   if (!p.includes(i) && adjacent(last, i)) setPath([...p, i]); S.cursor = i;
 });
-cv.addEventListener("wheel", (e) => { if (reportScroll(Math.sign(e.deltaY))) e.preventDefault(); }, { passive: false });   // the night report's word list
-cv.addEventListener("pointerup", () => { REPORT.drag = null; if (down === null) return; const d = down; down = null; if (dragging) { dragging = false; if (S.path.length >= 3) send(); else if (S.path.length) setPath([]); } else tapTile(d); });
+cv.addEventListener("wheel", (e) => { if (MAN.on) { if (MAN.sec >= 0) manScroll(e.deltaY > 0 ? 60 : -60); else MAN.sel = Math.max(0, Math.min(MAN_SECS.length - 1, MAN.sel + Math.sign(e.deltaY))); e.preventDefault(); return; } if (reportScroll(Math.sign(e.deltaY))) e.preventDefault(); }, { passive: false });   // the night report's word list
+cv.addEventListener("pointerup", () => { if (MAN.on) { manUp(); return; } REPORT.drag = null; if (down === null) return; const d = down; down = null; if (dragging) { dragging = false; if (S.path.length >= 3) send(); else if (S.path.length) setPath([]); } else tapTile(d); });
 cv.addEventListener("pointercancel", () => { down = null; dragging = false; });
 cv.addEventListener("pointerleave", () => { hoverTile = -1; });
 let padCur = null, padTimer = null;

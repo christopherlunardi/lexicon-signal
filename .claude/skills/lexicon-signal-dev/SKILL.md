@@ -691,3 +691,16 @@ the same batch.
   shatter keeps its look and its blue letter (iceFx entries with t below 0). Recorder: the steps in the round's "found" text, built on
   tools/record_with_sound.py (rest, a miss, all frozen + deepened, a trace over the ice and let go); stills are close-ups of the glass.
   Delete the frame folders after encoding: a 13 s recording is about 500 MB of frames and the disk filled up once.
+
+## How to Play and the Service Manual (Chris 2026-11-18)
+- How to Play is five short cards (spell, send, fill the tube, retune, radio parts): just enough to play. Its last card's A opens the
+  Service Manual. Keep the cards short; detail goes in the manual.
+- The Service Manual (MAN, MAN_SECS, manLayout, manFig, drawManual in index.html) holds every rule in depth with worked examples,
+  printed like an old receiver's service booklet: cream paper, black and red ink, numbered sections, ruled tables, line drawings.
+  Open from the title menu (MANUAL), the pause menu (SERVICE MANUAL; the run stays paused) or the end of How to Play.
+  Contents: up/down + A; a section: up/down read, left/right turn the page, B contents. Touch: tap a line, drag, tap PREV/CONTENTS/NEXT.
+  Small screens (phone shell, Retroid) get bigger print (manSize: BK/HK).
+- KEEP IT TRUE: tables come from the game's numbers (STACK, KEY_LADDER, KEY_MORE, VALUES, REQ_PAY, targetFor), but the words and the
+  worked examples are hand-written: every rule or number change updates the section it touches in the same batch.
+  The requests section shows as torn-out pages until the Stranger's Hat has been fitted once (hatKnown).
+- Ice at rest: ICE_REST = 4, ice blocks with the blue key's level meter (Chris picked it 2026-11-18; keep it clear of the green key).
