@@ -169,7 +169,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 213;</script><script>
+<script>window.LEX_BUILD = 214;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -832,9 +832,12 @@ const notBanned = (p) => !(S.banned || []).includes(p.id);
 function keyGroups() { const own = (id) => S.parts.includes(id) || id === "red", ks = PARTS.filter(p => p.key && (!p.trial || BLUE_ON) && notBanned(p));
   return { lv: ks.filter(p => own(p.id)), nw: ks.filter(p => !own(p.id)) }; }
 const pick1 = (a) => a[(Math.random() * a.length) | 0];
-function makeOffers(reroll) { const bag = PARTS.filter(p => !p.key && notBanned(p)); shopChoices = [];
-  while (shopChoices.length < (S.over ? 4 : 3) && bag.length) shopChoices.push(bag.splice((Math.random() * bag.length) | 0, 1)[0]);
-  const { lv, nw } = keyGroups(), spots = shopChoices.map((_, i) => i).sort(() => Math.random() - .5);
+// a reroll deals cards you weren't just shown wherever it can (Chris 2026-11-18: three rerolls gave the same keys); only when there's
+// nothing else (say, the red key is the only key to level) does a card come back
+function makeOffers(reroll) { const was = new Set(reroll ? shopChoices.map(p => p.id) : []), fresh = (a) => { const f = a.filter(p => !was.has(p.id)); return f.length ? f : a; };
+  const all = PARTS.filter(p => !p.key && notBanned(p)), n = S.over ? 4 : 3, fr = all.filter(p => !was.has(p.id)), bag = fr.length >= n ? fr : all; shopChoices = [];
+  while (shopChoices.length < n && bag.length) shopChoices.push(bag.splice((Math.random() * bag.length) | 0, 1)[0]);
+  const kg = keyGroups(), lv = fresh(kg.lv), nw = fresh(kg.nw), spots = shopChoices.map((_, i) => i).sort(() => Math.random() - .5);
   if (S.over) { const ks = [nw.length && pick1(nw), lv.length && pick1(lv)].filter(Boolean); ks.forEach((p, j) => { if (spots[j] != null) shopChoices[spots[j]] = p; }); if (!reroll) S.keyDry = 0; }
   else if ((lv.length || nw.length) && Math.random() < KEY_ODDS + (S.keyDry || 0) * KEY_ODDS_UP) { shopChoices[spots[0]] = pick1(nw.length && lv.length ? (Math.random() < .5 ? nw : lv) : nw.length ? nw : lv); if (!reroll) S.keyDry = 0; }
   else if (!reroll) S.keyDry = (S.keyDry || 0) + 1; }
