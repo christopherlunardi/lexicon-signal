@@ -169,7 +169,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 211;</script><script>
+<script>window.LEX_BUILD = 212;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -3634,9 +3634,8 @@ function bonusMarks(tiles) { const nv = has("vowel"), nt = has("treble"); if (!B
   for (const o of tiles) { const t = o.t; if (!t || t.wild || t.ch === " ") continue; const v = nv && VOWELS.has(t.ch) ? nv : 0, tr = nt && VALUES[t.ch] >= 3; if (!v && !tr) continue;
     const mx = o.x + Math.round((o.w - 54) / 2), my = o.y + Math.round((o.hh - 42) / 2), top = 7 - o.dots;
     ctx.save(); ctx.shadowColor = dotC; ctx.shadowBlur = 0;
-    // (corner marks, the pick: up to 3 vowel dots; from 4 copies one dot and the count, and a second Treble Slider puts its count by the square)
-    if (BONUS === 3) { let x = o.x + 5; ctx.fillStyle = dotC; if (v <= 3) for (let k = 0; k < v; k++) { ctx.fillRect(x, o.y + 6, 4, 4); x += 6; } else { ctx.fillRect(x, o.y + 6, 4, 4); x += 6; x += miniNum(v, x, o.y + 4, dotC) + 3; }
-      if (tr) { x += v ? 2 : 0; ctx.fillStyle = sqC; ctx.fillRect(x, o.y + 4, 8, 8); if (nt > 1) miniNum(nt, x + 10, o.y + 4, sqC); } }
+    // (corner marks, the pick, kept simple (Chris 2026-11-18): one dot if the Vowel Antenna lifts this letter, the bigger square if the Treble Slider does; no counts)
+    if (BONUS === 3) { let x = o.x + 5; if (v) { ctx.fillStyle = dotC; ctx.fillRect(x, o.y + 6, 4, 4); x += 8; } if (tr) { ctx.fillStyle = sqC; ctx.fillRect(x, o.y + 4, 8, 8); } }
     else { ctx.fillStyle = dotC; for (let k = 0; k < Math.min(v, top); k++) ctx.fillRect(mx + 49, my + (top - 1 - k) * 6 + 1, 4, 4);
       if (tr) { ctx.fillStyle = sqC; if (BONUS === 1) { const r = Math.max(0, top - 1 - v); ctx.fillRect(mx + 47, Math.min(my + r * 6 - 1, my - 2), 8, 8); } else ctx.fillRect(o.x + 5, o.y + 4, 8, 8); } }
     ctx.restore(); } }
