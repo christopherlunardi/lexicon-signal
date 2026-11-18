@@ -169,7 +169,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 219;</script><script>
+<script>window.LEX_BUILD = 220;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -503,18 +503,19 @@ const iceN = () => S.grid.filter(t => t && t.ice).length, blueAt = () => S.grid.
 const blueX = () => { const v = keyLv("blue"); return 2 + iceN() * (v >= 3 ? 2 : 1) + iceN() * Math.max(0, v - 4) + (S.blueDeep || 0); };
 const blueNb = (b) => Array.from({ length: NN }, (_, j) => j).filter(j => j !== b && Math.abs(j % N - b % N) <= 1 && Math.abs(((j / N) | 0) - ((b / N) | 0)) <= 1);   // all eight around it, corners too (Chris 2026-11-16)
 // ice shards: cash-in (bright) and shatter (gray); blueMove: the broken blue key on its way to another key; bluePop: the multiplier rising off a cash-in
-let iceFx = [], blueMove = null, bluePop = null;
+let iceFx = [], blueMove = null, bluePop = null, lossPop = null;
 const BM_BREAK = 14, BM_GO = 18, BM_SHOW = 44, BM_END = 74, iceMood = { d: 0, r: 0, dt: 0, rt: 0 };
 const blueHid = (t) => !!blueMove && blueMove.to === t && blueMove.t < BM_SHOW;
 function blueAfter(used) { if (!has("blue")) return; const ub = used.some(i => S.grid[i].blue), ui = used.some(i => S.grid[i].ice), b = blueAt(), bc = b >= 0 ? tileC(b) : null;
   if (ub) { const n = iceN(), bx = blueX(); S.blueDeep = 0; S.grid.forEach((t, i) => { if (t.ice) { t.ice = false; iceFx.push({ i, t: 0, cash: true, bx: bc.x, by: bc.y }); } });
-    iceFx.push({ i: b, t: ICE_LOOK === 2 && n ? -12 : 0, cash: true, key: true, n }); bluePop = { x: bc.x, y: bc.y, text: "x" + bx, t: ICE_LOOK === 2 && n ? -12 : 0, big: n > 0 }; if (n) { log(`The ice paid x${bx}.`); Sound.iceCash(); } }
+    iceFx.push({ i: b, t: ICE_LOOK === 2 && n ? -12 : 0, cash: true, key: true, n }); bluePop = { x: bc.x, y: bc.y, text: "x" + bx, t: ICE_LOOK === 2 && n ? -12 : 0, big: n > 0 }; if (n) log(`The ice paid x${bx}.`); Sound.iceCash(n, ICE_LOOK === 2 && n ? .2 : 0); }
   else if (ui) {
     // a frozen key used without the blue key (Chris 2026-11-18): all the ice breaks, and the blue key breaks too and comes back on
     // another plain key, starting over (no ice, no saved-up frost). Level 4: the blue key holds and half the ice survives.
     const ic = S.grid.map((t, i) => t.ice ? i : -1).filter(i => i >= 0), v4 = keyLv("blue") >= 4, pool = ic.filter(i => !used.includes(i)), keep = [], u0 = used.find(i => S.grid[i].ice);
     if (v4) for (let q = Math.floor(ic.length / 2); q > 0 && pool.length; q--) keep.push(pool.splice((Math.random() * pool.length) | 0, 1)[0]);
     const far = (i, j) => Math.max(Math.abs(i % N - j % N), Math.abs(((i / N) | 0) - ((j / N) | 0)));
+    const lostX = blueX();
     S.blueDeep = v4 ? Math.floor((S.blueDeep || 0) / 2) : 0; ic.forEach(i => { if (!keep.includes(i)) { S.grid[i].ice = false; iceFx.push({ i, t: -3 * far(i, u0), cash: false, bx: bc ? bc.x : 0, by: bc ? bc.y : 0 }); } });
     let moved = false;
     if (!v4 && b >= 0) {
@@ -524,6 +525,8 @@ function blueAfter(used) { if (!has("blue")) return; const ub = used.some(i => S
       const pick = (f) => { const g = free.filter(f); if (g.length) free = g; };
       pick(i => !ic.includes(i)); pick(i => far(i, b) >= 2); pick(i => !used.some(j => j % N === i % N && j > i));
       if (free.length) { const to = S.grid[free[(Math.random() * free.length) | 0]]; S.grid[b].blue = false; to.blue = true; to.blueT = frame; blueMove = { x: bc.x, y: bc.y, to, t: 0 }; iceFx.push({ i: b, t: -BM_BREAK, cash: false, key: true }); moved = true; } }
+    // the loss reads as a loss (Chris 2026-11-18): the multiplier you had drops off the key in red, struck out, and the glass flinches red
+    if (bc && !v4) lossPop = { x: bc.x, y: bc.y, text: "x" + lostX, t: moved ? -BM_BREAK : 0 };
     log(v4 ? (keep.length ? "Half the ice broke." : "The ice broke!") : moved ? "The ice broke! The blue key starts over." : "The ice broke!"); Sound.iceBreak(); shake = Math.max(shake, ICE_LOOK === 3 ? 6 : 3); }
   else S.blueSpread = true; }
 /* a miss spreads the frost at the end of the turn (Chris 2026-11-16: a turn is over when everything it caused is over): once the
@@ -534,8 +537,8 @@ function blueSpread() { if (!S.blueSpread) return; S.blueSpread = false; const b
   if (nb.length) { for (let q = keyLv("blue") >= 2 ? 2 : 1; q > 0 && nb.length; q--) { const j = nb.splice((Math.random() * nb.length) | 0, 1)[0], t = S.grid[j];
       if (t.hot || t.wild) keyHop(j, []);
       if (t.yOff !== 0 || t.vy !== 0 || t.wait > 0) t.iceSoon = true; else { t.ice = true; t.iceT = frame; } }
-    log(`Frost spreads: ${iceN() + S.grid.filter(t => t.iceSoon).length} frozen.`); }
-  else { S.blueDeep = (S.blueDeep || 0) + 1; iceFx.push({ i: b, t: 0, cash: true }); log(`The frost deepens: x${blueX()}.`); } }
+    log(`Frost spreads: ${iceN() + S.grid.filter(t => t.iceSoon).length} frozen.`); Sound.iceFreeze(); }
+  else { S.blueDeep = (S.blueDeep || 0) + 1; iceFx.push({ i: b, t: 0, cash: true }); log(`The frost deepens: x${blueX()}.`); Sound.iceDeepen(); } }
 // the frost reached the red or gold key: it hops away to an open key, a bright arc showing where it went (Chris 2026-11-16: the frost
 // never moves aside; the key does, so it's never locked in the ice)
 let hopFx = [];
@@ -2347,7 +2350,8 @@ function iceFxDraw() { const IL = ICE_LOOK, W2 = FX(L.tw), H2 = FX(L.th);
       crkDark(o, crackSet(f.i, K ? 8 : 5), 1, K || IL === 3 ? 3 : 2, 1, IL === 4);
       if (IL === 2 && !K) { const bx = FX(f.bx), by = FX(f.by); ctx.strokeStyle = `rgba(228,242,255,${.9 * hsh(frame, f.i + 2)})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(cx + (bx - cx) * .37, cy + (by - cy) * .37); ctx.lineTo(cx + (bx - cx) * .63, cy + (by - cy) * .63); ctx.stroke(); }
       continue; }
-    if (f.t === 1 && !f.cash && K) { Sound.iceBreak(); shake = Math.max(shake, IL === 3 ? 7 : 4); }
+    if (f.t === 1 && !f.cash && K) { Sound.iceBreak(); Sound.iceLose(); shake = Math.max(shake, IL === 3 ? 9 : 7); }
+    if (!f.cash && K && f.t >= 1 && f.t < 26) { const g = L.glass, a = .34 * (1 - f.t / 26); ctx.fillStyle = `rgba(110,8,6,${a})`; ctx.fillRect(FX(g.x), FX(g.y), FX(g.w), FX(g.h)); }
     if (!f.cash) {
       if (IL === 4) { for (let j = 0; j < (K ? 16 : 10); j++) { const fx = o.x + 5 + (o.w - 10) * hsh(j, f.i), fy = o.y + o.hh * (.3 + .6 * hsh(j + 5, f.i)) + 60 * k * k * (.5 + hsh(j + 9, f.i)); ctx.fillStyle = `rgba(${K ? "110,150,200" : "130,145,160"},${1 - k})`; ctx.fillRect(fx, fy, 4, 4); }
         if (k < .3) { ctx.fillStyle = `rgba(3,8,16,${.5 * (1 - k / .3)})`; ctx.beginPath(); ctx.roundRect(o.x + 3, o.y + 3, o.w - 6, o.hh - 6, 7); ctx.fill(); } }
@@ -2364,6 +2368,10 @@ function iceFxDraw() { const IL = ICE_LOOK, W2 = FX(L.tw), H2 = FX(L.th);
         iceShards(cx, cy, k, K ? 12 : 8, (K ? 44 : 32) * (IL === 3 ? 1.35 : 1), 0, (K ? 5 : 4) * (IL === 3 ? 1.3 : 1), "220,245,255", f.i + 1, IL === 3); }
       if (K) { iceRing(cx, cy, k * 1.5, 12, 70 + 8 * Math.min(8, f.n || 0), "190,230,255", 4); if (IL === 3) iceRing(cx, cy, k * 1.5 - .25, 12, 110, "150,205,255", 3); bloom(cx, cy, 90, "140,200,255", .8 * (1 - k)); }
       ctx.restore(); } }
+  // a lost multiplier: a red plate, struck out, that tips and drops away
+  if (lossPop) { const q = lossPop; q.t++; if (q.t > 56) lossPop = null; else if (q.t > 0) { const u = q.t / 56, a = u < .6 ? 1 : (1 - u) / .4, pw = textW(q.text, "key") + 22, ph = 40, px = FX(q.x) + 30 * u, py = FX(q.y) - 20 + 160 * u * u;
+      ctx.save(); ctx.globalAlpha = a; ctx.translate(px, py); ctx.rotate(.5 * u * u); ctx.fillStyle = "#c8341f"; ctx.beginPath(); ctx.roundRect(-pw / 2, -ph / 2, pw, ph, 8); ctx.fill(); ctx.strokeStyle = "#3a0806"; ctx.lineWidth = 2; ctx.stroke();
+      ftext(q.text, 0, -14, "key", "#2a0604", "c"); ctx.strokeStyle = "#2a0604"; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(-pw / 2 + 6, ph / 2 - 8); ctx.lineTo(pw / 2 - 6, -ph / 2 + 8); ctx.stroke(); ctx.restore(); } }
   // the multiplier rises off the blue key
   if (bluePop) { const q = bluePop; q.t++; if (q.t > 60) bluePop = null; else if (q.t > 0) { const u = Math.min(1, q.t / 54), a = u < .75 ? 1 : (1 - u) / .25, kind = q.big ? "key" : "ink", pw = textW(q.text, kind) + 20, ph = q.big ? 40 : 26, px = FX(q.x), py = FX(q.y) - 10 - Math.round(50 * (1 - (1 - u) * (1 - u))); ctx.globalAlpha = a;
       ctx.fillStyle = u < .12 ? "#ffffff" : "#dff2ff"; ctx.beginPath(); ctx.roundRect(px - pw / 2, py - ph / 2, pw, ph, 8); ctx.fill(); ctx.strokeStyle = "#3a8ad0"; ctx.lineWidth = 2; ctx.stroke();
@@ -4135,8 +4143,17 @@ const Sound = (() => {
     // the blue key's ice: a dry tick as it starts to crack, a glint when a word will pay, the break, the pay-out, the key forming again
     iceCrack() { if (!ac) return; const t = ac.currentTime; noise(t, .05, .12, "highpass", 5200, 1); osc("square", 3100, t + .03, .001, .02, .02); },
     iceGlint() { if (!ac) return; const t = ac.currentTime; osc("sine", 2794, t, .003, .035, .12); osc("sine", 4186, t + .05, .003, .03, .16); },
+    iceLose() { if (!ac) return; const t = ac.currentTime; osc("triangle", 330, t + .05, .01, .16, .32, sfx, 247); osc("triangle", 233, t + .36, .01, .16, .55, sfx, 165); },
     iceBreak() { if (!ac) return; const t = ac.currentTime; noise(t, .28, .3, "highpass", 3800, 1); noise(t + .06, .2, .16, "bandpass", 7000, 3); osc("square", 110, t, .004, .12, .2, sfx, 60); },
-    iceCash() { if (!ac) return; const t = ac.currentTime; [2093, 2637, 3136, 4186].forEach((f, k) => osc("sine", f, t + k * .045, .003, .05, .22)); noise(t, .12, .08, "highpass", 6000, 1); },
+    // the blue key's sounds (Chris 2026-11-18: every case needs its own sound and they have to make sense together):
+    // through the blue key with no ice: a bright two-note chime; with ice: the ice bursts (a glassy shatter) and a run of rising notes,
+    // one more for each frozen key, so a bigger save sounds bigger; a key freezing: a cold tink; the frost deepening: a higher tink
+    iceCash(n = 0, d = 0) { if (!ac) return; const t = ac.currentTime + d;
+      if (!n) { osc("sine", 1568, t, .003, .09, .25); osc("sine", 2349, t + .06, .003, .08, .32); return; }
+      noise(t, .35, .26, "highpass", 4200, 1); noise(t, .2, .14, "bandpass", 9000, 4); osc("sine", 196, t, .005, .18, .4, sfx, 392);
+      const sc = [1047, 1175, 1319, 1568, 1760, 2093, 2349, 2637, 3136, 3520, 4186]; for (let k = 0; k <= Math.min(10, n + 1); k++) osc("sine", sc[k], t + .05 + k * .055, .003, .07 + .004 * n, .2); },
+    iceFreeze() { if (!ac) return; const t = ac.currentTime; osc("sine", 2637, t, .002, .05, .18, sfx, 2400); noise(t, .08, .05, "highpass", 7000, 2); },
+    iceDeepen() { if (!ac) return; const t = ac.currentTime; osc("sine", 3136, t, .002, .06, .2); osc("sine", 3951, t + .08, .002, .05, .24); },
     iceForm() { if (!ac) return; const t = ac.currentTime; osc("sine", 1568, t, .004, .05, .2); osc("sine", 2349, t + .07, .004, .045, .26); },
     tickMove() { if (!ac) return; osc("square", 1600, ac.currentTime, .001, .03, .02); },
     cell(f) { if (!ac) return; const t = ac.currentTime; if (t - lastCell < .028) return; lastCell = t; const m = PENT[Math.min(PENT.length - 1, Math.floor(f * 9))] - 12; osc("square", m2f(m), t, .002, .035, .05); osc("sine", m2f(m + 12), t, .002, .03, .07); },

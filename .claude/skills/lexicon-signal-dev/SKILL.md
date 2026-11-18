@@ -668,3 +668,11 @@ the same batch.
   drawn in drawIce, before the red outline, green ring, chips and corner marks, so those stay on top. Recorder steps: set S.path
   for traces, call send() for sends, LEXSTEP(2) per video frame.
 - icecrack-r1 decided 2 (fault lines), Chris 2026-11-18: ICE_LOOK = 2.
+- Blue key sounds (Chris 2026-11-18, every case its own sound): through it with no ice, a two-note chime; with ice, a glassy burst and a
+  rising run (one more note per frozen key); a key freezing, a cold tink; the frost deepening, a higher tink; ice used without it, the
+  crack, a sad falling two-note drop (Sound.iceLose), a red flinch over the glass and the lost multiplier falling off struck out (lossPop).
+- Videos WITH SOUND (Chris wants sound in Workshop videos): tools/record_with_sound.py shows how. Before the page loads, an init script
+  swaps AudioContext for an OfflineAudioContext behind a Proxy whose currentTime is a virtual clock (window.__vt), advanced by 2/60 with
+  every LEXSTEP(2); at the end window.__wav(t0, t1) renders the audio to a WAV that ffmpeg muxes in (-c:a aac -shortest). Call
+  Sound.ensure() through __lex after load. Use it for any video where sound matters.
+
