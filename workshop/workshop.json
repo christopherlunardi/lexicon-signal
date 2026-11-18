@@ -3206,7 +3206,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "How should the lamp at the end of the tube show that your word will clear the night (or overdrive)?",
      "found": "Each video: a 2-letter start, then a word that clears the night lights the lamp; the word is let go, then the same word on a night where it would overdrive (red). Every new look also pings when the lamp lights.",
      "options": [
@@ -3310,7 +3310,8 @@
        ],
        "play": "play.html#test-endl-endl-4"
       }
-     ]
+     ],
+     "decided": "3"
     }
    ]
   }

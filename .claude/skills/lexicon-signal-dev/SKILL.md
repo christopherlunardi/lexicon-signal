@@ -652,4 +652,6 @@ the same batch.
 - Gold key words (Chris 2026-11-18): resolveWord picks the most common word the gold letter can make (tierOf: words.js groups split by
   " | ", most common first: SCOWL size 35, 40-50, 60, the other everyday lists, ENABLE only). A word that fills an open request wins.
 - Rerolls deal cards you weren't just shown wherever they can (makeOffers(true) leaves out the last deal's ids).
+- endlamp-r1 (decided 3, 2026-11-18): the tube's end lamp is bigger with a strong glow, pings when it lights, and a band of light runs
+  along the tube into it while the traced word will clear (orange-red for overdrive). ENDL 0..4, `#test-endl-endl-N`.
 

@@ -169,7 +169,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 216;</script><script>
+<script>window.LEX_BUILD = 217;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -1255,7 +1255,7 @@ function scoreShow() { return !HOW.on && barShow > .9 && ["play", "shop", "swap"
    5 the plate taking turns and the tube mark together. ---- */
 // the end of a run (Workshop topics "danger", "loss" and "gover", 2026-11-18): DANGER = the last-word warning, LOSS = the losing
 // animation, GOVER = the game over screen. #danger-N, #loss-N and #gover-N pick one.
-let DANGER = 2, LOSS = 1, GOVER = 3, DIALFX = 2, POWER = 1, BONUS = 3, ENDL = 1;   // (BONUS 3, corner marks: Chris 2026-11-18)   // (DIALFX 2 the glow, POWER 1 the warm-up: Chris 2026-11-18)   // (Chris picked 2026-11-18: DANGER 2 fading signal, LOSS 1 power down, GOVER 3 the sign-off log)
+let DANGER = 2, LOSS = 1, GOVER = 3, DIALFX = 2, POWER = 1, BONUS = 3, ENDL = 3;   // (ENDL 3, the tube answers: Chris 2026-11-18)   // (BONUS 3, corner marks: Chris 2026-11-18)   // (DIALFX 2 the glow, POWER 1 the warm-up: Chris 2026-11-18)   // (Chris picked 2026-11-18: DANGER 2 fading signal, LOSS 1 power down, GOVER 3 the sign-off log)
 { const h = location.hash; let m; if ((m = h.match(/danger-(\d)/))) DANGER = +m[1]; if ((m = h.match(/loss-(\d)/))) LOSS = +m[1]; if ((m = h.match(/gover-(\d)/))) GOVER = +m[1]; if ((m = h.match(/dialfx-(\d)/))) DIALFX = +m[1]; if ((m = h.match(/power-(\d)/))) POWER = +m[1]; if ((m = h.match(/bonus-(\d)/))) BONUS = +m[1]; if ((m = h.match(/endl-(\d)/))) ENDL = +m[1]; }
 /* the radio powers on (Workshop topic "power", 2026-11-18): a new run's glass waits dark, lamps and dial off, under the night 1
    plaque; once that's gone the radio comes on and the letters fall in. POWER 1 warm-up, 2 tune in, 3 lamp cascade. */
