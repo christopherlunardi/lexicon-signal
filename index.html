@@ -534,7 +534,27 @@ const HIT_NAME = { blue: "BLUE KEY", red: "RED KEY", hat: "REQUEST", tap: "GREEN
 let HAT_KNOWN = false; try { HAT_KNOWN = localStorage.getItem("lexsig.hatKnown") === "1"; } catch (e) {}
 const hatKnown = () => HAT_KNOWN || has("hat") > 0;
 function hatLearn() { if (HAT_KNOWN) return; HAT_KNOWN = true; try { localStorage.setItem("lexsig.hatKnown", "1"); } catch (e) {} }
-const partDesc = (p) => p.mystery && !hatKnown() ? p.blurb : p.more && has(p.id) ? p.more : p.key && (has(p.id) || p.id === "red") ? keyStep(p.id, has(p.id) + 1) + "." : p.desc;
+/* each part's card says what it does at a number of copies (Chris 2026-11-18: no "(x3...)" lists): [the full text, the short value].
+   In the picker a part you have shows what you'd get with one more, and what it is now: "Words of 3 or 4 letters x3 (now x2)." */
+const pl = (n, w) => n + " " + w + (n === 1 ? "" : "s");
+const STACK = {   // v(n) the part's value with n copies, t(v) the card's text around it
+  amp: { v: (n) => pl(n, "letter"), t: (v) => `Every word scores as if it were ${v} longer.` },
+  battery: { v: (n) => pl(n, "word"), t: (v) => `+${v} every night.` },
+  knob: { v: (n) => pl(n, "retune"), t: (v) => `+${v} a night. Each one you keep: words score 1 letter longer.` },
+  coil: { v: (n) => "x" + (1.5 + n / 2), t: (v) => `Words of 5+ letters ${v}.` },
+  short: { v: (n) => "x" + (1 + n), t: (v) => `Words of 3 or 4 letters ${v}.` },
+  echo: { v: (n) => "x" + (2 + n), t: (v) => `First word each night ${v}.` },
+  meter: { v: (n) => pl(n, "letter"), t: (v) => `Every 2 words you send make later ones score ${v} longer.` },
+  owl: { v: (n) => "x" + (1 + 2 * n), t: (v) => `Last word each night ${v}, even if left over.` },
+  treble: { v: (n) => "+" + 5 * n, t: (v) => `${v} signal per letter worth 3+.` },
+  vowel: { v: (n) => "+" + n, t: (v) => `Vowels ${v} signal each.` },
+  hat: { v: (n) => `x${2 + 2 * n} to x${6 + 2 * n}`, t: (v) => `A caller brings requests. Fill one for ${v}, and your lamp stays lit.` },
+};
+// in the picker: what this card would give you, with what you have now beside the number
+const partDesc = (p) => { if (p.mystery && !hatKnown()) return p.blurb; if (p.key) return (has(p.id) || p.id === "red") ? keyStep(p.id, has(p.id) + 1) + "." : p.desc;
+  const f = STACK[p.id], n = has(p.id); if (!f) return p.desc; return f.t(n ? `${f.v(n + 1)} (now ${f.v(n)})` : f.v(1)); };
+// reading a fitted part: what it does now
+const partNow = (p) => { if (p.mystery && !hatKnown()) return p.blurb; const f = STACK[p.id]; return f ? f.t(f.v(Math.max(1, has(p.id)))) : p.desc; };
 // a key's reading (the slot's inspect card): what it does at the level it's at
 const keyNow = (id) => [PART[id].desc.replace(/\.$/, ""), ...Array.from({ length: has(id) }, (_, i) => keyStep(id, i + 1))].join(". ") + ".";
 const iconOf = (id) => "iconL_" + ((PART[id] && PART[id].icon) || id);
@@ -2501,7 +2521,7 @@ function drawInspect() {
   if (!INSPECT.on || S.phase !== "play") { INSPECT.on = false; return; }
   const sl = partSlots()[INSPECT.k]; if (!sl) { INSPECT.on = false; return; } const P = PART[sl.id], b = slotBox(INSPECT.k);
   ctx.save(); ctx.strokeStyle = (frame >> 4) & 1 ? C.hot : C.gold; ctx.lineWidth = 3; ctx.strokeRect(FX(b.x) - 4, FX(b.y) - 4, FX(b.w) + 8, FX(b.h) + 8); ctx.restore();
-  const lh = Math.round(20 * TK), w = Math.min(W - 16, 300), wrapW = FX(w) - 48, lines = wrap(P.key ? keyNow(sl.id) : partDesc(P), "ink", wrapW);
+  const lh = Math.round(20 * TK), w = Math.min(W - 16, 300), wrapW = FX(w) - 48, lines = wrap(P.key ? keyNow(sl.id) : partNow(P), "ink", wrapW);
   const live = partHits(S.path.length >= 3 ? S.path : [])[sl.id], now = P.key ? `LEVEL ${showLv(sl.id, sl.n)}` : sl.n > 1 ? `${sl.n} COPIES FITTED` : "1 FITTED";
   const hh = Math.round((26 + lh + 10 + lines.length * lh + 8 + lh + 20) / FINE), x = Math.max(6, Math.min(W - w - 6, Math.round(b.x + b.w / 2 - w / 2))), y = L.barY - hh - 6;
   ctx.drawImage(panelCv("logbox", w, hh), FX(x), FX(y), FX(w), FX(hh));
