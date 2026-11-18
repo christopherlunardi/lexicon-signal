@@ -727,7 +727,7 @@ function startNight() {
   // a song request: a new one (and a new caller) when none is open; an open one stays on the sill, its card already there
   if (REQ && !HOW.on && has("hat")) { S.reqNext = 0; if (!S.req || S.req.done) { S.req = makeReq(); S.reqAt = null; } else S.reqAt = frame - 10000; S.req.nights++; }
   else S.req = null;   // (no hat, no caller)
-  S.phase = "play"; INSPECT.on = false; KNOB.on = false; CARDF.on = false; dialFlash = null; nightCard = 170; if (INTRO && !HOW.on && (!location.hash.startsWith("#test-") || location.hash.includes("intro-"))) { nightHold = true; introT = 0; nightCard = 16; } log(`Night ${S.night}: beam ${S.target} signal to the tower in ${S.words} words.`); if (S.night === 1 && !HOW.on) log(TAPW() ? "Stuck? Tap the right knob to retune: all new letters." : btn("Stuck? Press {Y} to retune: all new letters."));
+  S.phase = "play"; INSPECT.on = false; KNOB.on = false; CARDF.on = false; dialFlash = null; nightCard = 170; S.powerOff = POWER > 0 && S.night === 1 && !HOW.on && (!location.hash.startsWith("#test-") || location.hash.includes("power")); powerT = -1; if (S.powerOff) S.grid.forEach(t => { t.yOff = -400; t.vy = 0; t.wait = 1e9; }); if (INTRO && !HOW.on && (!location.hash.startsWith("#test-") || location.hash.includes("intro-"))) { nightHold = true; introT = 0; nightCard = 16; } log(`Night ${S.night}: beam ${S.target} signal to the tower in ${S.words} words.`); if (S.night === 1 && !HOW.on) log(TAPW() ? "Stuck? Tap the right knob to retune: all new letters." : btn("Stuck? Press {Y} to retune: all new letters."));
 }
 
 /* ================= actions ================= */
@@ -1115,6 +1115,7 @@ function update() {
   if (!inDanger()) dangerT = 0; else if (dangerT > 0 || (!pending && !flyers.length && !moving() && !busy)) { dangerT++;
     if (dangerT === 1 || (dangerT % 720 === 0 && !S.path.length)) { dialFlash = { text: "LAST WORD", bad: true, t: 150, big: true }; Sound.warn(); }
     if (DANGER === 3 && dangerT % 64 === 1) Sound.beat(); }
+  powerUpdate();
   if (S.phase === "dying") lossUpdate();
   if (S.phase === "over") overT2++;
   const fallOut = S.phase === "dying" && LOSS === 3;
@@ -1226,8 +1227,25 @@ function scoreShow() { return !HOW.on && barShow > .9 && ["play", "shop", "swap"
    5 the plate taking turns and the tube mark together. ---- */
 // the end of a run (Workshop topics "danger", "loss" and "gover", 2026-11-18): DANGER = the last-word warning, LOSS = the losing
 // animation, GOVER = the game over screen. #danger-N, #loss-N and #gover-N pick one.
-let DANGER = 2, LOSS = 1, GOVER = 3, DIALFX = 1;   // (Chris picked 2026-11-18: DANGER 2 fading signal, LOSS 1 power down, GOVER 3 the sign-off log)
-{ const h = location.hash; let m; if ((m = h.match(/danger-(\d)/))) DANGER = +m[1]; if ((m = h.match(/loss-(\d)/))) LOSS = +m[1]; if ((m = h.match(/gover-(\d)/))) GOVER = +m[1]; if ((m = h.match(/dialfx-(\d)/))) DIALFX = +m[1]; }
+let DANGER = 2, LOSS = 1, GOVER = 3, DIALFX = 2, POWER = 1;   // (DIALFX 2, the glow: Chris 2026-11-18)   // (Chris picked 2026-11-18: DANGER 2 fading signal, LOSS 1 power down, GOVER 3 the sign-off log)
+{ const h = location.hash; let m; if ((m = h.match(/danger-(\d)/))) DANGER = +m[1]; if ((m = h.match(/loss-(\d)/))) LOSS = +m[1]; if ((m = h.match(/gover-(\d)/))) GOVER = +m[1]; if ((m = h.match(/dialfx-(\d)/))) DIALFX = +m[1]; if ((m = h.match(/power-(\d)/))) POWER = +m[1]; }
+/* the radio powers on (Workshop topic "power", 2026-11-18): a new run's glass waits dark, lamps and dial off, under the night 1
+   plaque; once that's gone the radio comes on and the letters fall in. POWER 1 warm-up, 2 tune in, 3 lamp cascade. */
+let powerT = -1;
+const POWER_LEN = [0, 110, 140, 150];
+function powerStart() { powerT = 0; busy++; Sound.click(); Sound.up();
+  S.grid.forEach((t, i) => { const r = (i / N) | 0, c = i % N; t.vy = 0; t.yOff = -N * (L.th + L.gap) - 30 - (N - 1 - r) * 8;   // (every key starts above the glass)
+    t.wait = POWER === 1 ? 52 + c * 5 : POWER === 2 ? 70 + ((Math.random() * 24) | 0) : 60 + i * 3; }); }
+function powerUpdate() { if (!S.powerOff) return; if (powerT < 0) { if (S.phase === "play" && !nightHold && nightCard <= 0) powerStart(); return; }
+  powerT++; const t = powerT;
+  if (POWER === 1 && t >= 26 && t <= 56 && (t - 26) % 6 === 0) Sound.blip(1 + (t - 26) / 6);
+  if (POWER === 2) { if (t < 60 && t % 6 === 0) Sound.tick(); if (t === 60) { Sound.lock(); dialFlash = { text: "ON THE AIR", t: 110 }; } }
+  if (POWER === 3) { if (t >= 6 && t <= 46 && (t - 6) % 8 === 0) Sound.blip(1 + (t - 6) / 8); if (t === 140) dialFlash = { text: "ON THE AIR", t: 110 }; }
+  if (POWER === 1 && t === 44) dialFlash = { text: "ON THE AIR", t: 110 };
+  if (t >= POWER_LEN[POWER] && !moving()) { S.powerOff = false; powerT = -1; busy--; } }
+// how far on the radio is: lamps lit, glass light (0 dark .. 1 on), dial on
+function powerLamps() { const t = powerT; if (t < 0) return 0; if (POWER === 1) return Math.min(6, Math.max(0, Math.floor((t - 26) / 6) + 1)); if (POWER === 2) return t >= 60 ? 6 : 0; return Math.min(6, Math.max(0, Math.floor((t - 6) / 8) + 1)); }
+function powerGlass() { const t = powerT; if (t < 0) return 0; if (POWER === 1) return Math.min(1, t / 50); if (POWER === 2) return Math.min(1, t / 70); return Math.min(1, t / 60); }
 let dangerT = 0, lossT = 0, beaconKill = 0, overSel = 0, overT2 = 0, lossOrd = [], lossCols = [], OVERUI = [];
 // the last word, with the tube still short: the warning runs (it starts once the turn before it is over)
 const inDanger = () => S.phase === "play" && !HOW.on && S.words === 1 && S.score < S.target && !S.ending;
@@ -1420,7 +1438,7 @@ function drawBarLive() {
 const FX = (x) => Math.round(x * FINE);
 const dialDots = new Map();
 function dialAttention(d, age, rgb) { const cx = FX(d.x + d.w / 2), cy = FX(d.y + d.h / 2), fade = Math.min(1, age / 4) * Math.max(0, Math.min(1, (dialFlash.t - 10) / 30));
-  if (DIALFX === 2 || DIALFX === 5) { const pu = .55 + .45 * Math.sin(age * .35); ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(cx, cy, FX(d.w) * .75, rgb, .55 * pu * fade); bloom(cx, cy, FX(d.w) * 1.3, rgb, .22 * pu * fade); ctx.restore(); }
+  if (DIALFX === 2 || DIALFX === 5) { const pu = .55 + .45 * Math.sin(age * .35); ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(cx, cy, FX(d.w) * .75, rgb, .47 * pu * fade); bloom(cx, cy, FX(d.w) * 1.3, rgb, .19 * pu * fade); ctx.restore(); }
   if (DIALFX === 4) { const pu = .5 + .5 * Math.sin(age * .4); ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.strokeStyle = `rgba(${rgb},${.85 * pu * fade})`; ctx.lineWidth = 4; ctx.strokeRect(FX(d.x) - 6, FX(d.y) - 6, FX(d.w) + 12, FX(d.h) + 12);
     ctx.strokeStyle = `rgba(${rgb},${.3 * pu * fade})`; ctx.lineWidth = 12; ctx.strokeRect(FX(d.x) - 8, FX(d.y) - 8, FX(d.w) + 16, FX(d.h) + 16); ctx.restore(); if (age === 1) shake = Math.max(shake, 5); } }
 function drawDial() {
@@ -1434,7 +1452,8 @@ function drawDial() {
     if (!g) { g = document.createElement("canvas"); g.width = cols * 18; g.height = 21; const x = g.getContext("2d"); x.fillStyle = lit ? C.dotDim : C.dotOff; for (let cx = 0; cx < cols * 6; cx++) for (let r = 0; r < 7; r++) if (cx % 6 < 5) x.fillRect(cx * 3, r * 3, 2, 2); dialDots.set(key, g); }
     ctx.drawImage(g, x0, y0); }
   let s = "", col = C.amber, blink = false;
-  if (S.phase === "over" && LOSS === 1 && !HOW.on) { ctx.restore(); return; }   // (the dial stays dead after the power-down)
+  if (S.phase === "over" && LOSS === 1 && !HOW.on) { ctx.restore(); return; }
+  if (S.powerOff && !dialFlash) { if (POWER === 2 && powerT >= 0 && powerT < 60) { const f = (88 + powerT / 60 * 9.6).toFixed(1) + " FM"; ftextDot(f, x0 + Math.max(0, Math.floor((cols - f.length) / 2)) * 18, y0, C.amber); } ctx.restore(); return; }   // (the dial stays dead after the power-down)
   if (S.phase === "dying") { const q = lossDial(cols); if (q) ftextDot(q.s.slice(0, cols), x0 + Math.max(0, Math.floor((cols - q.s.length) / 2)) * 18, y0, q.col); ctx.restore(); return; }
   if (dialFlash) { s = dialFlash.text; col = dialFlash.bad ? C.redHot : C.hot; blink = true; dialVal = 0; }
   else if (live) {
@@ -1466,7 +1485,6 @@ function drawDial() {
     else if (on) ftextDot(s.slice(0, cols), tx, y0, col); }
   else if (s) ftextDot(s.slice(0, cols), x0, y0, col);
   ctx.restore();
-  if (dialFlash && dialFlash.big && dialFlash.t0 != null) dialAttention(d, dialFlash.t0 - dialFlash.t, dialFlash.bad ? "255,60,40" : "255,190,90");
 }
 const T35 = ["111101101101111", "010110010010111", "111001111100111", "111001011001111", "101101111001001", "111100111001111", "111100111101111", "111001010010010", "111101111101111", "111101111001111"];
 function tinyNum(n, x, y, col) { String(n).split("").forEach((d, k) => { const b = T35[+d]; ctx.fillStyle = col; for (let i = 0; i < 15; i++) if (b[i] === "1") ctx.fillRect(x - (String(n).length - 1 - k) * 8 + (i % 3) * 2, y + ((i / 3) | 0) * 2, 2, 2); }); }
@@ -1509,7 +1527,7 @@ function drawLamp(x, y, r, low) {   // a lit dome lamp centered at (x, y) fine p
   ctx.fillStyle = g; ctx.beginPath(); ctx.arc(x, y, r, 0, 6.283); ctx.fill(); ctx.fillStyle = "rgba(255,255,245,.9)"; ctx.beginPath(); ctx.arc(x - r * .38, y - r * .38, r * .2, 0, 6.283); ctx.fill(); }
 let lampWas = null, lampOut = null, retWas = null, retOut = 0;
 function drawLamps() {
-  const lit = S.phase === "title" ? titleFX.lamps : Math.min(6, S.words), low = S.words === 1 && S.phase === "play" && (frame >> 4) & 1;
+  const lit = S.phase === "title" ? titleFX.lamps : S.powerOff ? Math.min(powerLamps(), S.words) : Math.min(6, S.words), low = S.words === 1 && S.phase === "play" && (frame >> 4) & 1;
   L.lamps.forEach((p, k) => { if (k < lit) drawLamp(FX(p.x), FX(p.y), FX(7), low); });
   // the spare battery lamps: spent first (before the radio's own six), so they go dark as soon as a word is sent
   // spare words (Spare Battery): small lights on the radio's bottom lip under the row, separate from the tuning lights; spent first
@@ -2220,7 +2238,7 @@ function drawPlayArea() {
   PA_DRAW[KS - 6]({ G, tiles, ok, low, last, play });
   drawIce(tiles);
   if (KS !== 10) for (const o of tiles) if (o.t.hot) { ctx.strokeStyle = (frame >> 3) & 1 ? "#ff3a2e" : "#ff8060"; ctx.lineWidth = 3; ctx.shadowColor = "#ff3a2e"; ctx.shadowBlur = 14; rr(ctx, o.x - 1, o.y - 2, o.w + 1, o.hh + 2, 9); ctx.stroke(); ctx.shadowBlur = 0; }
-  dangerGlass(G, tiles); lossGlass(G, tiles);
+  dangerGlass(G, tiles); lossGlass(G, tiles); powerGlassDraw(G);
   // a night that's over: no cursor, and the glass dims while the night wraps up, so it doesn't look like you can still play (Chris 2026-11-16)
   if (S.ending && (S.phase === "play" || S.phase === "dying")) { ctx.fillStyle = `rgba(4,2,1,${Math.min(.45, (frame - S.ending) / 30 * .45)})`; ctx.fillRect(G.x, G.y, G.w, G.h); }
   if (play && usingButtons && !CARDF.on) { const o = tiles.find(o => o.i === S.cursor); if (o) { const c = PA_CUR[KS - 6]; c ? paCursor(o, c[0], c[1]) : curScope(o); } }
@@ -2300,12 +2318,14 @@ function drawGlows() {
   const bk = 1 - beaconKill;
   bloom(FX(b.x), FX(b.y), 46 + prog * 60 + beaconFlash * 2, "255,60,40", ((.25 + .55 * prog) * pulse + beaconFlash / 50) * bk);
   bloom(FX(b.x), FX(b.y), 20, "255,200,170", (.5 + beaconFlash / 40) * bk);
-  if (S.phase !== "title") { greenGlow(); blueGlow(); }   // the green and blue keys' glows
+  if (S.phase !== "title") { greenGlow(); blueGlow(); }
+  // the dial's glow for important messages, drawn here so it falls over the glass and the radio too (one cached glow picture each, Chris 2026-11-18)
+  if (dialFlash && dialFlash.big && dialFlash.t0 != null) dialAttention(L.dial, dialFlash.t0 - dialFlash.t, dialFlash.bad ? "255,60,40" : "255,190,90");   // the green and blue keys' glows
   if (goldFlash > 0) { bloom(FX(b.x), FX(b.y), 70 + goldFlash * 3, GK.rgb, goldFlash / 44); bloom(FX(b.x), FX(b.y), 30, "255,244,190", goldFlash / 44); }   // a word that used the gold key lands gold
   for (const [x, y, n, kind] of P("window_lights") || []) { if (kind !== "warm") continue; const big = n > 40, cb = CALLER.box; if (cb && !big && x >= cb[0] && x <= cb[2] && y >= cb[1] && y <= cb[3]) continue;
     bloom(FX(L.winX + x), FX(L.winY + y), big ? FX(22) : 10 + Math.sqrt(n) * 3, "255,190,90", big ? .18 : Math.min(.35, .08 + n * .02)); }
   bloom(FX(W - 20), FX(SCENE_H - 30), FX(220), "255,150,60", .16 + .03 * Math.sin(frame / 50));     // the unseen lamp, breathing
-  const lit = S.phase === "title" ? titleFX.lamps : Math.min(6, S.words);
+  const lit = S.phase === "title" ? titleFX.lamps : S.powerOff ? Math.min(powerLamps(), S.words) : Math.min(6, S.words);
   L.extraLamps.forEach((p, j) => { if (S.phase !== "title" && S.words > 6 + j) bloom(FX(p.x), FX(p.y), 20, "255,190,90", .5); });
   L.lamps.forEach((p, k) => { if (k < lit) bloom(FX(p.x), FX(p.y), 34, S.words === 1 && S.phase === "play" ? "255,70,50" : "255,190,90", .5); });
   const d = L.dial, okNow = S.phase === "play" && S.path.length >= 3 && isValid();
@@ -3577,6 +3597,13 @@ function drawShop() {
 const NOISE = [];
 function noiseCv(k) { if (!NOISE[k]) { const c = document.createElement("canvas"); c.width = 160; c.height = 100; const x = c.getContext("2d"), im = x.createImageData(160, 100);
     for (let i = 0; i < im.data.length; i += 4) { const v = (Math.random() * 255) | 0; im.data[i] = im.data[i + 1] = im.data[i + 2] = v; im.data[i + 3] = 255; } x.putImageData(im, 0, 0); NOISE[k] = c; } return NOISE[k]; }
+function powerGlassDraw(G) { if (!S.powerOff) return; const g = powerGlass(), cx = G.x + G.w / 2, cy = G.y + G.h / 2;
+  ctx.fillStyle = `rgba(4,2,1,${.92 * (1 - g)})`; ctx.fillRect(G.x, G.y, G.w, G.h);
+  if (powerT < 0) return;
+  if (POWER === 1) { ctx.save(); ctx.globalCompositeOperation = "lighter"; const w = Math.sin(Math.min(1, powerT / 60) * Math.PI); bloom(cx, cy, G.w * (.3 + .5 * g), "255,140,50", .55 * w); ctx.restore(); }
+  if (POWER === 2 && powerT < 90) { ctx.save(); ctx.globalAlpha = Math.max(0, .55 * (1 - powerT / 90)); ctx.globalCompositeOperation = "screen"; ctx.imageSmoothingEnabled = false; ctx.drawImage(noiseCv(frame & 3), G.x, G.y, G.w, G.h); ctx.restore();
+    if (powerT < 60) { ctx.fillStyle = "rgba(255,220,170,.25)"; ctx.fillRect(G.x, G.y + ((powerT * 7) % (G.h | 0)), G.w, 3); } }
+  if (POWER === 3) { ctx.save(); ctx.globalCompositeOperation = "lighter"; for (let k = 0; k < Math.min(6, powerLamps()); k++) bloom(G.x + G.w * (k + .5) / 6, G.y + G.h, G.w * .18, "255,170,70", .25); ctx.restore(); } }
 let dangerDim = -1, vigCv = null, crtCv = null, GLITCH = [], LAST_SX = 0;
 // behind the game over screen: after the power-down the room stays nearly black with the tower's red light blinking (Chris 2026-11-18)
 function overBackdrop(a) { if (LOSS !== 1 || HOW.on) { ctx.fillStyle = `rgba(4,2,1,${a})`; ctx.fillRect(0, 0, CVW, CVH); return; }
@@ -3905,6 +3932,7 @@ const Sound = (() => {
     thud(n) { if (!ac) return; const t = ac.currentTime; osc("sine", 90, t, .002, .5, .18, sfx, 42); noise(t, .08, .25, "lowpass", 900, 1, sfx); osc("square", 160, t, .001, .05 * n, .04); },
     send(big) { if (!ac) return; const t = ac.currentTime; noise(t, .9, .14, "bandpass", 500, 2, sfx, 5000); osc("sine", 220, t, .02, .08, .8, sfx, 1200); if (big) noise(t + .1, .9, .12, "highpass", 2500, .7); },
     beacon(big) { if (!ac) return; const t = ac.currentTime, ch = chordNow(); ch.concat(ch.map(m => m + 12)).slice(0, big ? 8 : 5).forEach((m, k) => osc("square", m2f(m + 12), t + k * .05, .003, .06, .5)); if (big) osc("sawtooth", 110, t, .01, .14, .9, sfx, 660); },
+    up() { if (!ac) return; const t = ac.currentTime; osc("sine", 45, t, .25, .12, .9, sfx, 220); noise(t, .6, .06, "bandpass", 300, 1, sfx, 1600); },
     warn() { if (!ac) return; const t = ac.currentTime; osc("square", 660, t, .002, .05, .12, sfx); osc("square", 440, t + .17, .002, .05, .22, sfx); },
     beat() { if (!ac) return; const t = ac.currentTime; osc("sine", 64, t, .004, .3, .22, sfx, 40); osc("sine", 60, t + .24, .004, .2, .2, sfx, 40); },
     pop() { if (!ac) return; osc("square", 1100 + Math.random() * 500, ac.currentTime, .001, .025, .04, sfx, 260); },
@@ -4145,6 +4173,7 @@ async function boot() {
   if (/^#test-keyup/.test(location.hash)) { newRun(); S.parts.push("red", "gold", "amp", "coil", "hat"); ensureHot(); S.phase = "upgrade"; MELT.ut = 0; swapFocus = 0; }
   { const m = location.hash.match(/^#test-shop-all-(\d)/); if (m) { newRun(); S.parts.push("amp", "coil"); S.over = true; nightClear(); S.phase = "shop"; shopChoices = PARTS.slice(+m[1] * 4, +m[1] * 4 + 4); } }
   // the end of a run (2026-11-18): #test-danger(-danger-N) = the last word on night 4, short of the target; #test-gover(-gover-N) = the game over screen
+  if (/^#test-power/.test(location.hash)) { newRun(); }   // the power-up: #test-power-intro-power-N (with the night 1 plaque)
   if (/^#test-danger/.test(location.hash)) { newRun(); S.night = 4; S.parts.push("red", "amp", "coil"); startNight(); setTimeout(() => { nightHold = false; nightCard = 0; S.score = S.shown = Math.round(S.target * .45); S.words = 1; }, 300); }
   if (/^#test-gover/.test(location.hash)) { newRun(); S.night = 6; S.parts.push("red", "blue", "blue", "echo", "meter", "battery", "battery", "battery"); S.total = 7250; S.best = { word: "perv", pts: 720 }; S.sent = 31; S.longest = "quartz"; S.score = 300; S.target = 475; overNow(); overT2 = 300; }
   if (/^#test-report/.test(location.hash)) { newRun(); S.parts.push("amp", "owl"); S.target = 30; S.score = 52; S.total = 214; S.startTotal = 162; S.over = true; S.night = 3;

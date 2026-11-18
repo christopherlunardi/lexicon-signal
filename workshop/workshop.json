@@ -2985,7 +2985,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "How should the dial grab your eye for important warnings and news?",
      "found": "Only important messages get this (LAST WORD, OVERDRIVE, and later ones like it); everyday ones (word scores, TOO SHORT) just flash in. Each video: LAST WORD (a warning, red), then OVERDRIVE (good news, amber).",
      "options": [
@@ -3068,6 +3068,69 @@
         }
        ],
        "play": "play.html#test-danger-danger-2-dialfx-5"
+      }
+     ],
+     "decided": "2"
+    }
+   ]
+  },
+  {
+   "id": "power",
+   "title": "Power up",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "How should the radio switch on at the start of a run?",
+     "found": "A new run now starts with the radio off: the glass dark, no lamps, the dial dead, under the NIGHT 1 plaque. Once you press A the radio powers on and the letters fall in (the falling sound you like stays). Only on night 1; later nights keep their letters. In each video the plaque shows, A is pressed, then the power-up.",
+     "options": [
+      {
+       "id": "1",
+       "title": "Warm-up",
+       "note": "A click and a rising hum; the glass warms from the middle like a valve heating, the battery lamps light one by one with rising notes, the dial says ON THE AIR, then the letters fall in column by column.",
+       "images": [
+        {
+         "src": "img/power-r1/power-1.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/power-r1/power-1.jpg",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-power-intro-power-1"
+      },
+      {
+       "id": "2",
+       "title": "Tune in",
+       "note": "A click, then static fills the glass while the dial scrolls up the stations (88.1 FM ... 97.6 FM); it locks with a chord, ON THE AIR, all the lamps light at once and the letters rain in.",
+       "images": [
+        {
+         "src": "img/power-r1/power-2.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/power-r1/power-2.jpg",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-power-intro-power-2"
+      },
+      {
+       "id": "3",
+       "title": "Lamp cascade",
+       "note": "The battery lamps light left to right with rising notes, the glass glows up from below, then the letters fall in one key at a time, from the top left to the bottom right.",
+       "images": [
+        {
+         "src": "img/power-r1/power-3.mp4",
+         "label": "Video"
+        },
+        {
+         "src": "img/power-r1/power-3.jpg",
+         "label": "Still"
+        }
+       ],
+       "play": "play.html#test-power-intro-power-3"
       }
      ]
     }
