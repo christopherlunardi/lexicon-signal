@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 241;</script><script>
+<script>window.LEX_BUILD = 242;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -583,7 +583,7 @@ const partDesc = (p) => { if (p.mystery && !hatKnown()) return p.blurb; if (p.ke
 // reading a fitted part: what it does now
 const partNow = (p) => { if (p.mystery && !hatKnown()) return p.blurb; const f = STACK[p.id]; return f ? f.t(f.v(Math.max(1, has(p.id)))) : p.desc; };
 // a key's reading (the slot's inspect card): what it does at the level it's at
-const keyNow = (id) => [PART[id].desc.replace(/\.$/, ""), ...Array.from({ length: has(id) }, (_, i) => keyStep(id, i + 1))].join(". ") + ".";
+const keyNow = (id) => [PART[id].desc.replace(/\.$/, ""), ...Array.from({ length: has(id) }, (_, i) => keyStep(id, i + 1)).slice(id === "red" ? 0 : 1)].join(". ") + ".";   // (a key's first step is the key itself, already said by its desc)
 const iconOf = (id) => "iconL_" + ((PART[id] && PART[id].icon) || id);
 const BASE_WORDS = 6;   // one per battery lamp
 const OVERDRIVE = 1.5, OVERDRIVE2 = 2;   // (2x: a double overdrive, pick two cards)
@@ -2170,14 +2170,16 @@ function gkKey(o, P, w0, h0, ox, oy, ok, low, fl, lockT) {
   const a = lit > .5 ? (wave ? fl : 1) : Math.min(1, Math.min(1, (1 - low * .35 * (1 - lit)) * fl) + land), col = lit > .5 ? GK.hot : GK.on;
   const glyph = (ch, c, al) => { if (al <= .01) return; ctx.globalAlpha = al; if (GF.deep) ctx.drawImage(gvGlow(ch, GLO), mx - 14, my - 14); ctx.drawImage(gvLet(ch, c), mx, my); };
   const rows = (ch, c, r0, r1, al) => { if (r1 < r0) return; ctx.globalAlpha = al; ctx.drawImage(gvLet(ch, c), 0, r0 * 6, 54, (r1 - r0 + 1) * 6, mx, my + r0 * 6, 54, (r1 - r0 + 1) * 6); };
-  if (wild) { t.gkP += (frame - t.gkF) * (o.on ? 3.2 : 1.8); t.gkF = frame; }   // a fast spin, so nobody mistakes a passing letter for the one it is (Chris)
+  if (wild) { t.gkP += (frame - t.gkF) * (o.on ? 3.2 : 1.8); t.gkF = frame; }
+  const GLK = GOLDLOOK, gplate = wild && GLK === 6, gl = wild && (GLK === 1 || GLK === 5), gcol = gplate ? "#3a2200" : gl ? (lit > .5 ? "#ffe066" : "#ffc830") : null;
+  if (gplate) { ctx.save(); ctx.globalAlpha = 1; const gg = ctx.createLinearGradient(x, y, x + w0, y + h0); gg.addColorStop(0, "#ffe9a0"); gg.addColorStop(.5, lit > .5 ? "#ffd04a" : "#e8ac2c"); gg.addColorStop(1, "#b07818"); ctx.fillStyle = gg; ctx.beginPath(); ctx.roundRect(x + 3, y + 3, w0 - 6, h0 - 6, 6); ctx.fill(); ctx.restore(); }   // a fast spin, so nobody mistakes a passing letter for the one it is (Chris)
   if (scr) { const H = dotSpr(GK.hot); ctx.globalAlpha = 1; for (let r = 0; r < 7; r++) for (let c = 1; c < 8; c++) if (hsh(c + r * 9 + (frame >> 1) * 3.1, t.seed * 17) < .42) ctx.drawImage(H, mx + c * 6, my + r * 6, 6, 6); }
   else if (!wild) glyph(o.ch, hot ? "#ffc4a0" : GK.hot, a);
   else if (GS === 1) {   // letter reel: rolls slowly at rest, spins while traced, then the letter comes up from below and locks with a flash
     if (locked && age >= 4) { const off = Math.round(8 * (1 - clamp01((age - 4) / 9)) ** 2);
-      if (off) { if (off < 7) { ctx.globalAlpha = 1; ctx.drawImage(gvLet(now, GK.hot), 0, 0, 54, (7 - off) * 6, mx, my + off * 6, 54, (7 - off) * 6); } }
-      else { glyph(now, GK.hot, a); if (age < 28) { ctx.globalAlpha = 1 - (age - 13) / 15; ctx.drawImage(gvLet(now, "#ffffff"), mx, my); gkFx.push([0, o.cx, o.cy, 1 + .5 * (age - 13) / 15, .8 * (1 - (age - 13) / 15)]); } } }
-    else { ctx.globalAlpha = a; gkReel(mx, my, Math.floor(t.gkP), col); ctx.globalAlpha = 1; ctx.drawImage(gkShade(), mx, my); } }
+      if (off) { if (off < 7) { ctx.globalAlpha = 1; ctx.drawImage(gvLet(now, gcol || GK.hot), 0, 0, 54, (7 - off) * 6, mx, my + off * 6, 54, (7 - off) * 6); } }
+      else { glyph(now, gcol || GK.hot, a); if (age < 28) { ctx.globalAlpha = 1 - (age - 13) / 15; ctx.drawImage(gvLet(now, "#ffffff"), mx, my); gkFx.push([0, o.cx, o.cy, 1 + .5 * (age - 13) / 15, .8 * (1 - (age - 13) / 15)]); } } }
+    else { ctx.globalAlpha = a; gkReel(mx, my, Math.floor(t.gkP), gcol || col); ctx.globalAlpha = 1; if (!gplate) ctx.drawImage(gkShade(), mx, my); } }
   else if (GS === 2) {   // gold lamp board: "?" melts into the letter; a shimmer crosses the lit field and glints come and go
     const k = clamp01(age / 8), c2 = lit > .5 ? "#fffbe2" : "#fff0a0"; if (k < 1) glyph(t.gkPrev, c2, a * (1 - k)); glyph(now, c2, a * k);
     const ws = (frame + Math.floor(t.seed * 150)) % 150; if (ws < 46) { const H = dotSpr("#ffe9a0"), wipe = ws * .45 - 2; for (let r = 0; r < 7; r++) for (let c = 0; c < 9; c++) { const band = Math.max(0, 1 - Math.abs((c + r) * .9 - wipe) / 1.8) * .5; if (band > .03) { ctx.globalAlpha = band; ctx.drawImage(H, mx + c * 6, my + r * 6, 6, 6); } } }
@@ -2236,8 +2238,9 @@ function paGlassVar({ G, tiles, ok, low }) {
     if (t.flN == null || t.flN < frame - 600) t.flN = frame + 60 + Math.random() * 500;
     if (frame >= t.flN) { t.flE = frame + 2 + Math.random() * 10; t.flN = frame + 40 + Math.random() * (Math.random() < .3 ? 120 : 700); }
     const fl = t.flE > frame ? .68 + .27 * hsh(frame >> 1, t.seed * 7) : 1;   // the whole letter dips gently, never single dots
-    if (GOLD_STYLE && (t.wild || (gkNow.gild && o.on))) { gkKey(o, P, w0, h0, ox, oy, ok, low, fl, lockT); continue; }
-    const warm = GF.warm ? gvWarm(t) : GV_REST, scr = !GF.warm && land > .4, grn = o.i === TAP_I && GREEN_STYLE >= 2 && greenOn(), blu = !!t.blue && !blueHid(t), frz = (!!t.ice || (ICE_REST > 0 && iceFx.length > 0 && iceFx.some(f => f.i === o.i && !f.cash && !f.key && f.t < 0))) && BLUE_STYLE === 4;   // (the green key's letter glows green; the blue key's letter is cold blue; style 4 turns frozen letters blue)
+    if (GOLD_STYLE && (t.wild || (gkNow.gild && o.on))) { let jx = 0, jy = 0; if (GOLDLOOK === 3 && t.wild) { const burst = o.on || (frame + Math.floor(t.seed * 150)) % 150 < 14; if (burst) { jx = Math.round((hsh(frame >> 1, t.seed * 3) - .5) * (o.on ? 5 : 4)); jy = Math.round((hsh(frame >> 1, t.seed * 5 + 1) - .5) * (o.on ? 4 : 3)); } }
+      if (jx || jy) { ctx.save(); ctx.translate(jx, jy); gkKey(o, P, w0, h0, ox, oy, ok, low, fl, lockT); ctx.restore(); } else gkKey(o, P, w0, h0, ox, oy, ok, low, fl, lockT); continue; }
+    const warm = GF.warm ? gvWarm(t) : GV_REST, scr = !GF.warm && land > .4, grn = o.i === TAP_I && (GREEN_STYLE >= 2 || GREENLOOK === 1) && greenOn(), blu = !!t.blue && !blueHid(t), frz = (!!t.ice || (ICE_REST > 0 && iceFx.length > 0 && iceFx.some(f => f.i === o.i && !f.cash && !f.key && f.t < 0))) && BLUE_STYLE === 4;   // (the green key's letter glows green; the blue key's letter is cold blue; style 4 turns frozen letters blue)
     let la = Math.min(1, (1 - low * .35 * (1 - lit)) * fl) * warm[0]; if (GF.lock && !o.on) la *= 1 - .42 * lockK;   // word lock: the rest of the glass dips while a real word is traced
     ctx.globalAlpha = 1; ctx.drawImage(gvBase(P, GS, o.dots, w0, h0), x - 4, y - 4);
     if (hot && lit <= .03) { const pr = .5 + .5 * Math.sin(frame / 14 + o.i);   // (Workshop redkey: the red key at rest)
@@ -2276,7 +2279,7 @@ function paGlassVar({ G, tiles, ok, low }) {
   if (rings.length) { ctx.globalCompositeOperation = "lighter"; const e = lockT / 20, s = 1 + .55 * (1 - (1 - e) ** 2), R = gvRim("ring", w0, h0);   // a ring of light opens out from every key of the word
     for (const o of rings) { ctx.globalAlpha = .8 * (1 - e); ctx.drawImage(R, o.cx - R.width * s / 2, o.cy - R.height * s / 2, R.width * s, R.height * s); }
     ctx.globalAlpha = 1; ctx.globalCompositeOperation = "source-over"; }
-  if (GOLD_STYLE) gkAfter(w0, h0);
+  if (GOLD_STYLE) gkAfter(w0, h0); if (GOLDLOOK) goldLookFx(tiles);
   if (GF.edge) gvPathEdge(ok); else gvPath(ok);
   ctx.globalAlpha = 1;
 }
@@ -2290,6 +2293,11 @@ let tapFlash = 0;
    GREEN_STYLE: 0 the old gold ring, 1 green ring, 2 green letter + soft glow, 3 charge level (green light rises in the key as the
    charge grows), 4 magic eye (a little tuning eye in the key's corner opens as it charges), 5 breathing (a green glow that breathes
    faster and brighter as it charges). The charge chip shows the number in every style. */
+/* Workshop topics "goldlook" and "greenlook" (Chris 2026-11-19: the gold key can't be told apart once its letter locks in; new looks
+   for the green key). 0 = as now. Each must stay readable when the key is also red, or under the green key's ring, or traced.
+   GOLDLOOK 1 gold letter, 2 gold shimmer, 3 shake, 4 gold setting (frame and studs), 5 gold letter + glow, 6 gold plate (dark letter on gold).
+   GREENLOOK 1 green letter, 2 charge bar (left edge), 3 battery tag, 4 breathing ring, 5 corner lamp (bottom left). #goldlook-N #greenlook-N */
+let GOLDLOOK = 0, GREENLOOK = 0; { const m = location.hash.match(/goldlook-(\d+)/), n = location.hash.match(/greenlook-(\d+)/); if (m) GOLDLOOK = +m[1]; if (n) GREENLOOK = +n[1]; }
 let GREEN_STYLE = 1; { const m = location.hash.match(/green-(\d)/); if (m) GREEN_STYLE = Math.min(5, +m[1]); }   // (Chris picked 1, the green ring, 2026-11-15)
 const greenOn = () => has("tap") && GREEN_STYLE > 0 && S.grid[TAP_I];
 const greenK = () => 1 - 1 / (1 + (S.tap || 0) / 25);   // how full the charge looks: 0 empty, about .5 at 25, toward 1
@@ -2595,7 +2603,7 @@ function blueGlow() { if (!has("blue") || S.phase === "title") return; const b =
   if (BLUE_STYLE === 4 || BLUE_STYLE === 1) { const ia = IR === 5 ? .13 + .04 * q.dk + .03 * Math.sin(frame / 38 - .9) : .08; S.grid.forEach((t2, i) => { if (t2.ice) { const c2 = tileC(i); bloom(FX(c2.x), FX(c2.y), 40, "140,200,255", ia * (1 - lk * m.d)); } }); } }
 function drawGreenKey(p, x, y, w, h, on, f) { const k = greenK(), GS = GREEN_STYLE, GR = "#5cff8a", GD = "#1f9a48";
   ctx.save();
-  if (GS === 1) { const col = on || f > 0 ? "#d8ffe2" : GR, bl = Math.round(8 + 10 * f + (on ? 6 : 0) + 3 * Math.sin(frame / 14)), P = Math.ceil(64 / RS);   // (cached by glow size)
+  if (GS === 1) { const col = on || f > 0 ? "#d8ffe2" : GR, bl = GREENLOOK === 4 ? Math.round(6 + 10 * f + (on ? 6 : 0) + (5 + 12 * k) * (.5 + .5 * Math.sin(frame / (24 - 16 * k)))) : Math.round(8 + 10 * f + (on ? 6 : 0) + 3 * Math.sin(frame / 14)), P = Math.ceil(64 / RS);   // (cached by glow size)
     ctx.drawImage(shCache("green|" + col + "|" + bl + "|" + w + "x" + h, w, h, P, (x2, p, s) => { x2.strokeStyle = col; x2.lineWidth = 3; x2.shadowColor = "#30ff70"; x2.shadowBlur = bl * s; x2.beginPath(); x2.roundRect(p, p, w, h, 8); x2.stroke(); }), x - P, y - P); }
   if (GS === 3) { const ih = Math.round((h - 10) * k), iy = y + h - 5 - ih; ctx.globalCompositeOperation = "lighter"; const g = ctx.createLinearGradient(0, iy, 0, y + h - 5); g.addColorStop(0, `rgba(120,255,160,${.38 + .3 * f})`); g.addColorStop(1, "rgba(30,160,70,.18)");
     ctx.fillStyle = g; ctx.beginPath(); ctx.roundRect(x + 5, iy, w - 10, ih, 5); ctx.fill(); ctx.fillStyle = `rgba(200,255,215,${.55 + .3 * Math.sin(frame / 9)})`; ctx.fillRect(x + 7, iy, w - 14, 2); ctx.globalCompositeOperation = "source-over";
@@ -2604,11 +2612,26 @@ function drawGreenKey(p, x, y, w, h, on, f) { const k = greenK(), GS = GREEN_STY
     ctx.fillStyle = "#06140a"; ctx.beginPath(); ctx.arc(ex, ey, r + 2, 0, 6.283); ctx.fill(); ctx.strokeStyle = "#8a6a2a"; ctx.lineWidth = 2; ctx.stroke();
     ctx.shadowColor = "#30ff70"; ctx.shadowBlur = 8; ctx.fillStyle = GR; ctx.beginPath(); ctx.moveTo(ex, ey); ctx.arc(ex, ey, r, -Math.PI / 2 - span, -Math.PI / 2 + span); ctx.closePath(); ctx.fill(); ctx.shadowBlur = 0;
     ctx.fillStyle = "#06140a"; ctx.beginPath(); ctx.arc(ex, ey, 3, 0, 6.283); ctx.fill(); }
+  if (GREENLOOK === 2) { const bh = Math.max(3, Math.round((h - 16) * k)), bx = x + 6, by = y + h - 8 - bh; ctx.fillStyle = "rgba(4,20,8,.75)"; ctx.fillRect(bx - 1, y + 7, 7, h - 14);
+    ctx.shadowColor = "#30ff70"; ctx.shadowBlur = 8 + 6 * f; ctx.fillStyle = f > 0 ? "#d8ffe2" : GR; ctx.fillRect(bx, by, 5, bh); ctx.shadowBlur = 0; }
+  if (GREENLOOK === 5) { const lx = x + 13, ly = y + h - 13, r = 6, a = .35 + .65 * k; ctx.fillStyle = "#06140a"; ctx.beginPath(); ctx.arc(lx, ly, r + 2, 0, 6.283); ctx.fill();
+    ctx.shadowColor = "#30ff70"; ctx.shadowBlur = 6 + 14 * k + 8 * f; ctx.fillStyle = `rgba(${f > 0 ? "216,255,226" : "92,255,138"},${a})`; ctx.beginPath(); ctx.arc(lx, ly, r, 0, 6.283); ctx.fill(); ctx.shadowBlur = 0; }
   if (on && GS !== 1) { ctx.strokeStyle = "rgba(216,255,226,.9)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(x + 1, y + 1, w - 2, h - 2, 8); ctx.stroke(); }
   const txt = String(S.tap || 0), cw = Math.max(26, textW(txt, "ink") + 14), ch = Math.round(22 * TK), cx = x + w - cw + 10, cy = y - ch + 8;
   if (lossGone(TAP_I)) { ctx.restore(); return; } lossChips.green = { i: TAP_I, x: cx - 3, y: cy - 3, w: cw + 6, h: ch + 6 };
-  ctx.fillStyle = "#06140a"; ctx.beginPath(); ctx.roundRect(cx, cy, cw, ch, 6); ctx.fill(); ctx.strokeStyle = GD; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
+  if (GREENLOOK === 3) { ctx.fillStyle = "#06140a"; ctx.beginPath(); ctx.roundRect(cx - 4, cy, cw, ch, 3); ctx.fill(); ctx.strokeStyle = GR; ctx.lineWidth = 2; ctx.stroke(); ctx.fillStyle = GR; ctx.fillRect(cx + cw - 4, cy + ch * .3, 4, ch * .4);
+    ctx.fillStyle = `rgba(48,200,96,${.35 + .25 * f})`; ctx.fillRect(cx - 1, cy + 3, Math.max(2, (cw - 6) * k), ch - 6); }
+  else { ctx.fillStyle = "#06140a"; ctx.beginPath(); ctx.roundRect(cx, cy, cw, ch, 6); ctx.fill(); ctx.strokeStyle = GD; ctx.lineWidth = 2; ctx.stroke(); } ctx.restore();
   ftext(txt, cx + cw / 2, cy + Math.round((ch - 14 * TK) / 2), "ink", f > 0 ? "#eaffef" : GR, "c"); }
+function goldLookFx(tiles) { const L0 = GOLDLOOK; if (![2, 4, 5].includes(L0)) return;
+  for (const o of tiles) { if (!o.t.wild || lossGone(o.i)) continue; const { x, y, w, hh } = o; ctx.save();
+    if (L0 === 2) { ctx.beginPath(); ctx.roundRect(x + 2, y + 2, w - 4, hh - 4, 7); ctx.clip(); ctx.globalCompositeOperation = "lighter"; const u = ((frame + Math.floor(o.t.seed * 90)) % 90) / 90, bx = x - w + u * w * 3;
+      const sg = ctx.createLinearGradient(bx, y, bx + w * .6, y + hh); sg.addColorStop(0, "rgba(255,200,60,0)"); sg.addColorStop(.5, `rgba(255,214,100,${o.on ? .55 : .38})`); sg.addColorStop(1, "rgba(255,200,60,0)"); ctx.fillStyle = sg; ctx.fillRect(x, y, w, hh); }
+    if (L0 === 4) { const gg = ctx.createLinearGradient(x, y, x + w, y + hh); gg.addColorStop(0, "#fff0b8"); gg.addColorStop(.5, "#e0a23a"); gg.addColorStop(1, "#8a5a14"); ctx.strokeStyle = gg; ctx.lineWidth = 4; ctx.beginPath(); ctx.roundRect(x - 1, y - 1, w + 2, hh + 2, 9); ctx.stroke();
+      for (const [sx, sy] of [[x + 3, y + 3], [x + w - 3, y + 3], [x + 3, y + hh - 3], [x + w - 3, y + hh - 3]]) { ctx.fillStyle = "#ffe9a0"; ctx.beginPath(); ctx.arc(sx, sy, 4, 0, 6.283); ctx.fill(); ctx.fillStyle = "#9a6a1c"; ctx.beginPath(); ctx.arc(sx + 1, sy + 1, 1.5, 0, 6.283); ctx.fill(); }
+      if (o.on) { ctx.globalCompositeOperation = "lighter"; bloom(o.cx, o.cy, w * .8, "255,190,60", .25 + .1 * Math.sin(frame / 6)); } }
+    if (L0 === 5) { ctx.globalCompositeOperation = "lighter"; bloom(o.cx, o.cy, w * (o.on ? 1.05 : .9), "255,180,40", (o.on ? .38 : .26) + .08 * Math.sin(frame / 10)); }
+    ctx.restore(); } }
 function drawPlayArea() {
   const g = L.glass, G = { x: FX(g.x), y: FX(g.y), w: FX(g.w), h: FX(g.h) }, play = S.phase === "play" && !S.ending, ok = play && isValid(), cand = candidate(), low = play ? clamp01(1 - S.words / maxWords()) : 0, last = play && S.words === 1;
   ctx.save(); ctx.beginPath(); ctx.roundRect(G.x, G.y, G.w, G.h, FX(GLASS_R)); ctx.clip(); ctx.imageSmoothingEnabled = true; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.lineCap = ctx.lineJoin = "round";
@@ -4062,7 +4085,7 @@ function drawUpgrade() {
   ftext("THE MELTER PAID OUT", FX(W / 2), 22, "ink", C.hot, "c", { outline: C.dark });
   ftext(TAPW() ? "TAP A KEY IN THE BAR" : btn("LEFT / RIGHT: CHOOSE A KEY   {A}: LEVEL IT UP"), FX(W / 2), FX(y + ch) + 26, "ink", C.gold, "c", { outline: C.dark });
   // the part in the bar that gains the copy
-  const [, , sw, shh] = R("slot"), sx = FX(L.slotX + swapFocus * L.slotStep), sy = FX(L.barY + L.slotY);
+  const sb = slotBox(swapFocus), sw = sb.w, shh = sb.h, sx = FX(sb.x), sy = FX(sb.y);
   ctx.save(); ctx.strokeStyle = (frame >> 3) & 1 ? "#ffd24a" : "#fff2c0"; ctx.lineWidth = 4; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 14; ctx.strokeRect(sx - 4, sy - 4, FX(sw) + 8, FX(shh) + 8); ctx.restore();
   ftext("+1", sx + FX(sw) / 2, sy - 22, "ink", C.hot, "c", { outline: C.dark });
 }
@@ -4085,15 +4108,19 @@ function drawTrade() { const t = ++TRADE.t, w = Math.min(W - 48, 400), h = 112, 
     if (on) ftext("-1", sx + FX(sw) / 2, sy - 22, "ink", C.redHot, "c", { outline: C.dark }); });
 }
 function drawSwap() {
-  const w = Math.min(W - 48, 400), h = 104, x = Math.round(W / 2 - w / 2), y = Math.max(12, Math.round((SCENE_H - h) / 2) - 10), r = R(iconOf(swapNew.id));
+  // (Chris 2026-11-19: the panel says what the part going out does, so you can choose; the OUT frame sits on the real slot, keys or parts)
+  const w = Math.min(W - 48, 420), r = R(iconOf(swapNew.id)), tw = FX(w - r[2] - 40) - 40, lh = Math.round(22 * TK), out = partSlots()[swapFocus];
+  const intro = wrap(`To fit the ${swapNew.name}, take one ${swapNew.key ? "key" : "part"} out.`, "ink", tw), od = out ? wrap(PART[out.id].key ? keyNow(out.id) : partNow(PART[out.id]), "ink", tw) : [];
+  const h = Math.ceil((26 + 50 + intro.length * lh + 6 + lh + od.length * lh + 20) / FINE), x = Math.round(W / 2 - w / 2), y = Math.max(12, Math.round((SCENE_H - h) / 2) - 10);
   dim(); octx.drawImage(panelCv("logbox", w, h), x, y); spr(octx, iconOf(swapNew.id), x + 24, y + Math.round((h - r[3]) / 2)); blitOver([x, y, w, h]);
-  const tx = FX(x + 24 + r[2] + (w - 24 - r[2]) / 2), lh = Math.round(22 * TK); let ty = FX(y) + 26;
+  const tx = FX(x + 24 + r[2] + (w - 24 - r[2]) / 2); let ty = FX(y) + 26;
   ftext("SLOTS FULL", tx, ty, "key", C.ink, "c", { under: C.brassHi, uy: 3 }); ty += 50;
-  wrap(`To fit the ${swapNew.name}, take one part out.`, "ink", FX(w - r[2] - 40) - 40).forEach(s => { ftext(s, tx, ty, "ink", C.ink, "c"); ty += lh; });
-  const out = partSlots()[swapFocus]; if (out) ftext(`OUT: ${PART[out.id].name}${out.n > 1 ? " X" + out.n : ""}`.toUpperCase(), tx, ty + 6, "ink", C.inkRed, "c");
+  intro.forEach(s => { ftext(s, tx, ty, "ink", C.ink, "c"); ty += lh; }); ty += 6;
+  if (out) { ftext(`OUT: ${PART[out.id].name}${out.n > 1 ? " X" + out.n : ""}`.toUpperCase(), tx, ty, "ink", C.inkRed, "c"); ty += lh;
+    od.forEach(s => { ftext(s, tx, ty, "ink", C.inkSoft || C.ink, "c"); ty += lh; }); }
   ftext(TAPW() ? "TAP A PART BELOW. TAP HERE TO GO BACK." : "LEFT / RIGHT TO CHOOSE, A TAKE OUT, B BACK", FX(W / 2), FX(y + h) + 16, "ink", C.gold, "c", { outline: C.dark });
-  // the slot that would go: a blinking frame and "OUT" above it
-  const [, , sw, sh] = R("slot"), sx = FX(L.slotX + swapFocus * L.slotStep), sy = FX(L.barY + L.slotY);
+  // the slot that would go: a blinking frame and "OUT" above it, on the slot itself (slotBox: key slots, a gap, then part slots)
+  const b = slotBox(swapFocus), sx = FX(b.x), sy = FX(b.y), sw = b.w, sh = b.h;
   ctx.save(); ctx.strokeStyle = (frame >> 3) & 1 ? "#ff6a50" : "#ffd27a"; ctx.lineWidth = 4; ctx.shadowColor = "#ff5a40"; ctx.shadowBlur = 14; ctx.strokeRect(sx - 4, sy - 4, FX(sw) + 8, FX(sh) + 8); ctx.restore();
   ftext("OUT", sx + FX(sw) / 2, sy - 22, "ink", C.redHot, "c", { outline: C.dark });
 }

@@ -723,3 +723,4 @@ the same batch.
   for a second and 2.5 s have passed since it last showed (lastIdle / lastWarn); while tracing it cuts in over the word for
   80 frames every 4 s (keep: setPath doesn't clear it). No extra tag on the dial (Chris 2026-11-19).
 - Word list is neutral (Chris 2026-11-19): if it's a real word it goes in, whatever its tone; don't leave words out to avoid offense. Still no brand or company names, no first or last names.
+- Swap screen (Chris 2026-11-19): the OUT frame uses slotBox (key slots, the gap, part slots); the panel grows to show what the part or key going out does (partNow / keyNow). keyNow skips a key's first ladder step (its desc says it).
