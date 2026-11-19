@@ -3459,6 +3459,411 @@
      "chosen": "8"
     }
    ]
+  },
+  {
+   "id": "goldlook",
+   "title": "The gold key, easy to spot",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "How should the gold key stay obviously gold, even once its letter locks into a word?",
+     "found": "Each video: the glass at rest, then a word traced through the gold key (its letter locks in), held, and sent. The stills show it at rest, traced, and where it overlaps: one gold key sitting on the green key and one that's also the red key.",
+     "options": [
+      {
+       "id": "0",
+       "title": "As now",
+       "note": "For comparison. At rest the gold key spins its letter reel in a gold frame with two little arrows; once a word goes through it the letter locks in and it looks almost like any other traced key.",
+       "images": [
+        {
+         "src": "img/goldlook-r1/goldlook-0.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-0-gold.jpg",
+         "label": "At rest"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-0-gold-on.jpg",
+         "label": "Traced (letter locked)"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-0-goldover.jpg",
+         "label": "Overlaps: on the green key, and also the red key"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-0-goldover-on.jpg",
+         "label": "Overlaps, traced"
+        }
+       ],
+       "play": "play.html#test-word-gold-goldkey--goldlook-0",
+       "sound": true
+      },
+      {
+       "id": "1",
+       "title": "Gold letter",
+       "note": "The gold key's letters are always gold (the spinning reel and the letter it locks to), a richer gold while traced, so it never turns into a plain key.",
+       "images": [
+        {
+         "src": "img/goldlook-r1/goldlook-1.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-1-gold.jpg",
+         "label": "At rest"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-1-gold-on.jpg",
+         "label": "Traced (letter locked)"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-1-goldover.jpg",
+         "label": "Overlaps: on the green key, and also the red key"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-1-goldover-on.jpg",
+         "label": "Overlaps, traced"
+        }
+       ],
+       "play": "play.html#test-word-gold-goldkey--goldlook-1",
+       "sound": true
+      },
+      {
+       "id": "2",
+       "title": "Gold shimmer",
+       "note": "A gold sheen sweeps across the key every second and a half, at rest and while traced (brighter while traced).",
+       "images": [
+        {
+         "src": "img/goldlook-r1/goldlook-2.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-2-gold.jpg",
+         "label": "At rest"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-2-gold-on.jpg",
+         "label": "Traced (letter locked)"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-2-goldover.jpg",
+         "label": "Overlaps: on the green key, and also the red key"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-2-goldover-on.jpg",
+         "label": "Overlaps, traced"
+        }
+       ],
+       "play": "play.html#test-word-gold-goldkey--goldlook-2",
+       "sound": true
+      },
+      {
+       "id": "3",
+       "title": "Shake",
+       "note": "The key jitters like a coin on a table: a short shake every few seconds at rest, and a steady small shake while it's in your word.",
+       "images": [
+        {
+         "src": "img/goldlook-r1/goldlook-3.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-3-gold.jpg",
+         "label": "At rest"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-3-gold-on.jpg",
+         "label": "Traced (letter locked)"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-3-goldover.jpg",
+         "label": "Overlaps: on the green key, and also the red key"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-3-goldover-on.jpg",
+         "label": "Overlaps, traced"
+        }
+       ],
+       "play": "play.html#test-word-gold-goldkey--goldlook-3",
+       "sound": true
+      },
+      {
+       "id": "4",
+       "title": "Gold setting",
+       "note": "A thick polished gold frame with four studs at the corners, like a set jewel, always on; it glows while traced.",
+       "images": [
+        {
+         "src": "img/goldlook-r1/goldlook-4.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-4-gold.jpg",
+         "label": "At rest"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-4-gold-on.jpg",
+         "label": "Traced (letter locked)"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-4-goldover.jpg",
+         "label": "Overlaps: on the green key, and also the red key"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-4-goldover-on.jpg",
+         "label": "Overlaps, traced"
+        }
+       ],
+       "play": "play.html#test-word-gold-goldkey--goldlook-4",
+       "sound": true
+      },
+      {
+       "id": "5",
+       "title": "Gold letter + glow",
+       "note": "Option 1's gold letters, plus a soft gold glow behind the key that grows while it's traced.",
+       "images": [
+        {
+         "src": "img/goldlook-r1/goldlook-5.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-5-gold.jpg",
+         "label": "At rest"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-5-gold-on.jpg",
+         "label": "Traced (letter locked)"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-5-goldover.jpg",
+         "label": "Overlaps: on the green key, and also the red key"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-5-goldover-on.jpg",
+         "label": "Overlaps, traced"
+        }
+       ],
+       "play": "play.html#test-word-gold-goldkey--goldlook-5",
+       "sound": true
+      },
+      {
+       "id": "6",
+       "title": "Gold plate",
+       "note": "The whole key face is solid gold with a dark letter (a red letter when it's also the red key), at rest and traced. The boldest.",
+       "images": [
+        {
+         "src": "img/goldlook-r1/goldlook-6.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-6-gold.jpg",
+         "label": "At rest"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-6-gold-on.jpg",
+         "label": "Traced (letter locked)"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-6-goldover.jpg",
+         "label": "Overlaps: on the green key, and also the red key"
+        },
+        {
+         "src": "img/goldlook-r1/goldlook-6-goldover-on.jpg",
+         "label": "Overlaps, traced"
+        }
+       ],
+       "play": "play.html#test-word-gold-goldkey--goldlook-6",
+       "sound": true
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "greenlook",
+   "title": "The green key's look",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "Which look for the green key reads best, without getting in the way of the other keys?",
+     "found": "Each video: the glass at rest, then a word traced through the green key, held, and sent (the charge goes up). The stills show it at rest, traced, and with things overlapping it: the green key is also the red key, the gold key sits next to it, and there's ice around.",
+     "options": [
+      {
+       "id": "0",
+       "title": "As now",
+       "note": "For comparison: the green ring round the middle key and its charge number on a tag.",
+       "images": [
+        {
+         "src": "img/greenlook-r1/greenlook-0.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-0-green.jpg",
+         "label": "At rest"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-0-green-on.jpg",
+         "label": "Traced"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-0-greenover.jpg",
+         "label": "Overlaps: also the red key, next to gold and ice"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-0-greenover-on.jpg",
+         "label": "Overlaps, traced"
+        }
+       ],
+       "play": "play.html#test-word-tap-greenlook-0",
+       "sound": true
+      },
+      {
+       "id": "1",
+       "title": "Green letter",
+       "note": "The ring and tag stay; the green key's letter also glows green (a red or gold letter wins if the key is also red or gold).",
+       "images": [
+        {
+         "src": "img/greenlook-r1/greenlook-1.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-1-green.jpg",
+         "label": "At rest"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-1-green-on.jpg",
+         "label": "Traced"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-1-greenover.jpg",
+         "label": "Overlaps: also the red key, next to gold and ice"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-1-greenover-on.jpg",
+         "label": "Overlaps, traced"
+        }
+       ],
+       "play": "play.html#test-word-tap-greenlook-1",
+       "sound": true
+      },
+      {
+       "id": "2",
+       "title": "Charge bar",
+       "note": "The ring and tag stay; a thin green bar inside the key's left edge fills up as the charge grows.",
+       "images": [
+        {
+         "src": "img/greenlook-r1/greenlook-2.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-2-green.jpg",
+         "label": "At rest"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-2-green-on.jpg",
+         "label": "Traced"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-2-greenover.jpg",
+         "label": "Overlaps: also the red key, next to gold and ice"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-2-greenover-on.jpg",
+         "label": "Overlaps, traced"
+        }
+       ],
+       "play": "play.html#test-word-tap-greenlook-2",
+       "sound": true
+      },
+      {
+       "id": "3",
+       "title": "Battery tag",
+       "note": "The ring stays; the charge tag becomes a little battery (with a terminal nub) that fills with green as the charge grows.",
+       "images": [
+        {
+         "src": "img/greenlook-r1/greenlook-3.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-3-green.jpg",
+         "label": "At rest"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-3-green-on.jpg",
+         "label": "Traced"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-3-greenover.jpg",
+         "label": "Overlaps: also the red key, next to gold and ice"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-3-greenover-on.jpg",
+         "label": "Overlaps, traced"
+        }
+       ],
+       "play": "play.html#test-word-tap-greenlook-3",
+       "sound": true
+      },
+      {
+       "id": "4",
+       "title": "Breathing ring",
+       "note": "The ring breathes in and out, slowly at first and faster and brighter as the charge grows.",
+       "images": [
+        {
+         "src": "img/greenlook-r1/greenlook-4.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-4-green.jpg",
+         "label": "At rest"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-4-green-on.jpg",
+         "label": "Traced"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-4-greenover.jpg",
+         "label": "Overlaps: also the red key, next to gold and ice"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-4-greenover-on.jpg",
+         "label": "Overlaps, traced"
+        }
+       ],
+       "play": "play.html#test-word-tap-greenlook-4",
+       "sound": true
+      },
+      {
+       "id": "5",
+       "title": "Corner lamp",
+       "note": "The ring and tag stay; a small round green lamp in the key's bottom-left corner glows brighter as the charge grows.",
+       "images": [
+        {
+         "src": "img/greenlook-r1/greenlook-5.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-5-green.jpg",
+         "label": "At rest"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-5-green-on.jpg",
+         "label": "Traced"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-5-greenover.jpg",
+         "label": "Overlaps: also the red key, next to gold and ice"
+        },
+        {
+         "src": "img/greenlook-r1/greenlook-5-greenover-on.jpg",
+         "label": "Overlaps, traced"
+        }
+       ],
+       "play": "play.html#test-word-tap-greenlook-5",
+       "sound": true
+      }
+     ]
+    }
+   ]
   }
  ]
 }
