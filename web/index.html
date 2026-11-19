@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 238;</script><script>
+<script>window.LEX_BUILD = 239;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -783,7 +783,7 @@ function startNight() {
 let nightCard = 0, nightHold = false, introT = 0, busy = 0, dialFlash = null, knobA = { L: 0, R: 0 }, pathSound = 0, pending = null;
 const canAct = () => S.phase === "play" && !busy && !moving() && !nightHold;
 function dismissCard() { if (REQZ.open) { reqZoom(false); return true; } if (nightHold) { nightHold = false; nightCard = 16; Sound.click(); return true; } if (nightCard > 20) nightCard = 20; return false; }
-function setPath(p) { const was = isValid(); if (p.length > S.path.length) addT = 0; S.path = p; if (p.length > pathSound) Sound.blip(p.length); pathSound = p.length; if (isValid() && !was) Sound.lock(); dialFlash = null; }
+function setPath(p) { const was = isValid(); if (p.length > S.path.length) addT = 0; S.path = p; if (p.length > pathSound) Sound.blip(p.length); pathSound = p.length; if (isValid() && !was) Sound.lock(); if (!(dialFlash && dialFlash.keep && p.length)) dialFlash = null; }
 function tapTile(i) {
   if (dismissCard()) return; if (!canAct()) return; S.cursor = i; const p = S.path, last = p[p.length - 1];
   if (!p.length) return setPath([i]);
@@ -1171,7 +1171,9 @@ function update() {
     // LAST WORD flashes in on the dial: at once, then again whenever nothing has been traced for a second and it's been 2.5 seconds
     // since it last showed (Chris 2026-11-19: it barely showed; tracing clears it, so it waits for the dial to be free, never on a word)
     if (S.path.length) lastIdle = 0; else lastIdle++;
-    if (dangerT === 1 || (!S.path.length && !dialFlash && lastIdle >= 60 && frame - lastWarn >= 150)) { dialFlash = { text: "LAST WORD", bad: true, t: 150, big: true }; lastWarn = frame + 150; Sound.warn(); }
+    // while you trace it still cuts in now and then (Chris 2026-11-19): every 4 seconds it takes over the dial for a moment, word kept
+    const tracing = S.path.length > 0;
+    if (dangerT === 1 || (!dialFlash && (tracing ? frame - lastWarn >= 240 : lastIdle >= 60 && frame - lastWarn >= 150))) { const t = tracing && dangerT !== 1 ? 80 : 150; dialFlash = { text: "LAST WORD", bad: true, t, big: true, keep: tracing }; lastWarn = frame + t; Sound.warn(); }
     if (DANGER === 3 && dangerT % 64 === 1) Sound.beat(); }
   powerUpdate();
   if (S.phase === "dying") lossUpdate();

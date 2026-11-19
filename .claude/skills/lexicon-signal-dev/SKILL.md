@@ -720,4 +720,5 @@ the same batch.
   so nothing lights over the bezel. The #wordok-N hash reads 2-digit numbers.
 - wordok decided 8 (soft wash blink), Chris 2026-11-19: WORDOK = 8 (no big glow; the dial window takes a soft warm wash every half second).
 - Last word (Chris 2026-11-19, it barely showed): LAST WORD flashes in on the dial at once, then again whenever nothing's been traced
-  for a second and 2.5 s have passed since it last showed (lastIdle / lastWarn). Never anything on the dial while a word is traced (Chris).
+  for a second and 2.5 s have passed since it last showed (lastIdle / lastWarn); while tracing it cuts in over the word for
+  80 frames every 4 s (keep: setPath doesn't clear it). No extra tag on the dial (Chris 2026-11-19).
