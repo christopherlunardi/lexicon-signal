@@ -2367,13 +2367,17 @@ function drawIce(tiles) {
   iceLookDraw(tiles, b);
   if (b && !blueHid(b.t)) { const d = iceMood.d, r = iceMood.r, IL = ICE_LOOK, v4 = keyLv("blue") >= 4, born = blueMove && blueMove.to === b.t ? Math.min(1, (blueMove.t - BM_SHOW) / 22) : 1, tw = .5 + .5 * Math.sin(frame * .3);
     // the chip: what the blue key pays now. Danger: it trembles with the key, struck out (look 3: it blinks what you'd drop to, look 4: it goes dark). Reward: it lights up.
-    const warn = d > .3 && !v4, drop = warn && IL === 3 && (frame >> 3) & 1, txt = "x" + (drop ? 2 : blueX()), sc = 1 + (IL === 3 ? .22 : .1) * r * (.6 + .4 * tw), cw = Math.round(Math.max(30, textW(txt, "ink") + 14) * sc), ch = Math.round(22 * TK * sc), cx = b.x + b.w - cw + 6, cy = blueAt() < N ? b.y + b.hh - 10 : b.y - ch + 10;
+    const warn = d > .3 && !v4, drop = warn && IL === 3 && (frame >> 3) & 1, txt = "x" + (drop ? 2 : blueX()), sc = 1 + (IL === 3 ? .22 : .1) * r * (.6 + .4 * tw), cw = Math.round(Math.max(30, textW(txt, "ink") + 14) * sc), ch = Math.round(22 * TK * sc), cx = b.x + b.w - cw + 6, cy = blueAt() < N ? b.y + b.hh - Math.round(ch / 2) : b.y - Math.round(ch / 2);   // (the chip sits on the key's own frame, on its top edge, or its bottom edge on the top row, so it reads as the blue key's tag: Chris 2026-11-18)
     if (REST) iceRestBlue(b, born);
     ctx.globalAlpha = born;
     if (!REST) { ctx.fillStyle = `rgba(80,160,255,${(.16 + .05 * Math.sin(frame / 12)) * (1 - d * (IL === 4 ? .9 : .5))})`; ctx.beginPath(); ctx.roundRect(b.x + 4, b.y + 4, b.w - 8, b.hh - 8, 7); ctx.fill();
       const fl = Math.min(b.w, b.hh) * .16 * (.3 + .7 * born); frostCorner(b.x + 7, b.y + 7, 1, 1, fl, .9 * (1 - .6 * d)); frostCorner(b.x + b.w - 7, b.y + b.hh - 7, -1, -1, fl, .9 * (1 - .6 * d)); }
     if (IL === 4 && d > .02) ctx.globalAlpha = born * (1 - .5 * d);
-    ctx.fillStyle = r > .3 ? (IL === 4 ? "#0a2440" : "#e6f6ff") : "#06101c"; ctx.beginPath(); ctx.roundRect(cx, cy, cw, ch, 6); ctx.fill(); ctx.strokeStyle = r > .3 ? "#ffffff" : warn && IL === 3 ? "#ff7a50" : warn ? "#8094a8" : "#3a8ad0"; ctx.lineWidth = 2; ctx.stroke();
+    const rim = r > .3 ? "#ffffff" : warn && IL === 3 ? "#ff7a50" : warn ? "#8094a8" : "#5aaaf0";
+    // the blue key's frame: a bright blue rim that marks it apart from the frozen keys, with the chip fixed on it like a tag
+    ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(b.cx, b.cy, Math.max(b.w, b.hh) * .62, "80,160,255", .16 + .05 * Math.sin(frame / 14)); ctx.restore();
+    ctx.strokeStyle = rim; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect(b.x + 1.5, b.y + 1.5, b.w - 3, b.hh - 3, 8); ctx.stroke();
+    ctx.fillStyle = r > .3 ? (IL === 4 ? "#0a2440" : "#e6f6ff") : "#06101c"; ctx.beginPath(); ctx.roundRect(cx, cy, cw, ch, 6); ctx.fill(); ctx.strokeStyle = rim; ctx.lineWidth = 2; ctx.stroke();
     ftext(txt, cx + cw / 2, cy + Math.round((ch - 14 * TK) / 2), "ink", r > .3 ? (IL === 4 ? "#ffffff" : "#06203a") : warn && IL === 3 ? "#ff8a60" : warn ? "#9aa8b6" : "#a8dcff", "c");
     if (warn && IL !== 3) { ctx.strokeStyle = "#e8f0f8"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx + 4, cy + ch - 5); ctx.lineTo(cx + cw - 4, cy + 5); ctx.stroke(); }
     ctx.globalAlpha = 1; }

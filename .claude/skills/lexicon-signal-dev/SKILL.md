@@ -704,3 +704,4 @@ the same batch.
   worked examples are hand-written: every rule or number change updates the section it touches in the same batch.
   The requests section shows as torn-out pages until the Stranger's Hat has been fitted once (hatKnown).
 - Ice at rest: ICE_REST = 4, ice blocks with the blue key's level meter (Chris picked it 2026-11-18; keep it clear of the green key).
+- The blue key's chip (Chris 2026-11-18): a bright rim marks the blue key apart from frozen keys, and the chip sits on that rim like a tag, on the top edge (bottom edge on the top row), so it never reads as the key below's.
