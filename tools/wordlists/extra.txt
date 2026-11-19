@@ -77,3 +77,6 @@ hoes
 # months and days of the week (Chris 2026-11-14: they're words everybody knows, even though the big lists leave out capitalized names)
 january february march april may june july august september october november december
 monday mondays tuesday tuesdays wednesday wednesdays thursday thursdays friday fridays saturday saturdays sunday sundays
+
+# role-play
+larp larps larped larping larper larpers
