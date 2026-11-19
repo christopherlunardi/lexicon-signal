@@ -718,3 +718,4 @@ the same batch.
 - wordok-r3 (open, 2026-11-19, Chris found 7 a bit much): 8 soft wash blink, 9 slow breathe, 10 only the word reversed (blinking),
   11 two quick blinks then a steady soft glow, 12 blinking block cursor. All fills follow the dial window (dialFill / dialClip, A.dialRows)
   so nothing lights over the bezel. The #wordok-N hash reads 2-digit numbers.
+- wordok decided 8 (soft wash blink), Chris 2026-11-19: WORDOK = 8 (no big glow; the dial window takes a soft warm wash every half second).

@@ -3349,7 +3349,7 @@
     },
     {
      "id": "r3",
-     "status": "open",
+     "status": "decided",
      "question": "Round 2's reverse blink was a bit much: which calmer take reads clearly without shouting?",
      "found": "Same busy glass and moves as before, with a long hold on the word. Every option keeps what the game already shows for a good word (lit keys, the light sweep, the + on the number, the tube cells, the lock sound). Tap Play with sound.",
      "options": [
@@ -3455,7 +3455,8 @@
        "play": "play.html#test-icerest-over-wordok-12",
        "sound": true
       }
-     ]
+     ],
+     "chosen": "8"
     }
    ]
   }

@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 234;</script><script>
+<script>window.LEX_BUILD = 235;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -1508,7 +1508,7 @@ function dialAttention(d, age, rgb) { const cx = FX(d.x + d.w / 2), cy = FX(d.y 
    lamp (a lamp sign above the left grille strikes on like neon), 4 focus lock (corner brackets snap in round the glass), 5 hot path (the trace
    goes white-hot and the word's keys beat together), 6 send tag (a lit SEND tag on the last letter, where A sends), 7 reverse blink (Chris's round 2 idea: option 1's glow, and the dial
    swaps between reverse print and normal at a cursor's blink while the word holds). `#wordok-N`. */
-let WORDOK = 7; /* (Chris picked 7, reverse blink, 2026-11-19) */ { const m = location.hash.match(/wordok-(\d+)/); if (m) WORDOK = +m[1]; }
+let WORDOK = 8; /* (Chris picked 8, the soft wash blink, 2026-11-19) */ { const m = location.hash.match(/wordok-(\d+)/); if (m) WORDOK = +m[1]; }
 let wok = 0, wokOn = 0;   // (wok eases 0..1 with a good word; wokOn counts frames since it became good)
 function wordOkFx() { if (!WORDOK || HOW.on) return; const play = S.phase === "play" && !S.ending && !dialFlash, ok = play && S.path.length >= 3 && isValid();
   wokOn = ok ? wokOn + 1 : 0; wok += ((ok ? 1 : 0) - wok) * (ok ? .35 : .2); if (wok < .01 && !play) return;
@@ -3685,7 +3685,7 @@ const MAN_SECS = [
   { t: "TRACING AND SENDING", b: () => [
     ["p", "Start on any key, then move to a key that touches it: left, right, up, down or corner to corner. Each new letter has to touch the one before it, and a key can only be used once in a word. A word needs 3 letters or more and has to be a real word. QU sits on one key and counts as two letters."],
     ["fig", "trace", "FIG. 2  TRACING STAR. EACH LETTER TOUCHES THE LAST; CORNERS COUNT."],
-    ["p", "When what you have traced is a real word, its keys light up, a light sweeps across them, and the dial glows and blinks between reverse print and normal with the word's score. Send it and its letters fly to the tower."],
+    ["p", "When what you have traced is a real word, its keys light up, a light sweeps across them, and the dial shows the word's score with a soft warm wash blinking on and off. Send it and its letters fly to the tower."],
     ["note", "Sending something that isn't a word costs nothing: the dial says NO SIGNAL (or TOO SHORT) and you keep your lamp. A key that doesn't touch your last letter can't join the word: the dial says MUST TOUCH."],
     ["h", "CONTROLS"],
     ["tbl", [["ADD A LETTER", "A, or tap the key. Keyboard: arrows or WASD to move, then Space, Enter or Z."],
