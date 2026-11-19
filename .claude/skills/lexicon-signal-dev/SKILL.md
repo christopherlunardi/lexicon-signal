@@ -715,3 +715,6 @@ the same batch.
   tag on the last letter. wordOkFx() draws them after drawFlyers. #wordok-N; videos with sound by scratchpad rec_wok.py pattern (busy glass
   #test-icerest-over, trace, word held, broken by one more letter, back, send).
 - wordok decided 7 (reverse blink), Chris 2026-11-19: WORDOK = 7 in the game.
+- wordok-r3 (open, 2026-11-19, Chris found 7 a bit much): 8 soft wash blink, 9 slow breathe, 10 only the word reversed (blinking),
+  11 two quick blinks then a steady soft glow, 12 blinking block cursor. All fills follow the dial window (dialFill / dialClip, A.dialRows)
+  so nothing lights over the bezel. The #wordok-N hash reads 2-digit numbers.
