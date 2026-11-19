@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 225;</script><script>
+<script>window.LEX_BUILD = 226;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -2852,7 +2852,7 @@ const slotPX = (pos) => L.slotX + pos * L.slotStep + (pos >= KEY_SLOTS ? SLOT_KG
 const slotPos = (k) => { const nk = keyCount(); return k < nk ? k : KEY_SLOTS + (k - nk); };
 function slotBox(k) { const [, , sw, sh] = R("slot"); return { x: slotPX(slotPos(k)), y: L.barY + L.slotY, w: sw, h: sh }; }
 function drawSlotStates() {
-  if (0) partSlots().forEach((c, k) => { if (!PART[c.id] || !PART[c.id].key) return; const b = slotBox(k);   // (off: the key slots are lined with velvet in the bar art now) a gold part's slot: gilded / velvet / seal
+  if (0) partSlots().forEach((c, k) => { if (!PART[c.id] || !PART[c.id].key) return; const b = slotBox(k);   // a gold part's slot: gilded / velvet / seal (off: the key slots are lined with velvet in the bar art now)
     ctx.save(); ctx.imageSmoothingEnabled = false;
     if (rareHas("velvet")) { const v = velvet(b.w - 14, 49); ctx.drawImage(v, FX(b.x + 7), FX(b.y + 7), FX(b.w - 14), FX(49)); }
     if (rareHas("gild")) { const gs = giltSprite("slot"); if (rareHas("velvet")) { ctx.drawImage(gs, 0, 0, gs.width, 7, FX(b.x), FX(b.y), FX(b.w), FX(7)); ctx.drawImage(gs, 0, 56, gs.width, gs.height - 56, FX(b.x), FX(b.y + 56), FX(b.w), FX(gs.height - 56));
