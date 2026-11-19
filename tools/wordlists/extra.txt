@@ -1,6 +1,6 @@
 # Lexicon Signal's own extra words, on top of ENABLE and SCOWL (tools/words.py adds them to words.js).
 # Newer slang, internet words and crude words the big lists don't have. Each word is a real, commonly used one; add its forms too.
-# No brand or company names, and no slurs against groups of people. Words separated by spaces or lines; 3-12 letters, a-z only.
+# No brand or company names. Otherwise neutral: a real word goes in whatever its tone (Chris 2026-11-19). Words separated by spaces or lines; 3-12 letters, a-z only.
 
 # slang and everyday talk
 rager ragers

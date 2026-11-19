@@ -722,3 +722,4 @@ the same batch.
 - Last word (Chris 2026-11-19, it barely showed): LAST WORD flashes in on the dial at once, then again whenever nothing's been traced
   for a second and 2.5 s have passed since it last showed (lastIdle / lastWarn); while tracing it cuts in over the word for
   80 frames every 4 s (keep: setPath doesn't clear it). No extra tag on the dial (Chris 2026-11-19).
+- Word list is neutral (Chris 2026-11-19): if it's a real word it goes in, whatever its tone; don't leave words out to avoid offense. Still no brand or company names, no first or last names.

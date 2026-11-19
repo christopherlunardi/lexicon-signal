@@ -15,7 +15,7 @@ advent allah anglican anglicans baptist baptists bible bibles buddha buddhas bud
 mercury venus earth mars jupiter saturn uranus neptune pluto aries taurus gemini cancer leo virgo libra scorpio sagittarius capricorn aquarius pisces geminis virgos libras scorpios leos
 
 # peoples and ethnic groups, now and in history, with their plurals and adjectives (Chris 2026-11-19: Slav was missing; the
-# nationalities above only cover countries). No slurs.
+# nationalities above only cover countries). Real words go in whatever their tone (Chris 2026-11-19: the list is neutral).
 slav slavs slavic slavonic arab arabs arabian arabians inuit inuk briton britons danes finns norse norseman norsemen celtic gael gaels
 saxon saxons anglo anglos teuton teutons teutonic gaul gauls catalan catalans kurd kurds kurdish berber berbers aztec aztecs mayan mayans
 inca incas incan sioux cherokees navajos hopi hopis zulus maoris sami cajun cajuns yankee yankees latina latinas latino latinos hispanic
@@ -23,4 +23,4 @@ hispanics asiatic nordic nordics balkan balkans baltic baltics iberian iberians 
 slovaks slovenes scotsman scotsmen irishman irishmen englishman englishmen frenchman frenchmen aussie aussies thais filipino filipinos
 filipina filipinas hawaiian hawaiians tibetan tibetans uyghur uyghurs hmong khmer malay malays punjabi punjabis parsi parsis amish
 hutterite hutterites druze copt copts coptic hebrew hebrews israelite israelites semite semites semitic phoenician phoenicians spartan
-spartans trojan trojans athenian athenians sumerian sumerians babylonian babylonians assyrian assyrians etruscan etruscans
+spartans trojan trojans athenian athenians sumerian sumerians babylonian babylonians assyrian assyrians etruscan etruscans lapp lapps lappish
