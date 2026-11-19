@@ -714,3 +714,4 @@ the same batch.
   eye (green, above the right grille), 3 SEND lamp (above the left grille), 4 focus lock (corner brackets on the glass), 5 hot path, 6 SEND
   tag on the last letter. wordOkFx() draws them after drawFlyers. #wordok-N; videos with sound by scratchpad rec_wok.py pattern (busy glass
   #test-icerest-over, trace, word held, broken by one more letter, back, send).
+- wordok decided 7 (reverse blink), Chris 2026-11-19: WORDOK = 7 in the game.

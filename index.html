@@ -1508,7 +1508,7 @@ function dialAttention(d, age, rgb) { const cx = FX(d.x + d.w / 2), cy = FX(d.y 
    lamp (a lamp sign above the left grille strikes on like neon), 4 focus lock (corner brackets snap in round the glass), 5 hot path (the trace
    goes white-hot and the word's keys beat together), 6 send tag (a lit SEND tag on the last letter, where A sends), 7 reverse blink (Chris's round 2 idea: option 1's glow, and the dial
    swaps between reverse print and normal at a cursor's blink while the word holds). `#wordok-N`. */
-let WORDOK = 0; { const m = location.hash.match(/wordok-(\d)/); if (m) WORDOK = +m[1]; }
+let WORDOK = 7; /* (Chris picked 7, reverse blink, 2026-11-19) */ { const m = location.hash.match(/wordok-(\d)/); if (m) WORDOK = +m[1]; }
 let wok = 0, wokOn = 0;   // (wok eases 0..1 with a good word; wokOn counts frames since it became good)
 function wordOkFx() { if (!WORDOK || HOW.on) return; const play = S.phase === "play" && !S.ending && !dialFlash, ok = play && S.path.length >= 3 && isValid();
   wokOn = ok ? wokOn + 1 : 0; wok += ((ok ? 1 : 0) - wok) * (ok ? .35 : .2); if (wok < .01 && !play) return;

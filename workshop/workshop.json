@@ -3195,7 +3195,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "With a lot going on, how should the game make it obvious a word is good to send?",
      "found": "Everything that already shows a good word stays; each option adds one thing. Every video is the same busy glass (the blue key with ice, the green key, the red and gold keys): it traces a few letters, makes a word and holds it, adds a letter that breaks it, takes it back, then sends. The videos have the game's sound: tap Play with sound. Options can be combined: say which in a note.",
      "options": [
@@ -3318,11 +3318,12 @@
        "play": "play.html#test-icerest-over-wordok-6",
        "sound": true
       }
-     ]
+     ],
+     "chosen": "7"
     },
     {
      "id": "r2",
-     "status": "open",
+     "status": "decided",
      "question": "Your idea: the dial blinks between reverse print and normal while the word holds. Does it read?",
      "found": "Option 1's warm glow stays round the dial, and the dial itself swaps between reverse print (lit field, dark letters) and normal every half second, like a blinking cursor, for as long as the letters make a word. It stops the moment the word breaks. Same busy glass and the same moves as round 1, with a longer hold on the word so you see several blinks. Tap Play with sound.",
      "options": [
@@ -3343,7 +3344,8 @@
        "play": "play.html#test-icerest-over-wordok-7",
        "sound": true
       }
-     ]
+     ],
+     "chosen": "7"
     }
    ]
   }
