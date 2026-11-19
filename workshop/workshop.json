@@ -3339,6 +3339,139 @@
      "decided": "4"
     }
    ]
+  },
+  {
+   "id": "wordok",
+   "title": "A word that's good to send",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "With a lot going on, how should the game make it obvious a word is good to send?",
+     "found": "Everything that already shows a good word stays; each option adds one thing. Every video is the same busy glass (the blue key with ice, the green key, the red and gold keys): it traces a few letters, makes a word and holds it, adds a letter that breaks it, takes it back, then sends. The videos have the game's sound: tap Play with sound. Options can be combined: say which in a note.",
+     "options": [
+      {
+       "id": "0",
+       "title": "As now (nothing added)",
+       "note": "For comparison: what already shows a good word. The keys light and a light sweeps across them, the dial lights warm with a + on the number, the tube blinks the cells it would fill, and a short two-note lock sound.",
+       "images": [
+        {
+         "src": "img/wordok-r1/wordok-0.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/wordok-r1/wordok-0.jpg",
+         "label": "A word, held"
+        }
+       ],
+       "play": "play.html#test-icerest-over-wordok-0",
+       "sound": true
+      },
+      {
+       "id": "1",
+       "title": "Dial lock-on",
+       "note": "The moment the letters make a word, the dial flashes lit twice, then a warm glow pulses round it (and spills onto the top of the glass) for as long as the word holds. Uses the same glow you picked for important dial messages.",
+       "images": [
+        {
+         "src": "img/wordok-r1/wordok-1.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/wordok-r1/wordok-1.jpg",
+         "label": "A word, held"
+        }
+       ],
+       "play": "play.html#test-icerest-over-wordok-1",
+       "sound": true
+      },
+      {
+       "id": "2",
+       "title": "Tuning eye",
+       "note": "A round green tuning tube set into the cabinet above the right grille, like the tuning eye on an old set. Dim and open while you trace; when the letters make a word its dark wedge snaps shut and it glows bright green. Opens again the moment the word breaks.",
+       "images": [
+        {
+         "src": "img/wordok-r1/wordok-2.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/wordok-r1/wordok-2.jpg",
+         "label": "A word, held"
+        }
+       ],
+       "play": "play.html#test-icerest-over-wordok-2",
+       "sound": true
+      },
+      {
+       "id": "3",
+       "title": "Send lamp",
+       "note": "A small SEND lamp sign above the left grille. Dark while you trace; when the letters make a word it strikes on like a neon sign (a couple of flickers, then steady red-orange glow). Goes dark the moment the word breaks.",
+       "images": [
+        {
+         "src": "img/wordok-r1/wordok-3.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/wordok-r1/wordok-3.jpg",
+         "label": "A word, held"
+        }
+       ],
+       "play": "play.html#test-icerest-over-wordok-3",
+       "sound": true
+      },
+      {
+       "id": "4",
+       "title": "Focus lock",
+       "note": "Four bright corner brackets fly in and lock onto the corners of the glass when the letters make a word, with a quick flash round the rim. They stay, softly pulsing, while the word holds, and slide away when it breaks.",
+       "images": [
+        {
+         "src": "img/wordok-r1/wordok-4.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/wordok-r1/wordok-4.jpg",
+         "label": "A word, held"
+        }
+       ],
+       "play": "play.html#test-icerest-over-wordok-4",
+       "sound": true
+      },
+      {
+       "id": "5",
+       "title": "Hot path",
+       "note": "The trace itself goes white-hot and thicker when it's a word, and the word's keys beat together with a bright rim, like a heartbeat. Everything happens on the word, so your eye doesn't leave the glass.",
+       "images": [
+        {
+         "src": "img/wordok-r1/wordok-5.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/wordok-r1/wordok-5.jpg",
+         "label": "A word, held"
+        }
+       ],
+       "play": "play.html#test-icerest-over-wordok-5",
+       "sound": true
+      },
+      {
+       "id": "6",
+       "title": "Send tag",
+       "note": "A lit SEND tag appears on the last letter (where pressing A again sends), bobbing gently; on a touch screen it says TAP. It hangs below the key (above it on the bottom row), so it can sit over part of the key below.",
+       "images": [
+        {
+         "src": "img/wordok-r1/wordok-6.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/wordok-r1/wordok-6.jpg",
+         "label": "A word, held"
+        }
+       ],
+       "play": "play.html#test-icerest-over-wordok-6",
+       "sound": true
+      }
+     ]
+    }
+   ]
   }
  ]
 }
