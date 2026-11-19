@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 228;</script><script>
+<script>window.LEX_BUILD = 229;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -2994,8 +2994,14 @@ let TS = 6; {   // default: radio close-up (Chris, 2026-11-12, still being tweak
 const LD = 14, LP = 6 * LD;   // logo letter cell and letter pitch, in fine pixels
 let titleT = 0, titleSkip = false, logoCv = null, logoSig = null, logoNeon = null;
 const titleFX = { lamps: 6, tube: null, bar: false };
-const TITLE_MENU = ["START", "HOW TO PLAY", "MANUAL", "HIGH SCORES"]; let titleSel = 0, titleHits = [], titleSelL = -1, titleSelF = 0;
-function titleChoose(i) { const m = TITLE_MENU[i]; if (m === "HIGH SCORES") { BOARD.on = true; Sound.click(); return; } if (m === "HOW TO PLAY") howStart(); else if (m === "MANUAL") manOpen("title"); else if (m === "UPDATE APP") { try { LexNative.installApp(); } catch (e) {} } else start(); }
+const TITLE_MENU = ["START", "HOW TO PLAY", "HIGH SCORES"]; let titleSel = 0, titleHits = [], titleSelL = -1, titleSelF = 0;
+// HOW TO PLAY opens a second row of plates on the console: the short basics, or the full Service Manual (Chris 2026-11-18: the title
+// menu was getting cramped). The plates flip over like a station sign; B or a tap off the plates flips them back.
+const HOW_MENU = ["THE BASICS", "SERVICE MANUAL", "BACK"], TSUB = { on: false, t: -99, main: 1 };
+const titleItems = () => TSUB.on ? HOW_MENU : TITLE_MENU;
+function titleSub(on) { if (TSUB.on === on) return; TSUB.on = on; TSUB.t = frame; if (on) { TSUB.main = titleSel; titleSel = 0; } else titleSel = TSUB.main; titleSelL = -1; Sound.lock(); }
+function titleChoose(i) { if (TSUB.on) { const m = HOW_MENU[i]; if (m === "BACK") return titleSub(false); TSUB.on = false; titleSel = TSUB.main; if (m === "THE BASICS") howStart(); else manOpen("title"); return; }
+  const m = TITLE_MENU[i]; if (m === "HOW TO PLAY") return titleSub(true); if (m === "HIGH SCORES") { BOARD.on = true; Sound.click(); return; } if (m === "UPDATE APP") { try { LexNative.installApp(); } catch (e) {} } else start(); }
 const titleGlass = { ready: false };
 /* Tips shown scrolling on the dial of the title screen, one at a time in random order. KEEP THIS LIST TRUE TO THE GAME: whenever a
    rule, number, control or part changes, fix the tips it touches, drop the ones that no longer hold and add tips for new things. */
@@ -3006,7 +3012,7 @@ const TIPS = [
   "ON YOUR LAST WORD THE SIGNAL STARTS TO FADE: MAKE IT COUNT",
   "THE BLUE KEY'S ICE KEEPS FROM NIGHT TO NIGHT: SAVE IT UP FOR ONE BIG WORD",
   "ONCE THE BLUE KEY HAS FROZEN ALL IT CAN, EVERY WORD THAT MISSES IT ADDS X1 MORE",
-  "THE SERVICE MANUAL ON THE TITLE MENU EXPLAINS EVERY RULE, WITH WORKED EXAMPLES",
+  "HOW TO PLAY HOLDS THE BASICS AND THE FULL SERVICE MANUAL: EVERY RULE, WITH WORKED EXAMPLES",
   "PAUSE AND OPEN THE SERVICE MANUAL TO CHECK A RULE MID-RUN",
   "TRACE TOUCHING LETTERS IN ANY OF 8 DIRECTIONS",
   "A WORD NEEDS 3 LETTERS OR MORE",
@@ -3331,12 +3337,13 @@ function panelCvKey(k, make) { let c = panelCache.get(k); if (!c) { if (panelCac
 // 6. Console (Chris's art, 2026-11-13): the wooden console the radio stands on, with a brass push-button plate per option; the chosen
 // one is pressed in and lit from within
 function drawConsoleMenu(a, top, hh, best, zx, zy, Z) {
-  if (!TCAB) return; if (titleSel !== titleSelL) { titleSelL = titleSel; titleSelF = frame; } const M = TITLE_MENU, n = M.length, kh = glyphCv("key", "S", C.ink).height, ph = R("plate")[3];
+  if (!TCAB) return; if (titleSel !== titleSelL) { titleSelL = titleSel; titleSelF = frame; } const M = titleItems(), n = M.length, flip = Math.min(1, (frame - TSUB.t) / 12), kh = glyphCv("key", "S", C.ink).height, ph = R("plate")[3];
   // the plates fill the cabinet's name panel: as wide as their words need, shrinking their padding (never the art) to fit
   const px0 = zx(TCAB.x), py0 = zy(TCAB.y), pw = TCAB.w * Z, phh = TCAB.h * Z; let pad = 40, gapF = 20, ws;
   for (; pad >= 16; pad -= 4) { ws = M.map(m => Math.round(textW(m, "key") / FINE) + pad); if (ws.reduce((s, w) => s + w * FINE, 0) + gapF * (n - 1) <= pw - 24) break; }
   const tot = ws.reduce((s, w) => s + w * FINE, 0) + gapF * (n - 1); let x = Math.round(px0 + pw / 2 - tot / 2); const y = Math.round(py0 + phh / 2 - FX(ph) / 2);
   ctx.save(); ctx.globalAlpha = a;
+  if (flip < 1) { const u = flip - 1, sy = Math.max(.04, 1 + 2.7 * u * u * u + 1.7 * u * u), cyM = y + FX(ph) / 2; ctx.translate(0, cyM); ctx.scale(1, sy); ctx.translate(0, -cyM); }   // (the plates flip in: squashed flat, springing open)
   M.forEach((m, i) => { const w = ws[i], on = i === titleSel, mx = x + FX(w) / 2;
     if (on) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(mx, y + FX(ph) / 2, FX(w) * .7, "255,190,80", .32 * (.8 + .2 * Math.sin(frame / 10))); ctx.restore(); }
     ctx.drawImage(pushPlateCv(w, on, frame - titleSelF), x, y + (on ? 2 : 0), FX(w), FX(ph));
@@ -3356,7 +3363,7 @@ function floorBoardsDraw(ctx, top, hh) {   // dark wooden floorboards in the lam
   const v = ctx.createRadialGradient(CVW * .72, top, 10, CVW * .6, top, CVW * .7); v.addColorStop(0, "rgba(255,150,60,.16)"); v.addColorStop(1, "rgba(255,150,60,0)"); ctx.fillStyle = v; ctx.fillRect(0, top, CVW, hh);
 }
 function drawTitleMenu(a, top, hh) {
-  const S_ = MENU_STYLE, M = TITLE_MENU, n = M.length, best = bestLine(), cx = CVW / 2, pulse = .8 + .2 * Math.sin(frame / 10), arrowAt = (x, y) => { ctx.fillStyle = C.inkRed; ctx.beginPath(); ctx.moveTo(x, y - 9); ctx.lineTo(x + 13, y); ctx.lineTo(x, y + 9); ctx.fill(); };
+  const S_ = MENU_STYLE, M = titleItems(), n = M.length, best = bestLine(), cx = CVW / 2, pulse = .8 + .2 * Math.sin(frame / 10), arrowAt = (x, y) => { ctx.fillStyle = C.inkRed; ctx.beginPath(); ctx.moveTo(x, y - 9); ctx.lineTo(x + 13, y); ctx.lineTo(x, y + 9); ctx.fill(); };
   const kh = glyphCv("key", "S", C.ink).height;
   if (S_ === 1) {   // the game's bar with one parchment holding the list
     { const bw = Math.ceil(CVW / FINE), bh = Math.ceil(hh / FINE); octx.clearRect(0, 0, W, H); barStrip(octx, bw, bh); ctx.drawImage(over, 0, 0, bw, bh, 0, top, bw * FINE, bh * FINE); }
@@ -3414,7 +3421,7 @@ const HOW_CARDS = [
     setup() { S.score = S.shown = 18; S.words = 3; }, steps: [...[[30, 12], [58, 13], [86, 14], [114, 15]].flatMap(([t, i]) => howPick(i).map(([d, f]) => [t + d, f])), [170, () => tapTile(H5(15))]] },
   { title: "STUCK? RETUNE", keys: ["Y"], len: 270, text: "Press {Y}[[, tap the right knob,| or]] move right past the bottom rows onto the knob and press {A}, to swap every letter for new ones, once a night. The small light under that knob shows you still have it.",
     setup() {}, steps: [[80, () => retune()]] },
-  { title: "RADIO PARTS", keys: [], len: 330, text: "Clear a night to fit one of three radio parts: parts in the plain slots, keys in the velvet ones. That's all you need to play! Every rule, with examples, is in the Service Manual.",
+  { title: "RADIO PARTS", keys: [], len: 330, text: "Clear a night to fit one of three radio parts: parts in the plain slots, keys in the velvet ones. That's all you need to play! Every rule, with examples, is in the Service Manual under How to Play.",
     setup() { S.parts = ["battery", "echo"]; S.words = maxWords(); HOW.shop = true; nightClear(); HOW.shop = false; }, steps: [[70, () => { shopFocus = 1; Sound.click(); }], [140, () => { shopFocus = 2; Sound.click(); }], [210, () => { shopFocus = 0; Sound.click(); }]] },
 ];
 HOW_CARDS.forEach(c => { c.steps = c.steps.map(([t, f]) => [t, typeof f === "number" ? () => tapTile(f) : f]); });
@@ -3503,9 +3510,9 @@ function maybeReload() { if (buildReady) reloadBuild(); }
 // after a lost run, A goes back to the title menu, not straight into a new run (Chris 2026-11-16)
 function overToTitle() { howExit(); titleSel = 0; }
 function howExit() { HOW.on = false; S = fresh("title"); fillGrid(false); S.grid.forEach(t => t.ch = " "); "LEXICONSIGNAL".split("").forEach((ch, k) => { S.grid[H5([0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13][k])].ch = ch; });
-  titleT = 0; titleSkip = true; titleSel = 1; flyers = []; beams = []; busy = 0; pending = null; Sound.click(); }
+  titleT = 0; titleSkip = true; titleSel = 1; TSUB.on = false; flyers = []; beams = []; busy = 0; pending = null; Sound.click(); }
 function howKey(k) { if (!HOW.on) return false;
-  if (k === "a" || k === "right") { if (HOW.card < HOW_CARDS.length - 1) howGo(HOW.card + 1); else { howExit(); manOpen("title"); } }
+  if (k === "a" || k === "right") { if (HOW.card < HOW_CARDS.length - 1) howGo(HOW.card + 1); else howExit(); }
   else if (k === "b" || k === "left") { if (HOW.card > 0) howGo(HOW.card - 1); else howExit(); }
   else if (k === "start" || k === "select") howExit();
   return true; }
@@ -3577,7 +3584,7 @@ function drawHowCard() {
   let y = Y0 + th + 6; lines.forEach(s_ => { ftext(s_, X, y, "ink", C.ink, "l"); y += lh; });
   const last = HOW.card === n - 1; y += 10;
   ftext(TAPW() ? (HOW.card ? "TAP LEFT: BACK" : "TAP LEFT: TITLE") : btn(HOW.card ? "{B} BACK" : "{B} TITLE"), X, y, "ink", C.inkSoft, "l");
-  ftext((TAPW() ? "TAP RIGHT: " : btn("{A} ")) + (last ? "SERVICE MANUAL" : "NEXT") + ((frame >> 4) & 1 ? " >" : "  >"), cx0 + cw - IN, y, "ink", C.inkRed, "r");
+  ftext((TAPW() ? "TAP RIGHT: " : btn("{A} ")) + (last ? "DONE" : "NEXT") + ((frame >> 4) & 1 ? " >" : "  >"), cx0 + cw - IN, y, "ink", C.inkRed, "r");
   ctx.restore();
 }
 // a card's text for this player: [[touch words|button words]] picks the touch wording only when they're tapping, and {A} etc become the right buttons
@@ -3711,9 +3718,9 @@ const MAN_SECS = [
     ["note", "Every run builds a different radio. Try parts you've never fitted, and banish the ones that don't suit you."]] },
 ];
 const manTitle = (i) => { const t = MAN_SECS[i].t; return typeof t === "function" ? t() : t; };
-function manOpen(from) { MAN.on = true; MAN.from = from || "title"; MAN.sec = -1; MAN.sel = 0; MAN.y = MAN.ty = 0; MAN.cache = null; Sound.click(); }
-function manClose() { MAN.on = false; MAN.drag = null; Sound.click(); if (MAN.from === "pause") PAUSE.on = true; if (MAN.from === "title" && S.phase === "title") titleSel = Math.max(0, TITLE_MENU.indexOf("MANUAL")); }
-function manGo(i) { if (i < 0) { MAN.sel = Math.max(0, MAN.sec); MAN.sec = -1; MAN.y = MAN.ty = 0; } else { MAN.sec = i; MAN.y = MAN.ty = 0; } MAN.cache = null; Sound.click(); }
+function manOpen(from) { MAN.on = true; MAN.from = from || "title"; MAN.sec = -1; MAN.sel = 0; MAN.y = MAN.ty = 0; MAN.cache = null; Sound.paper(); }
+function manClose() { MAN.on = false; MAN.drag = null; Sound.click(); if (MAN.from === "pause") PAUSE.on = true; if (MAN.from === "title" && S.phase === "title") titleSel = Math.max(0, TITLE_MENU.indexOf("HOW TO PLAY")); }
+function manGo(i) { if (i < 0) { MAN.sel = Math.max(0, MAN.sec); MAN.sec = -1; MAN.y = MAN.ty = 0; } else { MAN.sec = i; MAN.y = MAN.ty = 0; } MAN.cache = null; Sound.paper(); }
 function manScroll(d) { MAN.ty = Math.max(0, Math.min(MAN.max, MAN.ty + d)); }
 function manKey(k) { if (!MAN.on) return false; const step = MLH() * 3;
   if (MAN.sec < 0) {
@@ -4340,7 +4347,7 @@ function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ?
   if (S.phase === "report") { if (dy) reportScroll(dy); return; }
   if (S.phase === "dying") { lossSkip(); return; }
   if (S.phase === "over") { if (dx || dy) { overSel = (overSel + (dx || dy) + 3) % 3; Sound.click(); } return; }
-  if (S.phase === "title" && TS === 6 && (dy || dx)) { dy = dy || dx; if (titleBusy()) return; titleSel = (titleSel + dy + TITLE_MENU.length) % TITLE_MENU.length; Sound.click(); return; }
+  if (S.phase === "title" && TS === 6 && (dy || dx)) { dy = dy || dx; if (titleBusy()) return; const nI = titleItems().length; titleSel = (titleSel + dy + nI) % nI; Sound.click(); return; }
   if (S.phase === "shop") { const n = shopChoices.length, pk = plateKinds().length;
     if (tokMenuKey(dk)) return;
     if (pk && dy) { shopFocus = dy > 0 ? (shopFocus >= n ? shopFocus : n) : Math.min(shopFocus, n - 1); Sound.click(); return; }   // down to the plates (reroll / banish, melt), up back to the cards
@@ -4364,7 +4371,7 @@ function start() { if (buildReady) return maybeReload(); Sound.ensure(); Sound.m
 // buttons (Chris 2026-11-12: a four-button game, Start pauses, Select doesn't mute): A pick / send, B back, X send the word, Y retune,
 // Start pause (and pick on menus), Select nothing (held: dev mode). Keyboard: Z/Space/Enter A, X/Backspace B, C/R retune (Y), V send (X), Esc/P pause.
 function pressA() { if (devKey("a")) return; if (manKey("a")) return; if (lossSkip()) return; if (pauseKey("a")) return; if (boardKey("a")) return; if (howKey("a")) return; if (inspectKey("a")) return; if (knobKey("a")) return; if (cardKey("a")) return; if (tokMenuKey("a")) return; Sound.ensure(); usingButtons = true; if (dismissCard()) return; if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return overChoose(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "trade") return tradeConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
-function pressB() { if (devKey("b")) return; if (manKey("b")) return; if (lossSkip()) return; if (pauseKey("b")) return; if (boardKey("b")) return; if (howKey("b")) return; if (inspectKey("a")) return; if (knobKey("b")) return; if (cardKey("b")) return; if (tokMenuKey("b")) return; if (nightHold) return void dismissCard(); if (S.phase === "melt") return meltDone(); if (S.phase === "swap") return swapCancel(); if (S.phase === "trade") return tradeGiveUp(); if (S.phase === "play") back(); }
+function pressB() { if (devKey("b")) return; if (manKey("b")) return; if (lossSkip()) return; if (pauseKey("b")) return; if (boardKey("b")) return; if (howKey("b")) return; if (inspectKey("a")) return; if (knobKey("b")) return; if (cardKey("b")) return; if (tokMenuKey("b")) return; if (nightHold) return void dismissCard(); if (S.phase === "title" && TSUB.on) return titleSub(false); if (S.phase === "melt") return meltDone(); if (S.phase === "swap") return swapCancel(); if (S.phase === "trade") return tradeGiveUp(); if (S.phase === "play") back(); }
 function pressX() { if (devKey("x")) return; if (PAUSE.on || HOW.on || MAN.on) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play" && S.path.length) send(); else pressA(); }
 function pressY() { if (devKey("y")) return; if (PAUSE.on || HOW.on || MAN.on) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play") retune(); else if (S.phase === "report") reportToggle(); else if (S.phase === "shop" && REROLL_STYLE === 4 && !TOKM.banish) { if (TOKM.open) TOKM.open = false; else tokMenuOpen(); } }   // (Y opens the reroll / banish menu)
 function pressStart() { if (devKey("start")) return; if (manKey("start")) return; if (pauseKey("start")) return; if (boardKey("start")) return; if (howKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return overChoose(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "trade") return tradeConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); if (S.phase === "play") pauseOpen(); }
@@ -4400,7 +4407,7 @@ cv.addEventListener("pointerdown", (e) => {
   if (HOW.on) { howKey(p.x < W / 2 ? "b" : "a"); return; }
   if (lossSkip()) return;
   if (S.phase === "over") { const inR = (r) => r && p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h, k = OVERUI.findIndex(inR); if (k >= 0) { overSel = k; overChoose(); } else if (overT2 < OVER_READY) overT2 = OVER_READY; return; }
-  if (titleBusy()) return; if (S.phase === "title") { const fy = p.y * FINE, fx = p.x * FINE, hit = TS === 6 && titleHits.find(r => fy >= r.y0 && fy <= r.y1 && (r.x0 == null || (fx >= r.x0 && fx <= r.x1))); titleChoose(hit ? hit.i : 0); return; } if (S.phase === "over") { overToTitle(); return; }
+  if (titleBusy()) return; if (S.phase === "title") { const fy = p.y * FINE, fx = p.x * FINE, hit = TS === 6 && titleHits.find(r => fy >= r.y0 && fy <= r.y1 && (r.x0 == null || (fx >= r.x0 && fx <= r.x1))); if (!hit && TSUB.on) return titleSub(false); titleChoose(hit ? hit.i : 0); return; } if (S.phase === "over") { overToTitle(); return; }
   if (S.phase === "play" && !REQZ.open && reqOpen() && REQZ.rect && !nightHold) { const fx = p.x * FINE, fy = p.y * FINE, r = REQZ.rect; if (fx >= r.x0 && fx <= r.x1 && fy >= r.y0 && fy <= r.y1) { reqZoom(true); return; } }
   if (S.phase === "swap") { const k = slotAt(p);
     if (k >= 0 && swapOk(partSlots()[k])) { if (swapFocus === k || usingTouch) swapConfirm(k); else swapFocus = k; }
