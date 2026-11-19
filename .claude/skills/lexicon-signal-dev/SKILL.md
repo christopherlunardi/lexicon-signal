@@ -706,3 +706,4 @@ the same batch.
 - Ice at rest: ICE_REST = 4, ice blocks with the blue key's level meter (Chris picked it 2026-11-18; keep it clear of the green key).
 - The blue key's chip (Chris 2026-11-18): a bright rim marks the blue key apart from frozen keys, and the chip sits on that rim like a tag, on the top edge (bottom edge on the top row), so it never reads as the key below's.
 - release.py refuses to build when code follows a // comment on the same line (the melter plate's draw was cut off that way 2026-11-17, which hid the picker's plates on every screen).
+- The power-down (loss look 1) takes every key's extras with it, key by key (lossGone(i)): glows, the blue key's rim and tag, the green key's charge, the red key's ring; tags flash off with their key (lossChips). Anything new drawn for a key must check lossGone too (Chris 2026-11-18).

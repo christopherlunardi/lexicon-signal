@@ -1300,6 +1300,10 @@ function powerUpdate() { if (!S.powerOff) return; if (powerT < 0) { if (S.phase 
 function powerLamps() { const t = powerT; if (t < 0) return 0; if (POWER === 1) return Math.min(6, Math.max(0, Math.floor((t - 26) / 6) + 1)); if (POWER === 2) return t >= 60 ? 6 : 0; return Math.min(6, Math.max(0, Math.floor((t - 6) / 8) + 1)); }
 function powerGlass() { const t = powerT; if (t < 0) return 0; if (POWER === 1) return Math.min(1, t / 50); if (POWER === 2) return Math.min(1, t / 70); return Math.min(1, t / 60); }
 let endT = 0, endOD = false;
+// the power-down takes the glass key by key: lossGone(i) once key i has gone dark (and for good after a loss), so everything that
+// belongs to a key (its glow, the blue key's rim and tag, the green key's charge, the red key's ring) goes dark with it (Chris 2026-11-18)
+const lossGone = (i) => !!LOSS && !HOW.on && (S.phase === "over" || (S.phase === "dying" && LOSS === 1 && lossT >= 6 + lossOrd.indexOf(i) * 2.8));
+let lossChips = {};   // (where each key's tag was last drawn, so it flashes off with its key)
 let dangerT = 0, lossT = 0, beaconKill = 0, overSel = 0, overT2 = 0, lossOrd = [], lossCols = [], OVERUI = [];
 // the last word, with the tube still short: the warning runs (it starts once the turn before it is over)
 const inDanger = () => S.phase === "play" && !HOW.on && S.words === 1 && S.score < S.target && !S.ending;
@@ -2365,7 +2369,7 @@ function drawIce(tiles) {
     if (BS === 4) { frostCorner(x + 4, y + 4, 1, 1, Math.min(w, h) * .16 * age, .8); }
   }
   iceLookDraw(tiles, b);
-  if (b && !blueHid(b.t)) { const d = iceMood.d, r = iceMood.r, IL = ICE_LOOK, v4 = keyLv("blue") >= 4, born = blueMove && blueMove.to === b.t ? Math.min(1, (blueMove.t - BM_SHOW) / 22) : 1, tw = .5 + .5 * Math.sin(frame * .3);
+  if (b && !blueHid(b.t) && !lossGone(b.i)) { const d = iceMood.d, r = iceMood.r, IL = ICE_LOOK, v4 = keyLv("blue") >= 4, born = blueMove && blueMove.to === b.t ? Math.min(1, (blueMove.t - BM_SHOW) / 22) : 1, tw = .5 + .5 * Math.sin(frame * .3);
     // the chip: what the blue key pays now. Danger: it trembles with the key, struck out (look 3: it blinks what you'd drop to, look 4: it goes dark). Reward: it lights up.
     const warn = d > .3 && !v4, drop = warn && IL === 3 && (frame >> 3) & 1, txt = "x" + (drop ? 2 : blueX()), sc = 1 + (IL === 3 ? .22 : .1) * r * (.6 + .4 * tw), cw = Math.round(Math.max(30, textW(txt, "ink") + 14) * sc), ch = Math.round(22 * TK * sc), cx = b.x + b.w - cw + 6, cy = blueAt() < N ? b.y + b.hh - Math.round(ch / 2) : b.y - Math.round(ch / 2);   // (the chip sits on the key's own frame, on its top edge, or its bottom edge on the top row, so it reads as the blue key's tag: Chris 2026-11-18)
     if (REST) iceRestBlue(b, born);
@@ -2377,6 +2381,7 @@ function drawIce(tiles) {
     // the blue key's frame: a bright blue rim that marks it apart from the frozen keys, with the chip fixed on it like a tag
     ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(b.cx, b.cy, Math.max(b.w, b.hh) * .62, "80,160,255", .16 + .05 * Math.sin(frame / 14)); ctx.restore();
     ctx.strokeStyle = rim; ctx.lineWidth = 3; ctx.beginPath(); ctx.roundRect(b.x + 1.5, b.y + 1.5, b.w - 3, b.hh - 3, 8); ctx.stroke();
+    lossChips.blue = { i: b.i, x: cx - 3, y: cy - 3, w: cw + 6, h: ch + 6 };
     ctx.fillStyle = r > .3 ? (IL === 4 ? "#0a2440" : "#e6f6ff") : "#06101c"; ctx.beginPath(); ctx.roundRect(cx, cy, cw, ch, 6); ctx.fill(); ctx.strokeStyle = rim; ctx.lineWidth = 2; ctx.stroke();
     ftext(txt, cx + cw / 2, cy + Math.round((ch - 14 * TK) / 2), "ink", r > .3 ? (IL === 4 ? "#ffffff" : "#06203a") : warn && IL === 3 ? "#ff8a60" : warn ? "#9aa8b6" : "#a8dcff", "c");
     if (warn && IL !== 3) { ctx.strokeStyle = "#e8f0f8"; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx + 4, cy + ch - 5); ctx.lineTo(cx + cw - 4, cy + 5); ctx.stroke(); }
@@ -2510,7 +2515,7 @@ function iceFxDraw() { const IL = ICE_LOOK, W2 = FX(L.tw), H2 = FX(L.th);
     if (land >= 0) { iceRing(x1, y1, land * 1.4, 14, 64, "170,220,255", 4); if (IL === 3) { iceRing(x1, y1, land * 1.4 - .2, 14, 90, "150,205,255", 3); if (land < .2) { ctx.fillStyle = `rgba(210,238,255,${.7 * (1 - land / .2)})`; ctx.beginPath(); ctx.roundRect(x1 - W2 / 2 + 3, y1 - H2 / 2 + 3, W2 - 6, H2 - 6, 7); ctx.fill(); } }
       bloom(x1, y1, 80, "140,200,255", .7 * (1 - land) * (IL === 4 && land < .5 && ((q.t >> 2) & 1) ? .15 : 1)); }
     ctx.restore(); } }
-function blueGlow() { if (!has("blue") || S.phase === "title") return; const b = blueAt(); if (b < 0) return; const c = tileC(b), t = S.grid[b], m = iceMood, lk = ICE_LOOK === 4 ? 1 : .4;
+function blueGlow() { if (!has("blue") || S.phase === "title") return; const b = blueAt(); if (b < 0 || lossGone(b)) return; const c = tileC(b), t = S.grid[b], m = iceMood, lk = ICE_LOOK === 4 ? 1 : .4;
   // (the rest looks: the blue key's light grows with what it holds, slowly breathing; look 5 lights the frozen keys more)
   const IR = BLUE_STYLE === 4 ? ICE_REST : 0, q = IR ? irCharge(b) : null, rad = IR ? 56 + 16 * q.heat + 8 * q.dk : 56, ga = IR ? .2 + .04 * Math.sin(frame / 38) + .03 * q.n + .05 * q.dk : .2 + .05 * Math.sin(frame / 14) + .03 * iceN();
   if (!blueHid(t)) bloom(FX(c.x), FX(c.y + (t.yOff || 0)), rad, "90,170,255", ga * (1 - .85 * lk * m.d) * (blueMove && blueMove.to === t ? clamp01((blueMove.t - BM_SHOW) / 22) : 1));
@@ -2528,6 +2533,7 @@ function drawGreenKey(p, x, y, w, h, on, f) { const k = greenK(), GS = GREEN_STY
     ctx.fillStyle = "#06140a"; ctx.beginPath(); ctx.arc(ex, ey, 3, 0, 6.283); ctx.fill(); }
   if (on && GS !== 1) { ctx.strokeStyle = "rgba(216,255,226,.9)"; ctx.lineWidth = 2; ctx.beginPath(); ctx.roundRect(x + 1, y + 1, w - 2, h - 2, 8); ctx.stroke(); }
   const txt = String(S.tap || 0), cw = Math.max(26, textW(txt, "ink") + 14), ch = Math.round(22 * TK), cx = x + w - cw + 10, cy = y - ch + 8;
+  if (lossGone(TAP_I)) { ctx.restore(); return; } lossChips.green = { i: TAP_I, x: cx - 3, y: cy - 3, w: cw + 6, h: ch + 6 };
   ctx.fillStyle = "#06140a"; ctx.beginPath(); ctx.roundRect(cx, cy, cw, ch, 6); ctx.fill(); ctx.strokeStyle = GD; ctx.lineWidth = 2; ctx.stroke(); ctx.restore();
   ftext(txt, cx + cw / 2, cy + Math.round((ch - 14 * TK) / 2), "ink", f > 0 ? "#eaffef" : GR, "c"); }
 function drawPlayArea() {
@@ -2540,7 +2546,7 @@ function drawPlayArea() {
   iceMoodStep(tiles);
   PA_DRAW[KS - 6]({ G, tiles, ok, low, last, play });
   drawIce(tiles); bonusMarks(tiles);
-  if (KS !== 10) for (const o of tiles) if (o.t.hot) { ctx.strokeStyle = (frame >> 3) & 1 ? "#ff3a2e" : "#ff8060"; ctx.lineWidth = 3; ctx.shadowColor = "#ff3a2e"; ctx.shadowBlur = 14; rr(ctx, o.x - 1, o.y - 2, o.w + 1, o.hh + 2, 9); ctx.stroke(); ctx.shadowBlur = 0; }
+  if (KS !== 10) for (const o of tiles) if (o.t.hot && !lossGone(o.i)) { ctx.strokeStyle = (frame >> 3) & 1 ? "#ff3a2e" : "#ff8060"; ctx.lineWidth = 3; ctx.shadowColor = "#ff3a2e"; ctx.shadowBlur = 14; rr(ctx, o.x - 1, o.y - 2, o.w + 1, o.hh + 2, 9); ctx.stroke(); ctx.shadowBlur = 0; }
   dangerGlass(G, tiles); lossGlass(G, tiles); powerGlassDraw(G);
   // a night that's over: no cursor, and the glass dims while the night wraps up, so it doesn't look like you can still play (Chris 2026-11-16)
   if (S.ending && (S.phase === "play" || S.phase === "dying")) { ctx.fillStyle = `rgba(4,2,1,${Math.min(.45, (frame - S.ending) / 30 * .45)})`; ctx.fillRect(G.x, G.y, G.w, G.h); }
@@ -2559,7 +2565,7 @@ const PA_RGB = ["255,130,40", "120,255,170", "255,120,40", "255,180,80", "255,15
 function paGlows(okNow) {
   const g = L.glass, rgb = PA_RGB[KS - 6];
   // a key's glow fades out once it is above the glass, so letters falling in don't light the wood above (Chris 2026-11-18)
-  S.grid.forEach((t, i) => { if (!t || t.ch === " ") return; const c = tileC(i), lit = t.lit || 0, hot = okNow && lit > .5, vis = clamp01((c.y + t.yOff - g.y) / (L.th / 2) + 1); if (vis <= 0) return; const ga0 = ctx.globalAlpha; ctx.globalAlpha = ga0 * vis;
+  S.grid.forEach((t, i) => { if (!t || t.ch === " " || lossGone(i)) return; const c = tileC(i), lit = t.lit || 0, hot = okNow && lit > .5, vis = clamp01((c.y + t.yOff - g.y) / (L.th / 2) + 1); if (vis <= 0) return; const ga0 = ctx.globalAlpha; ctx.globalAlpha = ga0 * vis;
     if (t.wild && KS === 10) { if (GOLD_STYLE) gkGlow(t, c); else bloom(FX(c.x), FX(c.y + t.yOff), 52, "255,210,70", .3 * (.8 + .2 * Math.sin(frame / 7))); }
     else if (gkNow.gild && lit > .5) bloom(FX(c.x), FX(c.y + t.yOff), 58, GK.rgb, .24);
     if (t.hot && KS === 10 && !(GOLD_STYLE && t.wild)) { const big = REDPOP === 1 || REDPOP === 6, br2 = .8 + .2 * Math.sin(frame / 9 + i);
@@ -2634,7 +2640,7 @@ function drawGlows() {
   L.lamps.forEach((p, k) => { if (k < lit) bloom(FX(p.x), FX(p.y), 34, S.words === 1 && S.phase === "play" ? "255,70,50" : "255,190,90", .5); });
   const d = L.dial, okNow = S.phase === "play" && S.path.length >= 3 && isValid();
   bloom(FX(d.x + d.w / 2), FX(d.y + d.h / 2), FX(d.w * .6), "255,170,70", okNow ? .3 : .12);
-  const sel = new Set(S.path); if (PA()) paGlows(okNow); else S.grid.forEach((t, i) => { if (!t) return; const c = tileC(i);
+  const sel = new Set(S.path); if (PA()) paGlows(okNow); else S.grid.forEach((t, i) => { if (!t || lossGone(i)) return; const c = tileC(i);
     if (sel.has(i)) bloom(FX(c.x), FX(c.y + t.yOff), 56, okNow ? "255,225,150" : "255,170,70", .35);
     else if (KS === 2 || KS === 3) bloom(FX(c.x), FX(c.y + t.yOff), 34, "255,130,40", .08); });
   for (const f of flyers) if (f.t > 0) { const q = flyPos(f); if (q.u < .95) bloom(FX(q.x), FX(q.y), f.gold ? 52 : 40, f.gold ? GK.rgb : "255,200,110", f.gold ? .6 : .45); }
@@ -4224,7 +4230,8 @@ function drawDanger() { if (!dangerT || DANGER !== 3) return; const f = Math.min
 function lossGlass(G, tiles) { if (S.phase === "over" && LOSS && !HOW.on) { ctx.fillStyle = "rgba(4,2,1,.9)"; ctx.fillRect(G.x, G.y, G.w, G.h); return; }   // (after a loss the glass stays dark behind the game over screen)
   if (S.phase !== "dying" || LOSS !== 1) return;
   for (const o of tiles) { const d = lossT - (6 + lossOrd.indexOf(o.i) * 2.8); if (d < 0) continue; ctx.fillStyle = "rgba(6,3,2,.93)"; ctx.fillRect(o.x - 2, o.y - 2, o.w + 4, o.hh + 4);
-    if (d < 7) { ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(255,236,200,${.7 * (1 - d / 7)})`; ctx.fillRect(o.x, o.y, o.w, o.hh); ctx.restore(); } }
+    const chips = Object.values(lossChips).filter(c => c.i === o.i);   // its tag (the blue key's x, the green key's charge) goes with it
+    if (d < 7) { ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(255,236,200,${.7 * (1 - d / 7)})`; ctx.fillRect(o.x, o.y, o.w, o.hh); for (const c of chips) ctx.fillRect(c.x, c.y, c.w, c.h); ctx.restore(); } }
   if (lossT > 76) { ctx.fillStyle = `rgba(4,2,1,${Math.min(.9, (lossT - 76) / 20)})`; ctx.fillRect(G.x, G.y, G.w, G.h); } }
 function lossDial(cols) { const t = lossT, GL = "#%&*@?!/<>=+ABCDEFGHKMNRSTXZ0123456789";
   if (LOSS === 1) { if (t < 70) { if (Math.random() < .15) return null; let s = ""; for (let i = 0; i < cols; i++) s += Math.random() < .25 ? " " : GL[(Math.random() * GL.length) | 0]; return { s, col: Math.random() < .3 ? C.redHot : C.amber }; }
