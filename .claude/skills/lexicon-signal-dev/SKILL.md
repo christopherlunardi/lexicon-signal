@@ -699,7 +699,7 @@ the same batch.
   printed like an old receiver's service booklet: cream paper, black and red ink, numbered sections, ruled tables, line drawings.
   Open from HOW TO PLAY on the title (its plates flip over to THE BASICS / SERVICE MANUAL, TSUB; B or a tap off them flips back;
   Chris 2026-11-18: the title menu stays three plates), or the pause menu (SERVICE MANUAL; the run stays paused).
-  Contents: up/down + A; a section: up/down read, left/right turn the page, B contents. Touch: tap a line, drag, tap PREV/CONTENTS/NEXT.
+  Contents: up/down + A opens a section; in a section up/down reads and B goes back (no left/right: Chris 2026-11-18). Touch: tap a line, drag to read, tap CONTENTS.
   Small screens (phone shell, Retroid) get bigger print (manSize: BK/HK).
 - KEEP IT TRUE: tables come from the game's numbers (STACK, KEY_LADDER, KEY_MORE, VALUES, REQ_PAY, targetFor), but the words and the
   worked examples are hand-written: every rule or number change updates the section it touches in the same batch.
