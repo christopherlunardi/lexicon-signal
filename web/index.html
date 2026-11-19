@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 227;</script><script>
+<script>window.LEX_BUILD = 228;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -3621,22 +3621,22 @@ const MAN_SECS = [
       ["READ A SLOT", "Tap a slot, or press down past the bottom row of keys."]], [.32, .68]]] },
   { t: "SCORING", b: () => { const g = {}; for (const [ch, v] of Object.entries(VALUES)) if (ch !== "?") (g[v] = g[v] || []).push(ch.toUpperCase()); return [
     ["p", "Every word is worked out from three things:"],
-    ["list", ["SIGNAL: 2, plus what each letter is worth. Every word carries those 2, so short words still count.", "BOOST: the number of letters past the second. A 3-letter word has 1, a 5-letter word has 3.", "MULTIPLIERS: the x2s and x3s from keys and parts. They multiply each other."]],
-    ["p", "SCORE = SIGNAL x BOOST x MULTIPLIERS. Two things add on top afterwards: the green key's charge and a filled request."],
+    ["list", ["SIGNAL: 2, plus what each letter is worth. Every word carries those 2, so short words still count.", "LENGTH: the letters past the second. A 3-letter word counts 1, a 5-letter word counts 3. Some parts make words score as if they were longer.", "MULTIPLIERS: the x2s and x3s from keys and parts. They multiply each other."]],
+    ["p", "SCORE = SIGNAL x LENGTH x MULTIPLIERS. Two things add on top afterwards: the green key's charge and a filled request."],
     ["h", "LETTER VALUES"],
     ["p", "Every key shows what its letter is worth as dots."],
     ["tbl", Object.keys(g).sort((a, b) => a - b).map(v => [v + " SIGNAL", g[v].join(" ")]), [.32, .68]],
     ["note", "The gold key is worth 0 until it reaches level 2 (section 7)."],
     ["h", "WORKED EXAMPLES"],
-    ["ex", "STAR, NO PARTS", [["SIGNAL", "2 + 1+1+1+1 = 6"], ["BOOST", "4 LETTERS - 2 = 2"], ["SCORE", "6 x 2 = 12"]]],
-    ["ex", "QUEST", [["SIGNAL", "2 + 7+1+1+1 = 12"], ["BOOST", "5 LETTERS (QU IS 2) = 3"], ["SCORE", "12 x 3 = 36"]]],
-    ["ex", "JOKER THROUGH THE RED KEY, WITH A TUBE AMP AND A TREBLE SLIDER", [["SIGNAL", "2 + 6+1+4+1+1 = 15"], ["TREBLE SLIDER", "+5 FOR J, +5 FOR K = 25"], ["BOOST", "3, +1 FROM THE AMP = 4"], ["RED KEY", "x2"], ["SCORE", "25 x 4 x 2 = 200"]]],
+    ["ex", "STAR, NO PARTS", [["SIGNAL", "2 + 1+1+1+1 = 6"], ["LENGTH", "4 LETTERS - 2 = 2"], ["SCORE", "6 x 2 = 12"]]],
+    ["ex", "QUEST", [["SIGNAL", "2 + 7+1+1+1 = 12"], ["LENGTH", "5 LETTERS (QU IS 2) = 3"], ["SCORE", "12 x 3 = 36"]]],
+    ["ex", "JOKER THROUGH THE RED KEY, WITH A TUBE AMP AND A TREBLE SLIDER", [["SIGNAL", "2 + 6+1+4+1+1 = 15"], ["TREBLE SLIDER", "+5 FOR J, +5 FOR K = 25"], ["LENGTH", "3, 1 LONGER FROM THE AMP = 4"], ["RED KEY", "x2"], ["SCORE", "25 x 4 x 2 = 200"]]],
     ["h", "WHAT ADDS WHERE"],
     ["tbl", [["TO SIGNAL", "Treble Slider, Vowel Antenna, the red key from level 2, the gold key from level 2."],
-      ["TO BOOST", "Tube Amp, Fine Tuning Knob (each retune still in hand), Signal Meter."],
+      ["LONGER", "Tube Amp, Fine Tuning Knob (1 letter for each retune still in hand), Signal Meter."],
       ["MULTIPLIERS", "Long Wave Coil, Shortwave Crystal, Pilot Lamp, Night Owl Clock, the red key, the blue key."],
       ["ON TOP", "The green key's charge, a filled request."]], [.32, .68]],
-    ["p", "Signal and boost add up inside themselves, then everything multiplies. So a part that adds signal and one that adds boost help each other more than two of the same kind."]]; } },
+    ["p", "Signal and length add up inside themselves, then everything multiplies. So a part that adds signal and one that makes words longer help each other more than two of the same kind."]]; } },
   { t: "OVERDRIVE AND CARRY-OVER", b: () => [
     ["p", "Clearing a night is only the start. Beam more than the target and the radio pays you for it."],
     ["fig", "tube", "FIG. 4  HOW FULL THE TUBE GETS, AGAINST THE NIGHT'S TARGET."],
@@ -3698,10 +3698,10 @@ const MAN_SECS = [
   { t: () => manReq() ? "REQUESTS" : "[PAGES MISSING]", b: () => manReq() ? [
     ["p", "With the Stranger's Hat fitted, a caller leaves a request card at the window. It waits on the sill, night after night, until a word fills it; then the next caller brings a new one at the start of a night. As you trace, the card lights the letters your word matches."],
     ["p", TAPW() ? "Tap the card to read it up close." : btn("From the bottom rows, press left past the first column to reach the card, then {A} to read it.")],
-    ["p", "A word that fills a request keeps its lamp. It pays its plain score (signal x boost) again, several times over, added on top: it doesn't multiply the other multipliers."],
+    ["p", "A word that fills a request keeps its lamp. It pays its plain score (signal x length) again, several times over, added on top: it doesn't multiply the other multipliers."],
     ["tbl", [["THE REQUEST", "PAYS"], ...[["LETTERS TOGETHER (2, LATER 3 OR 4)", "chunk"], ["A RARE LETTER", "letter"], ["A LONG WORD (5+ LETTERS, LATER 6+ AND 7+)", "long"], ["A DOUBLE LETTER, LIKE LL", "double"], ["4+ LETTERS THROUGH THE RED KEY (LATER 5+)", "red"], ["3 VOWELS OR MORE (LATER 4)", "vowels"], ["STARTS AND ENDS WITH THE SAME LETTER", "ends"], ["A SONG TITLE, SPELLED EXACTLY", "word"]].map(([a, k]) => [a, "x" + REQ_PAY[k]])], [.74, .26], true],
     ["p", "Every extra Stranger's Hat adds +2 to every request."],
-    ["ex", "STAR FILLS 'SOMETHING WITH AR IN IT' (x5)", [["PLAIN SCORE", "SIGNAL 6 x BOOST 2 = 12"], ["THE REQUEST", "12 x 4 MORE = 48"], ["SCORE", "12 + 48 = 60"]]]] : [
+    ["ex", "STAR FILLS 'SOMETHING WITH AR IN IT' (x5)", [["PLAIN SCORE", "SIGNAL 6 x LENGTH 2 = 12"], ["THE REQUEST", "12 x 4 MORE = 48"], ["SCORE", "12 + 48 = 60"]]]] : [
     ["p", "These pages have been torn out of the manual. Someone has pencilled a note in the margin: 'Ask the hat.'"],
     ["note", "Fit the Stranger's Hat once and this section turns up again."]] },
   { t: "THE END OF A RUN", b: () => [
