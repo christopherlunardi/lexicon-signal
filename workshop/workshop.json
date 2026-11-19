@@ -3319,6 +3319,31 @@
        "sound": true
       }
      ]
+    },
+    {
+     "id": "r2",
+     "status": "open",
+     "question": "Your idea: the dial blinks between reverse print and normal while the word holds. Does it read?",
+     "found": "Option 1's warm glow stays round the dial, and the dial itself swaps between reverse print (lit field, dark letters) and normal every half second, like a blinking cursor, for as long as the letters make a word. It stops the moment the word breaks. Same busy glass and the same moves as round 1, with a longer hold on the word so you see several blinks. Tap Play with sound.",
+     "options": [
+      {
+       "id": "7",
+       "title": "Reverse blink",
+       "note": "",
+       "images": [
+        {
+         "src": "img/wordok-r2/wordok-7.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/wordok-r2/wordok-7.jpg",
+         "label": "A word, held"
+        }
+       ],
+       "play": "play.html#test-icerest-over-wordok-7",
+       "sound": true
+      }
+     ]
     }
    ]
   }

@@ -1506,15 +1506,16 @@ function dialAttention(d, age, rgb) { const cx = FX(d.x + d.w / 2), cy = FX(d.y 
    Additions only; everything that already shows a good word stays. WORDOK 0 = as now. 1 dial lock-on (the dial flashes lit twice, then
    glows while the word holds), 2 tuning eye (a green tuning tube on the cabinet above the right grille closes when a word tunes in), 3 send
    lamp (a lamp sign above the left grille strikes on like neon), 4 focus lock (corner brackets snap in round the glass), 5 hot path (the trace
-   goes white-hot and the word's keys beat together), 6 send tag (a lit SEND tag on the last letter, where A sends). `#wordok-N`. */
+   goes white-hot and the word's keys beat together), 6 send tag (a lit SEND tag on the last letter, where A sends), 7 reverse blink (Chris's round 2 idea: option 1's glow, and the dial
+   swaps between reverse print and normal at a cursor's blink while the word holds). `#wordok-N`. */
 let WORDOK = 0; { const m = location.hash.match(/wordok-(\d)/); if (m) WORDOK = +m[1]; }
 let wok = 0, wokOn = 0;   // (wok eases 0..1 with a good word; wokOn counts frames since it became good)
 function wordOkFx() { if (!WORDOK || HOW.on) return; const play = S.phase === "play" && !S.ending && !dialFlash, ok = play && S.path.length >= 3 && isValid();
   wokOn = ok ? wokOn + 1 : 0; wok += ((ok ? 1 : 0) - wok) * (ok ? .35 : .2); if (wok < .01 && !play) return;
   const d = L.dial, dx = FX(d.x), dy = FX(d.y), dw = FX(d.w), dh = FX(d.h), age = wokOn, pu = .6 + .4 * Math.sin(frame / 6);
   ctx.save();
-  if (WORDOK === 1) {   // dial lock-on
-    if (ok && age < 14 && ((age / 3) | 0) % 2 === 0) { ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = "rgba(255,190,90,.55)"; ctx.fillRect(dx, dy, dw, dh); }
+  if (WORDOK === 1 || WORDOK === 7) {   // dial lock-on (7: no opening flashes; the dial itself blinks into reverse print, see drawDial)
+    if (WORDOK === 1 && ok && age < 14 && ((age / 3) | 0) % 2 === 0) { ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = "rgba(255,190,90,.55)"; ctx.fillRect(dx, dy, dw, dh); }
     ctx.globalCompositeOperation = "lighter"; bloom(dx + dw / 2, dy + dh / 2, dw * .72, "255,190,90", .42 * pu * wok); bloom(dx + dw / 2, dy + dh / 2 + FX(30), dw * 1.15, "255,190,90", .16 * pu * wok);
     ctx.strokeStyle = `rgba(255,214,140,${.8 * wok * pu})`; ctx.lineWidth = 3; ctx.strokeRect(dx - 4, dy - 4, dw + 8, dh + 8); }
   else if (WORDOK === 2) {   // tuning eye: a round green tube set into the cabinet right of the dial; its dark wedge closes on a word
@@ -1560,6 +1561,9 @@ function drawDial() {
   { const lit = ok || (dialFlash && !dialFlash.bad), key = cols + (lit ? "on" : "off"); let g = dialDots.get(key);   // the unlit dot field, drawn once and kept (it was 1,600 little squares a frame)
     if (!g) { g = document.createElement("canvas"); g.width = cols * 18; g.height = 21; const x = g.getContext("2d"); x.fillStyle = lit ? C.dotDim : C.dotOff; for (let cx = 0; cx < cols * 6; cx++) for (let r = 0; r < 7; r++) if (cx % 6 < 5) x.fillRect(cx * 3, r * 3, 2, 2); dialDots.set(key, g); }
     ctx.drawImage(g, x0, y0); }
+  // (wordok 7: while the word is good the dial swaps to reverse print and back, at a cursor's blink: lit field, dark letters)
+  const inv = WORDOK === 7 && ok && ((Math.max(0, wokOn - 1) / 30) | 0) % 2 === 0, INK = "#2a0d04";
+  if (inv) { ctx.fillStyle = "#ffbe5a"; ctx.fillRect(FX(d.x), FX(d.y), FX(d.w), FX(d.h)); }
   let s = "", col = C.amber, blink = false;
   if (S.phase === "over" && LOSS === 1 && !HOW.on) { ctx.restore(); return; }
   if (S.powerOff && !dialFlash) { if (POWER === 2 && powerT >= 0 && powerT < 60) { const f = (88 + powerT / 60 * 9.6).toFixed(1) + " FM"; ftextDot(f, x0 + Math.max(0, Math.floor((cols - f.length) / 2)) * 18, y0, C.amber); } ctx.restore(); return; }   // (the dial stays dead after the power-down)
@@ -1573,12 +1577,12 @@ function drawDial() {
     const num = (ok ? "+" : "") + Math.round(dialVal) + (PACE === 3 && paceNeed() ? "/" + paceNeed() : ""), gain = S.path.length && cand >= 0 ? "+" + (nxt - cur) : "";
     const room = cols - num.length - (gain ? gain.length + 1 : 0) - 1, w = pathWord(S.path).toUpperCase();
     const chW = w.length + (cand >= 0 ? (S.grid[cand].ch === "Qu" ? 2 : 1) : 0), sh = Math.max(0, chW - room);
-    ftextDot(w.slice(Math.min(sh, w.length)), x0, y0, ok ? C.hot : C.amber);
-    const pv = ok ? C.selFill : C.dotDim;   // preview color: dim, but still readable on the lit display
+    ftextDot(w.slice(Math.min(sh, w.length)), x0, y0, inv ? INK : ok ? C.hot : C.amber);
+    const pv = inv ? "#7a3a14" : ok ? C.selFill : C.dotDim;   // preview color: dim, but still readable on the lit display
     if (cand >= 0) ftextDot(S.grid[cand].ch.toUpperCase(), x0 + Math.max(0, w.length - sh) * 18, y0, pv);
     if (gain) ftextDot(gain, x0 + (cols - num.length - 1 - gain.length) * 18, y0, pv);
     const keeps = PACE !== 3 || !paceNeed() || target >= paceNeed();   // (pace look 3: a sendable word below pace stays amber)
-    ftextDot(num, x0 + (cols - num.length) * 18, y0, ok && keeps ? C.hot : S.path.length ? C.amber : C.dotDim);
+    ftextDot(num, x0 + (cols - num.length) * 18, y0, inv ? INK : ok && keeps ? C.hot : S.path.length ? C.amber : C.dotDim);
     if (REQ === 2 && reqMet(S.path) && (frame >> 3) & 1) ftextDot("REQ", x0 + (cols - num.length - 4) * 18, y0, "#ff4630");
   }
   else if (!dialFlash) { const msg = S.phase === "title" ? `  ${tipNow()} *` : S.phase === "play" ? (inDanger() ? `  LAST WORD *  NEED ${S.target - S.shown} *` : REQ === 2 && S.req ? `  REQUEST: ${S.req.text} *  ${S.target - S.shown} TO GO *` : PACE === 3 && paceNeed() ? `  NEED ${paceNeed()} A WORD * ${S.target - S.shown} TO GO * ${S.words} WORD${S.words === 1 ? "" : "S"} LEFT *` : `  ${freqFor(S.night).toFixed(1)} FM * NIGHT ${S.night} * REACH ${S.target} * SCORE ${S.total} *`) : `  ${freqFor(S.night).toFixed(1)} FM *`;
