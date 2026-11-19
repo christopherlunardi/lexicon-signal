@@ -7,6 +7,9 @@ import base64, datetime, hashlib, json, pathlib, re, sys
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 bt = ROOT / "tools/build.txt"; build = (int(bt.read_text().strip()) if bt.exists() else 0) + 1; bt.write_text(str(build) + "\n")
 page = (ROOT / "index.html").read_text()
+# a // comment in the middle of a line silently cuts off the code after it (it hid the part picker's plates once): refuse to release
+bad = [n for n, l in enumerate(page.split("\n"), 1) if re.search(r";\s+// \([^)]*\)\s*[^\s/]", l)]
+if bad: sys.exit("code after a // comment on line(s) " + ", ".join(map(str, bad)) + " of index.html: move the comment to the end")
 b64 = lambda p: base64.b64encode((ROOT / p).read_bytes()).decode()
 assets = {"atlasJson": json.loads((ROOT / "art/pixel/atlas.json").read_text()), "atlasPng": "data:image/png;base64," + b64("art/pixel/atlas.png"),
           "glassJson": json.loads((ROOT / "art/title/glass.json").read_text()), "glassLit": "data:image/png;base64," + b64("art/title/glass-lit.png"),

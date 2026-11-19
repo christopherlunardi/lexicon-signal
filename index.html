@@ -2213,7 +2213,7 @@ let tapFlash = 0;
    GREEN_STYLE: 0 the old gold ring, 1 green ring, 2 green letter + soft glow, 3 charge level (green light rises in the key as the
    charge grows), 4 magic eye (a little tuning eye in the key's corner opens as it charges), 5 breathing (a green glow that breathes
    faster and brighter as it charges). The charge chip shows the number in every style. */
-let GREEN_STYLE = 1;   // (Chris picked 1, the green ring, 2026-11-15) { const m = location.hash.match(/green-(\d)/); if (m) GREEN_STYLE = Math.min(5, +m[1]); }
+let GREEN_STYLE = 1; { const m = location.hash.match(/green-(\d)/); if (m) GREEN_STYLE = Math.min(5, +m[1]); }   // (Chris picked 1, the green ring, 2026-11-15)
 const greenOn = () => has("tap") && GREEN_STYLE > 0 && S.grid[TAP_I];
 const greenK = () => 1 - 1 / (1 + (S.tap || 0) / 25);   // how full the charge looks: 0 empty, about .5 at 25, toward 1
 function greenGlow() { if (!greenOn() || !["play", "report", "shop", "swap", "upgrade", "melt"].includes(S.phase)) return; const c = tileC(TAP_I), t = S.grid[TAP_I], k = greenK(), f = tapFlash / 40, cx = FX(c.x), cy = FX(c.y + (t.yOff || 0));
@@ -2231,7 +2231,7 @@ function drawTapRing() { if (!has("tap") || !["play", "report", "shop", "swap", 
    2 ice block (a clear block of ice with a bright edge and a highlight), 3 rime (white frost grows in from the corners, no film),
    4 blue letters (frozen letters turn icy blue, a small crystal), 5 frost web (a light film, and frost lines join each frozen key to
    the blue key). The blue key itself: a cold blue letter, a blue glow, and what it pays now on a small chip (x2 + the frozen keys). */
-let BLUE_STYLE = 4;   // (Chris picked 4, blue letters, 2026-11-16) { const m = location.hash.match(/blue-(\d)/); if (m) BLUE_STYLE = Math.min(5, +m[1]); }
+let BLUE_STYLE = 4; { const m = location.hash.match(/blue-(\d)/); if (m) BLUE_STYLE = Math.min(5, +m[1]); }   // (Chris picked 4, blue letters, 2026-11-16)
 function frostCorner(cx, cy, dx, dy, len, a) {   // a little frost sprig: a stem and its side shoots, from a corner inward
   ctx.strokeStyle = `rgba(235,248,255,${a})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + dx * len, cy + dy * len);
   for (let k = 1; k <= 3; k++) { const px = cx + dx * len * k / 4, py = cy + dy * len * k / 4, s2 = len * (.4 - k * .08); ctx.moveTo(px, py); ctx.lineTo(px + dx * s2, py); ctx.moveTo(px, py); ctx.lineTo(px, py + dy * s2); } ctx.stroke(); }
@@ -3843,7 +3843,7 @@ function meltPlate() { const G = shopGeom(), w0 = Math.min(W - 24, 260), hh = R(
    and MELT when it's open), each showing the stock as lamps; 2 a tuning dial at the lower right, its lamps round the rim, with a red
    BANISH tab on the chosen case; 3 brass tokens in the top corner and a red BANISH tab on the chosen case, one REROLL plate under the
    cases. Y rerolls, X banishes the chosen card (or tap). The stock: S.tokens. */
-let REROLL_STYLE = 4;   // (Chris picked plates like MELT THEM, 2026-11-16, as ONE plate that opens a small menu: style 4) { const m = location.hash.match(/reroll-(\d)/); if (m) REROLL_STYLE = Math.min(3, +m[1]); }
+let REROLL_STYLE = 4; { const m = location.hash.match(/reroll-(\d)/); if (m) REROLL_STYLE = Math.min(3, +m[1]); }   // (Chris picked plates like MELT THEM, 2026-11-16, as ONE plate that opens a small menu: style 4)
 let SHOPUI = { reroll: null, banish: null };
 // the plates under the cards: REROLL / BANISH (it opens a small menu), then MELT THEM when it's open. d-pad down reaches them
 const plateKinds = () => HOW.on || S.phase !== "shop" ? [] : REROLL_STYLE === 4 ? ["tokens", ...(meltOpen() ? ["melt"] : [])] : meltOpen() ? ["melt"] : [];
@@ -3923,7 +3923,8 @@ function drawShopTokens(G, geo) { SHOPUI = { reroll: null, banish: null, tokens:
 function meltLamps(cx, cy, r, step, lit, flash) { for (let k = 0; k < MELT_N; k++) { const x = cx + (k - (MELT_N - 1) / 2) * step, on = k < lit;
     ctx.fillStyle = "#140a05"; ctx.beginPath(); ctx.arc(x, cy, r + 3, 0, 6.283); ctx.fill(); ctx.fillStyle = on ? (k === lit - 1 && flash ? "#fff6d8" : "#ff8a24") : "#3a1f10"; ctx.beginPath(); ctx.arc(x, cy, r, 0, 6.283); ctx.fill();
     if (on) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(x, cy, r * 4, "255,140,40", .4); ctx.restore(); } } }
-function drawMeltPlate() { if (!meltOpen() || TOKM.open) return;   // (hidden while the reroll / banish menu is open, Chris 2026-11-17) const m = meltPlate(), on = !TOKM.open && !TOKM.banish && shopFocus === shopChoices.length + Math.max(0, plateKinds().indexOf("melt")), r = R("iconL_melter"), ih = m.h - 8, s = ih / r[3];
+// the melter plate (hidden while the reroll / banish menu is open, Chris 2026-11-17)
+function drawMeltPlate() { if (!meltOpen() || TOKM.open) return; const m = meltPlate(), on = !TOKM.open && !TOKM.banish && shopFocus === shopChoices.length + Math.max(0, plateKinds().indexOf("melt")), r = R("iconL_melter"), ih = m.h - 8, s = ih / r[3];
   ctx.save();
   if (on) { ctx.globalCompositeOperation = "lighter"; bloom(FX(m.x + m.w / 2), FX(m.y + m.h / 2), FX(m.w) * .6, "255,170,70", .3); ctx.globalCompositeOperation = "source-over"; }
   ctx.drawImage(pushPlateCv(m.w, on, frame), FX(m.x), FX(m.y), FX(m.w), FX(m.h));
@@ -4090,7 +4091,7 @@ function velvet(w, h) { const k = w + "x" + h; if (velvetCache[k]) return velvet
   x.putImageData(id, 0, 0); return (velvetCache[k] = cv); }
 /* the key slots' velvet tone (Chris 2026-11-16: the deepened red sank into the cherry wood around it). VELVET: 0 as it was (deepened
    red), 1 brighter crimson, 2 wine (red turned toward plum), 3 midnight blue, 4 bottle green. #velvet-N */
-let VELVET = 1;   // (Chris picked 1, brighter crimson, 2026-11-16) { const m = location.hash.match(/velvet-(\d)/); if (m) VELVET = Math.min(4, +m[1]); }
+let VELVET = 1; { const m = location.hash.match(/velvet-(\d)/); if (m) VELVET = Math.min(4, +m[1]); }   // (Chris picked 1, brighter crimson, 2026-11-16)
 function velvetTone(c, x, y, w, h) { c.save();
   if (VELVET === 0) { c.fillStyle = "rgba(12,2,6,.42)"; c.fillRect(x, y, w, h); }
   if (VELVET === 1) { c.globalCompositeOperation = "color"; c.fillStyle = "rgb(200,20,60)"; c.fillRect(x, y, w, h); c.globalCompositeOperation = "screen"; c.fillStyle = "rgba(60,0,20,1)"; c.fillRect(x, y, w, h); }
