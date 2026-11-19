@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 242;</script><script>
+<script>window.LEX_BUILD = 243;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -3982,6 +3982,10 @@ function banishTab(g, G) {   // a red tab hanging off the top of the chosen case
   ctx.fillStyle = S.tokens > 0 ? "#b0261a" : "#4a1a14"; ctx.beginPath(); ctx.roundRect(FX(x), FX(y), FX(w), FX(h), 6); ctx.fill(); ctx.restore();
   const lab = TAPW() ? "BANISH" : btn("{X} BANISH"), sc = Math.min(1, (FX(w) - 16) / textW(lab, "ink")); ctx.save(); ctx.translate(FX(x + w / 2), FX(y) + Math.round((FX(h) - 14 * TK * sc) / 2)); ctx.scale(sc, sc);
   ftext(lab, 0, 0, "ink", "#ffe0c8", "c"); ctx.restore(); SHOPUI.banish = { x, y, w, h }; }
+// the reroll / banish menu's control line goes under the cases; where the plate row sits right under them (short screens) it would
+// print over the plates, so it takes the title's place at the top instead (Chris 2026-11-19, seen on the Retroid)
+const menuHint = () => TOKM.open ? [TAPW() ? "TAP ONE, OR TAP AWAY TO CLOSE" : btn("LEFT / RIGHT   {A} CHOOSE   {B} BACK"), C.gold] : TOKM.banish ? [TAPW() ? "TAP A CARD TO BANISH IT" : btn("PICK A CARD TO BANISH   {A} BANISH   {B} BACK"), "#ff6a50"] : null;
+const menuTight = (G) => { const row = tokenRow(); return !!row && FX(G.y0 + G.ch) + 8 + Math.round(18 * TK) > FX(row[0].y); };
 function drawShopTokens(G, geo) { SHOPUI = { reroll: null, banish: null, tokens: null, menu: null }; if (HOW.on) return; const fx = SHOPFX, pr = fx ? Math.max(0, 1 - fx.t / 14) : 0;
   const row = tokenRow();
   if (row && REROLL_STYLE === 4 && !TOKM.open) row.forEach((r, j) => { if (r.kind !== "tokens") return; const on = !TOKM.open && !TOKM.banish && shopFocus === shopChoices.length + j;
@@ -3992,8 +3996,8 @@ function drawShopTokens(G, geo) { SHOPUI = { reroll: null, banish: null, tokens:
       if (on) { ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(FX(b.x + w / 2), FX(b.y + hh / 2), FX(w) * .6, "255,170,70", .35); ctx.restore(); }
       ctx.drawImage(pushPlateCv(w, on, frame), FX(b.x), FX(b.y), FX(w), FX(hh)); const sc = Math.min(1, (FX(w) - 24) / textW(lab, "ink")); ctx.save(); ctx.translate(FX(b.x + w / 2), FX(b.y) + Math.round((FX(hh) - 14 * TK) / 2) - 2); ctx.scale(sc, sc);
       ftext(lab, 0, 0, "ink", on ? "#3a1806" : C.ink, "c", { under: C.brassHi, uy: 2 }); ctx.restore(); return b; });
-    ftext(TAPW() ? "TAP ONE, OR TAP AWAY TO CLOSE" : btn("LEFT / RIGHT   {A} CHOOSE   {B} BACK"), FX(W / 2), FX(G.y0 + G.ch) + 8, "ink", C.gold, "c", { outline: C.dark }); }
-  if (TOKM.banish) { ftext(TAPW() ? "TAP A CARD TO BANISH IT" : btn("PICK A CARD TO BANISH   {A} BANISH   {B} BACK"), FX(W / 2), FX(G.y0 + G.ch) + 8, "ink", "#ff6a50", "c", { outline: C.dark });
+    if (!menuTight(G)) ftext(TAPW() ? "TAP ONE, OR TAP AWAY TO CLOSE" : btn("LEFT / RIGHT   {A} CHOOSE   {B} BACK"), FX(W / 2), FX(G.y0 + G.ch) + 8, "ink", C.gold, "c", { outline: C.dark }); }
+  if (TOKM.banish) { if (!menuTight(G)) ftext(TAPW() ? "TAP A CARD TO BANISH IT" : btn("PICK A CARD TO BANISH   {A} BANISH   {B} BACK"), FX(W / 2), FX(G.y0 + G.ch) + 8, "ink", "#ff6a50", "c", { outline: C.dark });
     if (shopFocus < shopChoices.length) { const g = geo(shopFocus); ctx.save(); ctx.strokeStyle = (frame >> 3) & 1 ? "#ff4a32" : "#ffb0a0"; ctx.lineWidth = 4; ctx.beginPath(); ctx.roundRect(FX(g.x) - 6, FX(g.y) - 6, FX(G.cw) + 12, FX(G.ch) + 12, 9); ctx.stroke(); ctx.restore(); } }
   if (row && REROLL_STYLE !== 4) row.forEach(r => { if (r.kind === "reroll") { tokenPlate(r, TAPW() ? "REROLL" : btn("{Y} REROLL"), fx && fx.kind === "reroll" ? pr : 0); SHOPUI.reroll = r; }
     if (r.kind === "banish") { tokenPlate(r, TAPW() ? "BANISH" : btn("{X} BANISH"), fx && fx.kind === "banish" ? pr : 0); SHOPUI.banish = r; } });
@@ -4253,7 +4257,7 @@ function drawShop() {
   if (shopTop.k !== tk) { shopTop.k = tk; shopTop.cv.width = CVW; shopTop.cv.height = CVH; const c = shopTop.cv.getContext("2d"); c.imageSmoothingEnabled = false; TXT = c;
     shopChoices.forEach((p, k) => { const g = geo(k), r = R(iconOf(p.id));
       c.drawImage(atlasImg, r[0], r[1], r[2], r[3], FX(g.x + G.cw / 2 - r[2] / 2), FX(g.y + 14 + (64 - r[3]) / 2), FX(r[2]), FX(r[3])); });
-    ftext(S.over2 ? (S.picks > 1 ? (TK > 1 ? "DOUBLE OVERDRIVE: PICK TWO" : `DOUBLE OVERDRIVE ON NIGHT ${S.night}! PICK TWO`) : "PICK ONE MORE") : S.over ? (TK > 1 ? "OVERDRIVE: KEY GUARANTEED" : `OVERDRIVE ON NIGHT ${S.night}! KEY GUARANTEED`) : TK > 1 ? "FIT A RADIO PART" : `NIGHT ${S.night} LOCKED IN. FIT A RADIO PART`, FX(W / 2), 22, "ink", S.over ? C.redHot : C.hot, "c", { outline: C.dark });
+    { const mh = menuHint(); if (mh && menuTight(G)) ftext(mh[0], FX(W / 2), 22, "ink", mh[1], "c", { outline: C.dark }); else ftext(S.over2 ? (S.picks > 1 ? (TK > 1 ? "DOUBLE OVERDRIVE: PICK TWO" : `DOUBLE OVERDRIVE ON NIGHT ${S.night}! PICK TWO`) : "PICK ONE MORE") : S.over ? (TK > 1 ? "OVERDRIVE: KEY GUARANTEED" : `OVERDRIVE ON NIGHT ${S.night}! KEY GUARANTEED`) : TK > 1 ? "FIT A RADIO PART" : `NIGHT ${S.night} LOCKED IN. FIT A RADIO PART`, FX(W / 2), 22, "ink", S.over ? C.redHot : C.hot, "c", { outline: C.dark }); }
     shopChoices.forEach((p, k) => { const g = geo(k), cx = FX(g.x + G.cw / 2), lh = Math.round(20 * TK), maxW = FX(G.cw) - 48;
       // name: stamped on the plate (smaller lettering if a long name needs it)
       const nl = nameLines(p), PH = plH(p), top = FX(g.py) + Math.round((FX(PH) - (nl.length - 1) * lh - 14 * TK) / 2) - 1;
