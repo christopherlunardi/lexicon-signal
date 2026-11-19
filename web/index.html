@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 229;</script><script>
+<script>window.LEX_BUILD = 230;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -3592,8 +3592,8 @@ function howText(t) { return btn(t.replace(/\[\[([^|\]]*)\|?([^\]]*)\]\]/g, (m, 
 /* ---------- SERVICE MANUAL (title menu, the pause menu, and the end of How to Play; Chris 2026-11-18) ----------
    How to Play stays short: just enough to play. The Service Manual holds every rule in depth, with worked examples, printed like an
    old receiver's service booklet: cream paper, black and red ink, numbered sections, ruled tables and line drawings. Contents first
-   (up/down, A opens), then a section (up/down read, left/right turn the page, B back to the contents). Touch: tap a line, drag to
-   read, tap PREV / NEXT / CONTENTS. KEEP IT TRUE: the tables come from the game's own numbers (STACK, KEY_LADDER, VALUES, REQ_PAY,
+   (up/down, A opens), then a section (up/down read, B back to the contents). Touch: tap a line, drag to
+   read, tap CONTENTS. KEEP IT TRUE: the tables come from the game's own numbers (STACK, KEY_LADDER, VALUES, REQ_PAY,
    targetFor), but the words are hand-written: every rule change updates the section it touches in the same batch. */
 // bigger print where the screen is small (a phone in the handheld shell, the Retroid): the body in the stamped size, heads in key letters
 let BK = "ink", HK = "ink3"; const MLH = () => Math.round((BK === "ink" ? 22 : 33) * TK);
@@ -3725,13 +3725,11 @@ function manScroll(d) { MAN.ty = Math.max(0, Math.min(MAN.max, MAN.ty + d)); }
 function manKey(k) { if (!MAN.on) return false; const step = MLH() * 3;
   if (MAN.sec < 0) {
     if (k === "up" || k === "down") { MAN.sel = (MAN.sel + (k === "up" ? MAN_SECS.length - 1 : 1)) % MAN_SECS.length; Sound.tickMove(); }
-    else if (k === "a" || k === "right") manGo(MAN.sel);
-    else if (k === "b" || k === "start" || k === "left") manClose();
+    else if (k === "a") manGo(MAN.sel);
+    else if (k === "b" || k === "start") manClose();
     return true; }
   if (k === "up" || k === "down") manScroll(k === "up" ? -step : step);
-  else if (k === "right" || k === "a") manGo(MAN.sec < MAN_SECS.length - 1 ? MAN.sec + 1 : -1);
-  else if (k === "left") manGo(MAN.sec > 0 ? MAN.sec - 1 : -1);
-  else if (k === "b") manGo(-1);
+  else if (k === "b") manGo(-1);   // (no left / right page turning: A opens a section, B closes it, Chris 2026-11-18)
   else if (k === "start") manClose();
   return true; }
 // touch: tap a contents line, drag to read, tap the footer's PREV / CONTENTS / NEXT
@@ -3832,10 +3830,7 @@ function drawManual() { manSize();
   if (MAN.sec < 0) {
     const l = tap ? "< CLOSE" : btn("{B} CLOSE"), r = tap ? "TAP A LINE TO OPEN" : btn("{A} OPEN");
     ftext(l, X, fy, BK, MP.red, "l"); hit(px, px + pw / 3, manClose); ftext(r, X + w, fy, BK, MP.soft, "r"); }
-  else { const n = MAN_SECS.length, pv = MAN.sec > 0 ? "< " + (MAN.sec) + ". PREV" : "< CONTENTS", nx = MAN.sec < n - 1 ? "NEXT " + (MAN.sec + 2) + ". >" : "CONTENTS >";
-    ftext(pv, X, fy, BK, MP.red, "l"); hit(px, px + pw / 3, () => manGo(MAN.sec > 0 ? MAN.sec - 1 : -1));
-    ftext(tap ? "CONTENTS" : btn("{B} CONTENTS"), X + w / 2, fy, BK, MP.soft, "c"); hit(px + pw / 3, px + pw * 2 / 3, () => manGo(-1));
-    ftext(nx, X + w, fy, BK, MP.red, "r"); hit(px + pw * 2 / 3, px + pw, () => manGo(MAN.sec < n - 1 ? MAN.sec + 1 : -1));
+  else { ftext(tap ? "< CONTENTS" : btn("{B} CONTENTS"), X, fy, BK, MP.red, "l"); hit(px, px + pw / 2, () => manGo(-1)); ftext(tap ? "DRAG TO READ" : "UP / DOWN TO READ", X + w, fy, BK, MP.soft, "r");
   }
   ctx.restore(); }
 function drawTitleOld() {
