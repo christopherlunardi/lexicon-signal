@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 230;</script><script>
+<script>window.LEX_BUILD = 231;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -867,8 +867,11 @@ function makeOffers(reroll) { const was = new Set(reroll ? shopChoices.map(p => 
   const all = PARTS.filter(p => !p.key && notBanned(p)), n = S.over ? 4 : 3, fr = all.filter(p => !was.has(p.id)), bag = fr.length >= n ? fr : all; shopChoices = [];
   while (shopChoices.length < n && bag.length) shopChoices.push(bag.splice((Math.random() * bag.length) | 0, 1)[0]);
   const kg = keyGroups(), lv = fresh(kg.lv), nw = fresh(kg.nw), spots = shopChoices.map((_, i) => i).sort(() => Math.random() - .5);
-  if (S.over) { const ks = [nw.length && pick1(nw), lv.length && pick1(lv)].filter(Boolean); ks.forEach((p, j) => { if (spots[j] != null) shopChoices[spots[j]] = p; }); if (!reroll) S.keyDry = 0; }
-  else if ((lv.length || nw.length) && Math.random() < KEY_ODDS + (S.keyDry || 0) * KEY_ODDS_UP) { shopChoices[spots[0]] = pick1(nw.length && lv.length ? (Math.random() < .5 ? nw : lv) : nw.length ? nw : lv); if (!reroll) S.keyDry = 0; }
+  const onlyRed = !PARTS.some(p => p.key && p.id !== "red" && has(p.id)), nw2 = [...nw].sort(() => Math.random() - .5);
+  if (S.over) { const ks = (onlyRed && nw2.length >= 2 ? [nw2[0], nw2[1]] : [nw.length && pick1(nw), lv.length && pick1(lv)]).filter(Boolean); ks.forEach((p, j) => { if (spots[j] != null) shopChoices[spots[j]] = p; }); if (!reroll) S.keyDry = 0; }
+  // new keys first (Chris 2026-11-19: keys came too slowly early on): while the red key is your only key, a key card is always a new key
+  else if ((lv.length || nw.length) && Math.random() < KEY_ODDS + (S.keyDry || 0) * KEY_ODDS_UP) {
+    shopChoices[spots[0]] = pick1(onlyRed && nw.length ? nw : nw.length && lv.length ? (Math.random() < .5 ? nw : lv) : nw.length ? nw : lv); if (!reroll) S.keyDry = 0; }
   else if (!reroll) S.keyDry = (S.keyDry || 0) + 1; }
 // rerolls and banishes (Chris 2026-11-16): one shared stock, S.tokens: 3 at the start of a run, +1 for every overdrive. A reroll deals
 // a new set of cards; a banish takes the chosen card out of this run for good and deals one in its place. Y rerolls, X banishes.
@@ -1206,7 +1209,7 @@ function draw() {
   wctx.drawImage(barCv, 0, L.barY); drawBarLive();
   ctx.drawImage(world, 0, 0, W * FINE, H * FINE);
   if (POP === 1 || POP === 5) popScoreShadow();   // (under every light: lamps, glows and letters all draw after it)
-  ctx.save(); ctx.translate(sx * FINE, 0); drawRain(); drawDial(); drawLamps(); drawKeyLetters(); drawGlows(); drawFlyers(); ctx.restore();
+  ctx.save(); ctx.translate(sx * FINE, 0); drawRain(); drawDial(); drawLamps(); drawKeyLetters(); drawGlows(); drawFlyers(); wordOkFx(); ctx.restore();
   if (overT > 0) { ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(255,40,24,${.42 * overT * (.6 + .4 * Math.sin(frame / 2))})`; ctx.fillRect(0, 0, CVW, CVH); ctx.restore(); overT = Math.max(0, overT - .012); }
   drawScoreDrums(); drawReqSlip(); if (POP === 2 || POP === 5) popRims(); if (POP === 3) popKeylines();
   drawBarText(); drawReqZoom(); drawDanger(); LAST_SX = sx; drawLoss(sx); if (nightCard > 0 && S.phase === "play" && !HOW.on) { if (INTRO) { drawIntro(); introT++; if (!nightHold) nightCard--; } else { drawNightCard(); nightCard--; } }
@@ -1499,6 +1502,54 @@ function dialAttention(d, age, rgb) { const cx = FX(d.x + d.w / 2), cy = FX(d.y 
   if (DIALFX === 2 || DIALFX === 5) { const pu = .55 + .45 * Math.sin(age * .35); ctx.save(); ctx.globalCompositeOperation = "lighter"; bloom(cx, cy, FX(d.w) * .75, rgb, .47 * pu * fade); bloom(cx, cy, FX(d.w) * 1.3, rgb, .19 * pu * fade); ctx.restore(); }
   if (DIALFX === 4) { const pu = .5 + .5 * Math.sin(age * .4); ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.strokeStyle = `rgba(${rgb},${.85 * pu * fade})`; ctx.lineWidth = 4; ctx.strokeRect(FX(d.x) - 6, FX(d.y) - 6, FX(d.w) + 12, FX(d.h) + 12);
     ctx.strokeStyle = `rgba(${rgb},${.3 * pu * fade})`; ctx.lineWidth = 12; ctx.strokeRect(FX(d.x) - 8, FX(d.y) - 8, FX(d.w) + 16, FX(d.h) + 16); ctx.restore(); if (age === 1) shake = Math.max(shake, 5); } }
+/* ---------- WORD READY: Workshop topic "wordok" (Chris 2026-11-19: with a lot going on it's hard to tell a word is good to send).
+   Additions only; everything that already shows a good word stays. WORDOK 0 = as now. 1 dial lock-on (the dial flashes lit twice, then
+   glows while the word holds), 2 tuning eye (a green tuning tube on the cabinet above the right grille closes when a word tunes in), 3 send
+   lamp (a lamp sign above the left grille strikes on like neon), 4 focus lock (corner brackets snap in round the glass), 5 hot path (the trace
+   goes white-hot and the word's keys beat together), 6 send tag (a lit SEND tag on the last letter, where A sends). `#wordok-N`. */
+let WORDOK = 0; { const m = location.hash.match(/wordok-(\d)/); if (m) WORDOK = +m[1]; }
+let wok = 0, wokOn = 0;   // (wok eases 0..1 with a good word; wokOn counts frames since it became good)
+function wordOkFx() { if (!WORDOK || HOW.on) return; const play = S.phase === "play" && !S.ending && !dialFlash, ok = play && S.path.length >= 3 && isValid();
+  wokOn = ok ? wokOn + 1 : 0; wok += ((ok ? 1 : 0) - wok) * (ok ? .35 : .2); if (wok < .01 && !play) return;
+  const d = L.dial, dx = FX(d.x), dy = FX(d.y), dw = FX(d.w), dh = FX(d.h), age = wokOn, pu = .6 + .4 * Math.sin(frame / 6);
+  ctx.save();
+  if (WORDOK === 1) {   // dial lock-on
+    if (ok && age < 14 && ((age / 3) | 0) % 2 === 0) { ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = "rgba(255,190,90,.55)"; ctx.fillRect(dx, dy, dw, dh); }
+    ctx.globalCompositeOperation = "lighter"; bloom(dx + dw / 2, dy + dh / 2, dw * .72, "255,190,90", .42 * pu * wok); bloom(dx + dw / 2, dy + dh / 2 + FX(30), dw * 1.15, "255,190,90", .16 * pu * wok);
+    ctx.strokeStyle = `rgba(255,214,140,${.8 * wok * pu})`; ctx.lineWidth = 3; ctx.strokeRect(dx - 4, dy - 4, dw + 8, dh + 8); }
+  else if (WORDOK === 2) {   // tuning eye: a round green tube set into the cabinet right of the dial; its dark wedge closes on a word
+    const gl = L.glass, r = FX(8), ex = FX(gl.x + gl.w + 30), ey = FX(gl.y + 3), tr = play && S.path.length > 0, lit = !play ? .18 : tr ? .55 + .45 * wok : .32;
+    ctx.fillStyle = "#3a2410"; ctx.beginPath(); ctx.arc(ex, ey, r + 6, 0, 6.283); ctx.fill(); ctx.strokeStyle = "#c89a4a"; ctx.lineWidth = 3; ctx.stroke();
+    ctx.fillStyle = "#06120a"; ctx.beginPath(); ctx.arc(ex, ey, r, 0, 6.283); ctx.fill();
+    const open = (tr ? 1.15 : 1.5) * (1 - wok) + .05 * wok + (tr && !ok ? .12 * Math.sin(frame / 3) * .3 : 0), a0 = -Math.PI / 2 + open / 2, a1 = -Math.PI / 2 - open / 2 + 6.283;
+    const gr = ctx.createRadialGradient(ex, ey, r * .25, ex, ey, r); gr.addColorStop(0, `rgba(40,120,70,${lit})`); gr.addColorStop(1, `rgba(120,255,160,${lit})`);
+    ctx.fillStyle = gr; ctx.beginPath(); ctx.moveTo(ex, ey); ctx.arc(ex, ey, r - 2, a0, a1); ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "#0a1a0f"; ctx.beginPath(); ctx.arc(ex, ey, r * .3, 0, 6.283); ctx.fill();
+    ctx.globalCompositeOperation = "lighter"; bloom(ex, ey, r * 3, "110,255,150", .12 + .38 * wok * pu); if (ok && age < 8) bloom(ex, ey, r * 5, "160,255,190", .5 * (1 - age / 8)); }
+  else if (WORDOK === 3) {   // send lamp: a lamp sign on the cabinet left of the dial; it strikes on like neon when the word is good
+    const gl = L.glass, pw = textW("SEND", "ink") + 14, ph = glyphCv("ink", "N", "#000").height + 10, px = FX(gl.x - 30) - pw / 2, py = FX(gl.y + 3) - ph / 2, strike = ok && age < 16 ? [1, 0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1][age] : ok ? 1 : 0, on = strike * Math.max(.75, pu);
+    ctx.fillStyle = "#2a160a"; ctx.beginPath(); ctx.roundRect(px - 4, py - 4, pw + 8, ph + 8, 6); ctx.fill(); ctx.strokeStyle = "#c89a4a"; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = on ? `rgba(255,${70 + 40 * on},40,1)` : "#3a0e08"; ctx.beginPath(); ctx.roundRect(px, py, pw, ph, 4); ctx.fill();
+    ftext("SEND", px + pw / 2, py + (ph - glyphCv("ink", "N", "#000").height) / 2, "ink", on ? "#2a0804" : "#5a2416", "c");
+    if (on) { ctx.globalCompositeOperation = "lighter"; bloom(px + pw / 2, py + ph / 2, pw * 1.1, "255,80,40", .45 * on); } }
+  else if (WORDOK === 4) {   // focus lock: four brackets fly in to the glass's corners and hold, with a quick rim flash
+    const g = L.glass, gx = FX(g.x), gy = FX(g.y), gw = FX(g.w), gh = FX(g.h), e = ok ? 1 - Math.pow(1 - Math.min(1, age / 7), 3) : wok, off = (1 - e) * FX(26) + 2, len = FX(16), a = ok ? .55 + .45 * pu : wok;
+    if (a > .02) { ctx.globalCompositeOperation = "lighter"; ctx.strokeStyle = `rgba(255,224,160,${a})`; ctx.lineWidth = 5; ctx.lineCap = "square";
+      for (const [sx, sy] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) { const cx = sx < 0 ? gx - off : gx + gw + off, cy = sy < 0 ? gy - off : gy + gh + off;
+        ctx.beginPath(); ctx.moveTo(cx - sx * len, cy); ctx.lineTo(cx, cy); ctx.lineTo(cx, cy - sy * len); ctx.stroke(); bloom(cx, cy, FX(14), "255,200,120", .3 * a); }
+      if (ok && age < 10) { ctx.strokeStyle = `rgba(255,240,200,${.7 * (1 - age / 10)})`; ctx.lineWidth = 4; ctx.strokeRect(gx, gy, gw, gh); } } }
+  else if (WORDOK === 5) {   // hot path: the trace goes white-hot and thick, and the word's keys beat together
+    if (wok > .02 && S.path.length) { const beat = Math.pow(Math.max(0, Math.sin(frame / 7)), 6), pts = S.path.map(i => { const c = tileC(i), t = S.grid[i]; return [FX(c.x), FX(c.y + (t ? t.yOff : 0))]; });
+      ctx.globalCompositeOperation = "lighter"; ctx.lineJoin = ctx.lineCap = "round";
+      for (const [lw, al] of [[18, .18], [7, .55], [3, .95]]) { ctx.strokeStyle = `rgba(255,245,215,${al * wok})`; ctx.lineWidth = lw; ctx.beginPath(); pts.forEach(([x, y], k) => k ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke(); }
+      const tw = FX(L.tw), th = FX(L.th); pts.forEach(([x, y]) => { ctx.strokeStyle = `rgba(255,236,190,${(.35 + .6 * beat) * wok})`; ctx.lineWidth = 3 + 3 * beat; ctx.strokeRect(x - tw / 2 + 2, y - th / 2 + 2, tw - 4, th - 4); bloom(x, y, tw * (.7 + .3 * beat), "255,220,150", .22 * beat * wok); }); } }
+  else if (WORDOK === 6) {   // send tag on the last letter (where A sends); tap screens say TAP
+    if (wok > .02 && S.path.length) { const i = S.path[S.path.length - 1], c = tileC(i), t = S.grid[i], txt = TAPW() ? "TAP" : "SEND", gh = glyphCv("ink", "N", "#000").height, cw = textW(txt, "ink") + 16, ch = gh + 10;
+      const top = ((i / N) | 0) === N - 1, bob = Math.sin(frame / 5) * 2, x = FX(c.x) - cw / 2, y = top ? FX(c.y + (t ? t.yOff : 0)) - FX(L.th) / 2 - ch + 6 + bob : FX(c.y + (t ? t.yOff : 0)) + FX(L.th) / 2 - 6 + bob, e = ok ? Math.min(1, age / 5) : wok;
+      ctx.globalAlpha = e; ctx.fillStyle = "rgba(0,0,0,.5)"; ctx.beginPath(); ctx.roundRect(x + 2, y + 3, cw, ch, 5); ctx.fill();
+      ctx.fillStyle = (frame >> 4) & 1 ? "#ffd27a" : "#ffe9b8"; ctx.beginPath(); ctx.roundRect(x, y, cw, ch, 5); ctx.fill(); ctx.strokeStyle = "#7a3f12"; ctx.lineWidth = 2; ctx.stroke();
+      ftext(txt, x + cw / 2, y + 5, "ink", "#3a1606", "c"); ctx.globalCompositeOperation = "lighter"; bloom(x + cw / 2, y + ch / 2, cw, "255,200,110", .3 * pu); } }
+  ctx.restore(); }
 function drawDial() {
   // lit dot-matrix display: every dot position faintly visible, lit dots bright with a dim halo
   const d = L.dial, cols = Math.floor((FX(d.w) - 8 + 3) / 18), x0 = FX(d.x) + Math.floor((FX(d.w) - (cols * 18 - 3)) / 2), y0 = FX(d.y) + Math.round((FX(d.h) - 21) / 2);
@@ -3647,7 +3698,7 @@ const MAN_SECS = [
   { t: "OVERDRIVE AND CARRY-OVER", b: () => [
     ["p", "Clearing a night is only the start. Beam more than the target and the radio pays you for it."],
     ["fig", "tube", "FIG. 4  HOW FULL THE TUBE GETS, AGAINST THE NIGHT'S TARGET."],
-    ["tbl", [["100%: CLEARED", "Pick 1 of 3 cards."], ["150%: OVERDRIVE", "Pick from 4 cards, two of them key cards (a new key, and a level for one you have). You also get +1 reroll / banish."], ["200%: DOUBLE OVERDRIVE", "All of that, and you pick two cards."]], [.4, .6]],
+    ["tbl", [["100%: CLEARED", "Pick 1 of 3 cards."], ["150%: OVERDRIVE", "Pick from 4 cards, two of them key cards: a new key and a level for one you have (two new keys while the red key is your only key). You also get +1 reroll / banish."], ["200%: DOUBLE OVERDRIVE", "All of that, and you pick two cards."]], [.4, .6]],
     ["h", "CARRY-OVER"],
     ["p", "Signal past the target isn't lost: the next night starts with it already in the tube, up to a quarter of that night's target."],
     ["ex", "NIGHT 3 (TARGET 130), YOU BEAM 200", [["150% OF 130", "195: OVERDRIVE"], ["PAST THE TARGET", "70"], ["NIGHT 4 TARGET", "205"], ["A QUARTER OF IT", "51, ROUNDED TO 50"], ["NIGHT 4 STARTS WITH", "50 IN THE TUBE"]]]] },
@@ -3674,7 +3725,7 @@ const MAN_SECS = [
     ["h", "REROLL AND BANISH"],
     ["p", `You start a run with 3 rerolls / banishes, shared, and every overdrive adds one. ${TAPW() ? "Tap" : btn("Press {Y} or pick")} the REROLL / BANISH plate in the picker. REROLL deals a fresh set of cards, steering clear of the ones you were just shown. BANISH takes the chosen card out of the run for good and deals another in its place.`],
     ["h", "WHEN KEYS COME UP"],
-    ["p", "A key card turns up in about one picker in four, and every night without one makes the next more likely. A key card is either a new key or the next level of one you have. An overdrive always deals two key cards."]] },
+    ["p", "A key card turns up in about one picker in four, and every night without one makes the next more likely. While the red key is your only key, a key card is always a new key. After that it is either a new key or the next level of one you have. An overdrive always deals two key cards."]] },
   { t: "KEYS", b: () => { const lv = (id, start) => { const L0 = KEY_LADDER[id], rows = start ? [["LEVEL 1", start]] : []; L0.forEach((s, i) => rows.push(["LEVEL " + (i + 1 + (start ? 1 : 0)), s + "."])); rows.push(["AFTER THAT", KEY_MORE[id] + ", each level."]); return ["tbl", rows, [.3, .7]]; }; return [
     ["p", "Keys sit on the glass and change any word that goes through them. Each copy of a key takes it up a level; the card says what the next level brings. Tap a key's slot to read everything its levels give."],
     ["h", "THE RED KEY"],

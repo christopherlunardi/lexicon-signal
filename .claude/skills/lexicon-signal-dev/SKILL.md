@@ -709,3 +709,8 @@ the same batch.
 - release.py refuses to build when code follows a // comment on the same line (the melter plate's draw was cut off that way 2026-11-17, which hid the picker's plates on every screen).
 - The power-down (loss look 1) takes every key's extras with it, key by key (lossGone(i)): glows, the blue key's rim and tag, the green key's charge, the red key's ring; tags flash off with their key (lossChips). Anything new drawn for a key must check lossGone too (Chris 2026-11-18).
 - Never say "boost" to the player (Chris dislikes the word; the game says "scores as if it were N letters longer"). The manual calls it LENGTH.
+- Keys early (Chris 2026-11-19): while the red key is the only key, a key card is always a new key (an overdrive deals two new keys).
+- wordok-r1 (open, 2026-11-19): extra signs that the traced word is good to send, additions only. WORDOK 0 as now, 1 dial lock-on, 2 tuning
+  eye (green, above the right grille), 3 SEND lamp (above the left grille), 4 focus lock (corner brackets on the glass), 5 hot path, 6 SEND
+  tag on the last letter. wordOkFx() draws them after drawFlyers. #wordok-N; videos with sound by scratchpad rec_wok.py pattern (busy glass
+  #test-icerest-over, trace, word held, broken by one more letter, back, send).
