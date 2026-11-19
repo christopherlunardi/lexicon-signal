@@ -3346,6 +3346,116 @@
       }
      ],
      "chosen": "7"
+    },
+    {
+     "id": "r3",
+     "status": "open",
+     "question": "Round 2's reverse blink was a bit much: which calmer take reads clearly without shouting?",
+     "found": "Same busy glass and moves as before, with a long hold on the word. Every option keeps what the game already shows for a good word (lit keys, the light sweep, the + on the number, the tube cells, the lock sound). Tap Play with sound.",
+     "options": [
+      {
+       "id": "7",
+       "title": "Reverse blink (as in the game now, fixed)",
+       "note": "What's in the game now: the warm glow round the dial, and the dial blinking between reverse print and normal every half second. Fixed: the reverse print now stays inside the dial's window, so it no longer lights over the bezel.",
+       "images": [
+        {
+         "src": "img/wordok-r3/wordok-7.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/wordok-r3/wordok-7.jpg",
+         "label": "A word, held"
+        }
+       ],
+       "play": "play.html#test-icerest-over-wordok-7",
+       "sound": true
+      },
+      {
+       "id": "8",
+       "title": "Soft wash blink",
+       "note": "No big glow. The dial window takes a soft warm wash every half second (about a third as bright as full reverse); the letters stay bright amber the whole time.",
+       "images": [
+        {
+         "src": "img/wordok-r3/wordok-8.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/wordok-r3/wordok-8.jpg",
+         "label": "A word, held"
+        }
+       ],
+       "play": "play.html#test-icerest-over-wordok-8",
+       "sound": true
+      },
+      {
+       "id": "9",
+       "title": "Slow breathe",
+       "note": "No glow. The dial fades smoothly into reverse print and back out again over about a second and a half, instead of a hard blink.",
+       "images": [
+        {
+         "src": "img/wordok-r3/wordok-9.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/wordok-r3/wordok-9.jpg",
+         "label": "A word, held"
+        }
+       ],
+       "play": "play.html#test-icerest-over-wordok-9",
+       "sound": true
+      },
+      {
+       "id": "10",
+       "title": "Just the word, reversed",
+       "note": "No glow. Only the word gets a lit box behind it (dark letters on amber) that blinks on and off every half second, like selected text. The number stays as it is.",
+       "images": [
+        {
+         "src": "img/wordok-r3/wordok-10.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/wordok-r3/wordok-10.jpg",
+         "label": "A word, held"
+        }
+       ],
+       "play": "play.html#test-icerest-over-wordok-10",
+       "sound": true
+      },
+      {
+       "id": "11",
+       "title": "Two blinks, then steady",
+       "note": "Two quick reverse blinks the moment the letters make a word, then the dial stays normal with a soft steady glow for as long as the word holds. No continuous blinking.",
+       "images": [
+        {
+         "src": "img/wordok-r3/wordok-11.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/wordok-r3/wordok-11.jpg",
+         "label": "A word, held"
+        }
+       ],
+       "play": "play.html#test-icerest-over-wordok-11",
+       "sound": true
+      },
+      {
+       "id": "12",
+       "title": "Blinking cursor",
+       "note": "No glow. A solid block cursor blinks right after the word on the dial, every half second, the way a text cursor does when it's waiting for you.",
+       "images": [
+        {
+         "src": "img/wordok-r3/wordok-12.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/wordok-r3/wordok-12.jpg",
+         "label": "A word, held"
+        }
+       ],
+       "play": "play.html#test-icerest-over-wordok-12",
+       "sound": true
+      }
+     ]
     }
    ]
   }
