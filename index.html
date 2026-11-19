@@ -1168,7 +1168,10 @@ function update() {
   const thudCols = new Set();
   if (S && S.blueSpread && S.phase === "play" && !pending && !flyers.length && !moving()) blueSpread();
   if (!inDanger()) dangerT = 0; else if (dangerT > 0 || (!pending && !flyers.length && !moving() && !busy)) { dangerT++;
-    if (dangerT === 1 || (dangerT % 240 === 0 && !S.path.length)) { dialFlash = { text: "LAST WORD", bad: true, t: 150, big: true }; Sound.warn(); }
+    // LAST WORD flashes in on the dial: at once, then again whenever nothing has been traced for a second and it's been 2.5 seconds
+    // since it last showed (Chris 2026-11-19: it barely showed; tracing clears it, so it waits for the dial to be free, never on a word)
+    if (S.path.length) lastIdle = 0; else lastIdle++;
+    if (dangerT === 1 || (!S.path.length && !dialFlash && lastIdle >= 60 && frame - lastWarn >= 150)) { dialFlash = { text: "LAST WORD", bad: true, t: 150, big: true }; lastWarn = frame + 150; Sound.warn(); }
     if (DANGER === 3 && dangerT % 64 === 1) Sound.beat(); }
   powerUpdate();
   if (S.phase === "dying") lossUpdate();
@@ -1307,7 +1310,7 @@ let endT = 0, endOD = false;
 // belongs to a key (its glow, the blue key's rim and tag, the green key's charge, the red key's ring) goes dark with it (Chris 2026-11-18)
 const lossGone = (i) => !!LOSS && !HOW.on && (S.phase === "over" || (S.phase === "dying" && LOSS === 1 && lossT >= 6 + lossOrd.indexOf(i) * 2.8));
 let lossChips = {};   // (where each key's tag was last drawn, so it flashes off with its key)
-let dangerT = 0, lossT = 0, beaconKill = 0, overSel = 0, overT2 = 0, lossOrd = [], lossCols = [], OVERUI = [];
+let lastIdle = 0, lastWarn = -1e9, dangerT = 0, lossT = 0, beaconKill = 0, overSel = 0, overT2 = 0, lossOrd = [], lossCols = [], OVERUI = [];
 // the last word, with the tube still short: the warning runs (it starts once the turn before it is over)
 const inDanger = () => S.phase === "play" && !HOW.on && S.words === 1 && S.score < S.target && !S.ending;
 // 0 = no pace hint (Chris 2026-11-17: the tube already shows what the traced word adds, the mark was one thing too many)
@@ -1596,9 +1599,6 @@ function drawDial() {
     const keeps = PACE !== 3 || !paceNeed() || target >= paceNeed();   // (pace look 3: a sendable word below pace stays amber)
     ftextDot(num, x0 + (cols - num.length) * 18, y0, inv ? INK : ok && keeps ? C.hot : S.path.length ? C.amber : C.dotDim);
     if (invA > .01) { fillDial(invA); ctx.save(); ctx.globalAlpha = invA; ftextDot(ws, x0, y0, INK); ftextDot(num, x0 + (cols - num.length) * 18, y0, INK); ctx.restore(); }
-    // on the last word the dial keeps saying so while you trace: a red LAST between the word and the number, when there's room
-    // (Chris 2026-11-19: LAST WORD barely showed, since tracing cleared it); untraced, LAST WORD comes back every 4 seconds
-    if (inDanger() && S.path.length && frame % 60 < 42) { const gw = gain ? gain.length + 1 : 0, at = cols - num.length - gw - 5; if (at >= chW - sh + 1) ftextDot("LAST", x0 + at * 18, y0, C.redHot); }
     if (REQ === 2 && reqMet(S.path) && (frame >> 3) & 1) ftextDot("REQ", x0 + (cols - num.length - 4) * 18, y0, "#ff4630");
   }
   else if (!dialFlash) { const msg = S.phase === "title" ? `  ${tipNow()} *` : S.phase === "play" ? (inDanger() ? `  LAST WORD *  NEED ${S.target - S.shown} *` : REQ === 2 && S.req ? `  REQUEST: ${S.req.text} *  ${S.target - S.shown} TO GO *` : PACE === 3 && paceNeed() ? `  NEED ${paceNeed()} A WORD * ${S.target - S.shown} TO GO * ${S.words} WORD${S.words === 1 ? "" : "S"} LEFT *` : `  ${freqFor(S.night).toFixed(1)} FM * NIGHT ${S.night} * REACH ${S.target} * SCORE ${S.total} *`) : `  ${freqFor(S.night).toFixed(1)} FM *`;
