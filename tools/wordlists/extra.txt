@@ -86,3 +86,6 @@ foid foids
 
 # acronyms people say as a word (Chris 2026-11-20); not ones spelled out letter by letter (FBI, USA, DIY)
 nato nasa opec fema nascar unicef unesco nafta asean seato interpol jpeg jpegs mpeg mpegs ascii scsi yolo fomo fubar lmfao rofl roflmao covid sars mers nasdaq unicode posix cobol fortran comintern cominform spetsnaz frelimo fatah hamas daesh anzac anzacs seabee seabees cern ofsted ofcom oxfam sids mrsa tesol tefl noaa nist darpa osha fifa uefa benelux comecon anzus eftpos aarp fica ebitda unix
+
+# tech and internet words (Chris 2026-11-20: distro)
+distro distros devops config configs unfollow unfollows unfollowed bingeable otaku otakus cosplays cosplayed npc npcs sidequest sidequests
