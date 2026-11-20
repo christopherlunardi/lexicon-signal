@@ -853,7 +853,7 @@ function tallyApply(s) {
 const tallyMid = () => { const cs = TL.used.map(i => tileC(i)); return { x: cs.reduce((a, c) => a + c.x, 0) / cs.length, y: cs.reduce((a, c) => a + c.y, 0) / cs.length }; };
 function tallyStep() { if (!TL) return; TL.t++; TL.curT = (TL.curT || 0) + 1; TL.chips.forEach(c => c.t++);
   if (TL.wait) { if (--TL.waitT <= 0) { const s = TL.wait; TL.wait = null; tallyApply(s); } return; }
-  if (TL.done) { if (++TL.endT >= (TLSLOW() ? 60 : 34)) { const { used, sc, hits } = TL; TL = null; busy--; sendFly(used, sc, hits); } return; }
+  if (TL.done) { if (++TL.endT >= (TLSLOW() ? 60 : 34)) { const { used, sc } = TL; TL = null; busy--; sendFly(used, sc, {}); }   // (the parts already showed what they did during the count, so they don't flash again when the signal lands) return; }
   if (TL.t < TL.dur) return;
   TL.i++; TL.t = 0;
   if (TL.i >= TL.steps.length) { TL.done = true; TL.endT = 0; Sound.lock(); TL.cur = -1; return; }
