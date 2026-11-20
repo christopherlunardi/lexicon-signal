@@ -3013,7 +3013,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "How should the gold key stay obviously gold, even once its letter locks into a word?",
      "found": "Each video: the glass at rest, then a word traced through the gold key (its letter locks in), held, and sent. The stills show it at rest, traced, and where it overlaps: one gold key sitting on the green key and one that's also the red key.",
      "options": [
@@ -3220,7 +3220,8 @@
        "play": "play.html#test-word-gold-goldkey--goldlook-6",
        "sound": true
       }
-     ]
+     ],
+     "chosen": "2"
     }
    ]
   },
