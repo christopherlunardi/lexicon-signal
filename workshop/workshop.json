@@ -3413,6 +3413,88 @@
      "chosen": "4"
     }
    ]
+  },
+  {
+   "id": "tally",
+   "title": "Showing how a word scores",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "When you send a word, where should the count-up play out?",
+     "found": "Every option counts the same way, in order: the 2 every word carries; each letter's value (with any part's bonus on that letter); the length, and parts that make it longer; each multiplier, one at a time with a stamp; flat adds (green key, a request); then the total, and only then do the letters fly to the tower. It speeds up as it goes, and A, X or a tap skips to the total. The video's word is JOKER through the red key, with the Treble Slider (J and K), a Tube Amp, the Long Wave Coil (5 letters) and the green key's charge. Tap Play with sound.",
+     "options": [
+      {
+       "id": "0",
+       "title": "As now",
+       "note": "For comparison: the score is added up instantly and the letters fly straight to the tower with the total.",
+       "images": [
+        {
+         "src": "img/tally-r1/tally-0.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/tally-r1/tally-0.jpg",
+         "label": "Mid count"
+        }
+       ],
+       "play": "play.html#test-word-tally-0",
+       "sound": true
+      },
+      {
+       "id": "1",
+       "title": "On the dial",
+       "note": "The count-up plays on the dial as a running sum: the signal climbs letter by letter (each letter flares on the glass as it's counted), then x the length, then each multiplier, then the flat adds, with the running total on the right. Each part's slot flashes with its tag the moment it adds in.",
+       "images": [
+        {
+         "src": "img/tally-r1/tally-1.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/tally-r1/tally-1.jpg",
+         "label": "Mid count"
+        }
+       ],
+       "play": "play.html#test-word-tally-1",
+       "sound": true
+      },
+      {
+       "id": "2",
+       "title": "On the keys",
+       "note": "The count-up plays on the glass: each letter pops its value on a little chip as it's counted, part bonuses pop on their letter, the length and multipliers stamp over the word in big chips (red for multipliers, green for the green key's charge), and the total pops at the end. Slots flash as their part adds in.",
+       "images": [
+        {
+         "src": "img/tally-r1/tally-2.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/tally-r1/tally-2.jpg",
+         "label": "Mid count"
+        }
+       ],
+       "play": "play.html#test-word-tally-2",
+       "sound": true
+      },
+      {
+       "id": "3",
+       "title": "Both",
+       "note": "The chips on the keys and the running sum on the dial together.",
+       "images": [
+        {
+         "src": "img/tally-r1/tally-3.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/tally-r1/tally-3.jpg",
+         "label": "Mid count"
+        }
+       ],
+       "play": "play.html#test-word-tally-3",
+       "sound": true
+      }
+     ]
+    }
+   ]
   }
  ]
 }
