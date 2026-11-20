@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 248;</script><script>
+<script>window.LEX_BUILD = 249;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -835,7 +835,7 @@ function tallySteps(p, sc) {
   if (reds) st.push({ k: "mult", v: redX(), key: p.find(i => S.grid[i].hot), slot: "red" });
   const bi = p.find(i => S.grid[i].blue); if (bi != null) st.push({ k: "mult", v: sc._blue, key: bi, slot: "blue" });
   if (sc.tap) st.push({ k: "flat", v: sc.tap, key: TAP_I, slot: "tap", txt: "+" + sc.tap });
-  if (sc.reqB) st.push({ k: "flat", v: sc.reqB, key: -1, slot: "hat", txt: "+" + sc.reqB + " REQUEST" });
+  if (sc.reqB) st.push({ k: "flat", v: sc.reqB, key: -1, slot: "hat", center: true, txt: "x" + reqX() + " WORD: +" + sc.reqB });   // (the request multiplies the word's own score, signal x length, and adds that on: say so)
   st.forEach(s => { if (s.k === "mult") s.txt = "x" + fmtX(s.v); });
   return tallyOrder(st); }
 function tallyStart(used, sc, hits) {
