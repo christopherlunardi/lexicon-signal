@@ -3102,6 +3102,105 @@
      "chosen": "9"
     }
    ]
+  },
+  {
+   "id": "tallyfx",
+   "title": "The count-up: pace and sound",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "question": "How should the count-up be split up and sound, without getting longer?",
+     "found": "All on top of the count-up you picked (the plain word first, then each part with its spark). Same word: JOKER through the red key with the Treble Slider, a Tube Amp, the Coil and the green key's charge. Turn the sound up: tap Play with sound.",
+     "options": [
+      {
+       "id": "0",
+       "title": "As now",
+       "note": "For comparison: the count-up in the game now, at one even pace with the old sounds.",
+       "images": [
+        {
+         "src": "img/tallyfx-r1/tallyfx-0.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/tallyfx-r1/tallyfx-0.jpg",
+         "label": "Mid count"
+        }
+       ],
+       "play": "play.html#test-word-tally-9-tlp-0",
+       "sound": true
+      },
+      {
+       "id": "1",
+       "title": "Phases",
+       "note": "The count splits into its parts: the word, the letter bonuses, the length, the multipliers, the adds. Each part goes a little quicker, with a short beat between parts. Soft simple sounds: a light tick per letter, a whoosh as a spark leaves its slot, a small bell when it lands, a low thump for each multiplier, a warm chord at the end. About the same length overall.",
+       "images": [
+        {
+         "src": "img/tallyfx-r1/tallyfx-1.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/tallyfx-r1/tallyfx-1.jpg",
+         "label": "Mid count"
+        }
+       ],
+       "play": "play.html#test-word-tally-9-tlp-1",
+       "sound": true
+      },
+      {
+       "id": "2",
+       "title": "Phases + roll-up",
+       "note": "Like 1, and when the plain word is done its chips gather into one tag over the word (\"JOKER 45\") with a two-note chime, so you see what the word alone was worth before the parts start.",
+       "images": [
+        {
+         "src": "img/tallyfx-r1/tallyfx-2.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/tallyfx-r1/tallyfx-2.jpg",
+         "label": "Mid count"
+        }
+       ],
+       "play": "play.html#test-word-tally-9-tlp-2",
+       "sound": true
+      },
+      {
+       "id": "3",
+       "title": "Phases, one tune",
+       "note": "Like 1, but every sound is a note in one scale that climbs through the whole count: the letters walk up, the parts keep climbing, multipliers ring lower and fuller, and the final chord resolves it.",
+       "images": [
+        {
+         "src": "img/tallyfx-r1/tallyfx-3.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/tallyfx-r1/tallyfx-3.jpg",
+         "label": "Mid count"
+        }
+       ],
+       "play": "play.html#test-word-tally-9-tlp-3",
+       "sound": true
+      },
+      {
+       "id": "4",
+       "title": "Roll-up + tune",
+       "note": "2 and 3 together.",
+       "images": [
+        {
+         "src": "img/tallyfx-r1/tallyfx-4.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/tallyfx-r1/tallyfx-4.jpg",
+         "label": "Mid count"
+        }
+       ],
+       "play": "play.html#test-word-tally-9-tlp-4",
+       "sound": true
+      }
+     ]
+    }
+   ]
   }
  ]
 }

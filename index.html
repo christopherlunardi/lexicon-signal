@@ -811,6 +811,15 @@ let TL = null;
    worked out (each letter's bonus to that letter, then the length parts, then each multiplier, then the flat adds), and the step counts
    in, with its chip, when the spark lands. */
 const TLSLOW = () => TALLY === 8 || TALLY === 9;
+/* Workshop "tallyfx" r1 (Chris 2026-11-20: split the count into clear parts, simple sounds, not much longer). On top of 9. #tlp-N.
+   TLP 0 as now. 1 phases: quicker inside each part of the count (the word, letter bonuses, length, multipliers, adds), a short beat
+   between parts, soft simple sounds (a tick per letter, a small bell when a spark lands, a low thump per multiplier, a warm chord at the
+   end). 2 phases + roll-up: when the plain word is done its chips gather into one "JOKER 45" tag over the word, then the parts start.
+   3 phases, sounds as one tune: the letters climb a scale, the parts keep climbing, multipliers ring lower and fuller, the total resolves.
+   4 roll-up and the tune together. */
+let TLP = 0; { const m = location.hash.match(/tlp-(\d+)/); if (m) TLP = +m[1]; }
+const tlPhase = (s) => !s ? -1 : (!s.slot || s.letter != null) ? (s.k === "len" ? 1 : 0) : s.k === "sig" ? 2 : s.k === "len" ? 3 : s.k === "mult" ? 4 : 5;
+const TLROLL = () => TLP === 2 || TLP === 4, TLTUNE = () => TLP === 3 || TLP === 4;
 // 9 (Chris 2026-11-20): the same, but the plain word scores first (the 2, every letter, its length), then the parts add on, in order
 const tallyOrder = (st) => TALLY !== 9 ? st : [...st.filter(s => !s.slot || s.letter != null || s.setLen), ...st.filter(s => s.slot && s.letter == null && !s.setLen)];
 const TLB = () => TALLY >= 3, TLSPARK = () => TALLY === 4 || TALLY === 7, TLTIDY = () => TALLY === 5 || TALLY === 7, TLTUBE = () => TALLY === 6 || TALLY === 7;
@@ -853,7 +862,11 @@ function tallyApply(s) {
   if (TALLY >= 2 && s.k === "len" && TLSLOW()) { if (lc) { lc.txt = lenTxt(); lc.t = 0; } else { const c = tallyMid(); TL.chips.push({ x: c.x, y: c.y, txt: lenTxt(), k: "len", t: 0, center: true, lenChip: true }); } }   // (the length is one chip: "5 LETTERS X3", and a part's spark turns it into X4)
   else if (TALLY >= 2) { const c = s.key >= 0 ? tileC(s.key) : tallyMid(); TL.chips.push({ x: c.x, y: c.y + (s.key >= 0 ? 0 : 0), txt: s.center ? s.txt : s.txt.split(" ")[0], k: s.k, t: 0, center: !!s.center || (s.key < 0 && s.k !== "sig") }); }
   const n = TL.n++;
+  if (TLP) { TL.tn = (TL.tn || 0) + 1; return Sound.tlStep(tlPhase(s), TL.tn, TLTUNE()); }
   if (s.k === "sig") Sound.cell(Math.min(1, n / 12)); else if (s.k === "len") Sound.tick(); else if (s.k === "mult") Sound.stamp(n); else Sound.lampPay(6); }
+// roll-up: the plain word's chips gather into one tag over the word ("JOKER 45") before the parts start
+function tallyRoll() { const m = tallyMid(), top = Math.min(...TL.used.map(i => tileC(i).y)); TL.chips.forEach(c => { if (!c.lenChip) c.gone = true; });
+  TL.chips.push({ x: m.x, y: top, txt: `${TL.sc.word.toUpperCase()} ${tallyTotal()}`, k: "roll", t: 0, center: false }); Sound.tlRoll(TLTUNE()); }
 const tallyMid = () => { const cs = TL.used.map(i => tileC(i)); return { x: cs.reduce((a, c) => a + c.x, 0) / cs.length, y: cs.reduce((a, c) => a + c.y, 0) / cs.length }; };
 // (when the count ends the letters fly with no part hits: the parts already showed what they did, so they don't flash again on landing)
 function tallyStep() { if (!TL) return; TL.t++; TL.curT = (TL.curT || 0) + 1; TL.chips.forEach(c => c.t++);
@@ -861,12 +874,14 @@ function tallyStep() { if (!TL) return; TL.t++; TL.curT = (TL.curT || 0) + 1; TL
   if (TL.done) { if (++TL.endT >= (TLSLOW() ? 60 : 34)) { const { used, sc } = TL; TL = null; busy--; sendFly(used, sc, {}); } return; }
   if (TL.t < TL.dur) return;
   TL.i++; TL.t = 0;
-  if (TL.i >= TL.steps.length) { TL.done = true; TL.endT = 0; Sound.lock(); TL.cur = -1; return; }
-  const s = TL.steps[TL.i], slow = TLSLOW();
-  if (slow && s.slot) { const k = partSlots().findIndex(c => c.id === s.slot); if (k >= 0) { const b = slotBox(k), to = s.key >= 0 ? tileC(s.key) : tallyMid(), dur = 22;
+  if (TL.i >= TL.steps.length) { if (TLP && !TL.gapEnd) { TL.gapEnd = true; TL.i--; TL.t = 0; TL.dur = 10; return; } TL.done = true; TL.endT = 0; if (TLP) Sound.tlTotal(TLTUNE()); else Sound.lock(); TL.cur = -1; return; }
+  const s = TL.steps[TL.i], slow = TLSLOW(), prev = TL.steps[TL.i - 1];
+  if (TLP && prev && tlPhase(prev) !== tlPhase(s) && !TL.gapDone) { TL.gapDone = true; TL.i--; TL.t = 0; TL.dur = 13; if (TLROLL() && tlPhase(prev) <= 1 && tlPhase(s) >= 2) tallyRoll(); return; }
+  TL.gapDone = false;
+  if (slow && s.slot) { const k = partSlots().findIndex(c => c.id === s.slot); if (k >= 0) { const b = slotBox(k), to = s.key >= 0 ? tileC(s.key) : tallyMid(), dur = TLP ? 17 : 22;
     tlSparks.push({ x0: b.x + b.w / 2, y0: b.y + b.h / 2, x1: to.x, y1: to.y, t: 0, dur, col: s.k === "mult" ? "255,110,70" : s.k === "flat" ? "90,255,140" : "255,214,120", k: s.k, sx: b.x, sy: b.y, sw: b.w, sh: b.h });
-    slotFlash[s.slot] = 1; Sound.tickMove(); TL.wait = s; TL.waitT = dur; } else tallyApply(s); } else tallyApply(s);
-  const base = (s.k === "sig" ? 8 : s.k === "len" ? 12 : s.k === "mult" ? 20 : 16) * (slow ? 2.2 : 1); TL.dur = Math.max(Math.round(base * (slow ? .75 : .5)), Math.round(base * (1 - TL.i * (slow ? .02 : .045)))); }
+    slotFlash[s.slot] = 1; if (TLP) Sound.tlWhoosh(); else Sound.tickMove(); TL.wait = s; TL.waitT = dur; } else tallyApply(s); } else tallyApply(s);
+  const base = (s.k === "sig" ? 8 : s.k === "len" ? 12 : s.k === "mult" ? 20 : 16) * (slow ? (TLP ? (s.k === "sig" && !s.slot ? 1.2 : 1.5) : 2.2) : 1); TL.dur = Math.max(Math.round(base * (slow ? .75 : .5)), Math.round(base * (1 - TL.i * (slow ? .02 : .045)))); }
 function tallyTop() { if (!tlSparks.length) return; ctx.save(); ctx.globalCompositeOperation = "lighter";
   tlSparks = tlSparks.filter(s => { s.t++; const u = Math.min(1, s.t / s.dur), e = u * u * (3 - 2 * u), sx = LAST_SX || 0;
     if (s.t <= 10) { ctx.strokeStyle = `rgba(${s.col},${.9 * (1 - s.t / 10)})`; ctx.lineWidth = 4; ctx.strokeRect(FX(s.sx + sx) - 4, FX(s.sy) - 4, FX(s.sw) + 8, FX(s.sh) + 8); bloom(FX(s.x0 + sx), FX(s.y0), FX(s.sw), s.col, .5 * (1 - s.t / 10)); }
@@ -894,11 +909,11 @@ function tallyFx() { if (!TL) return; ctx.save(); ctx.globalCompositeOperation =
   if (TALLY < 2) return;
   const gh = glyphCv("ink", "N", "#000").height;
   const tidy = TLTIDY(), lastBig = tidy ? TL.chips.map(c => c.k !== "sig").lastIndexOf(true) : -1;
-  TL.chips.forEach((c, j) => { if (c.k === "sig" && c.t > (tidy ? 22 : 40)) return; if (c.center && TL.chips.slice(j + 1).some(o => o.center) && c.t > 16) return; if (tidy && c.k !== "sig" && j !== lastBig && c.t > 10) return;
+  TL.chips.forEach((c, j) => { if (c.gone) return; if (c.k === "sig" && c.t > (tidy ? 22 : 40)) return; if (c.center && TL.chips.slice(j + 1).some(o => o.center) && c.t > 16) return; if (tidy && c.k !== "sig" && j !== lastBig && c.t > 10) return;
     const e = Math.min(1, c.t / 6), lift = c.center ? 0 : Math.min(18, c.t * 1.6), big = c.k === "mult" || c.k === "flat", cw = textW(c.txt, "ink") + 12, ch = gh + 8;
     const x = FX(c.x) - cw / 2, y = FX(c.y) - (c.center ? ch / 2 : FX(L.th) / 2 + ch * .2) - lift, a = c.k === "sig" ? Math.min(1, ((tidy ? 22 : 44) - c.t) / (tidy ? 6 : 10)) : 1;
     ctx.save(); ctx.globalAlpha = Math.max(0, a); ctx.translate(x + cw / 2, y + ch / 2); const s = (big ? 1.5 : 1) * (e < 1 ? .6 + .6 * e : 1 + .1 * Math.max(0, 1 - (c.t - 6) / 6)); ctx.scale(s, s);
-    ctx.fillStyle = c.k === "mult" ? "#ff6a40" : c.k === "flat" ? "#5cff8a" : c.k === "len" ? "#ffe9b8" : "#ffd27a"; ctx.beginPath(); ctx.roundRect(-cw / 2, -ch / 2, cw, ch, 5); ctx.fill();
+    ctx.fillStyle = c.k === "mult" ? "#ff6a40" : c.k === "flat" ? "#5cff8a" : c.k === "len" ? "#ffe9b8" : c.k === "roll" ? "#fff2c8" : "#ffd27a"; ctx.beginPath(); ctx.roundRect(-cw / 2, -ch / 2, cw, ch, 5); ctx.fill();
     ctx.strokeStyle = "#3a1606"; ctx.lineWidth = 2; ctx.stroke(); ftext(c.txt, 0, -gh / 2, "ink", "#2a0d04", "c"); ctx.restore(); });
   if (TL.done && TALLY === 2) { const m = tallyMid(), s = "+" + tallyTotal(), e = Math.min(1, TL.endT / 6); ctx.save(); ctx.translate(FX(m.x), FX(m.y)); ctx.scale(1.4 + .6 * e, 1.4 + .6 * e);
     ftext(s, 0, -gh / 2, "ink", "#fff2c8", "c", { outline: "#3a1606" }); ctx.restore(); } }
@@ -4763,6 +4778,15 @@ const Sound = (() => {
     lampPay(i) { if (!ac) return; const t = ac.currentTime, m = 76 + [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24][Math.min(10, i)];
       osc("square", 1900, t, .001, .02, .04, sfx); osc("triangle", m2f(m), t + .01, .003, .22, .2); osc("sine", m2f(m + 12), t + .01, .003, .16, .1); osc("square", m2f(m + 7), t + .07, .002, .06, .05); noise(t + .02, .12, .05, "highpass", 6000, .8, sfx); },
     lampOut() { if (!ac) return; const t = ac.currentTime; osc("triangle", 1500, t, .002, .06, .12, sfx, 300); noise(t, .05, .05, "highpass", 5000, .7, sfx); },
+    // the count-up's sounds (Workshop tallyfx): soft and short; tune = one scale climbing through the whole count
+    tlStep(ph, n, tune) { if (!ac) return; const t = ac.currentTime, sc = [60, 62, 64, 67, 69, 72, 74, 76, 79, 81, 84, 86, 88, 91];
+      if (ph === 0) { const m = tune ? sc[Math.min(sc.length - 1, n - 1)] + 12 : 84 + Math.min(6, n); osc("triangle", m2f(m), t, .002, .05, .09); }
+      else if (ph === 1 || ph === 3) { osc("sine", tune ? m2f(sc[Math.min(sc.length - 1, n - 1)] + 12) : 880, t, .002, .06, .12); noise(t, .04, .06, "bandpass", 2400, 3); }
+      else if (ph === 2 || ph === 5) { const m = tune ? sc[Math.min(sc.length - 1, n - 1)] + 12 : 91; osc("sine", m2f(m), t, .003, .07, .35); osc("sine", m2f(m + 12), t, .003, .025, .25); }
+      else { const m = tune ? sc[Math.min(sc.length - 1, n - 1)] : 52; osc("sine", m2f(m - 12), t, .003, .16, .32, sfx, m2f(m - 24)); noise(t, .05, .1, "lowpass", 700, 1); if (tune) { osc("triangle", m2f(m), t, .003, .06, .3); osc("triangle", m2f(m + 7), t, .003, .05, .3); } } },
+    tlWhoosh() { if (!ac) return; noise(ac.currentTime, .16, .035, "bandpass", 1400, 2, sfx, 5200); },
+    tlRoll(tune) { if (!ac) return; const t = ac.currentTime; osc("triangle", m2f(tune ? 72 : 79), t, .003, .06, .18); osc("triangle", m2f(tune ? 76 : 84), t + .06, .003, .06, .22); },
+    tlTotal(tune) { if (!ac) return; const t = ac.currentTime; (tune ? [60, 64, 67, 72] : [64, 67, 71]).forEach((m, k) => { osc("triangle", m2f(m + 12), t + k * .03, .004, .07, .7); osc("sine", m2f(m), t + k * .03, .004, .05, .6); }); },
     stamp(n) { if (!ac) return; const t = ac.currentTime; osc("sine", 110, t, .002, .12, .45, sfx, 55); noise(t, .06, .22, "lowpass", 900, 1);
       const sc = [523, 659, 784, 1047, 1319, 1568, 2093]; const k = Math.min(sc.length - 1, n % 7); osc("square", sc[k] / 2, t + .02, .003, .1, .12); osc("sine", sc[k], t + .02, .003, .14, .18); },
     tick() { if (!ac) return; const t = ac.currentTime; if (t - lastTick < .04) return; lastTick = t; osc("square", 2400, t, .001, .02, .015); },

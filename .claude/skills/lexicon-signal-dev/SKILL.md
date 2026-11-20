@@ -735,3 +735,4 @@ the same batch.
 - Count-up: when it ends the letters fly with no part hits (sendFly(used, sc, {})), so slots don't flash a second time. release.py's comment check also catches '} // (...) code'.
 - Count-up 8/9: the length is one chip '5 LETTERS X3' that the longer-parts' sparks update (X4). TALLY 9 scores the plain word first (2, letters, length), then the parts in order (tallyOrder).
 - tally decided 9 (Chris 2026-11-20): TALLY = 9 in the game. The opening chip reads 'BASE +2' (the 2 every word carries); the manual's scoring section describes the count-up.
+- tallyfx-r1 (open, 2026-11-20): TLP 1 phases (quicker within each part of the count, a beat between parts, soft sounds Sound.tlStep/tlWhoosh/tlTotal), 2 + roll-up (plain word chips gather into 'JOKER 45'), 3 one climbing tune, 4 both. #tlp-N on top of tally 9. Videos by scratchpad rec_tfx.py.
