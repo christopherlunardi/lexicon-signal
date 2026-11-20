@@ -802,7 +802,7 @@ function back() { if (canAct() && S.path.length) setPath(S.path.slice(0, -1)); }
    stamp, the flat adds (green charge, a request), then the total; only then do the letters fly to the tower. It speeds up as it goes;
    A, X or a tap skips to the total. TALLY 0 = off (as now), 1 on the dial (a running equation), 2 on the keys (chips pop on the
    letters and the word), 3 both. #tally-N */
-let TALLY = 0; { const m = location.hash.match(/tally-(\d+)/); if (m) TALLY = +m[1]; }
+let TALLY = 9; /* (Chris picked 9, 2026-11-20: slow, plain word first, then the parts with sparks) */ { const m = location.hash.match(/tally-(\d+)/); if (m) TALLY = +m[1]; }
 let TL = null;
 /* round 2 (Chris 2026-11-20 picked "both" and wants to watch the parts in the bar too), all on top of 3 (both): 4 sparks (a part's
    slot flares and a spark flies from it to the letter or the dial it adds to), 5 tidy chips (a letter's chip fades soon, only the latest
@@ -818,7 +818,7 @@ let tlSparks = [];
 const fmtX = (x) => (Math.round(x * 100) / 100).toString();
 function tallySteps(p, sc) {
   const tiles = p.map(i => S.grid[i]), len = sc.len, st = [], reds = tiles.filter(t => t.hot).length;
-  st.push({ k: "sig", v: 2, key: -1, txt: "+2", base: 1 });
+  st.push({ k: "sig", v: 2, key: -1, txt: "BASE +2", base: 1, center: true });   // (every word carries 2 signal, so short words still count)
   p.forEach((i, j) => { const t = tiles[j], v = (VALUES[t.ch] || 0) + (t.wild ? goldSig() : 0);
     st.push({ k: "sig", v, key: i, txt: "+" + v, base: 1, letter: j, slot: t.wild && goldSig() ? "gold" : null });
     if (has("treble") && VALUES[t.ch] >= 3) st.push({ k: "sig", v: 5 * has("treble"), key: i, slot: "treble", txt: "+" + 5 * has("treble") });
@@ -851,7 +851,7 @@ function tallyApply(s) {
   if (s.slot) { slotFlash[s.slot] = 1; if (s.k !== "sig" || s.slot !== "gold") slotTags.push({ id: s.slot, txt: s.txt.split(" ")[0], t: 0 }); }
   const lenTxt = () => `${TL.sc.len} LETTERS X${TL.len}`, lc = s.k === "len" && TLSLOW() ? TL.chips.find(c => c.lenChip) : null;
   if (TALLY >= 2 && s.k === "len" && TLSLOW()) { if (lc) { lc.txt = lenTxt(); lc.t = 0; } else { const c = tallyMid(); TL.chips.push({ x: c.x, y: c.y, txt: lenTxt(), k: "len", t: 0, center: true, lenChip: true }); } }   // (the length is one chip: "5 LETTERS X3", and a part's spark turns it into X4)
-  else if (TALLY >= 2) { const c = s.key >= 0 ? tileC(s.key) : tallyMid(); TL.chips.push({ x: c.x, y: c.y + (s.key >= 0 ? 0 : 0), txt: s.txt.split(" ")[0], k: s.k, t: 0, center: s.key < 0 && s.k !== "sig" }); }
+  else if (TALLY >= 2) { const c = s.key >= 0 ? tileC(s.key) : tallyMid(); TL.chips.push({ x: c.x, y: c.y + (s.key >= 0 ? 0 : 0), txt: s.center ? s.txt : s.txt.split(" ")[0], k: s.k, t: 0, center: !!s.center || (s.key < 0 && s.k !== "sig") }); }
   const n = TL.n++;
   if (s.k === "sig") Sound.cell(Math.min(1, n / 12)); else if (s.k === "len") Sound.tick(); else if (s.k === "mult") Sound.stamp(n); else Sound.lampPay(6); }
 const tallyMid = () => { const cs = TL.used.map(i => tileC(i)); return { x: cs.reduce((a, c) => a + c.x, 0) / cs.length, y: cs.reduce((a, c) => a + c.y, 0) / cs.length }; };
@@ -3837,6 +3837,7 @@ const MAN_SECS = [
     ["p", "Every word is worked out from three things:"],
     ["list", ["SIGNAL: 2, plus what each letter is worth. Every word carries those 2, so short words still count.", "LENGTH: the letters past the second. A 3-letter word counts 1, a 5-letter word counts 3. Some parts make words score as if they were longer.", "MULTIPLIERS: the x2s and x3s from keys and parts. They multiply each other."]],
     ["p", "SCORE = SIGNAL x LENGTH x MULTIPLIERS. Two things add on top afterwards: the green key's charge and a filled request."],
+    ["p", "When you send a word, the radio counts it out before it goes to the tower: first the word on its own (BASE +2, each letter, its length), then each part's spark adds what it does, in that same order. The dial shows the sum as it goes. Press A or tap to skip to the total."],
     ["h", "LETTER VALUES"],
     ["p", "Every key shows what its letter is worth as dots."],
     ["tbl", Object.keys(g).sort((a, b) => a - b).map(v => [v + " SIGNAL", g[v].join(" ")]), [.32, .68]],

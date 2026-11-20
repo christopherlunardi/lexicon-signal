@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 247;</script><script>
+<script>window.LEX_BUILD = 248;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -670,7 +670,7 @@ function scoreOf(p) {
   if (tiles.some(t => t.blue)) mult *= blueX();
   const charge = has("tap") && p.includes(TAP_I) ? (S.tap || 0) + tapAdd(len) : 0, tap = charge * tapPay();   // the Center Tap: charge up first, then score the charge, flat (twice from level 3)
   const req = reqMet(p) ? Math.round(signal * boost * (reqX() - 1)) : 0;   // a filled request pays x4..x8 of the word's own signal, added on: it doesn't multiply the other parts' multipliers (Chris 2026-11-15: echo x red x request made one word worth 1134)
-  return { word, len, signal, boost, mult, tap, charge, reqB: req, pts: Math.round(signal * boost * mult) + tap + req };
+  return { word, len, signal, boost, mult, tap, charge, reqB: req, pts: Math.round(signal * boost * mult) + tap + req, _owl: has("owl") && S.words === 1 };
 }
 // which fitted parts change this word, and how (shown on their slots: lit while tracing, a flash and a tag when the signal lands)
 function partHits(p) {
@@ -796,6 +796,112 @@ function tapTile(i) {
   dialFlash = { text: "MUST TOUCH", bad: true, t: 50 }; Sound.tickMove(); shake = Math.max(shake, 2);
 }
 function back() { if (canAct() && S.path.length) setPath(S.path.slice(0, -1)); }
+/* ---------- THE COUNT-UP: Workshop topic "tally" (Chris 2026-11-20: a friend couldn't tell what was multiplying; show every step
+   before the word is sent). A sent word stays lit and is scored step by step: the 2 every word carries, each letter's value in order
+   (with any part's bonus on that letter, its slot flashing), the length (and the parts that make it longer), each multiplier with a
+   stamp, the flat adds (green charge, a request), then the total; only then do the letters fly to the tower. It speeds up as it goes;
+   A, X or a tap skips to the total. TALLY 0 = off (as now), 1 on the dial (a running equation), 2 on the keys (chips pop on the
+   letters and the word), 3 both. #tally-N */
+let TALLY = 9; /* (Chris picked 9, 2026-11-20: slow, plain word first, then the parts with sparks) */ { const m = location.hash.match(/tally-(\d+)/); if (m) TALLY = +m[1]; }
+let TL = null;
+/* round 2 (Chris 2026-11-20 picked "both" and wants to watch the parts in the bar too), all on top of 3 (both): 4 sparks (a part's
+   slot flares and a spark flies from it to the letter or the dial it adds to), 5 tidy chips (a letter's chip fades soon, only the latest
+   length / multiplier chip stays), 6 the tube fills live with the running total, 7 all three. */
+/* round 3 (Chris 2026-11-20): 8 = slower, and the sparks lead: each part's spark flies from its slot first, in the order the score is
+   worked out (each letter's bonus to that letter, then the length parts, then each multiplier, then the flat adds), and the step counts
+   in, with its chip, when the spark lands. */
+const TLSLOW = () => TALLY === 8 || TALLY === 9;
+// 9 (Chris 2026-11-20): the same, but the plain word scores first (the 2, every letter, its length), then the parts add on, in order
+const tallyOrder = (st) => TALLY !== 9 ? st : [...st.filter(s => !s.slot || s.letter != null || s.setLen), ...st.filter(s => s.slot && s.letter == null && !s.setLen)];
+const TLB = () => TALLY >= 3, TLSPARK = () => TALLY === 4 || TALLY === 7, TLTIDY = () => TALLY === 5 || TALLY === 7, TLTUBE = () => TALLY === 6 || TALLY === 7;
+let tlSparks = [];
+const fmtX = (x) => (Math.round(x * 100) / 100).toString();
+function tallySteps(p, sc) {
+  const tiles = p.map(i => S.grid[i]), len = sc.len, st = [], reds = tiles.filter(t => t.hot).length;
+  st.push({ k: "sig", v: 2, key: -1, txt: "BASE +2", base: 1, center: true });   // (every word carries 2 signal, so short words still count)
+  p.forEach((i, j) => { const t = tiles[j], v = (VALUES[t.ch] || 0) + (t.wild ? goldSig() : 0);
+    st.push({ k: "sig", v, key: i, txt: "+" + v, base: 1, letter: j, slot: t.wild && goldSig() ? "gold" : null });
+    if (has("treble") && VALUES[t.ch] >= 3) st.push({ k: "sig", v: 5 * has("treble"), key: i, slot: "treble", txt: "+" + 5 * has("treble") });
+    if (has("vowel") && VOWELS.has(t.ch)) st.push({ k: "sig", v: has("vowel"), key: i, slot: "vowel", txt: "+" + has("vowel") }); });
+  if (reds && redSig()) { const ri = p.find(i => S.grid[i].hot); st.push({ k: "sig", v: redSig(), key: ri, slot: "red", txt: "+" + redSig() }); }
+  st.push({ k: "len", v: Math.max(1, len - 2), key: -1, txt: "x" + Math.max(1, len - 2), setLen: true });
+  if (has("amp")) st.push({ k: "len", v: has("amp"), slot: "amp", key: -1, txt: "+" + has("amp") + " LONGER" });
+  if (has("knob") && S.retunes) st.push({ k: "len", v: S.retunes, slot: "knob", key: -1, txt: "+" + S.retunes + " LONGER" });
+  if (meterB()) st.push({ k: "len", v: meterB(), slot: "meter", key: -1, txt: "+" + meterB() + " LONGER" });
+  if (has("coil") && len >= 5) st.push({ k: "mult", v: coilX(), slot: "coil", key: -1 });
+  if (has("short") && len <= 4) st.push({ k: "mult", v: 1 + has("short"), slot: "short", key: -1 });
+  if (has("echo") && firstW()) st.push({ k: "mult", v: 2 + has("echo"), slot: "echo", key: -1 });
+  if (has("owl") && sc._owl) st.push({ k: "mult", v: owlX(), slot: "owl", key: -1 });
+  if (reds) st.push({ k: "mult", v: redX(), key: p.find(i => S.grid[i].hot), slot: "red" });
+  const bi = p.find(i => S.grid[i].blue); if (bi != null) st.push({ k: "mult", v: sc._blue, key: bi, slot: "blue" });
+  if (sc.tap) st.push({ k: "flat", v: sc.tap, key: TAP_I, slot: "tap", txt: "+" + sc.tap });
+  if (sc.reqB) st.push({ k: "flat", v: sc.reqB, key: -1, slot: "hat", txt: "+" + sc.reqB + " REQUEST" });
+  st.forEach(s => { if (s.k === "mult") s.txt = "x" + fmtX(s.v); });
+  return tallyOrder(st); }
+function tallyStart(used, sc, hits) {
+  const p = used.slice(); sc._blue = p.some(i => S.grid[i].blue) ? blueX() : 1;
+  TL = { used: p, sc, hits, steps: tallySteps(p, sc), i: -1, t: 0, dur: 6, sig: 0, len: 0, mult: 1, flat: 0, chips: [], cur: -1, done: false, endT: 0, n: 0 };
+  busy++; S.cursor = p[p.length - 1]; }
+const tallyTotal = () => Math.round(TL.sig * Math.max(1, TL.len) * TL.mult) + TL.flat;
+function tallyApply(s) {
+  if (s.k === "sig") TL.sig += s.v; else if (s.k === "len") TL.len = s.setLen ? s.v : TL.len + s.v; else if (s.k === "mult") TL.mult *= s.v; else TL.flat += s.v;
+  TL.cur = s.key; TL.curT = 0; TL.last = s;
+  if (s.slot && TLSPARK()) { const k = partSlots().findIndex(c => c.id === s.slot); if (k >= 0) { const b = slotBox(k), to = s.k === "sig" && s.key >= 0 ? tileC(s.key) : { x: L.dial.x + L.dial.w / 2, y: L.dial.y + L.dial.h / 2 };
+    tlSparks.push({ x0: b.x + b.w / 2, y0: b.y + b.h / 2, x1: to.x, y1: to.y, t: 0, dur: 16, col: s.k === "mult" ? "255,110,70" : s.k === "flat" ? "90,255,140" : "255,214,120", k: s.k, sx: b.x, sy: b.y, sw: b.w, sh: b.h }); } }
+  if (s.slot) { slotFlash[s.slot] = 1; if (s.k !== "sig" || s.slot !== "gold") slotTags.push({ id: s.slot, txt: s.txt.split(" ")[0], t: 0 }); }
+  const lenTxt = () => `${TL.sc.len} LETTERS X${TL.len}`, lc = s.k === "len" && TLSLOW() ? TL.chips.find(c => c.lenChip) : null;
+  if (TALLY >= 2 && s.k === "len" && TLSLOW()) { if (lc) { lc.txt = lenTxt(); lc.t = 0; } else { const c = tallyMid(); TL.chips.push({ x: c.x, y: c.y, txt: lenTxt(), k: "len", t: 0, center: true, lenChip: true }); } }   // (the length is one chip: "5 LETTERS X3", and a part's spark turns it into X4)
+  else if (TALLY >= 2) { const c = s.key >= 0 ? tileC(s.key) : tallyMid(); TL.chips.push({ x: c.x, y: c.y + (s.key >= 0 ? 0 : 0), txt: s.center ? s.txt : s.txt.split(" ")[0], k: s.k, t: 0, center: !!s.center || (s.key < 0 && s.k !== "sig") }); }
+  const n = TL.n++;
+  if (s.k === "sig") Sound.cell(Math.min(1, n / 12)); else if (s.k === "len") Sound.tick(); else if (s.k === "mult") Sound.stamp(n); else Sound.lampPay(6); }
+const tallyMid = () => { const cs = TL.used.map(i => tileC(i)); return { x: cs.reduce((a, c) => a + c.x, 0) / cs.length, y: cs.reduce((a, c) => a + c.y, 0) / cs.length }; };
+// (when the count ends the letters fly with no part hits: the parts already showed what they did, so they don't flash again on landing)
+function tallyStep() { if (!TL) return; TL.t++; TL.curT = (TL.curT || 0) + 1; TL.chips.forEach(c => c.t++);
+  if (TL.wait) { if (--TL.waitT <= 0) { const s = TL.wait; TL.wait = null; tallyApply(s); } return; }
+  if (TL.done) { if (++TL.endT >= (TLSLOW() ? 60 : 34)) { const { used, sc } = TL; TL = null; busy--; sendFly(used, sc, {}); } return; }
+  if (TL.t < TL.dur) return;
+  TL.i++; TL.t = 0;
+  if (TL.i >= TL.steps.length) { TL.done = true; TL.endT = 0; Sound.lock(); TL.cur = -1; return; }
+  const s = TL.steps[TL.i], slow = TLSLOW();
+  if (slow && s.slot) { const k = partSlots().findIndex(c => c.id === s.slot); if (k >= 0) { const b = slotBox(k), to = s.key >= 0 ? tileC(s.key) : tallyMid(), dur = 22;
+    tlSparks.push({ x0: b.x + b.w / 2, y0: b.y + b.h / 2, x1: to.x, y1: to.y, t: 0, dur, col: s.k === "mult" ? "255,110,70" : s.k === "flat" ? "90,255,140" : "255,214,120", k: s.k, sx: b.x, sy: b.y, sw: b.w, sh: b.h });
+    slotFlash[s.slot] = 1; Sound.tickMove(); TL.wait = s; TL.waitT = dur; } else tallyApply(s); } else tallyApply(s);
+  const base = (s.k === "sig" ? 8 : s.k === "len" ? 12 : s.k === "mult" ? 20 : 16) * (slow ? 2.2 : 1); TL.dur = Math.max(Math.round(base * (slow ? .75 : .5)), Math.round(base * (1 - TL.i * (slow ? .02 : .045)))); }
+function tallyTop() { if (!tlSparks.length) return; ctx.save(); ctx.globalCompositeOperation = "lighter";
+  tlSparks = tlSparks.filter(s => { s.t++; const u = Math.min(1, s.t / s.dur), e = u * u * (3 - 2 * u), sx = LAST_SX || 0;
+    if (s.t <= 10) { ctx.strokeStyle = `rgba(${s.col},${.9 * (1 - s.t / 10)})`; ctx.lineWidth = 4; ctx.strokeRect(FX(s.sx + sx) - 4, FX(s.sy) - 4, FX(s.sw) + 8, FX(s.sh) + 8); bloom(FX(s.x0 + sx), FX(s.y0), FX(s.sw), s.col, .5 * (1 - s.t / 10)); }
+    if (u < 1) { for (let k = 0; k < 6; k++) { const v = Math.max(0, e - k * .05), x = s.x0 + (s.x1 - s.x0) * v, y = s.y0 + (s.y1 - s.y0) * v - Math.sin(v * Math.PI) * 30; ctx.fillStyle = `rgba(${s.col},${(1 - k / 6) * .9})`; ctx.beginPath(); ctx.arc(FX(x + sx), FX(y), 5 - k * .6, 0, 6.283); ctx.fill(); }
+      const x = s.x0 + (s.x1 - s.x0) * e, y = s.y0 + (s.y1 - s.y0) * e - Math.sin(e * Math.PI) * 30; bloom(FX(x + sx), FX(y), 18, s.col, .6); }
+    else if (s.t < s.dur + 8) bloom(FX(s.x1 + sx), FX(s.y1), 30, s.col, .6 * (1 - (s.t - s.dur) / 8));
+    return s.t < s.dur + 8; });
+  ctx.restore(); }
+function tallySkip() { if (!TL || TL.done) return !!TL; if (TL.wait) { TL.i--; TL.wait = null; } while (TL.i < TL.steps.length - 1) { TL.i++; const s = TL.steps[TL.i]; if (s.k === "sig") TL.sig += s.v; else if (s.k === "len") TL.len = s.setLen ? s.v : TL.len + s.v; else if (s.k === "mult") TL.mult *= s.v; else TL.flat += s.v; }
+  TL.i = TL.steps.length; TL.done = true; TL.endT = 14; TL.cur = -1; Sound.lock(); return true; }
+// the dial: SIGNAL x LENGTH x MULT + FLAT on the left, the running total on the right; at the end the total, big and bright
+function tallyDial(x0, y0, cols) { const d = L.dial;
+  if (TL.done) { const s = TL.sc.word.toUpperCase() + " " + tallyTotal(), a = TL.endT < 8 ? 1 : .8; if (TL.endT < 6) { ctx.fillStyle = "rgba(255,190,90,.35)"; dialFill(ctx, FX(L.radioX), FX(L.radioY), FINE); }
+    ftextDot(s.slice(0, cols), x0 + Math.max(0, Math.floor((cols - s.length) / 2)) * 18, y0, C.hot); return; }
+  let eq = String(TL.sig); if (TL.len) eq += " X" + TL.len; if (TL.mult !== 1) eq += " X" + fmtX(TL.mult); if (TL.flat) eq += " +" + TL.flat;
+  const tot = TL.len ? String(tallyTotal()) : "", fits = eq.length + tot.length + 2 <= cols, k = TL.last ? TL.last.k : "sig", fresh = (TL.curT || 0) < 8;
+  ftextDot(eq.slice(0, cols), x0, y0, C.hot);
+  if (fresh && TL.last) { const seg = k === "sig" ? 0 : eq.lastIndexOf(" ") + 1; ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(255,220,150,${.45 * (1 - TL.curT / 8)})`; ctx.fillRect(x0 + seg * 18 - 4, FX(d.y) + 2, (k === "sig" ? String(TL.sig).length : eq.length - seg) * 18 + 5, FX(d.h) - 4); ctx.restore(); }
+  if (fits && tot) ftextDot(tot, x0 + (cols - tot.length) * 18, y0, C.amber); }
+// the glass: the key being counted flares; chips (TALLY 2/3) pop on the letters, and the length, multipliers and flat adds over the word
+function tallyFx() { if (!TL) return; ctx.save(); ctx.globalCompositeOperation = "lighter";
+  if (TL.cur >= 0 && (TL.curT || 0) < 14) { const c = tileC(TL.cur), a = 1 - TL.curT / 14; bloom(FX(c.x), FX(c.y), FX(L.tw) * .8, TL.last && TL.last.k === "mult" ? "255,120,80" : "255,220,150", .55 * a); }
+  if (TL.done && TL.endT < 16) { const m = tallyMid(); bloom(FX(m.x), FX(m.y), FX(L.tw) * 2.2, "255,200,120", .5 * (1 - TL.endT / 16)); }
+  ctx.restore();
+  if (TALLY < 2) return;
+  const gh = glyphCv("ink", "N", "#000").height;
+  const tidy = TLTIDY(), lastBig = tidy ? TL.chips.map(c => c.k !== "sig").lastIndexOf(true) : -1;
+  TL.chips.forEach((c, j) => { if (c.k === "sig" && c.t > (tidy ? 22 : 40)) return; if (c.center && TL.chips.slice(j + 1).some(o => o.center) && c.t > 16) return; if (tidy && c.k !== "sig" && j !== lastBig && c.t > 10) return;
+    const e = Math.min(1, c.t / 6), lift = c.center ? 0 : Math.min(18, c.t * 1.6), big = c.k === "mult" || c.k === "flat", cw = textW(c.txt, "ink") + 12, ch = gh + 8;
+    const x = FX(c.x) - cw / 2, y = FX(c.y) - (c.center ? ch / 2 : FX(L.th) / 2 + ch * .2) - lift, a = c.k === "sig" ? Math.min(1, ((tidy ? 22 : 44) - c.t) / (tidy ? 6 : 10)) : 1;
+    ctx.save(); ctx.globalAlpha = Math.max(0, a); ctx.translate(x + cw / 2, y + ch / 2); const s = (big ? 1.5 : 1) * (e < 1 ? .6 + .6 * e : 1 + .1 * Math.max(0, 1 - (c.t - 6) / 6)); ctx.scale(s, s);
+    ctx.fillStyle = c.k === "mult" ? "#ff6a40" : c.k === "flat" ? "#5cff8a" : c.k === "len" ? "#ffe9b8" : "#ffd27a"; ctx.beginPath(); ctx.roundRect(-cw / 2, -ch / 2, cw, ch, 5); ctx.fill();
+    ctx.strokeStyle = "#3a1606"; ctx.lineWidth = 2; ctx.stroke(); ftext(c.txt, 0, -gh / 2, "ink", "#2a0d04", "c"); ctx.restore(); });
+  if (TL.done && TALLY === 2) { const m = tallyMid(), s = "+" + tallyTotal(), e = Math.min(1, TL.endT / 6); ctx.save(); ctx.translate(FX(m.x), FX(m.y)); ctx.scale(1.4 + .6 * e, 1.4 + .6 * e);
+    ftext(s, 0, -gh / 2, "ink", "#fff2c8", "c", { outline: "#3a1606" }); ctx.restore(); } }
 function send() {
   if (!canAct() || !S.path.length) return;
   if (!isValid()) { const short = S.path.length < 3; dialFlash = { text: short ? "TOO SHORT" : "NO SIGNAL", bad: true, t: 70 }; if (PLAYLOG.run && !HOW.on) PLAYLOG.run.fails++; shake = 6; staticKick = .4; Sound.fail(); log(short ? "Too short." : `${pathWord()}: no signal.`); return; }
@@ -804,6 +910,9 @@ function send() {
   if (sc.tap) { S.tap = sc.charge; tapFlash = 40; log(`Green key charged to ${S.tap}.`); }
   const reqHit = reqMet(used), rx = reqX(); if (reqHit) { S.req.done = true; S.req.doneT = frame; S.reqNext = frame + 150; sc.req = 1; S.reqN = (S.reqN || 0) + 1; (S.setList = S.setList || []).push(S.req.text); }
   if (reqHit) log(`Request filled! x${rx}, and the lamp stays lit.`); else { if (S.words > BASE_WORDS) log("Spare battery spent."); S.words -= 1; } S.firstWord = false; S.sent = (S.sent || 0) + 1; if ((sc.word || "").length > (S.longest || "").length) S.longest = sc.word; if (sc.pts > S.best.pts) S.best = { word: sc.word, pts: sc.pts };
+  if (TALLY && !HOW.on) return tallyStart(used, sc, hits);
+  sendFly(used, sc, hits); }
+function sendFly(used, sc, hits) {
   const big = sc.len >= 6 || sc.pts >= 60; busy++;
   const gch = GOLD_STYLE ? gkLetterOf(used) : null, gall = GOLD_STYLE === 5 && gch != null;   // (Workshop gold looks: the gold key leaves as the letter it stood for, in gold)
   const letters = used.map(i => { const t = S.grid[i], wk = !!(t.wild && gch); return { ch: wk ? gch : t.ch, wk, gold: wk || gall, red: wk && !!t.hot, ...tileC(i) }; });
@@ -1189,7 +1298,7 @@ function update() {
   for (const p of pops) p.t++; pops = pops.filter(p => p.t < 70);
   if (beaconFlash > 0) beaconFlash--; if (goldFlash > 0) goldFlash--; tubeGold *= .94; if (shake > 0) shake -= .5; if (dialFlash && dialFlash.t > 0 && --dialFlash.t === 0) dialFlash = null;
   // the tower sends the signal down into the tube; the count starts when it lands
-  for (const b of beams) b.t++; beams = beams.filter(b => { if (b.t < b.dur) return true; const q = tubeHead(); burst(q.x, q.y, b.big ? 18 : 10, b.gold ? C.gold : C.amber); tubeKick = 1; if (b.gold) tubeGold = 1; Sound.land(b.big); slotHits(b.hits); return false; });
+  tallyStep(); for (const b of beams) b.t++; beams = beams.filter(b => { if (b.t < b.dur) return true; const q = tubeHead(); burst(q.x, q.y, b.big ? 18 : 10, b.gold ? C.gold : C.amber); tubeKick = 1; if (b.gold) tubeGold = 1; Sound.land(b.big); slotHits(b.hits); return false; });
   if (S.shown < S.score && !beams.length) S.shown = Math.min(S.score, S.shown + Math.max(1, Math.ceil((S.score - S.shown) / 12)));
   // type the log out, oldest unfinished entry first
   const e = S.log.find(e => e.n < e.s.length); if (e) { e.n = Math.min(e.s.length, e.n + 1); if (e.s[e.n - 1] !== " " && (e.n & 1)) Sound.type(); }
@@ -1214,10 +1323,10 @@ function draw() {
   wctx.drawImage(barCv, 0, L.barY); drawBarLive();
   ctx.drawImage(world, 0, 0, W * FINE, H * FINE);
   if (POP === 1 || POP === 5) popScoreShadow();   // (under every light: lamps, glows and letters all draw after it)
-  ctx.save(); ctx.translate(sx * FINE, 0); drawRain(); drawDial(); drawLamps(); drawKeyLetters(); drawGlows(); drawFlyers(); wordOkFx(); ctx.restore();
+  ctx.save(); ctx.translate(sx * FINE, 0); drawRain(); drawDial(); drawLamps(); drawKeyLetters(); drawGlows(); drawFlyers(); wordOkFx(); tallyFx(); ctx.restore();
   if (overT > 0) { ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(255,40,24,${.42 * overT * (.6 + .4 * Math.sin(frame / 2))})`; ctx.fillRect(0, 0, CVW, CVH); ctx.restore(); overT = Math.max(0, overT - .012); }
   drawScoreDrums(); drawReqSlip(); if (POP === 2 || POP === 5) popRims(); if (POP === 3) popKeylines();
-  drawBarText(); drawReqZoom(); drawDanger(); LAST_SX = sx; drawLoss(sx); if (nightCard > 0 && S.phase === "play" && !HOW.on) { if (INTRO) { drawIntro(); introT++; if (!nightHold) nightCard--; } else { drawNightCard(); nightCard--; } }
+  drawBarText(); tallyTop(); drawReqZoom(); drawDanger(); LAST_SX = sx; drawLoss(sx); if (nightCard > 0 && S.phase === "play" && !HOW.on) { if (INTRO) { drawIntro(); introT++; if (!nightHold) nightCard--; } else { drawNightCard(); nightCard--; } }
   if (S.phase === "title" || S.phase === "shop" || S.phase === "swap" || S.phase === "trade" || S.phase === "over" || S.phase === "melt" || S.phase === "upgrade" || S.phase === "report") {
     octx.clearRect(0, 0, W, H); octx.imageSmoothingEnabled = false;
     if (S.phase === "title") drawTitle(); else if (S.phase === "shop") drawShop(); else if (S.phase === "swap") drawSwap(); else if (S.phase === "trade") drawTrade(); else if (S.phase === "melt") drawMelt(); else if (S.phase === "report") drawReport(); else if (S.phase === "upgrade") drawUpgrade(); else drawOver();
@@ -1571,6 +1680,7 @@ function drawDial() {
   // wordok round 3 (Chris 2026-11-19: 7 was a bit much): 8 soft wash blink, 9 slow breathe (reverse print fades in and out),
   // 10 only the word in reverse, blinking, 11 two quick reverse blinks then a steady soft glow, 12 a blinking block cursor after the word.
   // Every fill follows the dial window's own shape (dialFill), so nothing lights over the bezel.
+  if (TL && (TALLY === 1 || TLB())) { tallyDial(x0, y0, cols); ctx.restore(); return; }
   const blinkOn = ((Math.max(0, wokOn - 1) / 30) | 0) % 2 === 0, INK = "#2a0d04", wm = ok ? WORDOK : 0;
   let inv = (wm === 7 && blinkOn) || (wm === 11 && wokOn < 20 && ((wokOn / 5) | 0) % 2 === 0), invA = 0, wordBox = false, cursorAt = -1;
   if (wm === 9) invA = .8 * (.5 - .5 * Math.cos(Math.max(0, wokOn - 1) / 48 * Math.PI * 2));
@@ -3013,7 +3123,7 @@ function drawTube() {
   tubeLit = lit; const full = play && pr >= 1; if (full && !tubeFull) { tubeFlash = tubeFlash.map(() => 1); tubeKick = 1.5; Sound.full(); const t = L.tube; for (let x = 0; x < t.w; x += 24) burst(t.x + x, L.barY + t.y + t.h / 2, 2, C.gold); }
   tubeFull = full;
   // what the traced word would add, blinking
-  const ok = S.phase === "play" && S.path.length >= 3 && isValid(), pts = ok ? scoreOf(S.path).pts : 0, fills = ok && S.score + pts >= S.target, odv = fills && S.score + pts >= S.target * OVERDRIVE;
+  const tlT = TL && TLTUBE(), ok = tlT || (S.phase === "play" && S.path.length >= 3 && isValid()), pts = tlT ? (TL.done ? TL.sc.pts : tallyTotal()) : ok ? scoreOf(S.path).pts : 0, fills = ok && S.score + pts >= S.target, odv = fills && S.score + pts >= S.target * OVERDRIVE;
   // a word that falls short never lights the last cell: only a word that really fills the tube reaches the end (and lights the end lamp)
   const add = !ok ? 0 : fills ? G.n : Math.min(G.n - 1, Math.floor((S.shown + pts) / S.target * G.n));
   const sheen = ((frame * 9) % (G.n * (G.cw + G.gap) + 400)) - 200, blink = .45 + .3 * Math.sin(frame / 4);
@@ -3727,6 +3837,7 @@ const MAN_SECS = [
     ["p", "Every word is worked out from three things:"],
     ["list", ["SIGNAL: 2, plus what each letter is worth. Every word carries those 2, so short words still count.", "LENGTH: the letters past the second. A 3-letter word counts 1, a 5-letter word counts 3. Some parts make words score as if they were longer.", "MULTIPLIERS: the x2s and x3s from keys and parts. They multiply each other."]],
     ["p", "SCORE = SIGNAL x LENGTH x MULTIPLIERS. Two things add on top afterwards: the green key's charge and a filled request."],
+    ["p", "When you send a word, the radio counts it out before it goes to the tower: first the word on its own (BASE +2, each letter, its length), then each part's spark adds what it does, in that same order. The dial shows the sum as it goes. Press A or tap to skip to the total."],
     ["h", "LETTER VALUES"],
     ["p", "Every key shows what its letter is worth as dots."],
     ["tbl", Object.keys(g).sort((a, b) => a - b).map(v => [v + " SIGNAL", g[v].join(" ")]), [.32, .68]],
@@ -4470,9 +4581,9 @@ function titleBusy() { if (S.phase === "title" && !titleSkip && titleT < TITLE_L
 function start() { if (buildReady) return maybeReload(); Sound.ensure(); Sound.music(); newRun(); }   // (a new build waiting in the app loads first)
 // buttons (Chris 2026-11-12: a four-button game, Start pauses, Select doesn't mute): A pick / send, B back, X send the word, Y retune,
 // Start pause (and pick on menus), Select nothing (held: dev mode). Keyboard: Z/Space/Enter A, X/Backspace B, C/R retune (Y), V send (X), Esc/P pause.
-function pressA() { if (devKey("a")) return; if (manKey("a")) return; if (lossSkip()) return; if (pauseKey("a")) return; if (boardKey("a")) return; if (howKey("a")) return; if (inspectKey("a")) return; if (knobKey("a")) return; if (cardKey("a")) return; if (tokMenuKey("a")) return; Sound.ensure(); usingButtons = true; if (dismissCard()) return; if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return overChoose(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "trade") return tradeConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
+function pressA() { if (devKey("a")) return; if (manKey("a")) return; if (TL && !PAUSE.on && tallySkip()) return; if (lossSkip()) return; if (pauseKey("a")) return; if (boardKey("a")) return; if (howKey("a")) return; if (inspectKey("a")) return; if (knobKey("a")) return; if (cardKey("a")) return; if (tokMenuKey("a")) return; Sound.ensure(); usingButtons = true; if (dismissCard()) return; if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return overChoose(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "trade") return tradeConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
 function pressB() { if (devKey("b")) return; if (manKey("b")) return; if (lossSkip()) return; if (pauseKey("b")) return; if (boardKey("b")) return; if (howKey("b")) return; if (inspectKey("a")) return; if (knobKey("b")) return; if (cardKey("b")) return; if (tokMenuKey("b")) return; if (nightHold) return void dismissCard(); if (S.phase === "title" && TSUB.on) return titleSub(false); if (S.phase === "melt") return meltDone(); if (S.phase === "swap") return swapCancel(); if (S.phase === "trade") return tradeGiveUp(); if (S.phase === "play") back(); }
-function pressX() { if (devKey("x")) return; if (PAUSE.on || HOW.on || MAN.on) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play" && S.path.length) send(); else pressA(); }
+function pressX() { if (devKey("x")) return; if (PAUSE.on || HOW.on || MAN.on) return; if (TL && tallySkip()) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play" && S.path.length) send(); else pressA(); }
 function pressY() { if (devKey("y")) return; if (PAUSE.on || HOW.on || MAN.on) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play") retune(); else if (S.phase === "report") reportToggle(); else if (S.phase === "shop" && REROLL_STYLE === 4 && !TOKM.banish) { if (TOKM.open) TOKM.open = false; else tokMenuOpen(); } }   // (Y opens the reroll / banish menu)
 function pressStart() { if (devKey("start")) return; if (manKey("start")) return; if (pauseKey("start")) return; if (boardKey("start")) return; if (howKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return overChoose(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "trade") return tradeConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); if (S.phase === "play") pauseOpen(); }
 function pressSel() { if (devKey("select")) return; }   // Select does nothing by itself (held a moment: dev mode, once it's unlocked)
@@ -4499,7 +4610,7 @@ function toWorld(e) { const r = cv.getBoundingClientRect(), s = Math.min(r.width
 function keyAt(p, strict) { for (let i = 0; i < NN; i++) { const c = tileC(i), mx = strict ? L.tw * .38 : L.tw * .6, my = strict ? L.th * .38 : L.th * .6; if (Math.abs(p.x - c.x) < mx && Math.abs(p.y - c.y) < my) return i; } return -1; }
 let down = null, dragging = false;
 cv.addEventListener("pointerdown", (e) => {
-  Sound.ensure(); usingButtons = false; e.preventDefault(); if (introPress()) return; const p = toWorld(e);
+  Sound.ensure(); usingButtons = false; e.preventDefault(); if (introPress()) return; const p = toWorld(e); if (TL && !PAUSE.on && S.phase === "play" && tallySkip()) return;
   if (MAN.on) { manDown(p); try { cv.setPointerCapture(e.pointerId); } catch (er) {} return; }
   if (BOARD.on) { BOARD.on = false; Sound.click(); return; }
   if (PAUSE.on) { const fy = p.y * FINE, fx = p.x * FINE, hit = PAUSE.hits.find(r => fy >= r.y0 && fy <= r.y1 && fx >= r.x0 && fx <= r.x1);
@@ -4652,6 +4763,8 @@ const Sound = (() => {
     lampPay(i) { if (!ac) return; const t = ac.currentTime, m = 76 + [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24][Math.min(10, i)];
       osc("square", 1900, t, .001, .02, .04, sfx); osc("triangle", m2f(m), t + .01, .003, .22, .2); osc("sine", m2f(m + 12), t + .01, .003, .16, .1); osc("square", m2f(m + 7), t + .07, .002, .06, .05); noise(t + .02, .12, .05, "highpass", 6000, .8, sfx); },
     lampOut() { if (!ac) return; const t = ac.currentTime; osc("triangle", 1500, t, .002, .06, .12, sfx, 300); noise(t, .05, .05, "highpass", 5000, .7, sfx); },
+    stamp(n) { if (!ac) return; const t = ac.currentTime; osc("sine", 110, t, .002, .12, .45, sfx, 55); noise(t, .06, .22, "lowpass", 900, 1);
+      const sc = [523, 659, 784, 1047, 1319, 1568, 2093]; const k = Math.min(sc.length - 1, n % 7); osc("square", sc[k] / 2, t + .02, .003, .1, .12); osc("sine", sc[k], t + .02, .003, .14, .18); },
     tick() { if (!ac) return; const t = ac.currentTime; if (t - lastTick < .04) return; lastTick = t; osc("square", 2400, t, .001, .02, .015); },
     type() { if (!ac) return; const t = ac.currentTime; if (t - lastType < .03) return; lastType = t; noise(t, .025, .05, "bandpass", 3000 + Math.random() * 1500, 3); },
     click() { if (!ac) return; osc("triangle", 900, ac.currentTime, .002, .1, .05); },

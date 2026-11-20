@@ -3060,7 +3060,7 @@
     },
     {
      "id": "r3",
-     "status": "open",
+     "status": "decided",
      "question": "Slow with sparks leading: score the parts as they come, or the plain word first?",
      "found": "Slow, and each part's spark leads its step, in the order the score is worked out. The length is one chip, \"5 LETTERS X3\", and the Tube Amp's spark turns it into X4. The dial shows the plain math in step (no sparks go there), and when the signal reaches the tower nothing flashes again. A, X or a tap skips to the total. Tap Play with sound.",
      "options": [
@@ -3098,7 +3098,8 @@
        "play": "play.html#test-word-tally-9",
        "sound": true
       }
-     ]
+     ],
+     "chosen": "9"
     }
    ]
   }
