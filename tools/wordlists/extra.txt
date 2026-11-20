@@ -80,3 +80,6 @@ monday mondays tuesday tuesdays wednesday wednesdays thursday thursdays friday f
 
 # role-play
 larp larps larped larping larper larpers
+
+# slang (Chris 2026-11-20)
+foid foids
