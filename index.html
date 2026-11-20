@@ -810,7 +810,9 @@ let TL = null;
 /* round 3 (Chris 2026-11-20): 8 = slower, and the sparks lead: each part's spark flies from its slot first, in the order the score is
    worked out (each letter's bonus to that letter, then the length parts, then each multiplier, then the flat adds), and the step counts
    in, with its chip, when the spark lands. */
-const TLSLOW = () => TALLY === 8;
+const TLSLOW = () => TALLY === 8 || TALLY === 9;
+// 9 (Chris 2026-11-20): the same, but the plain word scores first (the 2, every letter, its length), then the parts add on, in order
+const tallyOrder = (st) => TALLY !== 9 ? st : [...st.filter(s => !s.slot || s.letter != null || s.setLen), ...st.filter(s => s.slot && s.letter == null && !s.setLen)];
 const TLB = () => TALLY >= 3, TLSPARK = () => TALLY === 4 || TALLY === 7, TLTIDY = () => TALLY === 5 || TALLY === 7, TLTUBE = () => TALLY === 6 || TALLY === 7;
 let tlSparks = [];
 const fmtX = (x) => (Math.round(x * 100) / 100).toString();
@@ -835,7 +837,7 @@ function tallySteps(p, sc) {
   if (sc.tap) st.push({ k: "flat", v: sc.tap, key: TAP_I, slot: "tap", txt: "+" + sc.tap });
   if (sc.reqB) st.push({ k: "flat", v: sc.reqB, key: -1, slot: "hat", txt: "+" + sc.reqB + " REQUEST" });
   st.forEach(s => { if (s.k === "mult") s.txt = "x" + fmtX(s.v); });
-  return st; }
+  return tallyOrder(st); }
 function tallyStart(used, sc, hits) {
   const p = used.slice(); sc._blue = p.some(i => S.grid[i].blue) ? blueX() : 1;
   TL = { used: p, sc, hits, steps: tallySteps(p, sc), i: -1, t: 0, dur: 6, sig: 0, len: 0, mult: 1, flat: 0, chips: [], cur: -1, done: false, endT: 0, n: 0 };
@@ -847,7 +849,9 @@ function tallyApply(s) {
   if (s.slot && TLSPARK()) { const k = partSlots().findIndex(c => c.id === s.slot); if (k >= 0) { const b = slotBox(k), to = s.k === "sig" && s.key >= 0 ? tileC(s.key) : { x: L.dial.x + L.dial.w / 2, y: L.dial.y + L.dial.h / 2 };
     tlSparks.push({ x0: b.x + b.w / 2, y0: b.y + b.h / 2, x1: to.x, y1: to.y, t: 0, dur: 16, col: s.k === "mult" ? "255,110,70" : s.k === "flat" ? "90,255,140" : "255,214,120", k: s.k, sx: b.x, sy: b.y, sw: b.w, sh: b.h }); } }
   if (s.slot) { slotFlash[s.slot] = 1; if (s.k !== "sig" || s.slot !== "gold") slotTags.push({ id: s.slot, txt: s.txt.split(" ")[0], t: 0 }); }
-  if (TALLY >= 2) { const c = s.key >= 0 ? tileC(s.key) : tallyMid(); TL.chips.push({ x: c.x, y: c.y + (s.key >= 0 ? 0 : 0), txt: s.txt.split(" ")[0], k: s.k, t: 0, center: s.key < 0 && s.k !== "sig" }); }
+  const lenTxt = () => `${TL.sc.len} LETTERS X${TL.len}`, lc = s.k === "len" && TLSLOW() ? TL.chips.find(c => c.lenChip) : null;
+  if (TALLY >= 2 && s.k === "len" && TLSLOW()) { if (lc) { lc.txt = lenTxt(); lc.t = 0; } else { const c = tallyMid(); TL.chips.push({ x: c.x, y: c.y, txt: lenTxt(), k: "len", t: 0, center: true, lenChip: true }); } }   // (the length is one chip: "5 LETTERS X3", and a part's spark turns it into X4)
+  else if (TALLY >= 2) { const c = s.key >= 0 ? tileC(s.key) : tallyMid(); TL.chips.push({ x: c.x, y: c.y + (s.key >= 0 ? 0 : 0), txt: s.txt.split(" ")[0], k: s.k, t: 0, center: s.key < 0 && s.k !== "sig" }); }
   const n = TL.n++;
   if (s.k === "sig") Sound.cell(Math.min(1, n / 12)); else if (s.k === "len") Sound.tick(); else if (s.k === "mult") Sound.stamp(n); else Sound.lampPay(6); }
 const tallyMid = () => { const cs = TL.used.map(i => tileC(i)); return { x: cs.reduce((a, c) => a + c.x, 0) / cs.length, y: cs.reduce((a, c) => a + c.y, 0) / cs.length }; };

@@ -3061,13 +3061,13 @@
     {
      "id": "r3",
      "status": "open",
-     "question": "Your direction: slower, with each part's spark leading the step. Is this the one?",
-     "found": "About twice as slow. Each part's spark flies from its slot in the order the score is worked out: the Treble Slider's +5 to the J, then to the K; then the Tube Amp to the word; then the Coil's x2 and the red key's x3; then the green key's +19. The chip appears on the letter or word when the spark lands, and at that same moment the dial's sum updates, so the top screen is the plain math, in step. No sparks go to the dial. Letters without a part bonus still count in by themselves. A, X or a tap skips to the total. Tap Play with sound.",
+     "question": "Slow with sparks leading: score the parts as they come, or the plain word first?",
+     "found": "Slow, and each part's spark leads its step, in the order the score is worked out. The length is one chip, \"5 LETTERS X3\", and the Tube Amp's spark turns it into X4. The dial shows the plain math in step (no sparks go there), and when the signal reaches the tower nothing flashes again. A, X or a tap skips to the total. Tap Play with sound.",
      "options": [
       {
        "id": "8",
-       "title": "Slow, sparks lead",
-       "note": "",
+       "title": "Parts as they come",
+       "note": "Each letter, then any part bonus on that letter, then the length and the parts that make it longer, then the multipliers and the green key.",
        "images": [
         {
          "src": "img/tally-r3/tally-8.mp4",
@@ -3079,6 +3079,23 @@
         }
        ],
        "play": "play.html#test-word-tally-8",
+       "sound": true
+      },
+      {
+       "id": "9",
+       "title": "Plain word first",
+       "note": "The word scores on its own first: the 2, every letter, \"5 LETTERS X3\" (JOKER alone: 15 x 3 = 45). Then the parts add on, each with its spark: Treble Slider +5 to the J and the K, the Tube Amp turns X3 into X4, the Coil x2, the red key x3, the green key +19. Same total; you see what your word was worth and what your radio added.",
+       "images": [
+        {
+         "src": "img/tally-r3/tally-9.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/tally-r3/tally-9.jpg",
+         "label": "Mid count"
+        }
+       ],
+       "play": "play.html#test-word-tally-9",
        "sound": true
       }
      ]
