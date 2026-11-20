@@ -3231,7 +3231,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "Which look for the green key reads best, without getting in the way of the other keys?",
      "found": "Each video: the glass at rest, then a word traced through the green key, held, and sent (the charge goes up). The stills show it at rest, traced, and with things overlapping it: the green key is also the red key, the gold key sits next to it, and there's ice around.",
      "options": [
@@ -3409,7 +3409,8 @@
        "play": "play.html#test-word-tap-greenlook-5",
        "sound": true
       }
-     ]
+     ],
+     "chosen": "4"
     }
    ]
   }

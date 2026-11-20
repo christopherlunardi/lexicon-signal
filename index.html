@@ -2297,7 +2297,7 @@ let tapFlash = 0;
    for the green key). 0 = as now. Each must stay readable when the key is also red, or under the green key's ring, or traced.
    GOLDLOOK 1 gold letter, 2 gold shimmer, 3 shake, 4 gold setting (frame and studs), 5 gold letter + glow, 6 gold plate (dark letter on gold).
    GREENLOOK 1 green letter, 2 charge bar (left edge), 3 battery tag, 4 breathing ring, 5 corner lamp (bottom left). #goldlook-N #greenlook-N */
-let GOLDLOOK = 2, GREENLOOK = 0;   // (Chris picked gold 2, the shimmer, 2026-11-19; green still open)
+let GOLDLOOK = 2, GREENLOOK = 4;   // (Chris picked gold 2, the shimmer, and green 4, the breathing ring, 2026-11-19)
  { const m = location.hash.match(/goldlook-(\d+)/), n = location.hash.match(/greenlook-(\d+)/); if (m) GOLDLOOK = +m[1]; if (n) GREENLOOK = +n[1]; }
 let GREEN_STYLE = 1; { const m = location.hash.match(/green-(\d)/); if (m) GREEN_STYLE = Math.min(5, +m[1]); }   // (Chris picked 1, the green ring, 2026-11-15)
 const greenOn = () => has("tap") && GREEN_STYLE > 0 && S.grid[TAP_I];

@@ -727,3 +727,4 @@ the same batch.
 - Picker menu hints (Chris 2026-11-19): when the plate row sits right under the cases (menuTight), the reroll/banish menu's control line takes the title's place at the top instead of printing over the plates.
 - goldlook-r1 / greenlook-r1 (open, 2026-11-19): GOLDLOOK 1 gold letter, 2 shimmer, 3 shake, 4 gold setting, 5 gold letter + glow, 6 gold plate; GREENLOOK 1 green letter, 2 charge bar (left edge), 3 battery tag, 4 breathing ring, 5 corner lamp (bottom left). Videos by scratchpad rec_keys.py (scenes gold, goldover, green, greenover). Workshop near 256 MiB: dropped the decided green-r1, goldkey-r1, redkey-r1 media and topics.
 - goldlook decided 2, the gold shimmer (Chris 2026-11-19): GOLDLOOK = 2.
+- greenlook decided 4, the breathing ring (Chris 2026-11-19, found all the green options boring): GREENLOOK = 4.
