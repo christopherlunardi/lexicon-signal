@@ -2967,7 +2967,7 @@
     },
     {
      "id": "r2",
-     "status": "open",
+     "status": "decided",
      "question": "Building on Both: what makes it easiest to follow, parts and all?",
      "found": "Every video is the whole screen now, bar included, so you can watch the parts' slots flash (with their tags rising) while it counts. The word is JOKER through the red key with the Treble Slider, a Tube Amp, the Long Wave Coil and the green key's charge. Tap Play with sound.",
      "options": [
@@ -3054,6 +3054,31 @@
         }
        ],
        "play": "play.html#test-word-tally-7",
+       "sound": true
+      }
+     ]
+    },
+    {
+     "id": "r3",
+     "status": "open",
+     "question": "Your direction: slower, with each part's spark leading the step. Is this the one?",
+     "found": "About twice as slow. Each part's spark flies from its slot in the order the score is worked out: the Treble Slider's +5 to the J, then to the K; then the Tube Amp to the word; then the Coil's x2 and the red key's x3; then the green key's +19. The chip appears on the letter or word when the spark lands, and at that same moment the dial's sum updates, so the top screen is the plain math, in step. No sparks go to the dial. Letters without a part bonus still count in by themselves. A, X or a tap skips to the total. Tap Play with sound.",
+     "options": [
+      {
+       "id": "8",
+       "title": "Slow, sparks lead",
+       "note": "",
+       "images": [
+        {
+         "src": "img/tally-r3/tally-8.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/tally-r3/tally-8.jpg",
+         "label": "Mid count"
+        }
+       ],
+       "play": "play.html#test-word-tally-8",
        "sound": true
       }
      ]

@@ -807,6 +807,10 @@ let TL = null;
 /* round 2 (Chris 2026-11-20 picked "both" and wants to watch the parts in the bar too), all on top of 3 (both): 4 sparks (a part's
    slot flares and a spark flies from it to the letter or the dial it adds to), 5 tidy chips (a letter's chip fades soon, only the latest
    length / multiplier chip stays), 6 the tube fills live with the running total, 7 all three. */
+/* round 3 (Chris 2026-11-20): 8 = slower, and the sparks lead: each part's spark flies from its slot first, in the order the score is
+   worked out (each letter's bonus to that letter, then the length parts, then each multiplier, then the flat adds), and the step counts
+   in, with its chip, when the spark lands. */
+const TLSLOW = () => TALLY === 8;
 const TLB = () => TALLY >= 3, TLSPARK = () => TALLY === 4 || TALLY === 7, TLTIDY = () => TALLY === 5 || TALLY === 7, TLTUBE = () => TALLY === 6 || TALLY === 7;
 let tlSparks = [];
 const fmtX = (x) => (Math.round(x * 100) / 100).toString();
@@ -848,12 +852,16 @@ function tallyApply(s) {
   if (s.k === "sig") Sound.cell(Math.min(1, n / 12)); else if (s.k === "len") Sound.tick(); else if (s.k === "mult") Sound.stamp(n); else Sound.lampPay(6); }
 const tallyMid = () => { const cs = TL.used.map(i => tileC(i)); return { x: cs.reduce((a, c) => a + c.x, 0) / cs.length, y: cs.reduce((a, c) => a + c.y, 0) / cs.length }; };
 function tallyStep() { if (!TL) return; TL.t++; TL.curT = (TL.curT || 0) + 1; TL.chips.forEach(c => c.t++);
-  if (TL.done) { if (++TL.endT >= 34) { const { used, sc, hits } = TL; TL = null; busy--; sendFly(used, sc, hits); } return; }
+  if (TL.wait) { if (--TL.waitT <= 0) { const s = TL.wait; TL.wait = null; tallyApply(s); } return; }
+  if (TL.done) { if (++TL.endT >= (TLSLOW() ? 60 : 34)) { const { used, sc, hits } = TL; TL = null; busy--; sendFly(used, sc, hits); } return; }
   if (TL.t < TL.dur) return;
   TL.i++; TL.t = 0;
   if (TL.i >= TL.steps.length) { TL.done = true; TL.endT = 0; Sound.lock(); TL.cur = -1; return; }
-  const s = TL.steps[TL.i]; tallyApply(s);
-  const base = s.k === "sig" ? 8 : s.k === "len" ? 12 : s.k === "mult" ? 20 : 16; TL.dur = Math.max(Math.round(base * .5), Math.round(base * (1 - TL.i * .045))); }
+  const s = TL.steps[TL.i], slow = TLSLOW();
+  if (slow && s.slot) { const k = partSlots().findIndex(c => c.id === s.slot); if (k >= 0) { const b = slotBox(k), to = s.key >= 0 ? tileC(s.key) : tallyMid(), dur = 22;
+    tlSparks.push({ x0: b.x + b.w / 2, y0: b.y + b.h / 2, x1: to.x, y1: to.y, t: 0, dur, col: s.k === "mult" ? "255,110,70" : s.k === "flat" ? "90,255,140" : "255,214,120", k: s.k, sx: b.x, sy: b.y, sw: b.w, sh: b.h });
+    slotFlash[s.slot] = 1; Sound.tickMove(); TL.wait = s; TL.waitT = dur; } else tallyApply(s); } else tallyApply(s);
+  const base = (s.k === "sig" ? 8 : s.k === "len" ? 12 : s.k === "mult" ? 20 : 16) * (slow ? 2.2 : 1); TL.dur = Math.max(Math.round(base * (slow ? .75 : .5)), Math.round(base * (1 - TL.i * (slow ? .02 : .045)))); }
 function tallyTop() { if (!tlSparks.length) return; ctx.save(); ctx.globalCompositeOperation = "lighter";
   tlSparks = tlSparks.filter(s => { s.t++; const u = Math.min(1, s.t / s.dur), e = u * u * (3 - 2 * u), sx = LAST_SX || 0;
     if (s.t <= 10) { ctx.strokeStyle = `rgba(${s.col},${.9 * (1 - s.t / 10)})`; ctx.lineWidth = 4; ctx.strokeRect(FX(s.sx + sx) - 4, FX(s.sy) - 4, FX(s.sw) + 8, FX(s.sh) + 8); bloom(FX(s.x0 + sx), FX(s.y0), FX(s.sw), s.col, .5 * (1 - s.t / 10)); }
@@ -862,7 +870,7 @@ function tallyTop() { if (!tlSparks.length) return; ctx.save(); ctx.globalCompos
     else if (s.t < s.dur + 8) bloom(FX(s.x1 + sx), FX(s.y1), 30, s.col, .6 * (1 - (s.t - s.dur) / 8));
     return s.t < s.dur + 8; });
   ctx.restore(); }
-function tallySkip() { if (!TL || TL.done) return !!TL; while (TL.i < TL.steps.length - 1) { TL.i++; const s = TL.steps[TL.i]; if (s.k === "sig") TL.sig += s.v; else if (s.k === "len") TL.len = s.setLen ? s.v : TL.len + s.v; else if (s.k === "mult") TL.mult *= s.v; else TL.flat += s.v; }
+function tallySkip() { if (!TL || TL.done) return !!TL; if (TL.wait) { TL.i--; TL.wait = null; } while (TL.i < TL.steps.length - 1) { TL.i++; const s = TL.steps[TL.i]; if (s.k === "sig") TL.sig += s.v; else if (s.k === "len") TL.len = s.setLen ? s.v : TL.len + s.v; else if (s.k === "mult") TL.mult *= s.v; else TL.flat += s.v; }
   TL.i = TL.steps.length; TL.done = true; TL.endT = 14; TL.cur = -1; Sound.lock(); return true; }
 // the dial: SIGNAL x LENGTH x MULT + FLAT on the left, the running total on the right; at the end the total, big and bright
 function tallyDial(x0, y0, cols) { const d = L.dial;
