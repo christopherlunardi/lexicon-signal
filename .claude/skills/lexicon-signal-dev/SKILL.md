@@ -730,3 +730,4 @@ the same batch.
 - greenlook decided 4, the breathing ring (Chris 2026-11-19, found all the green options boring): GREENLOOK = 4.
 - Acronyms (Chris 2026-11-20): common acronyms people say as a word go in (extra.txt: nato, nasa, jpeg, yolo, covid...); ones spelled letter by letter (FBI, USA, DIY) stay out.
 - tally-r1 (open, 2026-11-20): the count-up when a word is sent (TALLY 0 off, 1 on the dial, 2 chips on the keys, 3 both). tallyStart/tallyStep/tallySkip; send() hands over to sendFly() after it. Videos by scratchpad rec_tally.py (JOKER through the red key with treble, amp, coil, green charge).
+- tally r1 decided 3 (both); tally-r2 (open, 2026-11-20) on top of it: 4 sparks from the slots, 5 tidy chips, 6 live tube, 7 all three. Videos full screen by scratchpad rec_tally2.py.
