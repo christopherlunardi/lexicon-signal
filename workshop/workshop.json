@@ -3420,7 +3420,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "When you send a word, where should the count-up play out?",
      "found": "Every option counts the same way, in order: the 2 every word carries; each letter's value (with any part's bonus on that letter); the length, and parts that make it longer; each multiplier, one at a time with a stamp; flat adds (green key, a request); then the total, and only then do the letters fly to the tower. It speeds up as it goes, and A, X or a tap skips to the total. The video's word is JOKER through the red key, with the Treble Slider (J and K), a Tube Amp, the Long Wave Coil (5 letters) and the green key's charge. Tap Play with sound.",
      "options": [
@@ -3490,6 +3490,100 @@
         }
        ],
        "play": "play.html#test-word-tally-3",
+       "sound": true
+      }
+     ],
+     "chosen": "3"
+    },
+    {
+     "id": "r2",
+     "status": "open",
+     "question": "Building on Both: what makes it easiest to follow, parts and all?",
+     "found": "Every video is the whole screen now, bar included, so you can watch the parts' slots flash (with their tags rising) while it counts. The word is JOKER through the red key with the Treble Slider, a Tube Amp, the Long Wave Coil and the green key's charge. Tap Play with sound.",
+     "options": [
+      {
+       "id": "3",
+       "title": "Both, as in round 1",
+       "note": "For comparison: chips on the keys and the running sum on the dial, now seen with the whole screen, bar and all.",
+       "images": [
+        {
+         "src": "img/tally-r2/tally-3.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/tally-r2/tally-3.jpg",
+         "label": "Mid count"
+        }
+       ],
+       "play": "play.html#test-word-tally-3",
+       "sound": true
+      },
+      {
+       "id": "4",
+       "title": "Sparks from the parts",
+       "note": "When a part adds in, its slot in the bar flares and a spark flies from it to where it lands: to the letter for a letter bonus (the Treble Slider's +5 on the J), to the dial for length, multipliers and the green key's charge. You can follow each part's effect from its slot.",
+       "images": [
+        {
+         "src": "img/tally-r2/tally-4.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/tally-r2/tally-4.jpg",
+         "label": "Mid count"
+        }
+       ],
+       "play": "play.html#test-word-tally-4",
+       "sound": true
+      },
+      {
+       "id": "5",
+       "title": "Tidy chips",
+       "note": "Less on the glass at once: each letter's chip fades quickly, and only the latest length or multiplier chip stays over the word, so a busy word doesn't pile up.",
+       "images": [
+        {
+         "src": "img/tally-r2/tally-5.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/tally-r2/tally-5.jpg",
+         "label": "Mid count"
+        }
+       ],
+       "play": "play.html#test-word-tally-5",
+       "sound": true
+      },
+      {
+       "id": "6",
+       "title": "The tube fills live",
+       "note": "The signal tube along the bar fills with the running total as it counts up, so you see the night's progress grow with every step.",
+       "images": [
+        {
+         "src": "img/tally-r2/tally-6.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/tally-r2/tally-6.jpg",
+         "label": "Mid count"
+        }
+       ],
+       "play": "play.html#test-word-tally-6",
+       "sound": true
+      },
+      {
+       "id": "7",
+       "title": "All three",
+       "note": "Sparks, tidy chips and the live tube together.",
+       "images": [
+        {
+         "src": "img/tally-r2/tally-7.mp4",
+         "label": "Video (sound)"
+        },
+        {
+         "src": "img/tally-r2/tally-7.jpg",
+         "label": "Mid count"
+        }
+       ],
+       "play": "play.html#test-word-tally-7",
        "sound": true
       }
      ]

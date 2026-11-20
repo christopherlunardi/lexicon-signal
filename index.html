@@ -804,6 +804,11 @@ function back() { if (canAct() && S.path.length) setPath(S.path.slice(0, -1)); }
    letters and the word), 3 both. #tally-N */
 let TALLY = 0; { const m = location.hash.match(/tally-(\d+)/); if (m) TALLY = +m[1]; }
 let TL = null;
+/* round 2 (Chris 2026-11-20 picked "both" and wants to watch the parts in the bar too), all on top of 3 (both): 4 sparks (a part's
+   slot flares and a spark flies from it to the letter or the dial it adds to), 5 tidy chips (a letter's chip fades soon, only the latest
+   length / multiplier chip stays), 6 the tube fills live with the running total, 7 all three. */
+const TLB = () => TALLY >= 3, TLSPARK = () => TALLY === 4 || TALLY === 7, TLTIDY = () => TALLY === 5 || TALLY === 7, TLTUBE = () => TALLY === 6 || TALLY === 7;
+let tlSparks = [];
 const fmtX = (x) => (Math.round(x * 100) / 100).toString();
 function tallySteps(p, sc) {
   const tiles = p.map(i => S.grid[i]), len = sc.len, st = [], reds = tiles.filter(t => t.hot).length;
@@ -835,6 +840,8 @@ const tallyTotal = () => Math.round(TL.sig * Math.max(1, TL.len) * TL.mult) + TL
 function tallyApply(s) {
   if (s.k === "sig") TL.sig += s.v; else if (s.k === "len") TL.len = s.setLen ? s.v : TL.len + s.v; else if (s.k === "mult") TL.mult *= s.v; else TL.flat += s.v;
   TL.cur = s.key; TL.curT = 0; TL.last = s;
+  if (s.slot && TLSPARK()) { const k = partSlots().findIndex(c => c.id === s.slot); if (k >= 0) { const b = slotBox(k), to = s.k === "sig" && s.key >= 0 ? tileC(s.key) : { x: L.dial.x + L.dial.w / 2, y: L.dial.y + L.dial.h / 2 };
+    tlSparks.push({ x0: b.x + b.w / 2, y0: b.y + b.h / 2, x1: to.x, y1: to.y, t: 0, dur: 16, col: s.k === "mult" ? "255,110,70" : s.k === "flat" ? "90,255,140" : "255,214,120", k: s.k, sx: b.x, sy: b.y, sw: b.w, sh: b.h }); } }
   if (s.slot) { slotFlash[s.slot] = 1; if (s.k !== "sig" || s.slot !== "gold") slotTags.push({ id: s.slot, txt: s.txt.split(" ")[0], t: 0 }); }
   if (TALLY >= 2) { const c = s.key >= 0 ? tileC(s.key) : tallyMid(); TL.chips.push({ x: c.x, y: c.y + (s.key >= 0 ? 0 : 0), txt: s.txt.split(" ")[0], k: s.k, t: 0, center: s.key < 0 && s.k !== "sig" }); }
   const n = TL.n++;
@@ -847,6 +854,14 @@ function tallyStep() { if (!TL) return; TL.t++; TL.curT = (TL.curT || 0) + 1; TL
   if (TL.i >= TL.steps.length) { TL.done = true; TL.endT = 0; Sound.lock(); TL.cur = -1; return; }
   const s = TL.steps[TL.i]; tallyApply(s);
   const base = s.k === "sig" ? 8 : s.k === "len" ? 12 : s.k === "mult" ? 20 : 16; TL.dur = Math.max(Math.round(base * .5), Math.round(base * (1 - TL.i * .045))); }
+function tallyTop() { if (!tlSparks.length) return; ctx.save(); ctx.globalCompositeOperation = "lighter";
+  tlSparks = tlSparks.filter(s => { s.t++; const u = Math.min(1, s.t / s.dur), e = u * u * (3 - 2 * u), sx = LAST_SX || 0;
+    if (s.t <= 10) { ctx.strokeStyle = `rgba(${s.col},${.9 * (1 - s.t / 10)})`; ctx.lineWidth = 4; ctx.strokeRect(FX(s.sx + sx) - 4, FX(s.sy) - 4, FX(s.sw) + 8, FX(s.sh) + 8); bloom(FX(s.x0 + sx), FX(s.y0), FX(s.sw), s.col, .5 * (1 - s.t / 10)); }
+    if (u < 1) { for (let k = 0; k < 6; k++) { const v = Math.max(0, e - k * .05), x = s.x0 + (s.x1 - s.x0) * v, y = s.y0 + (s.y1 - s.y0) * v - Math.sin(v * Math.PI) * 30; ctx.fillStyle = `rgba(${s.col},${(1 - k / 6) * .9})`; ctx.beginPath(); ctx.arc(FX(x + sx), FX(y), 5 - k * .6, 0, 6.283); ctx.fill(); }
+      const x = s.x0 + (s.x1 - s.x0) * e, y = s.y0 + (s.y1 - s.y0) * e - Math.sin(e * Math.PI) * 30; bloom(FX(x + sx), FX(y), 18, s.col, .6); }
+    else if (s.t < s.dur + 8) bloom(FX(s.x1 + sx), FX(s.y1), 30, s.col, .6 * (1 - (s.t - s.dur) / 8));
+    return s.t < s.dur + 8; });
+  ctx.restore(); }
 function tallySkip() { if (!TL || TL.done) return !!TL; while (TL.i < TL.steps.length - 1) { TL.i++; const s = TL.steps[TL.i]; if (s.k === "sig") TL.sig += s.v; else if (s.k === "len") TL.len = s.setLen ? s.v : TL.len + s.v; else if (s.k === "mult") TL.mult *= s.v; else TL.flat += s.v; }
   TL.i = TL.steps.length; TL.done = true; TL.endT = 14; TL.cur = -1; Sound.lock(); return true; }
 // the dial: SIGNAL x LENGTH x MULT + FLAT on the left, the running total on the right; at the end the total, big and bright
@@ -865,9 +880,10 @@ function tallyFx() { if (!TL) return; ctx.save(); ctx.globalCompositeOperation =
   ctx.restore();
   if (TALLY < 2) return;
   const gh = glyphCv("ink", "N", "#000").height;
-  TL.chips.forEach((c, j) => { if (c.k === "sig" && c.t > 40) return; if (c.center && TL.chips.slice(j + 1).some(o => o.center) && c.t > 16) return;
+  const tidy = TLTIDY(), lastBig = tidy ? TL.chips.map(c => c.k !== "sig").lastIndexOf(true) : -1;
+  TL.chips.forEach((c, j) => { if (c.k === "sig" && c.t > (tidy ? 22 : 40)) return; if (c.center && TL.chips.slice(j + 1).some(o => o.center) && c.t > 16) return; if (tidy && c.k !== "sig" && j !== lastBig && c.t > 10) return;
     const e = Math.min(1, c.t / 6), lift = c.center ? 0 : Math.min(18, c.t * 1.6), big = c.k === "mult" || c.k === "flat", cw = textW(c.txt, "ink") + 12, ch = gh + 8;
-    const x = FX(c.x) - cw / 2, y = FX(c.y) - (c.center ? ch / 2 : FX(L.th) / 2 + ch * .2) - lift, a = c.k === "sig" ? Math.min(1, (44 - c.t) / 10) : 1;
+    const x = FX(c.x) - cw / 2, y = FX(c.y) - (c.center ? ch / 2 : FX(L.th) / 2 + ch * .2) - lift, a = c.k === "sig" ? Math.min(1, ((tidy ? 22 : 44) - c.t) / (tidy ? 6 : 10)) : 1;
     ctx.save(); ctx.globalAlpha = Math.max(0, a); ctx.translate(x + cw / 2, y + ch / 2); const s = (big ? 1.5 : 1) * (e < 1 ? .6 + .6 * e : 1 + .1 * Math.max(0, 1 - (c.t - 6) / 6)); ctx.scale(s, s);
     ctx.fillStyle = c.k === "mult" ? "#ff6a40" : c.k === "flat" ? "#5cff8a" : c.k === "len" ? "#ffe9b8" : "#ffd27a"; ctx.beginPath(); ctx.roundRect(-cw / 2, -ch / 2, cw, ch, 5); ctx.fill();
     ctx.strokeStyle = "#3a1606"; ctx.lineWidth = 2; ctx.stroke(); ftext(c.txt, 0, -gh / 2, "ink", "#2a0d04", "c"); ctx.restore(); });
@@ -1297,7 +1313,7 @@ function draw() {
   ctx.save(); ctx.translate(sx * FINE, 0); drawRain(); drawDial(); drawLamps(); drawKeyLetters(); drawGlows(); drawFlyers(); wordOkFx(); tallyFx(); ctx.restore();
   if (overT > 0) { ctx.save(); ctx.globalCompositeOperation = "lighter"; ctx.fillStyle = `rgba(255,40,24,${.42 * overT * (.6 + .4 * Math.sin(frame / 2))})`; ctx.fillRect(0, 0, CVW, CVH); ctx.restore(); overT = Math.max(0, overT - .012); }
   drawScoreDrums(); drawReqSlip(); if (POP === 2 || POP === 5) popRims(); if (POP === 3) popKeylines();
-  drawBarText(); drawReqZoom(); drawDanger(); LAST_SX = sx; drawLoss(sx); if (nightCard > 0 && S.phase === "play" && !HOW.on) { if (INTRO) { drawIntro(); introT++; if (!nightHold) nightCard--; } else { drawNightCard(); nightCard--; } }
+  drawBarText(); tallyTop(); drawReqZoom(); drawDanger(); LAST_SX = sx; drawLoss(sx); if (nightCard > 0 && S.phase === "play" && !HOW.on) { if (INTRO) { drawIntro(); introT++; if (!nightHold) nightCard--; } else { drawNightCard(); nightCard--; } }
   if (S.phase === "title" || S.phase === "shop" || S.phase === "swap" || S.phase === "trade" || S.phase === "over" || S.phase === "melt" || S.phase === "upgrade" || S.phase === "report") {
     octx.clearRect(0, 0, W, H); octx.imageSmoothingEnabled = false;
     if (S.phase === "title") drawTitle(); else if (S.phase === "shop") drawShop(); else if (S.phase === "swap") drawSwap(); else if (S.phase === "trade") drawTrade(); else if (S.phase === "melt") drawMelt(); else if (S.phase === "report") drawReport(); else if (S.phase === "upgrade") drawUpgrade(); else drawOver();
@@ -1651,7 +1667,7 @@ function drawDial() {
   // wordok round 3 (Chris 2026-11-19: 7 was a bit much): 8 soft wash blink, 9 slow breathe (reverse print fades in and out),
   // 10 only the word in reverse, blinking, 11 two quick reverse blinks then a steady soft glow, 12 a blinking block cursor after the word.
   // Every fill follows the dial window's own shape (dialFill), so nothing lights over the bezel.
-  if (TL && TALLY !== 2) { tallyDial(x0, y0, cols); ctx.restore(); return; }
+  if (TL && (TALLY === 1 || TLB())) { tallyDial(x0, y0, cols); ctx.restore(); return; }
   const blinkOn = ((Math.max(0, wokOn - 1) / 30) | 0) % 2 === 0, INK = "#2a0d04", wm = ok ? WORDOK : 0;
   let inv = (wm === 7 && blinkOn) || (wm === 11 && wokOn < 20 && ((wokOn / 5) | 0) % 2 === 0), invA = 0, wordBox = false, cursorAt = -1;
   if (wm === 9) invA = .8 * (.5 - .5 * Math.cos(Math.max(0, wokOn - 1) / 48 * Math.PI * 2));
@@ -3094,7 +3110,7 @@ function drawTube() {
   tubeLit = lit; const full = play && pr >= 1; if (full && !tubeFull) { tubeFlash = tubeFlash.map(() => 1); tubeKick = 1.5; Sound.full(); const t = L.tube; for (let x = 0; x < t.w; x += 24) burst(t.x + x, L.barY + t.y + t.h / 2, 2, C.gold); }
   tubeFull = full;
   // what the traced word would add, blinking
-  const ok = S.phase === "play" && S.path.length >= 3 && isValid(), pts = ok ? scoreOf(S.path).pts : 0, fills = ok && S.score + pts >= S.target, odv = fills && S.score + pts >= S.target * OVERDRIVE;
+  const tlT = TL && TLTUBE(), ok = tlT || (S.phase === "play" && S.path.length >= 3 && isValid()), pts = tlT ? (TL.done ? TL.sc.pts : tallyTotal()) : ok ? scoreOf(S.path).pts : 0, fills = ok && S.score + pts >= S.target, odv = fills && S.score + pts >= S.target * OVERDRIVE;
   // a word that falls short never lights the last cell: only a word that really fills the tube reaches the end (and lights the end lamp)
   const add = !ok ? 0 : fills ? G.n : Math.min(G.n - 1, Math.floor((S.shown + pts) / S.target * G.n));
   const sheen = ((frame * 9) % (G.n * (G.cw + G.gap) + 400)) - 200, blink = .45 + .3 * Math.sin(frame / 4);
