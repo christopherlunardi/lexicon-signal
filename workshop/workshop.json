@@ -3109,7 +3109,7 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "question": "How should the count-up be split up and sound, without getting longer?",
      "found": "All on top of the count-up you picked (the plain word first, then each part with its spark). Same word: JOKER through the red key with the Treble Slider, a Tube Amp, the Coil and the green key's charge. Turn the sound up: tap Play with sound.",
      "options": [
@@ -3198,7 +3198,8 @@
        "play": "play.html#test-word-tally-9-tlp-4",
        "sound": true
       }
-     ]
+     ],
+     "chosen": "2"
     }
    ]
   }

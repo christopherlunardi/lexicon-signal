@@ -817,7 +817,7 @@ const TLSLOW = () => TALLY === 8 || TALLY === 9;
    end). 2 phases + roll-up: when the plain word is done its chips gather into one "JOKER 45" tag over the word, then the parts start.
    3 phases, sounds as one tune: the letters climb a scale, the parts keep climbing, multipliers ring lower and fuller, the total resolves.
    4 roll-up and the tune together. */
-let TLP = 0; { const m = location.hash.match(/tlp-(\d+)/); if (m) TLP = +m[1]; }
+let TLP = 2; /* (Chris picked 2, phases + roll-up, 2026-11-21) */ { const m = location.hash.match(/tlp-(\d+)/); if (m) TLP = +m[1]; }
 const tlPhase = (s) => !s ? -1 : (!s.slot || s.letter != null) ? (s.k === "len" ? 1 : 0) : s.k === "sig" ? 2 : s.k === "len" ? 3 : s.k === "mult" ? 4 : 5;
 const TLROLL = () => TLP === 2 || TLP === 4, TLTUNE = () => TLP === 3 || TLP === 4;
 // 9 (Chris 2026-11-20): the same, but the plain word scores first (the 2, every letter, its length), then the parts add on, in order
