@@ -461,7 +461,7 @@ the same batch.
    Clips: a hash ending in `-step` (e.g. `#test-word-keys-6-step`) stops the game running by itself; `LEXSTEP(n)` advances n
    frames. Press keys with Playwright, step 2 frames, screenshot the canvas, repeat, then encode with ffmpeg (30 fps, H.264,
    yuv420p, no sound) into `workshop/img/<topic>-<round>/`. A Workshop option's images may be .mp4 files.
-4. `python3 -I tools/release.py` then `python3 -I tools/web.py` (the Android build and the web app). Name check, commit with a plain
+4. `python3 -I tools/release.py` (build number + comment check) then `python3 -I tools/web.py` (the GitHub site's web app). Name check, commit with a plain
    message, push (that deploys the web app), republish the link. Tell Chris in a few lines what changed.
 
 ## The Retroid app (Android, built the same way as the studio's other game)
@@ -484,7 +484,7 @@ the same batch.
   the newest; it can't be updated). Measured there: ~15 fps (65 ms frames, GPU only 4 ms: WebView's own graphics thread was the
   bottleneck), audio crackle, and a slow intro (the intro runs on the sound clock, so a struggling sound thread drags it). Chrome 157
   on the same device runs the game fast. The web app runs in Chrome's current engine, so it is now the main way to play there.
-- Keep the Android app (android/, dist/) building and working for now. Ask Chris before retiring it.
+- Retired (2026-11-18); dist/ and android.yml removed 2026-11-22. Kept for reference only.
 - Build: `python3 -I tools/web.py`, always after `tools/release.py` (every content change needs a new build number: the service
   worker's cache is named lexsig-BUILD and an unchanged number keeps serving the old files). It writes `web/`: index.html wrapped in
   a full head (manifest link, theme color, icons, the fonts from web/fonts instead of the internet, window.LEX_BUILD, pwa.js at the
@@ -738,3 +738,5 @@ the same batch.
 - tallyfx-r1 (open, 2026-11-20): TLP 1 phases (quicker within each part of the count, a beat between parts, soft sounds Sound.tlStep/tlWhoosh/tlTotal), 2 + roll-up (plain word chips gather into 'JOKER 45'), 3 one climbing tune, 4 both. #tlp-N on top of tally 9. Videos by scratchpad rec_tfx.py.
 - tallyfx decided 2 (Chris 2026-11-21): TLP = 2, phases + roll-up. Speed still to be tuned after he plays it.
 - Gold keys: any number in one word (up to 3) are filled together (goldFills, cached per letters); the most common word wins, a request-filling one first (Chris 2026-11-22: two gold keys + OAT found nothing).
+
+- 2026-11-22 (Chris): he only plays on the GitHub site (installed as an app); never the Android app. release.py no longer writes dist/; dist/ and .github/workflows/android.yml are gone. Sharing his play log from the installed site: pause (Start) > SHARE PLAY LOG opens the phone's share sheet (newest 3 runs), or copies it where sharing isn't offered.

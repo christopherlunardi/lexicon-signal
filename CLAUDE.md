@@ -31,7 +31,8 @@ Read the workflow in `.claude/skills/lexicon-signal-dev/SKILL.md` before changin
   It's written in five groups, most common first (SCOWL sizes in `scowl-sizes.txt`); the gold key picks the most common word it can.
 - `art/pixel/` the pixel art: sources in `src/`, `build.py` makes the palette, sprites, icons, fonts and `atlas.png`/`atlas.json`.
 - `web/` the installable web app for GitHub Pages, made by `tools/web.py` (with `tools/web/pwa.js` and `sw.js`); never edit web/ by hand.
-- `android/` the retired Retroid app (reference only); `tools/release.py` still makes dist/ and the build number.
+- `android/` the retired Retroid app (reference only; dist/ and its build workflow were removed 2026-11-22). `tools/release.py` only bumps
+  the build number and runs the // comment check.
 - `art/bench/` the Pixel Bench (Chris's pixel touch-up page, https://claude.ai/artifact/9VAQd2RwmbaReh6yxaFVuD): build.py writes the framed
   pieces as they are under the rivets to `art/bench/img/` + `manifest.json`. When Chris sends a fix: read ArtifactData collection `edits`
   (name, source, asset id, note), fetch the PNG with Artifact read `path: <asset id>`, save it exactly as painted (no resizing or
