@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 252;</script><script>
+<script>window.LEX_BUILD = 253;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -650,11 +650,15 @@ const moving = () => S.grid.some(t => t.yOff !== 0 || t.vy !== 0);
 const ABC = "abcdefghijklmnopqrstuvwxyz";
 // the Gold Key's "?" stands for any letter: a word with it reads as the first real word it can make
 // (with a request open, a letter that also fills the request comes first: MO + gold key with "OW" wanted reads MOW, Chris 2026-11-16)
-function resolveWord(w, p) { const i = w.indexOf("?"); if (i < 0) return w;
-  // the most common word it can make (REPO, not PEPO); one that fills an open request comes first
-  const best = (ok) => { let b = null, bt = 99; for (const c of ABC) { const t = w.slice(0, i) + c + w.slice(i + 1); if (t.length >= 3 && DICT.has(t) && ok(t)) { const g = tierOf(t); if (g < bt) { b = t; bt = g; if (g === 0) break; } } } return b; };
-  if (p && typeof reqOpen === "function" && reqOpen()) { const r = best(t => reqWordOk(t.toUpperCase(), p)); if (r) return r; }
-  return best(() => true) || w; }
+// any number of gold keys (Chris 2026-11-22: two in a row then OAT found nothing; it only filled the first one): every way to fill them
+// is tried, cached per letters, and the most common word wins (REPO, not PEPO); one that fills an open request comes first
+const goldCache = new Map();
+function goldFills(w) { let r = goldCache.get(w); if (r) return r; r = []; const n = (w.match(/\?/g) || []).length;
+  if (n <= 3 && w.length >= 3) { const go = (s) => { const i = s.indexOf("?"); if (i < 0) { if (DICT.has(s)) r.push(s); return; } for (const c of ABC) go(s.slice(0, i) + c + s.slice(i + 1)); }; go(w); }
+  r.sort((a, b) => tierOf(a) - tierOf(b)); if (goldCache.size > 400) goldCache.clear(); goldCache.set(w, r); return r; }
+function resolveWord(w, p) { if (w.indexOf("?") < 0) return w; const fills = goldFills(w); if (!fills.length) return w;
+  if (p && typeof reqOpen === "function" && reqOpen()) { const r = fills.find(t => reqWordOk(t.toUpperCase(), p)); if (r) return r; }
+  return fills[0]; }
 const pathWord = (p = S.path) => resolveWord(p.map(i => S.grid[i].ch).join("").toLowerCase(), p);
 const adjacent = (a, b) => a !== b && Math.abs((a % N) - (b % N)) <= 1 && Math.abs(((a / N) | 0) - ((b / N) | 0)) <= 1;
 const isValid = (p = S.path) => { const w = pathWord(p); return w.length >= 3 && DICT.has(w); };

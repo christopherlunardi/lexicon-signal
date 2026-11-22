@@ -737,3 +737,4 @@ the same batch.
 - tally decided 9 (Chris 2026-11-20): TALLY = 9 in the game. The opening chip reads 'BASE +2' (the 2 every word carries); the manual's scoring section describes the count-up.
 - tallyfx-r1 (open, 2026-11-20): TLP 1 phases (quicker within each part of the count, a beat between parts, soft sounds Sound.tlStep/tlWhoosh/tlTotal), 2 + roll-up (plain word chips gather into 'JOKER 45'), 3 one climbing tune, 4 both. #tlp-N on top of tally 9. Videos by scratchpad rec_tfx.py.
 - tallyfx decided 2 (Chris 2026-11-21): TLP = 2, phases + roll-up. Speed still to be tuned after he plays it.
+- Gold keys: any number in one word (up to 3) are filled together (goldFills, cached per letters); the most common word wins, a request-filling one first (Chris 2026-11-22: two gold keys + OAT found nothing).
