@@ -2247,10 +2247,13 @@ const gkMemo = new Map();
 // the letter the gold key stands for in a traced path (null while the letters aren't a real word)
 function gkLetterOf(path) { const raw = path.map(i => S.grid[i].ch).join("").toLowerCase(), q = raw.indexOf("?"); if (q < 0) return null;
   const mk = raw + "|" + (reqOpen() ? S.req.text : ""); let v = gkMemo.get(mk); if (v === undefined) { const w = resolveWord(raw, path); v = w.length >= 3 && DICT.has(w) ? w[q].toUpperCase() : null; if (gkMemo.size > 80) gkMemo.clear(); gkMemo.set(mk, v); } return v; }
-function gkFrame() { const wi = S.grid.findIndex(t => t && t.wild); let ch = null, hint = null;
-  if (S.phase === "play" && wi >= 0) { if (S.path.includes(wi)) ch = gkLetterOf(S.path);
+// each gold key in the path shows its own letter (Chris 2026-11-22: two gold keys both showed the first one's letter)
+function gkLetters(path) { const raw = path.map(i => S.grid[i].ch).join("").toLowerCase(); if (raw.indexOf("?") < 0) return null; const w = resolveWord(raw, path); if (!(w.length >= 3 && DICT.has(w))) return null;
+  const m = {}; path.forEach((i, j) => { if (S.grid[i].wild) m[i] = w[j].toUpperCase(); }); return m; }
+function gkFrame() { const wi = S.grid.findIndex(t => t && t.wild); let ch = null, hint = null, chs = null;
+  if (S.phase === "play" && wi >= 0) { if (S.path.some(i => S.grid[i].wild)) { chs = gkLetters(S.path); ch = chs ? chs[S.path.find(i => S.grid[i].wild)] : null; }
     else if (GOLD_STYLE === 3 && S.path.length >= 2 && adjacent(S.path[S.path.length - 1], wi)) hint = gkLetterOf([...S.path, wi]); }
-  gkNow = { ch, hint, gild: GOLD_STYLE === 5 && ch != null, red: wi >= 0 && !!S.grid[wi].hot }; }
+  gkNow = { ch, chs, hint, gild: GOLD_STYLE === 5 && ch != null, red: wi >= 0 && !!S.grid[wi].hot }; }
 Object.assign(GV_RIMS, { grest: ["rgba(255,210,96,.7)", 1.5, "#ffb400", 7], gpick: ["rgba(255,214,96,.9)", 2, "#ffb400", 10], gok: ["rgba(255,240,170,.95)", 2.5, "#ffc21a", 12], gring: ["rgba(255,232,150,.9)", 3, "#ffbe1e", 12] });
 // the gold key's housing with its dark dot field: a gold-lipped well, or (4) a brass bezel round a small window
 function gkBase(P, st, red, lit, w0, h0) { return gvSpr("gkb|" + st + (red ? "r" : "") + lit + "|" + w0 + "x" + h0, w0 + 8, h0 + 8, (c) => {
@@ -2279,7 +2282,7 @@ const gkStar = () => gvSpr("gkstar", 32, 32, (c) => { let g = c.createRadialGrad
 // the gold key (and, in the gilded word, every key of the word) drawn in gold
 function gkKey(o, P, w0, h0, ox, oy, ok, low, fl, lockT) {
   const { t, x, y } = o, GS = GOLD_STYLE, wild = !!t.wild, hot = !!t.hot, red = hot && wild, lit = t.lit, mx = x + ox, my = y + oy, land = t.land || 0, wave = o.on && ok, scr = land > .4;
-  const now = wild ? (o.on && gkNow.ch) || "?" : o.ch;   // what the key shows: "?" or the letter it stands for
+  const now = wild ? (o.on && gkNow.chs && gkNow.chs[o.i]) || "?" : o.ch;   // what the key shows: "?" or the letter it stands for
   if (wild) { if (t.gkCh == null) { t.gkCh = t.gkPrev = now; t.gkAt = -999; t.gkF = frame; t.gkP = Math.floor(t.seed * 200); }
     if (now !== t.gkCh) { t.gkPrev = t.gkCh; t.gkCh = now; t.gkAt = frame; } }
   const age = wild ? frame - t.gkAt : 999, locked = wild && now !== "?", GLO = "rgba(255,190,40,.6)";
