@@ -753,3 +753,7 @@ the same batch.
   into words.js as window.LEX_KINDS by tools/words.py; tileshark (ENABLE-only words of 5 letters or less), wordcel (long and
   uncommon), short (3 letters) and long (7+) are worked out in kindsOf(). Type = the kind that stands out most (x1.15 its base, 3+
   sends) once 15 words are sent; nothing stands out: Easy Listening. A streak = the next one that stands out.
+- 2026-11-23 (Chris: a best word's score means nothing without what made it): send() works out each word's breakdown (brOf over
+  tallySteps: letters + base, each part's signal, length and its parts, each multiplier, green key / request added on) into the play
+  log (words[].br) and the logbook keeps the best send's (BOOK.w[word][3]). Shown as the manual's framed example boxes (brEx): the
+  best word on Records, the top ten on Best Words. Words sent before this show the play log's rougher numbers, marked as such.
