@@ -1,7 +1,5 @@
 // Renders the game's sound offline (seeded random, a virtual clock) with a scripted list of effects (EV env: {"secs": "js"}).
 // Needs the local server on :8771 serving the repo and workshop/play.html built.
-// node sndrender.js <hash> <out.wav> <secs> [jsBefore]  : render the game's sound offline (seeded random) with a scripted set of effects
-const { chromium } = require('playwright'); const fs = require('fs');
 const [hash, out, secs, pre] = process.argv.slice(2); const DUR = +secs;
 const INIT = `(() => { let a = 12345; Math.random = () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; };
  window.__vt = 0; const SR = 44100; window.__off = new OfflineAudioContext(2, SR * ${DUR + 2}, SR);

@@ -5050,7 +5050,7 @@ const Sound = (() => {
     else { jazzSched(cur, t1); cur.chain.lp.frequency.setTargetAtTime(cur.st.lp * (.8 + fill * .45), ac.currentTime, .4); } }   // the band comes through the wall clearer as the night's signal fills
   // tune in station i: the one playing fades under the retune's static, the new one starts on its first beat as it clears
   function tune(i, sweep) { const t = ac.currentTime, st = STATIONS[i], at = t + (sweep ? .55 : .1);
-    if (cur) { const old = cur; old.g.gain.setTargetAtTime(.0001, t, .07); setTimeout(() => { (old.chain ? old.chain.srcs : []).forEach(x => { try { x.stop(); } catch (e) {} }); try { old.g.disconnect(); } catch (e) {} }, 4000); }
+    if (cur) { const old = cur; old.g.gain.setTargetAtTime(.0001, t, .07); (old.chain ? old.chain.srcs : []).forEach(x => { try { x.stop(t + 3); } catch (e) {} }); }   /* (stopped on the audio clock; its notes already have stop times) */
     const g = ac.createGain(); g.connect(mus); if (sweep) { g.gain.setValueAtTime(.0001, t); g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(st.level, at + .7); } else g.gain.value = st.level;
     const C = { i, st, g, start: at, nextBeat: at, beatN: 0, js: { lastBass: st.prog ? st.prog[0].root : 40, lead: null } };
     if (st.band === "pulse") { C.padF = ac.createBiquadFilter(); C.padF.type = "lowpass"; C.padF.frequency.value = 700; C.padF.Q.value = 2; C.padF.connect(g); }
