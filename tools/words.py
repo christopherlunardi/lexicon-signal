@@ -27,4 +27,19 @@ groups = [set() for _ in range(5)]
 for w in words: groups[tier(w)].add(w)
 (ROOT / "words.js").write_text("// Word list: ENABLE (public domain) + SCOWL/ESDB size 70 (Copyright Kevin Atkinson, see tools/wordlists/SCOWL-Copyright.txt)"
     " + place names (ESDB, and the world-cities list from GeoNames, CC BY 4.0) + our own extra words; 3-12 letters. Made by tools/words.py\nwindow.LEX_WORDS=\"" + " | ".join(" ".join(sorted(g)) for g in groups) + "\";\n")
+# word kinds for the Station Logbook's personality types (Chris 2026-11-23): kinds.txt's base words plus their plain forms (s, es, ed,
+# ing) that are in the list; edgelord also takes extra.txt's "# crude" section. Written into words.js as window.LEX_KINDS.
+kinds, cur = {}, None
+for l in (D / "kinds.txt").read_text().splitlines():
+    l = l.split("#")[0].strip().lower()
+    if not l: continue
+    if l.startswith("["): cur = kinds.setdefault(l.strip("[]"), set()); continue
+    for w in l.split(): cur.update(f for f in [w] + [w + x for x in ("s", "es", "ed", "ing")] if f in words and (f == w or len(w) >= 3))
+crude, on = set(), False
+for l in (D / "extra.txt").read_text().splitlines():
+    if l.startswith("#"): on = l.strip() == "# crude"; continue
+    if on: crude.update(w for w in l.lower().split() if w in words)
+kinds["edgelord"] |= crude
+with open(ROOT / "words.js", "a") as f: f.write("window.LEX_KINDS={" + ",".join(f'{k}:"{" ".join(sorted(v))}"' for k, v in kinds.items()) + "};\n")
+print("kinds:", ", ".join(f"{k} {len(v)}" for k, v in kinds.items()))
 print(len(words), "words;", ", ".join(f"{k}: +{v}" for k, v in counts.items()))

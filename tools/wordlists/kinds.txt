@@ -1,0 +1,76 @@
+# Word kinds for the Station Logbook's personality types (Chris 2026-11-23). tools/words.py reads this and writes window.LEX_KINDS
+# into words.js. Each [kind] lists base words; a word's plain forms (s, es, ed, ing, er, ers, y, ier, iest...) are added when they
+# are in the word list, and words not in the word list are dropped. A word can be in more than one kind. # comments.
+# Tile Shark, Wordcel, Short Wave and Long Haul come from how common and how long a word is, in the game itself.
+# Edgelord also takes every word in extra.txt's "# crude" section.
+
+[edgelord]
+fuck shit piss crap damn hell bitch bastard cunt twat cock dick prick wank arse ass asses butt boob tit tits titty
+slut whore hoe skank tramp pimp porn porno horny horniness sexy sex sexed nude nudes naked boner dildo dildos orgy orgies
+fart farts farted farting poop poops pooped turd turds puke barf vomit snot booger boogers pee peed peeing
+bugger bollock sod wanker tosser git twit moron idiot dumbass jackass dumb stupid retard retarded loser jerk douche
+creep creepy pervert perv pervy kinky fetish grope groped lube lubed spank spanked nipple nipples crotch crotches groin
+pube pubes pubic scrotum testicle testicles penis penises vagina vaginas anus anal rectum enema enemas condom condoms
+nigger niggers nigga niggas spic spics kike kikes chink chinks gook gooks wop wops dago dagos wetback wetbacks
+coon coons darkie darkies paki pakis raghead ragheads towelhead towelheads redskin redskins honky honkies cracker crackers
+gringo gringos limey limeys kraut krauts jap japs nip nips beaner beaners gypsy gypsies hick hicks redneck rednecks
+fag fags faggot faggots dyke dykes homo homos tranny trannies queer queers poof poofs poofter
+spaz spazzes cripple cripples midget midgets mong mongs foid foids incel incels
+drunk drunks druggie druggies stoner stoners junkie junkies crackhead crackheads bong bongs weed blunt blunts
+booze boozer boozy hooker hookers stripper strippers brothel brothels bimbo bimbos floozy
+
+[online]
+meme memes troll trolls trolled trolling blog blogs blogger vlog vlogs vlogger emoji emojis hashtag hashtags selfie selfies
+app apps online offline login logout spam spammer wiki wikis podcast podcasts streamer streamers gamer gamers lag laggy
+glitch glitches glitchy emo emos chad chads based cope coped coping seethe seething cringe cringed cringing woke lurk lurker
+lurkers upvote upvotes upvoted downvote downvotes doxx doxxed dox doxed catfish catfished ghosted ghosting toxic tweet tweets
+tweeted retweet retweets hacker hackers hacked noob noobs newb emote emotes avatar avatars pixel pixels crypto bitcoin
+modem modems server servers reboot reboots firmware malware spyware bot bots download downloads upload uploads
+browser browsers website websites webcam webcams email emails inbox spam scroll scrolling clickbait viral binge bingeing
+gamer streaming livestream podcaster blogger netizen netizens cyber hashtag subreddit avatar wifi smartphone
+username usernames password passwords captcha firewall bandwidth pixelated hotspot screenshot screenshots unboxing
+influencer influencers follower followers unfollow subscribe subscribers subscribed algorithm algorithms meta goat lit
+rizz yeet bae sus bruh fam lowkey highkey simp stan bussin sheesh oof meh legit deets rando bestie zoomer normie vibe vibey
+cringey cringy pwn pwned nerf nerfed ratio ratioed lol lols lmao lmfao rofl glowup hangry adulting frenemy doomscroll
+sext sexting gif gifs vaping vape vaper thot larp larper yolo fomo fubar jpeg jpegs distro devops config unfollow npc npcs
+sidequest otaku cosplay cosplayer anime manga waifu kawaii senpai
+
+[doomer]
+doom doomed death deaths dead die dies died dying grave graves rot rots rotted rotting rotten decay decayed gloom gloomy
+void voids abyss bleak despair dread dreaded ruin ruined ruins ash ashes corpse corpses tomb tombs crypt crypts coffin coffins
+morgue funeral funerals mourn mourning grief grieve sorrow misery miserable agony pain painful suffer suffering hell hellish
+demon demons curse cursed bleed bleeding blood bloody kill killed killer murder murders war wars plague plagues famine
+apocalypse collapse collapsed extinct extinction hopeless lonely loneliness empty emptiness nothing nil dark darkness
+shadow shadows ghost ghosts haunt haunted fear fears terror horror horrors skull skulls bone bones poison poisoned venom
+wither withered fade faded drown drowned drowning tragic tragedy tragedies gore gory grim reaper doomsday despond nihil
+nihilism nihilist futile futility woe woes sadness sad sorrowful weep wept tears lost ruinous dire omen omens bane bleakness
+carcass carrion decompose wreck wrecked wreckage ruinate perish perished lament lamenting entomb burial buried bury
+casket hearse cemetery cemeteries graveyard sepulcher tombstone epitaph obituary mortal mortality fatal fatality slay slain
+massacre carnage plunder pillage noose gallows hang hanged gloomier gloomiest dismal desolate forlorn dreary somber morose
+
+[romantic]
+love loved lover lovers loving lovely kiss kissed kisses kissing heart hearts darling darlings dear dearest honey sweet
+sweetie sweetheart romance romantic adore adored adoring crush crushes crushing flirt flirty flirted date dated dating
+cuddle cuddly cuddled hug hugs hugged embrace embraced passion passionate desire desired tender tenderness affection
+beloved cherish cherished devotion valentine valentines rose roses wed wedded wedding weddings bride brides groom grooms
+marry married marriage amour babe baby bae swoon swooned longing yearn yearning soulmate soulmates charm charming blush
+blushed blushing caress caressed fond fondness honeymoon smitten infatuated infatuation suitor suitors courtship betrothed
+fiance fiancee spouse husband wife lovebird lovebirds sweetly ardor ardent enamored besotted kindred cupid amorous amore
+paramour beau beaux belle tryst trysts serenade serenaded snuggle snuggled snuggly woo wooed wooing elope eloped bliss
+
+[gourmand]
+food foods bread cake cakes pie pies meat meats beef pork ham bacon egg eggs cheese milk butter rice bean beans corn soup soups
+stew stews salad salads pasta pizza pizzas taco tacos burger burgers steak steaks fish tuna salmon shrimp crab crabs lobster
+oyster oysters apple apples pear pears plum plums peach peaches grape grapes lemon lemons lime limes melon melons berry berries
+cherry cherries banana bananas fig figs onion onions garlic pepper peppers salt sugar jam toast bun buns bagel bagels donut
+donuts doughnut cookie cookies candy candies fudge tart tarts pudding cream yogurt gravy sauce sauces curry chili noodle noodles
+dumpling dumplings sushi ramen tofu olive olives pickle pickles carrot carrots potato potatoes tomato tomatoes lettuce kale
+pea peas yam yams mango mangoes kiwi coconut cocoa coffee tea wine wines beer beers ale ales mead rum gin vodka whiskey whisky
+cider juice soda snack snacks meal meals feast feasts dine dined diner dinner dinners lunch lunches supper breakfast brunch
+eat eats ate eating chew chewed bite bites taste tasty savor savory yum yummy delicious gourmet chef chefs cook cooked cooking
+bake baked baking fry fried fries grill grilled roast roasted broil boil boiled spice spicy herb herbs basil thyme ginger
+nutmeg waffle waffles pancake pancakes crepe crepes muffin muffins scone scones biscuit biscuits cracker crackers gum gums
+negroni cocktail cocktails martini sandwich sandwiches hotdog nacho nachos salsa guac guacamole burrito burritos kebab kebabs
+omelet omelette sausage sausages salami pepperoni meatball meatballs brisket ribs turkey chicken duck lamb mutton veal venison
+caviar truffle truffles chocolate vanilla caramel toffee syrup maple cinnamon mustard ketchup mayo vinegar dough pastry
+pastries croissant brownie brownies sundae icecream sorbet gelato custard flan cobbler crumble strudel dessert desserts

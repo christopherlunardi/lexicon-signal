@@ -742,3 +742,14 @@ the same batch.
 - 2026-11-22 (Chris): he only plays on the GitHub site (installed as an app); never the Android app. release.py no longer writes dist/; dist/ and .github/workflows/android.yml are gone. Sharing his play log from the installed site: pause (Start) > SHARE PLAY LOG opens the phone's share sheet (newest 3 runs), or copies it where sharing isn't offered.
 - 2026-11-23 (Chris): the pause menu's SOUND line became MUSIC and EFFECTS level rows (0..10 each, 10 = the standard mix, saved in lexsig.vol; the rain follows MUSIC). Left/right step, A switches off and back, a tap on the pips sets the level. M still mutes everything. Fixed: the Service Manual opened from pause didn't take up/down (move() asked pauseKey before manKey).
 - 2026-11-23 (Chris): planned, not built yet: a Station Logbook in place of HIGH SCORES (records, a word library that never trims, charts, a personality type from the kinds of words sent). Type names so far: Edgelord (swears, crude words, slurs), Too Much Computer (internet slang, said-as-a-word acronyms), Tile Shark (weird legal short words), Wordcel (long fancy words; name 'for now'), Doomer (dark words), Short Wave (mostly 3-letter words), Long Haul (7+ letters), Romantic, Gourmand (food). Dead Air was cut.
+- 2026-11-23 (Chris): the Station Logbook is built. Title menu LOGBOOK (took HIGH SCORES' place) and the sign-off screen's LOGBOOK
+  button (opens on the top ten); dev panel LOGBOOK. It is the Service Manual's book engine with MAN.book = "log" (bookSecs() picks
+  LOG_SECS or MAN_SECS; manOpen(from, book, sec)). Data: lexsig.book (never trimmed: every word's sends / best / first sent, a line
+  per run, time on the air), filled by bookSync from plSave; the play log's runs are caught up on start (fills it the first time,
+  closes runs left halfway). #test- pages don't write to it, except #test-book... pages. Pages: records, top ten, personality, most
+  sent, best, longest, every word A to Z, charts of runs, words and parts. New book blocks: big, bars, cols, wgrid, ptype, logcover.
+- Personality types: PTYPES in index.html (name, tagline, write-up, base = how often an ordinary player sends that kind). Word kinds:
+  tools/wordlists/kinds.txt (edgelord, online, doomer, romantic, gourmand; edgelord also takes extra.txt's # crude section), written
+  into words.js as window.LEX_KINDS by tools/words.py; tileshark (ENABLE-only words of 5 letters or less), wordcel (long and
+  uncommon), short (3 letters) and long (7+) are worked out in kindsOf(). Type = the kind that stands out most (x1.15 its base, 3+
+  sends) once 15 words are sent; nothing stands out: Easy Listening. A streak = the next one that stands out.
