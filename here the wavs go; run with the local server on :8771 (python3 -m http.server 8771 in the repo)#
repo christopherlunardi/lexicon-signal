@@ -1,0 +1,2 @@
+import pathlib
+S = os.environ.get("OUT", str(pathlib.Path(__file__).parent))   

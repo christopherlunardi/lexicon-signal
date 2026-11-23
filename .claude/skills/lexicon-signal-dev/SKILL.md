@@ -757,3 +757,13 @@ the same batch.
   tallySteps: letters + base, each part's signal, length and its parts, each multiplier, green key / request added on) into the play
   log (words[].br) and the logbook keeps the best send's (BOOK.w[word][3]). Shown as the manual's framed example boxes (brEx): the
   best word on Records, the top ten on Best Words. Words sent before this show the play log's rougher numbers, marked as such.
+- 2026-11-23 (Chris: a different song per retune, maybe 5, without losing how the sounds are tuned with the music): STATIONS in the
+  Sound module. Station 0 NIGHT PULSE is the game's own music, unchanged (checked by rendering offline against the old build). Each
+  station: band "pulse" (the game's synth: ch/rt chord loop) or "jazz" (the band-through-the-wall engine from workshop/music-r1.js:
+  prog chart, piano/bass/brush/ride/lead), shift (semitones from station 0's A minor) and optional alt (its mode's 7 steps). Every
+  pitched effect takes its note through P(m) / PF(hz) (key and mode of the station on now; identity on station 0); the beacon plays
+  chordNow() (the band's current chord). Never give a new effect a fixed pitch: use q(midi) or PF(hz). Unpitched thumps, ticks and
+  sweeps stay as they are. level = loudness matched to station 0 in 150 Hz..5 kHz. tune(i, sweep): the old station fades under the
+  retune static, the new one starts on its first beat 0.55 s later. ROT = the retune order, [0] in the shipped game (no change);
+  #...-stn-a-b-c sets it (and gives 5 retunes a night); dev panel STATION steps through all. Workshop topic "stations" r1 (clips
+  rendered offline: tools/sound/render.js + station_clips.py, music + scripted effects, seeded random).

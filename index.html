@@ -826,7 +826,7 @@ function reqWordOk(W2, p) { const q = S.req;
   if (q.kind === "vowels") return [...W2].filter(c => "AEIOU".includes(c)).length >= q.n; return W2[0] === W2[W2.length - 1]; }
 function newRun() { S = fresh("play"); log("On the air."); plStart(); startNight(); }
 function startNight() {
-  S.ending = 0; S.score = 0; S.shown = 0; S.over = false; S.over2 = false; S.picks = 1; S.nw = []; S.startTotal = S.total; S.firstWord = true; S.target = targetFor(S.night); S.words = maxWords(); S.retunes = maxRetunes(); S.path = [];
+  S.ending = 0; S.score = 0; S.shown = 0; S.over = false; S.over2 = false; S.picks = 1; S.nw = []; S.startTotal = S.total; S.firstWord = true; S.target = targetFor(S.night); S.words = maxWords(); S.retunes = maxRetunes(); if (/-stn-/.test(location.hash)) S.retunes = Math.max(S.retunes, 5); S.path = [];
   if (S.carry > 0 && !HOW.on) { S.score = Math.min(S.carry, round5(S.target * CARRY_MAX)); log(`Overdrive carried over: ${S.score} already in the tube.`); } S.carry = 0;
   // the ice and the depth of the frost carry over from night to night (Chris 2026-11-16: a reset worked against planning)
   if (S.grid.length === NN && S.night > 1) ensureHot(); else fillGrid(true);   // the glass keeps its letters from night to night; a new run starts fresh
@@ -1024,7 +1024,9 @@ function retune() { if (!canAct() || S.retunes <= 0) return; if (PLAYLOG.run && 
   const keep = S.grid.map(t => t && (t.ice || t.blue) ? t : null); fillGrid(true);
   // (their letters do change with the rest, Chris 2026-11-16; the frost's depth stays too)
   if (keep.some(Boolean)) { S.grid.forEach(t => { t.blue = false; }); keep.forEach((t, i) => { if (t) { t.ch = pickLetter(); t.wild = false; t.hot = false; t.land = 1; t.yOff = 0; t.vy = 0; t.wait = 0; S.grid[i] = t; } }); ensureHot(); }
-  knobA.R += 2.4; staticKick = .5; Sound.retune(); log("Retuned."); }
+  knobA.R += 2.4; staticKick = .5; Sound.retune(); log("Retuned.");
+  // stations (Workshop, 2026-11-23): with more than one in the rotation, a retune also tunes the radio to the next song
+  if (Sound.rot().length > 1) { const st = Sound.next(); dialFlash = { text: st.kc + " " + st.name, t: 120 }; log(`Tuned in ${st.name}, ${st.kc} kc.`); } }
 let shopChoices = [], shopFocus = 0;
 function nightClear() {
   if (HOW.on && !HOW.shop) return;
@@ -4887,7 +4889,7 @@ window.addEventListener("resize", layout); if (window.ResizeObserver) new Resize
 
 /* ================= sound: Web Audio synth, 84 BPM night pulse ================= */
 const Sound = (() => {
-  let ac = null, lowEnd = false, master, mus, sfx, nb, padF, playing = false, nextBeat = 0, beatN = 0, muted = false, lastTick = 0, lastType = 0, lastCell = 0, rainOn = false, amb;
+  let ac = null, lowEnd = false, master, mus, sfx, nb, playing = false, muted = false, lastTick = 0, lastType = 0, lastCell = 0, rainOn = false, amb;
   // music and effects levels (Chris 2026-11-23): 0..10 each, 10 = the standard mix; the rain goes with the music; saved in lexsig.vol
   const VOL = { m: 10, s: 10 }; try { const v = JSON.parse(localStorage.getItem("lexsig.vol") || "{}"); ["m", "s"].forEach(k => { if (v[k] >= 0 && v[k] <= 10) VOL[k] = Math.round(v[k]); }); } catch (e) {}
   const lv = n => (n / 10) ** 2;
@@ -4912,87 +4914,223 @@ const Sound = (() => {
     { const lim = ac.createDynamicsCompressor(); lim.threshold.value = -6; lim.knee.value = 6; lim.ratio.value = 12; lim.attack.value = .003; lim.release.value = .15; master.connect(lim); lim.connect(ac.destination); } mus = ac.createGain(); mus.gain.value = .5; mus.connect(master); sfx = ac.createGain(); sfx.gain.value = .7; sfx.connect(master); amb = ac.createGain(); amb.connect(master); volApply();
     nb = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate); const d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     // (the old constant static ran a noise source into a silent gain all game long; it's gone, it only cost the sound thread time)
-    padF = ac.createBiquadFilter(); padF.type = "lowpass"; padF.frequency.value = 700; padF.Q.value = 2; padF.connect(mus); }
+  }
   function env(g, t, a, p, d) { g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(p, t + a); g.gain.exponentialRampToValueAtTime(.0001, t + a + d); }
   function osc(type, f, t, a, p, d, dest, slide) { const o = ac.createOscillator(), g = ac.createGain(); o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(slide, t + a + d); env(g, t, a, p, d); o.connect(g); g.connect(dest || sfx); o.start(t); o.stop(t + a + d + .05); }
   function noise(t, dur, p, type, f, q, dest, to) { const s = ac.createBufferSource(); s.buffer = nb; const fl = ac.createBiquadFilter(); fl.type = type; fl.frequency.setValueAtTime(f, t); fl.Q.value = q || 1; if (to) fl.frequency.exponentialRampToValueAtTime(to, t + dur); const g = ac.createGain(); env(g, t, .005, p, dur); s.connect(fl); fl.connect(g); g.connect(dest || sfx); s.start(t, Math.random()); s.stop(t + dur + .05); }
-  function schedule() { const beat = 60 / 84;
-    while (nextBeat < ac.currentTime + .25) { const t = nextBeat, inBar = beatN % 4, bar = (beatN / 4) | 0, ci = ((bar / 2) | 0) % 4;
-      osc("sine", 120, t, .004, .5, .32, mus, 38); noise(t + beat / 2, .05, .045, "highpass", 7000, .7, mus); if (inBar === 2) noise(t, .12, .07, "bandpass", 1800, 1.2, mus);
-      if (inBar === 0 || inBar === 2) osc("triangle", m2f(RT[ci]), t, .02, .26, beat * 1.6, mus);
-      if (inBar === 0 && bar % 2 === 0) CH[ci].forEach(m => (lowEnd ? [0] : [-6, 6]).forEach(det => { const o = ac.createOscillator(), g = ac.createGain(); o.type = "sawtooth"; o.frequency.value = m2f(m); o.detune.value = det;
-        g.gain.setValueAtTime(.0001, t); const pk = lowEnd ? .045 : .032; g.gain.exponentialRampToValueAtTime(pk, t + 1.2); g.gain.setValueAtTime(pk, t + beat * 7); g.gain.exponentialRampToValueAtTime(.0001, t + beat * 8.4); o.connect(g); g.connect(padF); o.start(t); o.stop(t + beat * 8.5); }));
-      nextBeat += beat; beatN++; }
-    if (S && S.target) padF.frequency.setTargetAtTime(600 + Math.min(1, S.score / S.target) * 1800, ac.currentTime, .4); }
+  /* ---- stations (Chris 2026-11-23): each retune can tune the radio to another station, each with its own song. The game's sounds stay
+     in tune with whichever is on: every pitched effect asks P(m) for its note, which moves the note into the station's key (shift, in
+     semitones from station 0's A minor) and, for a station in another mode, onto that mode's degree (alt: its 7 steps in place of
+     A minor's). Station 0 is the game's own music exactly as it was, and P() leaves every note alone there. Two kinds of band: "pulse"
+     (the game's own synth: chord pads, a bass, a soft beat) and "jazz" (a small band heard through the wall, from the Workshop's music
+     round 1: piano, upright bass, brushes, a lead). ROT is the stations a retune steps through; [0] = no change (the game as shipped). */
+  const AEOL = [0, 2, 3, 5, 7, 8, 10];
+  const JQ = { m9: [3, 7, 10, 14], m11: [3, 10, 14, 17], d13: [4, 10, 14, 21], d9: [4, 10, 14, 19], d7b9: [4, 10, 13, 19], d7b13: [4, 10, 13, 20], M9: [4, 7, 11, 14], M69: [4, 9, 14, 19], m7b5: [3, 6, 10, 14], m6: [3, 7, 9, 14] };
+  const JS = { m: [0, 2, 3, 5, 7, 9, 10], d: [0, 2, 4, 5, 7, 9, 10], M: [0, 2, 4, 5, 7, 9, 11], h: [0, 1, 3, 5, 6, 8, 10], alt: [0, 1, 3, 4, 6, 8, 10] };
+  const JC = (root, q, sc, beats) => ({ root, v: JQ[q], sc: JS[sc], beats });
+  const tr = (prog, d) => prog.map(c => ({ ...c, root: c.root + d }));
+  const BALLAD = [JC(38, "m9", "m", 4), JC(43, "d13", "d", 4), JC(46, "M9", "M", 4), JC(45, "d7b13", "alt", 4), JC(38, "m9", "m", 4), JC(43, "d13", "d", 4), JC(40, "m7b5", "h", 2), JC(45, "d7b9", "alt", 2), JC(38, "m6", "m", 2), JC(45, "d7b13", "alt", 2)];
+  const SWING = [JC(46, "M69", "M", 4), JC(43, "d7b9", "alt", 4), JC(48, "m9", "m", 4), JC(41, "d13", "d", 4), JC(38, "m11", "m", 2), JC(43, "d7b13", "alt", 2), JC(48, "m9", "m", 2), JC(41, "d13", "d", 2), JC(46, "M9", "M", 4), JC(39, "d9", "d", 4), JC(38, "m11", "m", 2), JC(43, "d7b9", "alt", 2), JC(48, "m9", "m", 2), JC(41, "d13", "d", 2)];
+  const DREAM = [JC(39, "M9", "M", 8), JC(44, "M69", "M", 8), JC(43, "m9", "m", 4), JC(36, "d7b13", "alt", 4), JC(41, "m9", "m", 4), JC(46, "d13", "d", 4)];
+  const STATIONS = [
+    { name: "NIGHT PULSE", kc: 540, band: "pulse", bpm: 84, ch: CH, rt: RT, shift: 0, level: 1 },
+    { name: "LAST CALL TRIO", kc: 680, band: "jazz", bpm: 70, prog: BALLAD, shift: 5, piano: 1, bass: 1, brush: 1, ride: .5, lead: "piano", lp: 2200, wet: .32, level: .9, seed: 7 },
+    { name: "BLUE ROOM VIBES", kc: 880, band: "jazz", bpm: 62, prog: DREAM, slow: 1, shift: 3, piano: .45, bass: .9, brush: .55, ride: 0, lead: "vibes", lp: 2400, wet: .4, level: 2.4, seed: 5 },
+    { name: "MUTED HORN", kc: 1010, band: "jazz", bpm: 92, prog: tr(SWING, 2), shift: 0, piano: .8, bass: 1, brush: 1, ride: 1, lead: "horn", lp: 2000, wet: .3, level: 1.2, seed: 11 },
+    { name: "OLD 78", kc: 1240, band: "jazz", bpm: 84, prog: SWING, shift: -2, piano: 1, bass: 1, brush: .9, ride: .7, lead: "clar", lp: 2600, hp: 300, wet: .22, level: .8, crackle: 1, wow: 1, seed: 21 },
+    // a second song for the game's own band, in a new scale: E dorian (minor with a raised sixth: a little lighter, misty)
+    { name: "FOG PULSE", kc: 1450, band: "pulse", bpm: 84, ch: [[55, 59, 62, 66], [55, 61, 64, 66], [54, 59, 62, 67], [54, 57, 62, 64]], rt: [40, 45, 43, 38], shift: -5, alt: [0, 2, 3, 5, 7, 9, 10], level: 1 },
+  ];
+  // (levels: matched by ear-weighted loudness, 150 Hz to 5 kHz, to station 0's music)
+  let ROT = [0], cur = null;
+  { const m = location.hash.match(/-stn((?:-\d+)+)/); if (m) { const l = m[1].split("-").filter(x => x !== "").map(Number).filter(i => i < STATIONS.length); if (l.length) ROT = l; } }
+  // a note (midi) moved into the station on now: its key, and its mode's degree
+  function P(m) { const st = cur ? cur.st : STATIONS[ROT[0]]; if (!st.shift && !st.alt) return m; const r = ((m - 69) % 12 + 12) % 12, k = AEOL.indexOf(r); return m + st.shift + (k >= 0 && st.alt ? st.alt[k] - AEOL[k] : 0); }
+  const q = (m) => m2f(P(m)), PF = (f) => { const st = cur ? cur.st : STATIONS[ROT[0]]; return !st.shift && !st.alt ? f : q(Math.round(69 + 12 * Math.log2(f / 440))); };
+
+  // ---- the jazz band's instruments: each one note, a handful of nodes, stopped as soon as it is silent ----
+  function jPiano(out, m, t, vel, len) {   // a felt-damped upright: a few sine partials, a soft hammer, a gentle decay
+    const f = m2f(m), g = ac.createGain(), lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(900 + vel * 1800, t); lp.frequency.exponentialRampToValueAtTime(500, t + 1.2); g.connect(lp); lp.connect(out);
+    const dec = Math.min(len + .4, 2.6);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vel * .11, t + .006); g.gain.exponentialRampToValueAtTime(vel * .045, t + .25); g.gain.setTargetAtTime(.0001, t + len, .25); g.gain.exponentialRampToValueAtTime(.00005, t + dec + .3);
+    (lowEnd ? [[1, 1, 0], [2, .32, 3]] : [[1, 1, 0], [2, .32, 3], [3, .1, -4], [4, .05, 2]]).forEach(([k, a, det]) => { const o = ac.createOscillator(), og = ac.createGain(); o.type = "sine"; o.frequency.value = f * k; o.detune.value = det; og.gain.value = a; o.connect(og); og.connect(g); o.start(t); o.stop(t + dec + .35); });
+  }
+  function jBass(out, m, t, vel, len) {   // upright: a round thump that blooms then dies, a little string buzz on top
+    const f = m2f(m), g = ac.createGain(), lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.setValueAtTime(700, t); lp.frequency.exponentialRampToValueAtTime(260, t + .3); lp.Q.value = 1.5; g.connect(lp); lp.connect(out);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vel * .34, t + .012); g.gain.exponentialRampToValueAtTime(vel * .15, t + .12); g.gain.exponentialRampToValueAtTime(.0001, t + Math.max(.3, len * 1.1));
+    const o = ac.createOscillator(); o.type = "triangle"; o.frequency.setValueAtTime(f * 1.012, t); o.frequency.exponentialRampToValueAtTime(f, t + .05); o.connect(g); o.start(t); o.stop(t + len * 1.1 + .1);
+    const s2 = ac.createOscillator(), sg = ac.createGain(); s2.type = "sine"; s2.frequency.value = f; sg.gain.value = .8; s2.connect(sg); sg.connect(g); s2.start(t); s2.stop(t + len * 1.1 + .1);
+  }
+  function jNoise(out, t, type, f, q2, vel, a, d) { const s2 = ac.createBufferSource(); s2.buffer = nb; const fl = ac.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q2; const g = ac.createGain();
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vel, t + a); g.gain.exponentialRampToValueAtTime(.0001, t + d); s2.connect(fl); fl.connect(g); g.connect(out); s2.start(t, Math.random() * 1.5); s2.stop(t + d + .05); }
+  const jBrush = (out, t, vel, dur) => jNoise(out, t, "bandpass", 3200, .6, vel * .05, dur * .45, dur);   // a brush swept across the snare head
+  const jTap = (out, t, vel) => jNoise(out, t, "bandpass", 2200, .9, vel * .09, .004, .16);              // the brush slapped on 2 and 4
+  function jRide(out, t, vel) { jNoise(out, t, "highpass", 6500, .7, vel * .03, .003, .5);               // a ride cymbal, tapped lightly
+    const o = ac.createOscillator(), og = ac.createGain(); o.type = "square"; o.frequency.value = 5200; og.gain.setValueAtTime(vel * .004, t); og.gain.exponentialRampToValueAtTime(.00005, t + .35); o.connect(og); og.connect(out); o.start(t); o.stop(t + .4); }
+  function jKick(out, t, vel) { const o = ac.createOscillator(), g = ac.createGain(); o.type = "sine"; o.frequency.setValueAtTime(90, t); o.frequency.exponentialRampToValueAtTime(48, t + .12);   // feathered on every beat
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vel * .05, t + .006); g.gain.exponentialRampToValueAtTime(.0001, t + .2); o.connect(g); g.connect(out); o.start(t); o.stop(t + .25); }
+  function jLead(out, kind, m, t, vel, len) {
+    const f = m2f(m), g = ac.createGain(); g.connect(out);
+    if (kind === "piano") { jPiano(out, m, t, vel * 1.1, len); return; }
+    if (kind === "vibes") {   // vibraphone: a bar ringing with the motor's slow tremolo
+      g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vel * .12, t + .004); g.gain.exponentialRampToValueAtTime(.0001, t + Math.max(1.6, len + 1.2));
+      const trem = ac.createGain(), lfo = ac.createOscillator(), lg = ac.createGain(); trem.gain.value = .75; lfo.frequency.value = 5.2; lg.gain.value = .25; lfo.connect(lg); lg.connect(trem.gain); trem.connect(g); lfo.start(t); lfo.stop(t + len + 1.5);
+      [[1, 1], [4, .12], [10, .03]].forEach(([k, a]) => { const o = ac.createOscillator(), og = ac.createGain(); o.type = "sine"; o.frequency.value = f * k; og.gain.setValueAtTime(a, t); og.gain.exponentialRampToValueAtTime(.001, t + (k > 1 ? .4 : len + 1.4)); o.connect(og); og.connect(trem); o.start(t); o.stop(t + len + 1.5); });
+      return; }
+    // horn (cup-muted trumpet) or clarinet: a reed-ish wave through a soft filter, with a breathy start and a slow vibrato
+    const o = ac.createOscillator(), lp = ac.createBiquadFilter(), vib = ac.createOscillator(), vg = ac.createGain();
+    o.type = kind === "clar" ? "square" : "sawtooth"; o.frequency.setValueAtTime(f * .985, t); o.frequency.exponentialRampToValueAtTime(f, t + .06);
+    vib.frequency.value = 4.8; vg.gain.setValueAtTime(0, t); vg.gain.linearRampToValueAtTime(f * .006, t + Math.min(len, .5)); vib.connect(vg); vg.connect(o.frequency);
+    lp.type = kind === "clar" ? "lowpass" : "bandpass"; lp.frequency.value = kind === "clar" ? 1300 : 1100; lp.Q.value = kind === "clar" ? .7 : 1.4;
+    const pk = vel * (kind === "clar" ? .05 : .085);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(pk, t + .05); g.gain.setValueAtTime(pk, t + Math.max(.06, len - .08)); g.gain.exponentialRampToValueAtTime(.0001, t + len + .18);
+    o.connect(lp); lp.connect(g); o.start(t); o.stop(t + len + .25); vib.start(t); vib.stop(t + len + .25);
+  }
+  // ---- the jazz band: what each player does in each beat ----
+  function jChordAt(prog, n) { const tot = prog.reduce((a, c) => a + c.beats, 0); let b = ((n % tot) + tot) % tot; for (let i = 0; i < prog.length; i++) { const c = prog[i]; if (b < c.beats) return { c, into: b, next: prog[(i + 1) % prog.length] }; b -= c.beats; } }
+  const near = (m, target) => m + Math.round((target - m) / 12) * 12;
+  const scaleNotes = (c, lo, hi) => { const out = []; for (let m = lo; m <= hi; m++) if (c.sc.includes(((m - c.root) % 12 + 12) % 12)) out.push(m); return out; };
+  function jazzSched(C, t1) {
+    const S2 = C.st, beat = 60 / S2.bpm, prog = S2.prog, st = C.js, R = Math.random, sw = beat * 2 / 3, out = C.chain.bus;   // swung eighths: the "and" lands two thirds through the beat
+    for (; ; C.beatN++) {
+      const n = C.beatN, t = C.start + n * beat; if (t >= t1) break;
+      const { c, into, next } = jChordAt(prog, n), bar = Math.floor(n / 4), inBar = n % 4, hum = () => (R() - .5) * .018;   // hum: players a hair early or late
+      // bass: walks in quarter notes (the root on the chord's first beat, chord and scale tones after, a half step into the next chord)
+      if (S2.bass) { let m;
+        if (into === 0) m = near(c.root, st.lastBass);
+        else if (into === c.beats - 1) m = near(next.root, st.lastBass) + (R() < .5 ? -1 : 1);
+        else { const opts = scaleNotes(c, 31, 50).filter(x => Math.abs(x - st.lastBass) <= 5 && x !== st.lastBass); m = opts.length ? opts[Math.floor(R() * opts.length)] : c.root; }
+        if (S2.slow && into % 2 === 1) m = null;   // the slow one: half notes
+        if (m != null) { while (m < 31) m += 12; while (m > 50) m -= 12; jBass(out.bass, m, t + hum(), S2.bass * (inBar === 0 ? 1 : .85), S2.slow ? beat * 1.9 : beat * .95); st.lastBass = m; } }
+      // drums: brushes sweep every beat, slapped on 2 and 4; a feathered bass drum; the ride's "ding, ding-a ding"
+      if (S2.brush) { jBrush(out.drums, t, S2.brush * (inBar % 2 ? .8 : 1), beat * .95); if (inBar % 2 === 1) jTap(out.drums, t + hum(), S2.brush); jKick(out.drums, t, .5 * S2.brush); }
+      if (S2.ride) { jRide(out.drums, t + hum(), S2.ride * (inBar % 2 ? 1 : .7)); if (inBar % 2 === 1) jRide(out.drums, t + sw + hum(), S2.ride * .55); }
+      // piano: comps the chord in the middle of the keyboard, on a beat or the "and" before it, sparse and soft
+      if (S2.piano && (into === 0 ? R() < .9 : R() < .38)) { let at = into === 0 && R() < .4 ? t - beat + sw : t + (R() < .3 ? sw : 0); if (at < ac.currentTime) at = t; const vel = S2.piano * (.45 + R() * .25);
+        const base = near(c.root, 52); c.v.forEach((iv, k) => { let m = base + iv; while (m > 72) m -= 12; while (m < 50) m += 12; jPiano(out.keys, m, at + k * .008 + hum(), vel * (k === 3 ? .8 : 1), beat * (into === 0 ? 1.6 : .9)); }); }
+      if (S2.slow && into === 0 && S2.piano) jPiano(out.keys, near(c.root, 40), t, S2.piano * .5, beat * 3);
+      // the tune: a lead plays a short phrase, rests a while, then plays again (chord tones on the strong beats, steps between)
+      if (S2.lead) { const vib = S2.lead === "vibes";
+        if (!st.lead && inBar === 0 && bar % 4 === (vib ? 0 : 2) && R() < .85) st.lead = { left: vib ? 8 : 6, m: near(c.root + c.v[1], vib ? 74 : 70) };
+        if (st.lead) { const L = st.lead, notes = scaleNotes(c, 62, 84), ct = c.v.map(iv => (c.root + iv) % 12);
+          const hits = vib || S2.lead === "piano" ? [[0, R() < .7], [sw, R() < .35]] : [[0, R() < .75], [sw, R() < .55]];
+          hits.forEach(([off, on]) => { if (!on || L.left <= 0) return;
+            const strong = off === 0, pool = notes.filter(x => Math.abs(x - L.m) <= (strong ? 4 : 2) && (!strong || ct.includes(x % 12)));
+            const m = pool.length ? pool[Math.floor(R() * pool.length)] : L.m; L.m = m;
+            const len = vib ? beat * (strong ? 1.4 : .6) : (strong ? sw : beat - sw) * (R() < .25 ? 2.6 : .95);
+            jLead(out.lead, S2.lead, m, t + off + hum(), .7 + R() * .3, len); L.left -= .5; });
+          if (L.left <= 0) st.lead = null; } }
+    }
+  }
+  // the room the jazz is in: through the wall (the highs rolled off), a little reverb, and for the 78 its crackle and wobble
+  function jazzChain(S2, out) {
+    const input = ac.createGain(), bus = { bass: ac.createGain(), drums: ac.createGain(), keys: ac.createGain(), lead: ac.createGain() }, srcs = [];
+    bus.drums.gain.value = .9; bus.lead.gain.value = .9; Object.values(bus).forEach(b => b.connect(input));
+    let x = input;
+    if (S2.wow) { const d = ac.createDelay(.05), l = ac.createOscillator(), lg = ac.createGain(); d.delayTime.value = .012; l.frequency.value = .55; lg.gain.value = .0011; l.connect(lg); lg.connect(d.delayTime); l.start(); srcs.push(l); x.connect(d); x = d; }
+    const lp = ac.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = S2.lp; lp.Q.value = .5; x.connect(lp); x = lp;
+    const hp = ac.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = S2.hp || 70; x.connect(hp); x = hp;
+    const len = Math.floor(ac.sampleRate * (lowEnd ? 1 : 1.8)), ir = ac.createBuffer(2, len, ac.sampleRate); for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
+    const cv = ac.createConvolver(); cv.buffer = ir; const wet = ac.createGain(), dry = ac.createGain(); wet.gain.value = S2.wet; dry.gain.value = 1 - S2.wet * .5; x.connect(cv); cv.connect(wet); wet.connect(out); x.connect(dry); dry.connect(out);
+    if (S2.crackle) { const n = ac.sampleRate * 4, b = ac.createBuffer(1, n, ac.sampleRate), d = b.getChannelData(0);
+      for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * .012; for (let k = 0; k < 90; k++) { const p0 = Math.floor(Math.random() * (n - 40)), a = (Math.random() < .15 ? .5 : .18) * (Math.random() < .5 ? -1 : 1); for (let j = 0; j < 30; j++) d[p0 + j] += a * Math.exp(-j / 4); }
+      const s2 = ac.createBufferSource(); s2.buffer = b; s2.loop = true; const f = ac.createBiquadFilter(); f.type = "bandpass"; f.frequency.value = 2400; f.Q.value = .5; const g = ac.createGain(); g.gain.value = .35; s2.connect(f); f.connect(g); g.connect(out); s2.start(); srcs.push(s2); }
+    return { bus, lp, srcs };
+  }
+  // the game's own band (station 0's music, unchanged; FOG PULSE uses it with its own chords)
+  function pulseSched(C, t1) { const beat = 60 / C.st.bpm, CHs = C.st.ch, RTs = C.st.rt, out = C.g;
+    while (C.nextBeat < t1) { const t = C.nextBeat, inBar = C.beatN % 4, bar = (C.beatN / 4) | 0, ci = ((bar / 2) | 0) % 4;
+      osc("sine", 120, t, .004, .5, .32, out, 38); noise(t + beat / 2, .05, .045, "highpass", 7000, .7, out); if (inBar === 2) noise(t, .12, .07, "bandpass", 1800, 1.2, out);
+      if (inBar === 0 || inBar === 2) osc("triangle", m2f(RTs[ci]), t, .02, .26, beat * 1.6, out);
+      if (inBar === 0 && bar % 2 === 0) CHs[ci].forEach(m => (lowEnd ? [0] : [-6, 6]).forEach(det => { const o = ac.createOscillator(), g = ac.createGain(); o.type = "sawtooth"; o.frequency.value = m2f(m); o.detune.value = det;
+        g.gain.setValueAtTime(.0001, t); const pk = lowEnd ? .045 : .032; g.gain.exponentialRampToValueAtTime(pk, t + 1.2); g.gain.setValueAtTime(pk, t + beat * 7); g.gain.exponentialRampToValueAtTime(.0001, t + beat * 8.4); o.connect(g); g.connect(C.padF); o.start(t); o.stop(t + beat * 8.5); }));
+      C.nextBeat += beat; C.beatN++; } }
+  function schedule() { if (!cur) return; const t1 = ac.currentTime + .25, fill = S && S.target ? Math.min(1, S.score / S.target) : 0;
+    if (cur.st.band === "pulse") { pulseSched(cur, t1); if (S && S.target) cur.padF.frequency.setTargetAtTime(600 + fill * 1800, ac.currentTime, .4); }
+    else { jazzSched(cur, t1); cur.chain.lp.frequency.setTargetAtTime(cur.st.lp * (.8 + fill * .45), ac.currentTime, .4); } }   // the band comes through the wall clearer as the night's signal fills
+  // tune in station i: the one playing fades under the retune's static, the new one starts on its first beat as it clears
+  function tune(i, sweep) { const t = ac.currentTime, st = STATIONS[i], at = t + (sweep ? .55 : .1);
+    if (cur) { const old = cur; old.g.gain.setTargetAtTime(.0001, t, .07); setTimeout(() => { (old.chain ? old.chain.srcs : []).forEach(x => { try { x.stop(); } catch (e) {} }); try { old.g.disconnect(); } catch (e) {} }, 4000); }
+    const g = ac.createGain(); g.connect(mus); if (sweep) { g.gain.setValueAtTime(.0001, t); g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(st.level, at + .7); } else g.gain.value = st.level;
+    const C = { i, st, g, start: at, nextBeat: at, beatN: 0, js: { lastBass: st.prog ? st.prog[0].root : 40, lead: null } };
+    if (st.band === "pulse") { C.padF = ac.createBiquadFilter(); C.padF.type = "lowpass"; C.padF.frequency.value = 700; C.padF.Q.value = 2; C.padF.connect(g); }
+    else C.chain = jazzChain(st, g);
+    cur = C; return st; }
   // rain on the window: a soft wash of filtered noise, a fine hiss on top, and now and then a drip on the sill
   function startRain() { const t = ac.currentTime;
     const mk = (type, f, q, g) => { const s = ac.createBufferSource(); s.buffer = nb; s.loop = true; s.playbackRate.value = .5 + Math.random() * .1; const fl = ac.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q; const gg = ac.createGain(); gg.gain.setValueAtTime(.0001, t); gg.gain.exponentialRampToValueAtTime(g, t + 3); s.connect(fl); fl.connect(gg); gg.connect(amb); s.start(t); return gg; };
     const wash = mk("lowpass", 1100, .5, .025), hiss = mk("bandpass", 6500, .4, .0065);   // (a third of what it was: Chris 2026-11-14, too loud)
     const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = .07; lg.gain.value = .007; lfo.connect(lg); lg.connect(wash.gain); lfo.start();
     setInterval(() => { if (!ac || Math.random() < .4) return; const t2 = ac.currentTime + Math.random() * .8, f = 1400 + Math.random() * 1600; osc("sine", f, t2, .002, .005 + Math.random() * .006, .06, amb, f * .55); }, 700); }
-  const chordNow = () => CH[(((beatN / 4) | 0) / 2 | 0) % 4];
+  // the chord the band is on now (the beacon's chime plays it): station 0's as before, a jazz station's from its chart
+  function chordNow() { if (!cur || cur.st.band === "pulse") { const C = cur || { st: STATIONS[0], beatN: 0 }; return C.st.ch[(((C.beatN / 4) | 0) / 2 | 0) % 4]; }
+    const n = Math.max(0, Math.floor((ac.currentTime - cur.start) / (60 / cur.st.bpm))), { c } = jChordAt(cur.st.prog, n), b = near(c.root, 57); return c.v.map(iv => { let m = b + iv; while (m > 71) m -= 12; while (m < 55) m += 12; return m; }).sort((a, z) => a - z); }
   return { ensure, ac: () => ac, out: () => master, muted: () => muted, vol: k => VOL[k],
     setVol(k, n) { VOL[k] = Math.max(0, Math.min(10, n)); try { localStorage.setItem("lexsig.vol", JSON.stringify(VOL)); } catch (e) {} volApply(); },
-    music() { if (!ac) return; this.rain(); if (playing) return; playing = true; nextBeat = ac.currentTime + .1; setInterval(schedule, 60); },
+    music() { if (!ac) return; this.rain(); if (playing) return; playing = true; tune(ROT[0], false); setInterval(schedule, 60); },
+    // stations: the list, the one on, tune one in (with the retune's sweep), and the next in the retune order
+    STATIONS, rot: () => ROT, setRot(l) { ROT = l.length ? l : [0]; }, station: () => cur ? cur.i : ROT[0],
+    tune(i) { if (!ac || !playing) return STATIONS[i]; return tune(i, true); },
+    next() { const i = cur ? cur.i : ROT[0], k = ROT.indexOf(i), n = ROT[(k + 1) % ROT.length]; return this.tune(n); },
     toggle() { muted = !muted; if (master) master.gain.setTargetAtTime(muted ? 0 : .8, ac.currentTime, .05); log(muted ? "Sound off." : "Sound on."); },
     setStatic(l) {},   // (the constant static hiss is gone, Chris 2026-11-12: static is only a sound effect now; the rain is the room's sound)
     rain() { if (!ac || rainOn) return; rainOn = true; startRain(); },
-    blip(n) { if (!ac) return; const t = ac.currentTime, f = m2f(PENT[Math.min(PENT.length - 1, n - 1)]); osc("square", f, t, .003, .07, .1); osc("triangle", f / 2, t, .003, .1, .12); },
-    lock() { if (!ac) return; const t = ac.currentTime; osc("square", m2f(93), t, .003, .05, .08); osc("square", m2f(100), t + .05, .003, .05, .12); },
+    blip(n) { if (!ac) return; const t = ac.currentTime, f = q(PENT[Math.min(PENT.length - 1, n - 1)]); osc("square", f, t, .003, .07, .1); osc("triangle", f / 2, t, .003, .1, .12); },
+    lock() { if (!ac) return; const t = ac.currentTime; osc("square", q(93), t, .003, .05, .08); osc("square", q(100), t + .05, .003, .05, .12); },
     // the blue key's ice: a dry tick as it starts to crack, a glint when a word will pay, the break, the pay-out, the key forming again
     iceCrack() { if (!ac) return; const t = ac.currentTime; noise(t, .05, .12, "highpass", 5200, 1); osc("square", 3100, t + .03, .001, .02, .02); },
-    iceGlint() { if (!ac) return; const t = ac.currentTime; osc("sine", 2794, t, .003, .035, .12); osc("sine", 4186, t + .05, .003, .03, .16); },
-    iceLose() { if (!ac) return; const t = ac.currentTime; osc("triangle", 330, t + .05, .01, .16, .32, sfx, 247); osc("triangle", 233, t + .36, .01, .16, .55, sfx, 165); },
+    iceGlint() { if (!ac) return; const t = ac.currentTime; osc("sine", PF(2794), t, .003, .035, .12); osc("sine", PF(4186), t + .05, .003, .03, .16); },
+    iceLose() { if (!ac) return; const t = ac.currentTime; osc("triangle", PF(330), t + .05, .01, .16, .32, sfx, PF(247)); osc("triangle", PF(233), t + .36, .01, .16, .55, sfx, PF(165)); },
     iceBreak() { if (!ac) return; const t = ac.currentTime; noise(t, .28, .3, "highpass", 3800, 1); noise(t + .06, .2, .16, "bandpass", 7000, 3); osc("square", 110, t, .004, .12, .2, sfx, 60); },
     // the blue key's sounds (Chris 2026-11-18: every case needs its own sound and they have to make sense together):
     // through the blue key with no ice: a bright two-note chime; with ice: the ice bursts (a glassy shatter) and a run of rising notes,
     // one more for each frozen key, so a bigger save sounds bigger; a key freezing: a cold tink; the frost deepening: a higher tink
     iceCash(n = 0, d = 0) { if (!ac) return; const t = ac.currentTime + d;
-      if (!n) { osc("sine", 1568, t, .003, .09, .25); osc("sine", 2349, t + .06, .003, .08, .32); return; }
-      noise(t, .35, .26, "highpass", 4200, 1); noise(t, .2, .14, "bandpass", 9000, 4); osc("sine", 196, t, .005, .18, .4, sfx, 392);
-      const sc = [1047, 1175, 1319, 1568, 1760, 2093, 2349, 2637, 3136, 3520, 4186]; for (let k = 0; k <= Math.min(10, n + 1); k++) osc("sine", sc[k], t + .05 + k * .055, .003, .07 + .004 * n, .2); },
-    iceFreeze() { if (!ac) return; const t = ac.currentTime; osc("sine", 2637, t, .002, .05, .18, sfx, 2400); noise(t, .08, .05, "highpass", 7000, 2); },
-    iceDeepen() { if (!ac) return; const t = ac.currentTime; osc("sine", 3136, t, .002, .06, .2); osc("sine", 3951, t + .08, .002, .05, .24); },
-    iceForm() { if (!ac) return; const t = ac.currentTime; osc("sine", 1568, t, .004, .05, .2); osc("sine", 2349, t + .07, .004, .045, .26); },
+      if (!n) { osc("sine", PF(1568), t, .003, .09, .25); osc("sine", PF(2349), t + .06, .003, .08, .32); return; }
+      noise(t, .35, .26, "highpass", 4200, 1); noise(t, .2, .14, "bandpass", 9000, 4); osc("sine", PF(196), t, .005, .18, .4, sfx, PF(392));
+      const sc = [1047, 1175, 1319, 1568, 1760, 2093, 2349, 2637, 3136, 3520, 4186]; for (let k = 0; k <= Math.min(10, n + 1); k++) osc("sine", PF(sc[k]), t + .05 + k * .055, .003, .07 + .004 * n, .2); },
+    iceFreeze() { if (!ac) return; const t = ac.currentTime; osc("sine", PF(2637), t, .002, .05, .18, sfx, PF(2400)); noise(t, .08, .05, "highpass", 7000, 2); },
+    iceDeepen() { if (!ac) return; const t = ac.currentTime; osc("sine", PF(3136), t, .002, .06, .2); osc("sine", PF(3951), t + .08, .002, .05, .24); },
+    iceForm() { if (!ac) return; const t = ac.currentTime; osc("sine", PF(1568), t, .004, .05, .2); osc("sine", PF(2349), t + .07, .004, .045, .26); },
     tickMove() { if (!ac) return; osc("square", 1600, ac.currentTime, .001, .03, .02); },
-    cell(f) { if (!ac) return; const t = ac.currentTime; if (t - lastCell < .028) return; lastCell = t; const m = PENT[Math.min(PENT.length - 1, Math.floor(f * 9))] - 12; osc("square", m2f(m), t, .002, .035, .05); osc("sine", m2f(m + 12), t, .002, .03, .07); },
-    land(big) { if (!ac) return; const t = ac.currentTime; osc("sine", 160, t, .003, .3, .16, sfx, 70); noise(t, .1, .1, "bandpass", 1400, 1.5, sfx); if (big) osc("triangle", 220, t, .005, .12, .3, sfx); },
-    full() { if (!ac) return; const t = ac.currentTime; [0, 4, 7, 12].forEach((d, k) => osc("square", m2f(81 + d), t + k * .045, .003, .06, .35)); noise(t, .5, .1, "highpass", 4000, .7, sfx); },
-    part() { if (!ac) return; const t = ac.currentTime; osc("triangle", m2f(88), t, .003, .08, .18); osc("square", m2f(95), t + .06, .003, .05, .2); },
+    cell(f) { if (!ac) return; const t = ac.currentTime; if (t - lastCell < .028) return; lastCell = t; const m = PENT[Math.min(PENT.length - 1, Math.floor(f * 9))] - 12; osc("square", q(m), t, .002, .035, .05); osc("sine", q(m + 12), t, .002, .03, .07); },
+    land(big) { if (!ac) return; const t = ac.currentTime; osc("sine", 160, t, .003, .3, .16, sfx, 70); noise(t, .1, .1, "bandpass", 1400, 1.5, sfx); if (big) osc("triangle", PF(220), t, .005, .12, .3, sfx); },
+    full() { if (!ac) return; const t = ac.currentTime; [0, 4, 7, 12].forEach((d, k) => osc("square", q(81 + d), t + k * .045, .003, .06, .35)); noise(t, .5, .1, "highpass", 4000, .7, sfx); },
+    part() { if (!ac) return; const t = ac.currentTime; osc("triangle", q(88), t, .003, .08, .18); osc("square", q(95), t + .06, .003, .05, .2); },
     buzz() { if (!ac) return; const t = ac.currentTime; osc("sawtooth", 120, t, .005, .05, .25, sfx); osc("square", 240, t, .002, .03, .08, sfx); noise(t, .12, .06, "highpass", 3000, .7, sfx); },
     // a leftover lamp paying in on the night report: a switch click, a bright bell climbing with each lamp, a little shimmer
     lampPay(i) { if (!ac) return; const t = ac.currentTime, m = 76 + [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24][Math.min(10, i)];
-      osc("square", 1900, t, .001, .02, .04, sfx); osc("triangle", m2f(m), t + .01, .003, .22, .2); osc("sine", m2f(m + 12), t + .01, .003, .16, .1); osc("square", m2f(m + 7), t + .07, .002, .06, .05); noise(t + .02, .12, .05, "highpass", 6000, .8, sfx); },
+      osc("square", 1900, t, .001, .02, .04, sfx); osc("triangle", q(m), t + .01, .003, .22, .2); osc("sine", q(m + 12), t + .01, .003, .16, .1); osc("square", q(m + 7), t + .07, .002, .06, .05); noise(t + .02, .12, .05, "highpass", 6000, .8, sfx); },
     lampOut() { if (!ac) return; const t = ac.currentTime; osc("triangle", 1500, t, .002, .06, .12, sfx, 300); noise(t, .05, .05, "highpass", 5000, .7, sfx); },
     // the count-up's sounds (Workshop tallyfx): soft and short; tune = one scale climbing through the whole count
     tlStep(ph, n, tune) { if (!ac) return; const t = ac.currentTime, sc = [60, 62, 64, 67, 69, 72, 74, 76, 79, 81, 84, 86, 88, 91];
-      if (ph === 0) { const m = tune ? sc[Math.min(sc.length - 1, n - 1)] + 12 : 84 + Math.min(6, n); osc("triangle", m2f(m), t, .002, .05, .09); }
-      else if (ph === 1 || ph === 3) { osc("sine", tune ? m2f(sc[Math.min(sc.length - 1, n - 1)] + 12) : 880, t, .002, .06, .12); noise(t, .04, .06, "bandpass", 2400, 3); }
-      else if (ph === 2 || ph === 5) { const m = tune ? sc[Math.min(sc.length - 1, n - 1)] + 12 : 91; osc("sine", m2f(m), t, .003, .07, .35); osc("sine", m2f(m + 12), t, .003, .025, .25); }
-      else { const m = tune ? sc[Math.min(sc.length - 1, n - 1)] : 52; osc("sine", m2f(m - 12), t, .003, .16, .32, sfx, m2f(m - 24)); noise(t, .05, .1, "lowpass", 700, 1); if (tune) { osc("triangle", m2f(m), t, .003, .06, .3); osc("triangle", m2f(m + 7), t, .003, .05, .3); } } },
+      if (ph === 0) { const m = tune ? sc[Math.min(sc.length - 1, n - 1)] + 12 : 84 + Math.min(6, n); osc("triangle", q(m), t, .002, .05, .09); }
+      else if (ph === 1 || ph === 3) { osc("sine", tune ? q(sc[Math.min(sc.length - 1, n - 1)] + 12) : PF(880), t, .002, .06, .12); noise(t, .04, .06, "bandpass", 2400, 3); }
+      else if (ph === 2 || ph === 5) { const m = tune ? sc[Math.min(sc.length - 1, n - 1)] + 12 : 91; osc("sine", q(m), t, .003, .07, .35); osc("sine", q(m + 12), t, .003, .025, .25); }
+      else { const m = tune ? sc[Math.min(sc.length - 1, n - 1)] : 52; osc("sine", q(m - 12), t, .003, .16, .32, sfx, q(m - 24)); noise(t, .05, .1, "lowpass", 700, 1); if (tune) { osc("triangle", q(m), t, .003, .06, .3); osc("triangle", q(m + 7), t, .003, .05, .3); } } },
     tlWhoosh() { if (!ac) return; noise(ac.currentTime, .16, .035, "bandpass", 1400, 2, sfx, 5200); },
-    tlRoll(tune) { if (!ac) return; const t = ac.currentTime; osc("triangle", m2f(tune ? 72 : 79), t, .003, .06, .18); osc("triangle", m2f(tune ? 76 : 84), t + .06, .003, .06, .22); },
-    tlTotal(tune) { if (!ac) return; const t = ac.currentTime; (tune ? [60, 64, 67, 72] : [64, 67, 71]).forEach((m, k) => { osc("triangle", m2f(m + 12), t + k * .03, .004, .07, .7); osc("sine", m2f(m), t + k * .03, .004, .05, .6); }); },
+    tlRoll(tune) { if (!ac) return; const t = ac.currentTime; osc("triangle", q(tune ? 72 : 79), t, .003, .06, .18); osc("triangle", q(tune ? 76 : 84), t + .06, .003, .06, .22); },
+    tlTotal(tune) { if (!ac) return; const t = ac.currentTime; (tune ? [60, 64, 67, 72] : [64, 67, 71]).forEach((m, k) => { osc("triangle", q(m + 12), t + k * .03, .004, .07, .7); osc("sine", q(m), t + k * .03, .004, .05, .6); }); },
     stamp(n) { if (!ac) return; const t = ac.currentTime; osc("sine", 110, t, .002, .12, .45, sfx, 55); noise(t, .06, .22, "lowpass", 900, 1);
-      const sc = [523, 659, 784, 1047, 1319, 1568, 2093]; const k = Math.min(sc.length - 1, n % 7); osc("square", sc[k] / 2, t + .02, .003, .1, .12); osc("sine", sc[k], t + .02, .003, .14, .18); },
+      const sc = [523, 659, 784, 1047, 1319, 1568, 2093]; const k = Math.min(sc.length - 1, n % 7); osc("square", PF(sc[k]) / 2, t + .02, .003, .1, .12); osc("sine", PF(sc[k]), t + .02, .003, .14, .18); },
     tick() { if (!ac) return; const t = ac.currentTime; if (t - lastTick < .04) return; lastTick = t; osc("square", 2400, t, .001, .02, .015); },
     type() { if (!ac) return; const t = ac.currentTime; if (t - lastType < .03) return; lastType = t; noise(t, .025, .05, "bandpass", 3000 + Math.random() * 1500, 3); },
     click() { if (!ac) return; osc("triangle", 900, ac.currentTime, .002, .1, .05); },
     paper() { if (!ac) return; const t = ac.currentTime; noise(t, .22, .05, "bandpass", 2600, 1.2); noise(t + .16, .08, .04, "bandpass", 1500, 2); },   // a card slid under the sash
     thud(n) { if (!ac) return; const t = ac.currentTime; osc("sine", 90, t, .002, .5, .18, sfx, 42); noise(t, .08, .25, "lowpass", 900, 1, sfx); osc("square", 160, t, .001, .05 * n, .04); },
     send(big) { if (!ac) return; const t = ac.currentTime; noise(t, .9, .14, "bandpass", 500, 2, sfx, 5000); osc("sine", 220, t, .02, .08, .8, sfx, 1200); if (big) noise(t + .1, .9, .12, "highpass", 2500, .7); },
-    beacon(big) { if (!ac) return; const t = ac.currentTime, ch = chordNow(); ch.concat(ch.map(m => m + 12)).slice(0, big ? 8 : 5).forEach((m, k) => osc("square", m2f(m + 12), t + k * .05, .003, .06, .5)); if (big) osc("sawtooth", 110, t, .01, .14, .9, sfx, 660); },
+    beacon(big) { if (!ac) return; const t = ac.currentTime, ch = chordNow(); ch.concat(ch.map(m => m + 12)).slice(0, big ? 8 : 5).forEach((m, k) => osc("square", m2f(m + 12), t + k * .05, .003, .06, .5)); if (big) osc("sawtooth", PF(110), t, .01, .14, .9, sfx, PF(660)); },
     up() { if (!ac) return; const t = ac.currentTime; osc("sine", 45, t, .25, .12, .9, sfx, 220); noise(t, .6, .06, "bandpass", 300, 1, sfx, 1600); },
-    warn() { if (!ac) return; const t = ac.currentTime; osc("square", 660, t, .002, .05, .12, sfx); osc("square", 440, t + .17, .002, .05, .22, sfx); },
+    warn() { if (!ac) return; const t = ac.currentTime; osc("square", PF(660), t, .002, .05, .12, sfx); osc("square", PF(440), t + .17, .002, .05, .22, sfx); },
     beat() { if (!ac) return; const t = ac.currentTime; osc("sine", 64, t, .004, .3, .22, sfx, 40); osc("sine", 60, t + .24, .004, .2, .2, sfx, 40); },
     pop() { if (!ac) return; osc("square", 1100 + Math.random() * 500, ac.currentTime, .001, .025, .04, sfx, 260); },
     hiss() { if (!ac) return; noise(ac.currentTime, 1.4, .3, "bandpass", 1400, .6); },
     down() { if (!ac) return; const t = ac.currentTime; osc("sine", 1500, t, .004, .07, .9, sfx, 50); noise(t, .5, .12, "highpass", 2500, 1); },
     fail() { if (!ac) return; const t = ac.currentTime; noise(t, .3, .32, "bandpass", 500, 2); osc("square", 82, t, .005, .16, .25, sfx, 55); },
     retune() { if (!ac) return; const t = ac.currentTime; noise(t, .7, .24, "bandpass", 300, 8, sfx, 5000); osc("sine", 300, t, .02, .06, .6, sfx, 1400); },
-    clear() { if (!ac) return; const t = ac.currentTime; [69, 72, 76, 79, 84, 88].forEach((m, k) => osc("square", m2f(m), t + k * .08, .003, .07, .6)); noise(t, 1.2, .13, "bandpass", 400, 2, sfx, 9000); },
-    pick() { if (!ac) return; const t = ac.currentTime; osc("square", 440, t, .003, .07, .08); osc("square", 660, t + .06, .003, .07, .12); },
-    over() { if (!ac) return; const t = ac.currentTime; [76, 72, 69, 64, 57].forEach((m, k) => osc("sawtooth", m2f(m), t + k * .16, .01, .09, .5)); noise(t, 2, .24, "lowpass", 3000, .5, sfx, 200); },
+    clear() { if (!ac) return; const t = ac.currentTime; [69, 72, 76, 79, 84, 88].forEach((m, k) => osc("square", q(m), t + k * .08, .003, .07, .6)); noise(t, 1.2, .13, "bandpass", 400, 2, sfx, 9000); },
+    pick() { if (!ac) return; const t = ac.currentTime; osc("square", PF(440), t, .003, .07, .08); osc("square", PF(660), t + .06, .003, .07, .12); },
+    over() { if (!ac) return; const t = ac.currentTime; [76, 72, 69, 64, 57].forEach((m, k) => osc("sawtooth", q(m), t + k * .16, .01, .09, .5)); noise(t, 2, .24, "lowpass", 3000, .5, sfx, 200); },
   };
 })();
 
@@ -5093,6 +5231,7 @@ const DEV_ACTIONS = [
   ["POWER UP", () => { devPlay(); S.night = 1; startNight(); }],
   ["NEW RUN", () => { newRun(); barShow = 1; }], ["TITLE SCREEN", () => { S.phase = "title"; titleT = 0; titleSkip = false; }],
   ["LOGBOOK", () => { manOpen(S.phase === "title" ? "title" : "dev", "log"); }],
+  [() => "STATION: " + Sound.STATIONS[Sound.station()].name, () => { Sound.ensure(); Sound.music(); const n = Sound.STATIONS.length; Sound.setRot(Sound.STATIONS.map((x, i) => i)); Sound.tune((Sound.station() + 1) % n); Sound.retune(); }],
   ["STUDIO INTRO", () => { studioStart(); }], [() => "SOUND " + (Sound.muted() ? "OFF" : "ON"), () => { Sound.ensure(); Sound.toggle(); }],
 ];
 function devInstall() {

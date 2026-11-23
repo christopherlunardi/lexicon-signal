@@ -1,6 +1,78 @@
 {
  "topics": [
   {
+   "id": "stations",
+   "title": "Stations (a song per retune)",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "date": "2026-11-23",
+     "question": "Stations: a retune tunes the radio to another song. Which stations should be in the rotation?",
+     "found": "Each station has its own song, and the game's sounds (letter blips, the lock chime, the beacon, the tube, the count-up, lamps, night clear) move into that station's key and scale, so they stay in tune with whatever is playing. The beacon chime plays the chord the band is on right then. A retune fades the song out under the static and the next one starts on its first beat as the static clears, and the dial shows the station. The jazz ones are the four 'band in the next room' pieces from the music round, now with the sounds tuned to them; they also come through the wall a little clearer as the night's signal fills. Each clip is about 30 seconds: the station with three words played over it (letters, send, beacon, count-up) and a night clear at the end. 'Station tour' is all six in a row with real retunes between. Play: starts a run on that station; in these test copies you get 5 retunes a night and each one steps to the next station. Mark the ones to keep or cut in the notes, and say whether a retune should change the song, or each night, or both. The game itself doesn't change until you decide.",
+     "options": [
+      {
+       "id": "0",
+       "title": "540 kc: Night Pulse (now)",
+       "note": "The game's own music, exactly as it is now: the slow A minor pulse, chord pads, soft beat. Everything else is tuned against this one.",
+       "audio": "img/stations-r1/st0.mp3",
+       "play": "play.html#title-stn-0-1-2-3-4-5",
+       "sound": true
+      },
+      {
+       "id": "1",
+       "title": "680 kc: Last Call Trio",
+       "note": "Piano trio ballad at 70 BPM in D minor: brushes, upright bass, the piano taking the tune now and then. The game's sounds move up into D minor.",
+       "audio": "img/stations-r1/st1.mp3",
+       "play": "play.html#title-stn-1-0-2-3-4-5",
+       "sound": true
+      },
+      {
+       "id": "2",
+       "title": "880 kc: Blue Room Vibes",
+       "note": "Very slow (62 BPM) and dreamy in E flat: vibraphone with its tremolo, soft bass, the lightest brushes. The sounds move into E flat.",
+       "audio": "img/stations-r1/st2.mp3",
+       "play": "play.html#title-stn-2-0-1-3-4-5",
+       "sound": true
+      },
+      {
+       "id": "3",
+       "title": "1010 kc: Muted Horn",
+       "note": "A gentle swing at 92 BPM in C: walking bass, brushes and ride, piano chords, a cup-muted trumpet with short phrases. Same key as Night Pulse, so the sounds stay where they are.",
+       "audio": "img/stations-r1/st3.mp3",
+       "play": "play.html#title-stn-3-0-1-2-4-5",
+       "sound": true
+      },
+      {
+       "id": "4",
+       "title": "1240 kc: Old 78",
+       "note": "84 BPM, your tempo: the band with a clarinet as an old record from the next room, narrow, warm, crackling, wavering a little. In B flat; the sounds move down to match.",
+       "audio": "img/stations-r1/st4.mp3",
+       "play": "play.html#title-stn-4-0-1-2-3-5",
+       "sound": true
+      },
+      {
+       "id": "5",
+       "title": "1450 kc: Fog Pulse",
+       "note": "Your idea of a second song with a new scale: the game's own band (same pads, bass and beat) with new chords in E dorian, minor with a raised sixth, a little lighter and mistier. The sounds move to E.",
+       "audio": "img/stations-r1/st5.mp3",
+       "play": "play.html#title-stn-5-0-1-2-3-4",
+       "sound": true
+      },
+      {
+       "id": "tour",
+       "title": "Station tour",
+       "note": "All six in a row, about 14 seconds each, with a word played on each and a real retune into the next.",
+       "audio": "img/stations-r1/tour.mp3",
+       "play": "play.html#title-stn-0-1-2-3-4-5",
+       "sound": true
+      }
+     ],
+     "chosen": null
+    }
+   ]
+  },
+  {
    "id": "type",
    "title": "Lettering",
    "rounds": [
