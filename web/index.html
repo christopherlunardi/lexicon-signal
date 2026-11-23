@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 255;</script><script>
+<script>window.LEX_BUILD = 256;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -3236,6 +3236,7 @@ const titleGlass = { ready: false };
 /* Tips shown scrolling on the dial of the title screen, one at a time in random order. KEEP THIS LIST TRUE TO THE GAME: whenever a
    rule, number, control or part changes, fix the tips it touches, drop the ones that no longer hold and add tips for new things. */
 const TIPS = [
+  "PAUSE MENU: TURN THE MUSIC AND THE EFFECTS UP OR DOWN ON THEIR OWN WITH LEFT AND RIGHT",
   "EVERY WORD THAT MISSES THE BLUE KEY FREEZES A KEY AROUND IT. A WORD THROUGH IT PAYS X2, +1 FOR EACH FROZEN KEY",
   "USE A FROZEN KEY WITHOUT THE BLUE KEY AND IT ALL BREAKS: THE BLUE KEY MOVES AND STARTS OVER AT X2",
   "A RETUNE GIVES THE FROZEN KEYS NEW LETTERS BUT KEEPS THE ICE",
@@ -3686,7 +3687,8 @@ function NATIVE() { return typeof LexNative !== "undefined" ? LexNative : null; 
 function pauseItems() {
   const sure = (key, label, fn) => [PAUSE.sure === key ? btn("SURE? PRESS {A} AGAIN") : label, () => { if (PAUSE.sure !== key) { PAUSE.sure = key; return; } PAUSE.sure = null; fn(); }, key];
   const it = [["RESUME", () => pauseClose()],
-    ["SOUND: " + (Sound.muted() ? "OFF" : "ON"), () => Sound.toggle()],
+    ["MUSIC", () => volTap("m"), null, "m"],
+    ["EFFECTS", () => volTap("s"), null, "s"],
     ["SERVICE MANUAL", () => manOpen("pause")],
     ["SCREEN COLOR: " + COLORS[colorMode][0], () => { colorMode = (colorMode + 1) % COLORS.length; applyColor(); try { localStorage.setItem("lexsig.colour", colorMode); } catch (e) {} }],
     sure("new", "NEW RUN", () => { pauseClose(); plEnd("quit"); start(); }),
@@ -3703,7 +3705,12 @@ function pauseItems() {
   return it; }
 function pauseOpen() { if (S.phase !== "play" || HOW.on) return; PAUSE.on = true; PAUSE.sel = 0; PAUSE.sure = null; PAUSE.t = 0; Sound.click(); }
 function pauseClose() { PAUSE.on = false; PAUSE.sure = null; }
+// a level row (MUSIC / EFFECTS): left / right turn it down / up a step, A switches it off and back on (to where it was)
+const volWas = { m: 10, s: 10 };
+function volTap(k) { Sound.ensure(); const n = Sound.vol(k); if (n > 0) { volWas[k] = n; Sound.setVol(k, 0); } else Sound.setVol(k, volWas[k] || 10); if (Sound.muted()) Sound.toggle(); }
+function volStep(k, d) { Sound.ensure(); Sound.setVol(k, Sound.vol(k) + d); if (Sound.muted() && Sound.vol(k) > 0) Sound.toggle(); if (k === "s") Sound.click(); }
 function pauseKey(k) { if (!PAUSE.on) return false; const items = pauseItems();
+  const vk = (items[Math.min(PAUSE.sel, items.length - 1)] || [])[3]; if (vk && (k === "left" || k === "right")) { volStep(vk, k === "left" ? -1 : 1); return true; }
   if (k === "up" || k === "down") { PAUSE.sel = (PAUSE.sel + (k === "up" ? items.length - 1 : 1)) % items.length; Sound.tickMove(); }
   else if (k === "b" || k === "start") { pauseClose(); Sound.click(); }
   else if (k === "a") { Sound.click(); items[Math.min(PAUSE.sel, items.length - 1)][1](); }
@@ -3715,7 +3722,8 @@ function drawPause() {   // one parchment panel like the log box, in the game's 
   const items = pauseItems(), kh = glyphCv("key", "N", C.ink).height, rh = glyphCv("read", "N", C.ink).height, IX = FX(INSET.logbox.x), IY = FX(INSET.logbox.y);
   const plH = Math.round((kh + 2 * FINE * INSET.plate.y + 8) / FINE), foot = (PAUSE.noteT ? rh + 10 : 0) + rh + 14;
   // every item keeps INSET clear of the gold frame, plus room for the pointer on its left (and the same on its right, so it stays centered)
-  const iw = Math.max(...items.map(t => textW(t[0], "key"))) + 2 * IX + 2 * 34, pw = Math.round(Math.min(CVW - 20, iw) / FINE);
+  const pipW = Math.round(kh * .42), pipG = Math.round(kh * .26), labW = textW("EFFECTS", "key"), VW = labW + 24 + 10 * pipW + 9 * pipG + 8 + textW("OFF", "key");   // a level row: label, then ten pips
+  const iw = Math.max(...items.map(t => t[3] ? VW : textW(t[0], "key"))) + 2 * IX + 2 * 34, pw = Math.round(Math.min(CVW - 20, iw) / FINE);
   const avail = CVH - FX(plH) - 24, lh = Math.max(kh + 8, Math.min(kh + 18, Math.floor((avail - FX(plH / 2) - 2 * IY - 10 - foot) / items.length)));
   const ph = Math.round((FX(Math.round(plH / 2)) + 10 + IY + items.length * lh + 10 + foot + IY) / FINE), x = Math.round(W / 2 - pw / 2) * FINE, top = Math.max(Math.round(plH / 2) + 4, Math.round((CVH / FINE - ph) / 2)) * FINE;
   ctx.save(); ctx.fillStyle = "rgba(6,4,10,.6)"; ctx.fillRect(0, 0, CVW, CVH);
@@ -3725,8 +3733,13 @@ function drawPause() {   // one parchment panel like the log box, in the game's 
   items.forEach((t, i) => { const y = y0 + i * lh, on = i === PAUSE.sel;
     if (on) { ctx.fillStyle = "rgba(150,40,26,.13)"; ctx.fillRect(L0, y, R0 - L0, lh);
       const ax = L0 + 10 + ((PAUSE.t >> 4) & 1) * 3, ay = y + lh / 2; ctx.fillStyle = C.inkRed; ctx.beginPath(); ctx.moveTo(ax, ay - 7); ctx.lineTo(ax + 9, ay); ctx.lineTo(ax, ay + 7); ctx.fill(); }
-    ftext(t[0], cx, y + Math.round((lh - kh) / 2), "key", on ? C.inkRed : C.ink, "c");
-    PAUSE.hits.push({ i, y0: y, y1: y + lh, x0: x, x1: x + pw * FINE }); });
+    const ty = y + Math.round((lh - kh) / 2);
+    if (t[3]) { const n = Sound.vol(t[3]), lx = Math.round(cx - VW / 2 + 4), px = lx + labW + 24;
+      ftext(t[0], lx, ty, "key", on ? C.inkRed : C.ink, "l");
+      for (let k = 0; k < 10; k++) { const lit = k < n, hh = Math.round(kh * (.45 + .55 * (k + 1) / 10)); ctx.globalAlpha = lit ? 1 : .22; ctx.fillStyle = lit && on ? C.inkRed : C.ink; ctx.fillRect(px + k * (pipW + pipG), ty + kh - hh, pipW, hh); }
+      ctx.globalAlpha = 1; if (!n) ftext("OFF", px + 10 * (pipW + pipG) + 8, ty, "key", C.inkSoft, "l");
+      PAUSE.hits.push({ i, y0: y, y1: y + lh, x0: x, x1: x + pw * FINE, vol: t[3], px, step: pipW + pipG }); }
+    else { ftext(t[0], cx, ty, "key", on ? C.inkRed : C.ink, "c"); PAUSE.hits.push({ i, y0: y, y1: y + lh, x0: x, x1: x + pw * FINE }); } });
   let ny = y0 + items.length * lh + 10;
   ctx.fillStyle = C.inkSoft; ctx.globalAlpha = .35; ctx.fillRect(L0, ny - 4, R0 - L0, 2); ctx.globalAlpha = 1; ny += 6;
   if (PAUSE.noteT) { ftext(PAUSE.note, cx, ny, "read", C.inkSoft, "c"); ny += rh + 10; }
@@ -4576,7 +4589,7 @@ const TAPW = () => usingTouch && !SHELL;
 const KEYNAME = { A: "Z", B: "X", X: "V", Y: "C", START: "ESC" };
 const BTN = (b) => INPUT === "keys" ? KEYNAME[b] : b;
 const btn = (t) => String(t).replace(/\{(A|B|X|Y|START)\}/g, (m, b) => BTN(b));
-function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ? "up" : "down"; if (devKey(dk)) return; if (pauseKey(dk)) return; if (manKey(dk)) return; if (boardKey(dk)) return; if (howKey(dk)) return; if (nightHold) return; dismissCard();
+function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ? "up" : "down"; if (devKey(dk)) return; if (manKey(dk)) return; if (pauseKey(dk)) return; if (boardKey(dk)) return; if (howKey(dk)) return; if (nightHold) return; dismissCard();
   usingButtons = true; Sound.ensure();
   if (S.phase === "report") { if (dy) reportScroll(dy); return; }
   if (S.phase === "dying") { lossSkip(); return; }
@@ -4637,6 +4650,7 @@ cv.addEventListener("pointerdown", (e) => {
   if (MAN.on) { manDown(p); try { cv.setPointerCapture(e.pointerId); } catch (er) {} return; }
   if (BOARD.on) { BOARD.on = false; Sound.click(); return; }
   if (PAUSE.on) { const fy = p.y * FINE, fx = p.x * FINE, hit = PAUSE.hits.find(r => fy >= r.y0 && fy <= r.y1 && fx >= r.x0 && fx <= r.x1);
+    if (hit && hit.vol && fx >= hit.px - hit.step / 2) { PAUSE.sel = hit.i; PAUSE.sure = null; const n = Math.max(0, Math.min(10, Math.floor((fx - hit.px) / hit.step) + 1)); volStep(hit.vol, n - Sound.vol(hit.vol)); return; }   // a tap on the pips sets that level
     if (hit) { if (PAUSE.sel !== hit.i) PAUSE.sure = null; PAUSE.sel = hit.i; pauseKey("a"); } else pauseClose(); return; }
   if (HOW.on) { howKey(p.x < W / 2 ? "b" : "a"); return; }
   if (lossSkip()) return;
@@ -4714,7 +4728,11 @@ window.addEventListener("resize", layout); if (window.ResizeObserver) new Resize
 
 /* ================= sound: Web Audio synth, 84 BPM night pulse ================= */
 const Sound = (() => {
-  let ac = null, lowEnd = false, master, mus, sfx, nb, padF, playing = false, nextBeat = 0, beatN = 0, muted = false, lastTick = 0, lastType = 0, lastCell = 0, rainOn = false;
+  let ac = null, lowEnd = false, master, mus, sfx, nb, padF, playing = false, nextBeat = 0, beatN = 0, muted = false, lastTick = 0, lastType = 0, lastCell = 0, rainOn = false, amb;
+  // music and effects levels (Chris 2026-11-23): 0..10 each, 10 = the standard mix; the rain goes with the music; saved in lexsig.vol
+  const VOL = { m: 10, s: 10 }; try { const v = JSON.parse(localStorage.getItem("lexsig.vol") || "{}"); ["m", "s"].forEach(k => { if (v[k] >= 0 && v[k] <= 10) VOL[k] = Math.round(v[k]); }); } catch (e) {}
+  const lv = n => (n / 10) ** 2;
+  function volApply() { if (!ac) return; const t = ac.currentTime; mus.gain.setTargetAtTime(.5 * lv(VOL.m), t, .03); amb.gain.setTargetAtTime(lv(VOL.m), t, .03); sfx.gain.setTargetAtTime(.7 * lv(VOL.s), t, .03); }
   const m2f = (m) => 440 * Math.pow(2, (m - 69) / 12), CH = [[57, 60, 64, 67], [53, 57, 60, 64], [48, 55, 59, 64], [55, 59, 62, 64]], RT = [45, 41, 36, 43], PENT = [69, 72, 74, 76, 79, 81, 84, 86, 88, 91, 93, 96, 98];
   // iPhone: the silent switch mutes web audio. Inside the press that starts the sound, say the page plays media (iOS 17+) and loop
   // a second of real silence in an audio element, so iOS treats the page like a music player and plays it (the studio's other games
@@ -4732,7 +4750,7 @@ const Sound = (() => {
     if (ac.state !== "running") ac.resume();
     master = ac.createGain(); master.gain.value = .8;
     // a gentle limiter at the end: several sounds landing together used to add up past full scale and crackle
-    { const lim = ac.createDynamicsCompressor(); lim.threshold.value = -6; lim.knee.value = 6; lim.ratio.value = 12; lim.attack.value = .003; lim.release.value = .15; master.connect(lim); lim.connect(ac.destination); } mus = ac.createGain(); mus.gain.value = .5; mus.connect(master); sfx = ac.createGain(); sfx.gain.value = .7; sfx.connect(master);
+    { const lim = ac.createDynamicsCompressor(); lim.threshold.value = -6; lim.knee.value = 6; lim.ratio.value = 12; lim.attack.value = .003; lim.release.value = .15; master.connect(lim); lim.connect(ac.destination); } mus = ac.createGain(); mus.gain.value = .5; mus.connect(master); sfx = ac.createGain(); sfx.gain.value = .7; sfx.connect(master); amb = ac.createGain(); amb.connect(master); volApply();
     nb = ac.createBuffer(1, ac.sampleRate * 2, ac.sampleRate); const d = nb.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     // (the old constant static ran a noise source into a silent gain all game long; it's gone, it only cost the sound thread time)
     padF = ac.createBiquadFilter(); padF.type = "lowpass"; padF.frequency.value = 700; padF.Q.value = 2; padF.connect(mus); }
@@ -4749,12 +4767,13 @@ const Sound = (() => {
     if (S && S.target) padF.frequency.setTargetAtTime(600 + Math.min(1, S.score / S.target) * 1800, ac.currentTime, .4); }
   // rain on the window: a soft wash of filtered noise, a fine hiss on top, and now and then a drip on the sill
   function startRain() { const t = ac.currentTime;
-    const mk = (type, f, q, g) => { const s = ac.createBufferSource(); s.buffer = nb; s.loop = true; s.playbackRate.value = .5 + Math.random() * .1; const fl = ac.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q; const gg = ac.createGain(); gg.gain.setValueAtTime(.0001, t); gg.gain.exponentialRampToValueAtTime(g, t + 3); s.connect(fl); fl.connect(gg); gg.connect(master); s.start(t); return gg; };
+    const mk = (type, f, q, g) => { const s = ac.createBufferSource(); s.buffer = nb; s.loop = true; s.playbackRate.value = .5 + Math.random() * .1; const fl = ac.createBiquadFilter(); fl.type = type; fl.frequency.value = f; fl.Q.value = q; const gg = ac.createGain(); gg.gain.setValueAtTime(.0001, t); gg.gain.exponentialRampToValueAtTime(g, t + 3); s.connect(fl); fl.connect(gg); gg.connect(amb); s.start(t); return gg; };
     const wash = mk("lowpass", 1100, .5, .025), hiss = mk("bandpass", 6500, .4, .0065);   // (a third of what it was: Chris 2026-11-14, too loud)
     const lfo = ac.createOscillator(), lg = ac.createGain(); lfo.frequency.value = .07; lg.gain.value = .007; lfo.connect(lg); lg.connect(wash.gain); lfo.start();
-    setInterval(() => { if (!ac || Math.random() < .4) return; const t2 = ac.currentTime + Math.random() * .8, f = 1400 + Math.random() * 1600; osc("sine", f, t2, .002, .005 + Math.random() * .006, .06, sfx, f * .55); }, 700); }
+    setInterval(() => { if (!ac || Math.random() < .4) return; const t2 = ac.currentTime + Math.random() * .8, f = 1400 + Math.random() * 1600; osc("sine", f, t2, .002, .005 + Math.random() * .006, .06, amb, f * .55); }, 700); }
   const chordNow = () => CH[(((beatN / 4) | 0) / 2 | 0) % 4];
-  return { ensure, ac: () => ac, out: () => master, muted: () => muted,
+  return { ensure, ac: () => ac, out: () => master, muted: () => muted, vol: k => VOL[k],
+    setVol(k, n) { VOL[k] = Math.max(0, Math.min(10, n)); try { localStorage.setItem("lexsig.vol", JSON.stringify(VOL)); } catch (e) {} volApply(); },
     music() { if (!ac) return; this.rain(); if (playing) return; playing = true; nextBeat = ac.currentTime + .1; setInterval(schedule, 60); },
     toggle() { muted = !muted; if (master) master.gain.setTargetAtTime(muted ? 0 : .8, ac.currentTime, .05); log(muted ? "Sound off." : "Sound on."); },
     setStatic(l) {},   // (the constant static hiss is gone, Chris 2026-11-12: static is only a sound effect now; the rain is the room's sound)

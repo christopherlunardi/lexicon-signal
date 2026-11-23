@@ -740,3 +740,4 @@ the same batch.
 - Gold keys: any number in one word (up to 3) are filled together (goldFills, cached per letters); the most common word wins, a request-filling one first (Chris 2026-11-22: two gold keys + OAT found nothing).
 
 - 2026-11-22 (Chris): he only plays on the GitHub site (installed as an app); never the Android app. release.py no longer writes dist/; dist/ and .github/workflows/android.yml are gone. Sharing his play log from the installed site: pause (Start) > SHARE PLAY LOG opens the phone's share sheet (newest 3 runs), or copies it where sharing isn't offered.
+- 2026-11-23 (Chris): the pause menu's SOUND line became MUSIC and EFFECTS level rows (0..10 each, 10 = the standard mix, saved in lexsig.vol; the rain follows MUSIC). Left/right step, A switches off and back, a tap on the pips sets the level. M still mutes everything. Fixed: the Service Manual opened from pause didn't take up/down (move() asked pauseKey before manKey).
