@@ -4100,7 +4100,7 @@ const LOG_SECS = [
    type as a rubber stamp and the high score up top, a podium for the top three, index cards); 3 Chart (your runs charted across the
    top, a short top five, then cards as rows). #logfront-N picks one. On the front page MAN.sec is -1 and the contents are -2;
    up / down / left / right move between the cards, A opens one, B goes back. ---- */
-let LOGFRONT = 0; { const m = location.hash.match(/logfront-(\d)/); if (m) LOGFRONT = Math.min(3, +m[1]); }
+let LOGFRONT = 1; /* (Chris picked 1, Ledger, 2026-11-23) */ { const m = location.hash.match(/logfront-(\d)/); if (m) LOGFRONT = Math.min(3, +m[1]); }
 const lfOn = () => MAN.book === "log" && LOGFRONT > 0 && MAN.sec === -1;
 // demo data for the Workshop's play copies (#...-bookdemo): a made-up logbook in memory only, never saved
 const BOOK_DEMO = /bookdemo/.test(location.hash);
@@ -4153,7 +4153,7 @@ function lfSel(x, y, w, h) { ctx.save(); ctx.strokeStyle = MP.red; ctx.lineWidth
 function lfLay(b, w, add, items, lh, gh, kh) { const k = b[0], row = () => items.length ? items[items.length - 1].row + 1 : 0, pad = Math.round(14 * TK);
   if (k === "lftitle") { const st = bookStats(); add(lh + 8 + kh * 2 + 18 + lh, (X, Y) => { const cx = X + w / 2;
       ftext("MODEL LS-5  NIGHT RECEIVER", cx, Y, BK, MP.red, "c"); ctx.save(); ctx.translate(cx, Y + lh + 8); ctx.scale(2, 2); ftext("STATION LOGBOOK", 0, 0, "key", MP.ink, "c"); ctx.restore();
-      ftext(`${fmtNum(st.ws.length)} WORDS  ${fmtNum(BOOK.runs.length)} RUNS  ${bookTime(BOOK.secs)} ON THE AIR`, cx, Y + lh + 8 + kh * 2 + 18, BK, MP.soft, "c"); }, 20); return true; }
+      ftext(`${fmtNum(st.ws.length)} WORD${st.ws.length === 1 ? "" : "S"}  ${fmtNum(BOOK.runs.length)} RUN${BOOK.runs.length === 1 ? "" : "S"}  ${bookTime(BOOK.secs)} ON THE AIR`, cx, Y + lh + 8 + kh * 2 + 18, BK, MP.soft, "c"); }, 20); return true; }
   if (k === "lfstamp") { const st = bookStats(), top = lfScores()[0], t = st.main ? PTYPES[st.main] : null, h = kh * 4 + lh * 2 + 40;
     add(h, (X, Y) => { const sw = Math.min(w * .55, Math.max(textW(t ? t.n : "UNKNOWN", "key") * 2 + 60, textW("CERTIFIED BY THE TOWER", BK) + 60, w * .36)), sx = X + 10, sy = Y + 8, sh = h - 16;
       ctx.save(); ctx.translate(sx + sw / 2, sy + sh / 2); ctx.rotate(-.06); ctx.globalAlpha = t ? .9 : .35; ctx.strokeStyle = MP.red; ctx.lineWidth = 5; ctx.strokeRect(-sw / 2, -sh / 2 + 6, sw, sh - 12); ctx.lineWidth = 2; ctx.strokeRect(-sw / 2 + 9, -sh / 2 + 15, sw - 18, sh - 30);

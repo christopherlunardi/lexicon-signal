@@ -777,7 +777,7 @@ the same batch.
   on the first (startNight calls Sound.home()); each retune turns the dial (Sound.dial) to the other, so two retunes come back. r2's
   four songs (stations 6..9) stay in the code for the Workshop only. A tip and the manual's retune section say so.
 - 2026-11-23 (Chris: the Logbook should open on a leaderboard and good-looking cards of your numbers you can click into, then a way
-  into everything, like How to Play leads into the manual; couldn't scroll back up). Workshop "logfront" r1 (open): LOGFRONT 1 Ledger,
+  into everything, like How to Play leads into the manual; couldn't scroll back up). Workshop "logfront" r1: Chris picked LOGFRONT 1 Ledger (the default now);
   2 Stamped, 3 Chart (#logfront-N; 0 = the old cover and contents, the game's default until he picks). Front page = MAN.sec -1
   (lfBlocks / lfLay: lftitle, lfstamp, lfchart, lfboard, lfpodium, lfcards, lfall), contents = -2; selectable spots are the layout's
   items (row, x, w; lfNav moves, lfGo opens; MAN.fsel), MAN.via says where B goes back to. #...-bookdemo fills a made-up logbook in

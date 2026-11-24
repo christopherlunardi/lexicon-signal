@@ -6,10 +6,10 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "date": "2026-11-23",
      "question": "What should the Logbook open on?",
-     "found": "Every option opens on a front page: your top runs first, then cards for your best numbers, then THE FULL LOGBOOK for every entry (the contents). Move between the cards with the d-pad (up / down / left / right), A or a tap opens one and goes to its entry (the top runs open the top ten, your type opens your personality, best word opens best words with the breakdowns...), and B comes back to the front page where you were. The pictures and Play links use a made-up logbook so there's something to look at (it isn't saved). Also fixed in every version: you can always scroll back to the very top (the contents list's first line now scrolls all the way up).",
+     "found": "Every option opens on a front page: your top runs first, then cards for your best numbers, then THE FULL LOGBOOK for every entry (the contents). Move between the cards with the d-pad (up / down / left / right), A or a tap opens one and goes to its entry (the top runs open the top ten, your type opens your personality, best word opens best words with the breakdowns...), and B comes back to the front page where you were. The pictures and Play links use a made-up logbook so there's something to look at (it isn't saved). Also fixed in every version: you can always scroll back to the very top (the contents list's first line now scrolls all the way up). Decided 2026-11-23: Ledger.",
      "options": [
       {
        "id": "0",
@@ -108,7 +108,7 @@
        "play": "play.html#title-bookdemo-logfront-3"
       }
      ],
-     "chosen": null
+     "chosen": "1"
     }
    ]
   },
