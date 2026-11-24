@@ -796,7 +796,9 @@ the same batch.
 - 2026-11-23 (Chris: collect everyone's play data wherever they play). The first time a player reaches the title, HELP TUNE THE
   TOWER asks (lexsig.share yes/no; pause menu SEND PLAY DATA switches it). With yes, plFlush posts finished runs from lexsig.runs (and
   runs left 6 hours) to https://idlelooping.com/api/plays/ (text/plain JSON {v, pid, owner, runs}); offline or failed posts wait and
-  retry at start, after each run, on "online" and every 10 minutes; lexsig.sent holds what went. The receiver is api/plays.js in the
+  retry at start, after each night and run, when the page is hidden or left, on "online" and every 10 minutes; a run goes out while
+  in progress and again whenever it has grown (lexsig.sent2: id -> how far it was when sent); the receiver updates the row until
+  the run ends. The receiver is api/plays.js in the
   idleloopingwebsite repo: one row per run in table plays of the site's Neon Postgres database "lexicon-plays" (made through Vercel
   Storage, free plan; Vercel gives it DATABASE_URL), columns pid, run_id, owner, started, got, build, place, how_ended, reached, total,
   words, data (the whole run, jsonb). Read it with the Neon connector in claude.ai (run SQL on lexicon-plays). Tested live
