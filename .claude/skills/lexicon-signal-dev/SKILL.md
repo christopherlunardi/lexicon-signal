@@ -802,3 +802,6 @@ the same batch.
   words, data (the whole run, jsonb). Read it with the Neon connector in claude.ai (run SQL on lexicon-plays). Tested live
   2026-11-23 from idlelooping.com and the GitHub site. The claude.ai link doesn't post (its page can't reach other sites); it keeps
   writing to its own "plays" database (ArtifactData), unless the player said no.
+- 2026-11-23 (Chris): pause menu = RESUME, SERVICE MANUAL, LOGBOOK, OPTIONS (PAUSE.sub "opt": MUSIC, EFFECTS, SEND PLAY DATA, SHARE
+  PLAY LOG, BACK; B or a tap outside goes back), the app's own items, then NEW RUN and QUIT TO TITLE at the bottom. SCREEN COLOR is
+  gone (colorMode always 0).

@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 267;</script><script>
+<script>window.LEX_BUILD = 268;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -746,7 +746,7 @@ function askKey(k) { if (!ASK.on) return false; if (k === "left" || k === "right
 function drawAsk() { manSize(); ASK.hits = []; const lh = MLH(), kh = glyphCv("key", "N", MP.ink).height, gh = glyphCv(BK, "N", MP.ink).height;
   const pw = Math.min(CVW - 40, Math.round(980 * Math.max(1, TK * .9))), M = Math.round(Math.min(44, pw * .05)), w = pw - 2 * M;
   const body = wrap("Lexicon Signal can send what happens in your runs (the words you send, your scores, the parts you pick) to Idle Looping Studios, so we can tune and balance the game. It's anonymous: no name, no account, nothing else from your device.", BK, w);
-  const foot = wrap("Offline? It waits and sends later. You can switch it off any time in the pause menu.", BK, w);
+  const foot = wrap("Offline? It waits and sends later. You can switch it off any time under Pause, Options.", BK, w);
   const bh = lh + 28, tk = Math.min(1.5, w / textW("HELP TUNE THE TOWER", "key")), ph = M + Math.round(kh * tk) + 22 + body.length * lh + 14 + foot.length * lh + 26 + bh + M;
   const px = Math.round((CVW - pw) / 2), py = Math.max(10, Math.round((CVH - ph) / 2));
   ctx.save(); ctx.fillStyle = "rgba(6,4,10,.6)"; ctx.fillRect(0, 0, CVW, CVH); ctx.fillStyle = "rgba(0,0,0,.4)"; ctx.fillRect(px + 8, py + 10, pw, ph); ctx.fillStyle = MP.paper; ctx.fillRect(px, py, pw, ph);
@@ -3341,12 +3341,12 @@ const titleGlass = { ready: false };
    rule, number, control or part changes, fix the tips it touches, drop the ones that no longer hold and add tips for new things. */
 const TIPS = [
   "THE LOGBOOK KEEPS EVERY WORD YOU SEND. SEND ENOUGH AND IT TELLS YOU WHAT KIND OF BROADCASTER YOU ARE",
-  "PAUSE MENU: TURN THE MUSIC AND THE EFFECTS UP OR DOWN ON THEIR OWN WITH LEFT AND RIGHT",
+  "PAUSE, THEN OPTIONS: TURN THE MUSIC AND THE EFFECTS UP OR DOWN ON THEIR OWN WITH LEFT AND RIGHT",
   "EVERY WORD THAT MISSES THE BLUE KEY FREEZES A KEY AROUND IT. A WORD THROUGH IT PAYS X2, +1 FOR EACH FROZEN KEY",
   "USE A FROZEN KEY WITHOUT THE BLUE KEY AND IT ALL BREAKS: THE BLUE KEY MOVES AND STARTS OVER AT X2",
   "A RETUNE GIVES THE FROZEN KEYS NEW LETTERS BUT KEEPS THE ICE",
   "A RETUNE ALSO TURNS THE DIAL TO THE OTHER STATION. EACH NIGHT STARTS BACK ON THE FIRST",
-  "PAUSE MENU: SEND PLAY DATA SWITCHES SENDING YOUR RUNS TO THE STUDIO ON OR OFF. IT HELPS US BALANCE THE GAME",
+  "PAUSE, THEN OPTIONS: SEND PLAY DATA SWITCHES SENDING YOUR RUNS TO THE STUDIO ON OR OFF. IT HELPS US BALANCE THE GAME",
   "ON YOUR LAST WORD THE SIGNAL STARTS TO FADE: MAKE IT COUNT",
   "THE BLUE KEY'S ICE KEEPS FROM NIGHT TO NIGHT: SAVE IT UP FOR ONE BIG WORD",
   "ONCE THE BLUE KEY HAS FROZEN ALL IT CAN, EVERY WORD THAT MISSES IT ADDS X1 MORE",
@@ -3772,7 +3772,7 @@ function howReset() {
    keyboard. Anything that throws the run away asks twice (the line turns into SURE? PRESS A AGAIN). In the app it also checks for a new
    build, updates the app and quits. ---- */
 const COLORS = [["NORMAL", ""], ["SOFT", "saturate(.82) brightness(.96) hue-rotate(5deg)"], ["SOFTER", "saturate(.68) brightness(.92) hue-rotate(9deg)"]];
-let colorMode = 0; try { colorMode = Math.min(2, +localStorage.getItem("lexsig.colour") || 0); } catch (e) {}
+let colorMode = 0;   /* (the SCREEN COLOR option was removed, Chris 2026-11-23: always normal now) */
 function applyColor() { cv.style.filter = COLORS[colorMode][1]; }
 applyColor();
 // the high score board (title menu): the best ten runs on this device
@@ -3793,15 +3793,14 @@ const PAUSE = { on: false, sel: 0, sure: null, t: 0, hits: [], note: "", noteT: 
 function NATIVE() { return typeof LexNative !== "undefined" ? LexNative : null; }
 function pauseItems() {
   const sure = (key, label, fn) => [PAUSE.sure === key ? btn("SURE? PRESS {A} AGAIN") : label, () => { if (PAUSE.sure !== key) { PAUSE.sure = key; return; } PAUSE.sure = null; fn(); }, key];
-  const it = [["RESUME", () => pauseClose()],
-    ["MUSIC", () => volTap("m"), null, "m"],
-    ["EFFECTS", () => volTap("s"), null, "s"],
-    ["SERVICE MANUAL", () => manOpen("pause")],
-    ["SCREEN COLOR: " + COLORS[colorMode][0], () => { colorMode = (colorMode + 1) % COLORS.length; applyColor(); try { localStorage.setItem("lexsig.colour", colorMode); } catch (e) {} }],
-    sure("new", "NEW RUN", () => { pauseClose(); plEnd("quit"); start(); }),
-    sure("title", "QUIT TO TITLE", () => { pauseClose(); plEnd("quit"); howExit(); titleSel = 0; }),
+  // (Chris 2026-11-23: the simple things up front, NEW RUN and QUIT TO TITLE at the bottom; sound and play data in OPTIONS; SCREEN COLOR removed)
+  if (PAUSE.sub === "opt") return [["MUSIC", () => volTap("m"), null, "m"], ["EFFECTS", () => volTap("s"), null, "s"],
     ["SEND PLAY DATA: " + (SHARE === "yes" ? "ON" : "OFF"), () => shareSet(SHARE === "yes" ? "no" : "yes")],
-    ["SHARE PLAY LOG", () => plShare()]];
+    ["SHARE PLAY LOG", () => plShare()], ["BACK", () => pauseSub(null)]];
+  const it = [["RESUME", () => pauseClose()],
+    ["SERVICE MANUAL", () => manOpen("pause")],
+    ["LOGBOOK", () => manOpen("pause", "log")],
+    ["OPTIONS", () => pauseSub("opt")]];
   const n = NATIVE();
   if (n) {
     if (buildReady) it.push(sure("reload", "LOAD NEW BUILD " + buildReady, () => { try { n.reload(); } catch (e) {} }));
@@ -3810,8 +3809,10 @@ function pauseItems() {
     if (au) it.push(sure("app", "UPDATE APP (NEW VERSION)", () => { try { n.installApp(); } catch (e) {} }));
     it.push(sure("exit", "EXIT GAME", () => { try { n.quit(); } catch (e) {} }));
   }
+  it.push(sure("new", "NEW RUN", () => { pauseClose(); plEnd("quit"); start(); }), sure("title", "QUIT TO TITLE", () => { pauseClose(); plEnd("quit"); howExit(); titleSel = 0; }));
   return it; }
-function pauseOpen() { if (S.phase !== "play" || HOW.on) return; PAUSE.on = true; PAUSE.sel = 0; PAUSE.sure = null; PAUSE.t = 0; Sound.click(); }
+function pauseSub(v) { PAUSE.sub = v; PAUSE.sel = v ? 0 : 3; PAUSE.sure = null; }
+function pauseOpen() { if (S.phase !== "play" || HOW.on) return; PAUSE.on = true; PAUSE.sub = null; PAUSE.sel = 0; PAUSE.sure = null; PAUSE.t = 0; Sound.click(); }
 function pauseClose() { PAUSE.on = false; PAUSE.sure = null; }
 // a level row (MUSIC / EFFECTS): left / right turn it down / up a step, A switches it off and back on (to where it was)
 const volWas = { m: 10, s: 10 };
@@ -3820,6 +3821,7 @@ function volStep(k, d) { Sound.ensure(); Sound.setVol(k, Sound.vol(k) + d); if (
 function pauseKey(k) { if (!PAUSE.on) return false; const items = pauseItems();
   const vk = (items[Math.min(PAUSE.sel, items.length - 1)] || [])[3]; if (vk && (k === "left" || k === "right")) { volStep(vk, k === "left" ? -1 : 1); return true; }
   if (k === "up" || k === "down") { PAUSE.sel = (PAUSE.sel + (k === "up" ? items.length - 1 : 1)) % items.length; Sound.tickMove(); }
+  else if (k === "b" && PAUSE.sub) { pauseSub(null); Sound.click(); }
   else if (k === "b" || k === "start") { pauseClose(); Sound.click(); }
   else if (k === "a") { Sound.click(); items[Math.min(PAUSE.sel, items.length - 1)][1](); }
   PAUSE.sel = Math.min(PAUSE.sel, pauseItems().length - 1);
@@ -3852,7 +3854,7 @@ function drawPause() {   // one parchment panel like the log box, in the game's 
   ctx.fillStyle = C.inkSoft; ctx.globalAlpha = .35; ctx.fillRect(L0, ny - 4, R0 - L0, 2); ctx.globalAlpha = 1; ny += 6;
   if (PAUSE.noteT) { ftext(PAUSE.note, cx, ny, "read", C.inkSoft, "c"); ny += rh + 10; }
   ctx.globalAlpha = .55; ftext(`${Math.round(1000 / PERF.dt)} FPS  ${PERF.draw.toFixed(1)} MS${RS < 1 ? "  HALF" : ""}`, cx, ny, "read", C.inkSoft, "c"); ctx.globalAlpha = 1;
-  edgePlate("PAUSED", "key", cx, top, C.inkRed);
+  edgePlate(PAUSE.sub ? "OPTIONS" : "PAUSED", "key", cx, top, C.inkRed);
   ctx.restore(); }
 function howStart() { HOW.on = true; HOW.card = 0; HOW.t = 0; Sound.ensure(); Sound.music(); howReset(); HOW_CARDS[0].setup(); Sound.click(); }
 function howGo(k) { HOW.card = k; HOW.t = 0; howReset(); HOW_CARDS[k].setup(); Sound.click(); }
@@ -5040,7 +5042,7 @@ cv.addEventListener("pointerdown", (e) => {
   if (BOARD.on) { BOARD.on = false; Sound.click(); return; }
   if (PAUSE.on) { const fy = p.y * FINE, fx = p.x * FINE, hit = PAUSE.hits.find(r => fy >= r.y0 && fy <= r.y1 && fx >= r.x0 && fx <= r.x1);
     if (hit && hit.vol && fx >= hit.px - hit.step / 2) { PAUSE.sel = hit.i; PAUSE.sure = null; const n = Math.max(0, Math.min(10, Math.floor((fx - hit.px) / hit.step) + 1)); volStep(hit.vol, n - Sound.vol(hit.vol)); return; }   // a tap on the pips sets that level
-    if (hit) { if (PAUSE.sel !== hit.i) PAUSE.sure = null; PAUSE.sel = hit.i; pauseKey("a"); } else pauseClose(); return; }
+    if (hit) { if (PAUSE.sel !== hit.i) PAUSE.sure = null; PAUSE.sel = hit.i; pauseKey("a"); } else if (PAUSE.sub) pauseSub(null); else pauseClose(); return; }
   if (HOW.on) { howKey(p.x < W / 2 ? "b" : "a"); return; }
   if (lossSkip()) return;
   if (S.phase === "over") { const inR = (r) => r && p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h, k = OVERUI.findIndex(inR); if (k >= 0) { overSel = k; overChoose(); } else if (overT2 < OVER_READY) overT2 = OVER_READY; return; }
