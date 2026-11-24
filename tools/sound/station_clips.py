@@ -23,7 +23,7 @@ def tour_events():
     e = {}
     for k in range(6):
         b = k * 14; e.update(word(b + 3, 4 + k % 3, k % 2 == 1))
-        if k < 5: e[b + 13.0] = "Sound.retune(); Sound.next()"
+        if k < 5: e[b + 13.0] = "Sound.dial(); Sound.next(1.05)"
     return e
 jobs = []
 for i in range(6):

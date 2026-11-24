@@ -767,3 +767,9 @@ the same batch.
   retune static, the new one starts on its first beat 0.55 s later. ROT = the retune order, [0] in the shipped game (no change);
   #...-stn-a-b-c sets it (and gives 5 retunes a night); dev panel STATION steps through all. Workshop topic "stations" r1 (clips
   rendered offline: tools/sound/render.js + station_clips.py, music + scripted effects, seeded random).
+- Stations r1 decided (Chris 2026-11-23): LAST CALL TRIO is the second song: he likes its noir feel and that there's hardly any tune
+  ("you kinda play the melody when you're playing"), so new songs are groove and chords with almost no lead. r2 (open): four
+  candidates for a third song, jazz band with a `groove` (jGroove: bossa, bolero, serial; shuffle = the swing players with no lead):
+  BACK ROOM BLUES, RAIN BOSSA, PALM ROOM, MIDNIGHT SERIAL; new players jOrgan, jPluck, jDrum, jRim, jShaker, jTick, jTheremin.
+  A retune that changes station plays Sound.dial() (between-stations static: a narrow band of hiss sweeping, heterodyne whistles,
+  crackle, a murmur) instead of the plain retune sound, and the new song starts 1.05 s later (Sound.next(gap)).
