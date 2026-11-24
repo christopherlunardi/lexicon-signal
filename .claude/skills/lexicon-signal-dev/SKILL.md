@@ -805,3 +805,7 @@ the same batch.
 - 2026-11-23 (Chris): pause menu = RESUME, SERVICE MANUAL, LOGBOOK, OPTIONS (PAUSE.sub "opt": MUSIC, EFFECTS, SEND PLAY DATA, SHARE
   PLAY LOG, BACK; B or a tap outside goes back), the app's own items, then NEW RUN and QUIT TO TITLE at the bottom. SCREEN COLOR is
   gone (colorMode always 0).
+- Quitting (Chris 2026-11-23): a run counts once a night has been cleared (reached > 1): quitRun() puts it in the top ten like any
+  run (the run score only goes up) and the logbook keeps it as a run. Quitting or leaving on night 1 is a restart: its words still go
+  in the logbook, the run doesn't (bookSync skips it; old ones are filtered out of BOOK.runs at start). Play data sends every run, quit
+  ones marked end "quit".

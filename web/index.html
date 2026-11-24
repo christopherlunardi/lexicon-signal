@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 268;</script><script>
+<script>window.LEX_BUILD = 269;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -773,12 +773,14 @@ function bookSync(r, done) { if (!r || !r.id || BOOK_OFF) return; const ws = r.w
     if (e) { e[0]++; if ((x.p || 0) > e[1] || ((x.p || 0) === e[1] && (!e[3] || e[3].old))) { e[1] = x.p || 0; e[3] = br; } } else BOOK.w[w] = [1, x.p || 0, r.at || Date.now(), br];
     BOOK.secs += Math.min(120, Math.max(0, x.s || 0)); ch = true; }   // (time per word capped at two minutes: a phone left on the table isn't play)
   if (ws.length > c) { BOOK.cnt[r.id] = ws.length; ch = true; }
-  if (done && !BOOK.runs.some(x => x.id === r.id) && ws.length) { const best = ws.reduce((a, x) => (x.p || 0) > (a.p || 0) ? x : a, ws[0]);
+  if (done && !BOOK.runs.some(x => x.id === r.id) && ws.length && (r.end === "lost" || (r.reached || 1) > 1)) { const best = ws.reduce((a, x) => (x.p || 0) > (a.p || 0) ? x : a, ws[0]);
     BOOK.runs.push({ id: r.id, at: r.at || Date.now(), t: r.total || 0, r: r.reached || 1, bw: best.w || "", bp: best.p || 0, nw: ws.length,
       ov: (r.nights || []).filter(n => n.over).length, end: r.end || "left", parts: [...new Set(r.parts || (r.now && r.now.parts) || [])] });
     BOOK.runs.sort((a, b) => a.at - b.at); ch = true; }
   if (ch) bookSave(); }
 try { JSON.parse(localStorage.getItem("lexsig.runs") || "[]").forEach(r => bookSync(r, true)); } catch (e) {}
+// (runs quit or left on night 1 are restarts, not runs: take out any the logbook kept before this rule, Chris 2026-11-23)
+{ const n = BOOK.runs.length; BOOK.runs = BOOK.runs.filter(x => x.end === "lost" || (x.r || 1) > 1); if (BOOK.runs.length !== n) bookSave(); }
 // the kinds of words (LEX_KINDS from words.js, tools/wordlists/kinds.txt), and the ones the game works out from how common and how long a word is
 const KINDS = {}; try { Object.entries(window.LEX_KINDS || {}).forEach(([k, v]) => { KINDS[k] = new Set(v.split(" ")); }); } catch (e) {}
 function kindsOf(w) { const o = [], t = tierOf(w), n = w.length; for (const k in KINDS) if (KINDS[k].has(w)) o.push(k);
@@ -3809,8 +3811,11 @@ function pauseItems() {
     if (au) it.push(sure("app", "UPDATE APP (NEW VERSION)", () => { try { n.installApp(); } catch (e) {} }));
     it.push(sure("exit", "EXIT GAME", () => { try { n.quit(); } catch (e) {} }));
   }
-  it.push(sure("new", "NEW RUN", () => { pauseClose(); plEnd("quit"); start(); }), sure("title", "QUIT TO TITLE", () => { pauseClose(); plEnd("quit"); howExit(); titleSel = 0; }));
+  it.push(sure("new", "NEW RUN", () => { pauseClose(); quitRun(); start(); }), sure("title", "QUIT TO TITLE", () => { pauseClose(); quitRun(); howExit(); titleSel = 0; }));
   return it; }
+// quitting (Chris 2026-11-23): a run counts once a night has been cleared; it goes in the top ten like any other (the run score only
+// ever goes up). Quitting on night 1 is a restart: its words still count in the logbook, the run doesn't.
+function quitRun() { if (!HOW.on && S.night > 1 && S.total > 0) saveRun(); plEnd("quit"); }
 function pauseSub(v) { PAUSE.sub = v; PAUSE.sel = v ? 0 : 3; PAUSE.sure = null; }
 function pauseOpen() { if (S.phase !== "play" || HOW.on) return; PAUSE.on = true; PAUSE.sub = null; PAUSE.sel = 0; PAUSE.sure = null; PAUSE.t = 0; Sound.click(); }
 function pauseClose() { PAUSE.on = false; PAUSE.sure = null; }
@@ -4071,7 +4076,7 @@ const MAN_SECS = [
   { t: "THE END OF A RUN", b: () => [
     ["p", "Your run score, in the bottom left corner, is every bit of signal you beamed plus every night's leftover bonus."],
     ["p", "When the lamps go dark before the tube is full, the radio powers down and the run ends. The sign-off log shows how the run went and the parts and keys you had (x2 for copies, LV for key levels). From there you can start again, go back to the title, or open the logbook."],
-    ["p", "Your best ten runs on this device are kept in the LOGBOOK on the title menu, with every word you've ever sent, charts of your runs, and what kind of broadcaster your words say you are. It opens on your top runs and cards of your best numbers: open a card for the whole story, or the full logbook at the bottom for everything."],
+    ["p", "Your best ten runs on this device are kept in the LOGBOOK on the title menu, with every word you've ever sent, charts of your runs, and what kind of broadcaster your words say you are. It opens on your top runs and cards of your best numbers: open a card for the whole story, or the full logbook at the bottom for everything. A run you quit counts too once you've cleared a night; quitting on night 1 is a restart, so only its words are kept."],
     ["note", "Every run builds a different radio. Try parts you've never fitted, and banish the ones that don't suit you."]] },
 ];
 /* ---- the Station Logbook (Chris 2026-11-23): the title menu's LOGBOOK (it took HIGH SCORES' place; the top ten is page 2) and the
