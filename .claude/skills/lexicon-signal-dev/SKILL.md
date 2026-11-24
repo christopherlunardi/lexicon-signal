@@ -811,3 +811,7 @@ the same batch.
   run (the run score only goes up) and the logbook keeps it as a run. Quitting or leaving on night 1 is a restart: its words still go
   in the logbook, the run doesn't (bookSync skips it; old ones are filtered out of BOOK.runs at start). Play data sends every run, quit
   ones marked end "quit".
+- 2026-11-23: builds 269 and 270 stopped at start (black screen on Chris's Pocket 6) when the logbook already held a night-1 run:
+  boot code called bookSave, which read BOOK_DEMO before its const line ran (TDZ). Fixed in 271 (BOOK_DEMO declared next to BOOK; boot
+  cleanup in try). Rule: anything that runs while the script is starting must only touch names declared above it; test boot with a
+  filled logbook (scratchpad crash.js seeds one), not only with empty storage.

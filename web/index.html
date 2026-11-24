@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 270;</script><script>
+<script>window.LEX_BUILD = 271;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -770,6 +770,7 @@ function drawAsk() { manSize(); ASK.hits = []; const lh = MLH(), kh = glyphCv("k
    demo never reaches the play log, and the test pages (#test-...) don't write to the book. ---- */
 const BOOK_OFF = /^#test-(?!book)/.test(location.hash);   // (#test-book... pages do write, to test the logbook)
 let BOOK = { v: 1, w: {}, runs: [], cnt: {}, secs: 0 }, bookVer = 0;
+const BOOK_DEMO = /bookdemo/.test(location.hash);   // (declared here, before anything saves the book: build 269 saved before it existed and stopped the game at start)
 try { const b = JSON.parse(localStorage.getItem("lexsig.book") || "null"); if (b && b.v === 1 && b.w && Array.isArray(b.runs)) BOOK = Object.assign({ cnt: {}, secs: 0 }, b); } catch (e) {}
 function bookSave() { bookVer++; if (BOOK_OFF || BOOK_DEMO) return; try { localStorage.setItem("lexsig.book", JSON.stringify(BOOK)); } catch (e) {} }
 function bookSync(r, done) { if (!r || !r.id || BOOK_OFF) return; const ws = r.words || [], c = BOOK.cnt[r.id] || 0; let ch = false;
@@ -785,7 +786,7 @@ function bookSync(r, done) { if (!r || !r.id || BOOK_OFF) return; const ws = r.w
   if (ch) bookSave(); }
 try { JSON.parse(localStorage.getItem("lexsig.runs") || "[]").forEach(r => bookSync(r, true)); } catch (e) {}
 // (runs quit or left on night 1 are restarts, not runs: take out any the logbook kept before this rule, Chris 2026-11-23)
-{ const n = BOOK.runs.length; BOOK.runs = BOOK.runs.filter(x => x.end === "lost" || (x.r || 1) > 1); if (BOOK.runs.length !== n) bookSave(); }
+try { const n = BOOK.runs.length; BOOK.runs = BOOK.runs.filter(x => x.end === "lost" || (x.r || 1) > 1); if (BOOK.runs.length !== n) bookSave(); } catch (e) {}
 // the kinds of words (LEX_KINDS from words.js, tools/wordlists/kinds.txt), and the ones the game works out from how common and how long a word is
 const KINDS = {}; try { Object.entries(window.LEX_KINDS || {}).forEach(([k, v]) => { KINDS[k] = new Set(v.split(" ")); }); } catch (e) {}
 function kindsOf(w) { const o = [], t = tierOf(w), n = w.length; for (const k in KINDS) if (KINDS[k].has(w)) o.push(k);
@@ -4158,7 +4159,6 @@ const LOG_SECS = [
 let LOGFRONT = 1; /* (Chris picked 1, Ledger, 2026-11-23) */ { const m = location.hash.match(/logfront-(\d)/); if (m) LOGFRONT = Math.min(3, +m[1]); }
 const lfOn = () => MAN.book === "log" && LOGFRONT > 0 && MAN.sec === -1;
 // demo data for the Workshop's play copies (#...-bookdemo): a made-up logbook in memory only, never saved
-const BOOK_DEMO = /bookdemo/.test(location.hash);
 function bookDemo() { let a = 7; const R = () => { a = (a * 16807) % 2147483647; return a / 2147483647; };
   const L = (LEXG[0] || []).concat(LEXG[1] || []), pick = (arr) => arr[Math.floor(R() * arr.length)], w = {};
   const doom = [...(KINDS.doomer || [])].filter(x => x.length >= 3), add = (x, n) => { const e = w[x] || (w[x] = [0, 0, Date.now() - 864e5 * 9, null]); e[0] += n; e[1] = Math.max(e[1], Math.round((x.length * x.length * 3 + R() * 40) * (1 + R() * 3))); };
