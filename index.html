@@ -3100,7 +3100,7 @@ function drawBarText() {
   const lw = FX(L.log.w) - 52 - ADV.ink, groups = [];
   S.log.forEach((e, k) => { if (e.n === 0) return; groups.push(wrap("> " + e.s.slice(0, e.n), "ink", lw).map(s => ({ s, age: S.log.length - 1 - k }))); });
   const pin = REQ === 3 && S.req && S.phase === "play" ? 1 : 0;
-  const lh = Math.round(22 * TK), rows = TK > 1 ? 2 : 3, cap = rows - pin, show = [], top = FX(by + L.log.y) + Math.round((FX(L.log.h) - rows * lh) / 2) + 4;
+  const lh = Math.round(22 * TK), rows = TK > 1 ? 2 : 3, cap = rows - pin, top = FX(by + L.log.y) + Math.round((FX(L.log.h) - rows * lh) / 2) + 4; let show = [];
   // whole entries only, newest last; an older entry that doesn't fit whole is left out (it showed from mid-sentence, audit 2026-11-24)
   for (let g = groups.length - 1; g >= 0; g--) { if (show.length + groups[g].length > cap) { if (!show.length) show = groups[g].slice(-cap); break; } show = groups[g].concat(show); }
   if (pin) { const met = reqMet(S.path), t = "REQUEST: " + S.req.text, px = FX(L.log.x) + 26;
