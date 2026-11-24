@@ -797,7 +797,8 @@ the same batch.
   TOWER asks (lexsig.share yes/no; pause menu SEND PLAY DATA switches it). With yes, plFlush posts finished runs from lexsig.runs (and
   runs left 6 hours) to https://idlelooping.com/api/plays/ (text/plain JSON {v, pid, owner, runs}); offline or failed posts wait and
   retry at start, after each run, on "online" and every 10 minutes; lexsig.sent holds what went. The receiver is api/plays.js in the
-  idleloopingwebsite repo: it files each run as runs/<day>/<pid>/<run id>.json in the private repo christopherlunardi/
-  lexicon-signal-plays (Vercel env PLAYS_TOKEN = a fine-grained token with Contents read/write on that repo). To study the data:
-  add that repo to the session and read the files. The claude.ai link doesn't post (its page can't reach other sites); it keeps
+  idleloopingwebsite repo: one row per run in table plays of the site's Neon Postgres database "lexicon-plays" (made through Vercel
+  Storage, free plan; Vercel gives it DATABASE_URL), columns pid, run_id, owner, started, got, build, place, how_ended, reached, total,
+  words, data (the whole run, jsonb). Read it with the Neon connector in claude.ai (run SQL on lexicon-plays). Tested live
+  2026-11-23 from idlelooping.com and the GitHub site. The claude.ai link doesn't post (its page can't reach other sites); it keeps
   writing to its own "plays" database (ArtifactData), unless the player said no.
