@@ -819,3 +819,9 @@ the same batch.
   baked in and refreshed by hand with tools/kind_rates.js (header has the SQL export; each player counts once; blended with the first
   guesses with weight K=4 while players are few; writes tools/kind_rates.json). First refresh 2026-11-24: 4 players, 1,301 words.
   When the numbers stop moving between refreshes, set FROZEN and stop.
+- Audit 2026-11-24 (two fresh agents, visual + functional). Timed game flow goes through later(frames, fn) (ticked in update(),
+  cleared by resetFlow() on new run / quit), never setTimeout, so a night-clear can't fire into a new run. Ask notices answer only
+  to A (B moves to NO THANKS). Every localStorage read checks its shape (bad data must not stop boot). Runs carry an id; a run with
+  no end found at boot counts as "left" (past night 1 it enters the top ten). Button names in tips go through {B}/{X}/{START}.
+  Open from the audit: the How to Play cards are small on phones and cover the part slots (drawHowCard placement).
+  Audit scripts: scratchpad audit-func/t*.js (seeded states, each prints PASS/FAIL).

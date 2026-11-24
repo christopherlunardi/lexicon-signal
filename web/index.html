@@ -34,7 +34,7 @@ body{background:var(--shell);color:var(--ink);font-family:var(--ui);overflow:hid
 .top b{color:var(--accent);font-weight:700;letter-spacing:.18em}
 #screenWrap{grid-area:screen;width:100%;max-width:calc((100vh - 290px) * 4 / 3);max-width:calc((100dvh - 290px) * 4 / 3);min-width:0;aspect-ratio:4/3;background:#000;border-radius:6px;
   box-shadow:0 0 0 3px var(--shell-hi),0 0 0 4px #000,0 18px 40px rgba(0,0,0,.55);overflow:hidden;position:relative;touch-action:none}
-@media (pointer:fine){ #screenWrap{aspect-ratio:16/9;max-width:calc((100vh - 110px) * 16 / 9);max-width:calc((100dvh - 110px) * 16 / 9)} }
+@media (pointer:fine){ #screenWrap{aspect-ratio:16/9;max-width:calc((100vh - 150px) * 16 / 9);max-width:calc((100dvh - 150px) * 16 / 9)} }
 .pad{grid-area:pad;display:flex;justify-content:space-between;align-items:center;width:100%;max-width:520px;user-select:none;-webkit-user-select:none;touch-action:none;position:relative}
 .dpad{position:relative;width:132px;height:132px;flex:none}
 .dpad span{position:absolute;background:var(--button);border-radius:5px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.35)}
@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 273;</script><script>
+<script>window.LEX_BUILD = 274;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -713,7 +713,7 @@ function plNight(offered) { const r = PLAYLOG.run; if (!r || HOW.on) return; r.n
 function plPick(id) { const r = PLAYLOG.run; if (!r) return; const nn = r.nights[r.nights.length - 1]; if (nn) nn.picked = nn.picked && !/^(melt|up:)/.test(id) ? nn.picked + "+" + id : id; }   // (a double overdrive's two picks: "amp+red")
 function plEnd(how) { const r = PLAYLOG.run; if (!r || r.end) return; r.end = how; r.total = S.total; r.reached = S.night; r.parts = S.parts.slice(); plSave(); PLAYLOG.run = null; setTimeout(plFlush, 1500); }
 function plSave() { const r = PLAYLOG.run; if (!r) return; r.total = S.total; r.reached = S.night; r.now = { n: S.night, target: S.target, score: S.score, words: S.words, retunes: S.retunes, parts: S.parts.slice() };
-  try { const a = JSON.parse(localStorage.getItem("lexsig.runs") || "[]").filter(x => x.id !== r.id); a.push(r); localStorage.setItem("lexsig.runs", JSON.stringify(a.slice(-40))); } catch (e) {}
+  try { let a = []; try { a = JSON.parse(localStorage.getItem("lexsig.runs") || "[]"); } catch (e) {} if (!Array.isArray(a)) a = []; a = a.filter(x => x && x.id !== r.id); a.push(r); localStorage.setItem("lexsig.runs", JSON.stringify(a.slice(-40))); } catch (e) {}
   try { bookSync(r, !!r.end); } catch (e) {}
   if (PLAYLOG.db && PLAYLOG.uid && SHARE !== "no") PLAYLOG.db.collection("plays/" + PLAYLOG.uid + "/runs").doc(r.id).set(JSON.parse(JSON.stringify(r))).catch(() => {}); }
 addEventListener("pagehide", () => { if (PLAYLOG.run && !PLAYLOG.run.end && S && S.phase !== "title") plSave(); });
@@ -735,7 +735,9 @@ let plFlushing = false;
 function plFlush() { if (SHARE !== "yes" || plFlushing || window.claude || /^#test-/.test(location.hash) || location.protocol === "file:" || navigator.onLine === false) return;
   // (Chris 2026-11-23: runs left mid-way didn't show up for hours; now a run goes out as it is played (after each night, when the
   // page is left or hidden) and again whenever it has grown; lexsig.sent2 keeps each run's id and how far it was when sent)
-  let runs = [], sent = {}; try { runs = JSON.parse(localStorage.getItem("lexsig.runs") || "[]"); sent = JSON.parse(localStorage.getItem("lexsig.sent2") || "{}"); JSON.parse(localStorage.getItem("lexsig.sent") || "[]").forEach(id => { if (!(id in sent)) sent[id] = "done"; }); } catch (e) { return; }
+  let runs = [], sent = {}; try { runs = JSON.parse(localStorage.getItem("lexsig.runs") || "[]"); } catch (e) {} try { sent = JSON.parse(localStorage.getItem("lexsig.sent2") || "{}"); } catch (e) {}
+  if (!Array.isArray(runs)) runs = []; if (!sent || typeof sent !== "object" || Array.isArray(sent)) sent = {};
+  try { const old = JSON.parse(localStorage.getItem("lexsig.sent") || "[]"); if (Array.isArray(old)) old.forEach(id => { if (!(id in sent)) sent[id] = "done"; }); } catch (e) {}   /* (bad saved data used to throw here every time, audit 2026-11-24) */
   const mark = (r) => (r.end ? "end:" : "") + (r.words || []).length + "/" + (r.nights || []).length;
   const todo = runs.filter(r => r && r.id && (r.words || []).length && sent[r.id] !== "done" && sent[r.id] !== mark(r)).slice(-10); if (!todo.length) return;
   let owner = false; try { owner = !!localStorage.getItem("lexsig.devkey"); } catch (e) {}
@@ -746,7 +748,7 @@ function plFlush() { if (SHARE !== "yes" || plFlushing || window.claude || /^#te
     .catch(() => {}).finally(() => { plFlushing = false; }); }
 setTimeout(plFlush, 8000); addEventListener("online", () => setTimeout(plFlush, 2000)); setInterval(plFlush, 6e5);
 addEventListener("visibilitychange", () => { if (document.hidden) plFlush(); }); addEventListener("pagehide", () => plFlush());
-function askKey(k) { if (!ASK.on) return false; if (k === "left" || k === "right" || k === "up" || k === "down") { ASK.sel = 1 - ASK.sel; Sound.tickMove(); } else if (k === "a" || k === "start") shareSet(ASK.sel ? "no" : "yes"); return true; }
+function askKey(k) { if (!ASK.on) return false; if (k === "left" || k === "right" || k === "up" || k === "down") { ASK.sel = 1 - ASK.sel; Sound.tickMove(); } else if (k === "a") shareSet(ASK.sel ? "no" : "yes"); else if (k === "b" && ASK.sel !== 1) { ASK.sel = 1; Sound.tickMove(); } return true; }   /* (only A or a tap answers: pause and send used to say yes, audit 2026-11-24) */
 // the notice: a slip of the manual's paper over the title, two buttons
 function drawAsk() { manSize(); ASK.hits = []; const lh = MLH(), kh = glyphCv("key", "N", MP.ink).height, gh = glyphCv(BK, "N", MP.ink).height;
   const pw = Math.min(CVW - 40, Math.round(980 * Math.max(1, TK * .9))), M = Math.round(Math.min(44, pw * .05)), w = pw - 2 * M;
@@ -771,7 +773,7 @@ function drawAsk() { manSize(); ASK.hits = []; const lh = MLH(), kh = glyphCv("k
 const BOOK_OFF = /^#test-(?!book)/.test(location.hash);   // (#test-book... pages do write, to test the logbook)
 let BOOK = { v: 1, w: {}, runs: [], cnt: {}, secs: 0 }, bookVer = 0;
 const BOOK_DEMO = /bookdemo/.test(location.hash);   // (declared here, before anything saves the book: build 269 saved before it existed and stopped the game at start)
-try { const b = JSON.parse(localStorage.getItem("lexsig.book") || "null"); if (b && b.v === 1 && b.w && Array.isArray(b.runs)) BOOK = Object.assign({ cnt: {}, secs: 0 }, b); } catch (e) {}
+try { const b = JSON.parse(localStorage.getItem("lexsig.book") || "null"); if (b && b.v === 1 && b.w && typeof b.w === "object" && Array.isArray(b.runs)) { BOOK = Object.assign({ cnt: {}, secs: 0 }, b); BOOK.runs = BOOK.runs.filter(x => x && typeof x === "object"); for (const k in BOOK.w) if (!Array.isArray(BOOK.w[k])) delete BOOK.w[k]; } } catch (e) {}
 function bookSave() { bookVer++; if (BOOK_OFF || BOOK_DEMO) return; try { localStorage.setItem("lexsig.book", JSON.stringify(BOOK)); } catch (e) {} }
 function bookSync(r, done) { if (!r || !r.id || BOOK_OFF) return; const ws = r.words || [], c = BOOK.cnt[r.id] || 0; let ch = false;
   for (const x of ws.slice(c)) { const w = String(x.w || "").toLowerCase(); if (!/^[a-z]{3,16}$/.test(w)) continue; const e = BOOK.w[w];
@@ -787,6 +789,13 @@ function bookSync(r, done) { if (!r || !r.id || BOOK_OFF) return; const ws = r.w
 try { JSON.parse(localStorage.getItem("lexsig.runs") || "[]").forEach(r => bookSync(r, true)); } catch (e) {}
 // (runs quit or left on night 1 are restarts, not runs: take out any the logbook kept before this rule, Chris 2026-11-23)
 try { const n = BOOK.runs.length; BOOK.runs = BOOK.runs.filter(x => x.end === "lost" || (x.r || 1) > 1); if (BOOK.runs.length !== n) bookSave(); } catch (e) {}
+// a run left by closing the game (no end) counts like a quit: past night 1 it goes in the top ten too, and it's marked "left" so it
+// isn't looked at again (audit 2026-11-24: the Logbook counted such a run but the top ten never had it)
+try { const rs = JSON.parse(localStorage.getItem("lexsig.runs") || "[]"); let ch = false;
+  if (Array.isArray(rs)) { const top = loadScores(); rs.forEach(r => { if (!r || !r.id || r.end) return; r.end = "left"; ch = true;
+      if ((r.reached || 1) > 1 && (r.total || 0) > 0 && !top.some(x => x.id === r.id)) { const ws = r.words || [], b = ws.reduce((a, x) => (x.p || 0) > (a.p || 0) ? x : a, ws[0] || {});
+        top.push({ s: r.total, n: (r.reached || 1) - 1, w: b.w || "", p: b.p || 0, d: r.at || Date.now(), id: r.id }); } });
+    if (ch) { top.sort((x, y) => y.s - x.s || y.n - x.n); localStorage.setItem("lexsig.scores", JSON.stringify(top.slice(0, 10))); localStorage.setItem("lexsig.runs", JSON.stringify(rs)); } } } catch (e) {}
 // the kinds of words (LEX_KINDS from words.js, tools/wordlists/kinds.txt), and the ones the game works out from how common and how long a word is
 const KINDS = {}; try { Object.entries(window.LEX_KINDS || {}).forEach(([k, v]) => { KINDS[k] = new Set(v.split(" ")); }); } catch (e) {}
 function kindsOf(w) { const o = [], t = tierOf(w), n = w.length; for (const k in KINDS) if (KINDS[k].has(w)) o.push(k);
@@ -869,7 +878,13 @@ function reqWordOk(W2, p) { const q = S.req;
   if (q.kind === "word") return W2 === q.big; if (q.kind === "chunk") return W2.includes(q.big); if (q.kind === "letter") return W2.includes(q.ch);
   if (q.kind === "long") return W2.length >= q.len; if (q.kind === "double") return /(.)\1/.test(W2); if (q.kind === "red") return W2.length >= q.len && p.some(i => S.grid[i].hot);
   if (q.kind === "vowels") return [...W2].filter(c => "AEIOU".includes(c)).length >= q.n; return W2[0] === W2[W2.length - 1]; }
-function newRun() { S = fresh("play"); log("On the air."); plStart(); startNight(); }
+// (audit 2026-11-24: a word still counting up, flying letters or the end-of-night wait went on into the next run or the title and
+// could lock the game; everything in flight now belongs to its run and is cleared with it)
+const LATER = [];
+function later(frames, fn) { LATER.push({ n: frames, s: S, fn }); }   // like setTimeout, but on game frames (holds while paused) and only for the run it was set in
+function laterTick() { for (let i = LATER.length - 1; i >= 0; i--) { const L = LATER[i]; if (L.s !== S) { LATER.splice(i, 1); continue; } if (--L.n <= 0) { LATER.splice(i, 1); L.fn(); } } }
+function resetFlow() { TL = null; LATER.length = 0; flyers = []; beams = []; busy = 0; pending = null; }
+function newRun() { resetFlow(); S = fresh("play"); log("On the air."); plStart(); startNight(); }
 function startNight() { Sound.home();   /* (each night starts on the first station: Chris 2026-11-23) */
   S.ending = 0; S.score = 0; S.shown = 0; S.over = false; S.over2 = false; S.picks = 1; S.nw = []; S.startTotal = S.total; S.firstWord = true; S.target = targetFor(S.night); S.words = maxWords(); S.retunes = maxRetunes(); if (/-stn-/.test(location.hash)) S.retunes = Math.max(S.retunes, 5); S.path = [];
   if (S.carry > 0 && !HOW.on) { S.score = Math.min(S.carry, round5(S.target * CARRY_MAX)); log(`Overdrive carried over: ${S.score} already in the tube.`); } S.carry = 0;
@@ -1060,8 +1075,8 @@ function arrive() {
   if (HOW.on) {}   // (the how-to-play demo never clears the night or ends the run)
   else if (S.score >= S.target) { S.over = S.score >= S.target * OVERDRIVE;
     if (S.over) { overT = 1; shake = 8; Sound.full(); Sound.beacon(true); dialFlash = { text: "OVERDRIVE", t: 150, big: true }; log(`Overdrive! ${S.score} of ${S.target}.`); }
-    S.ending = frame; busy++; setTimeout(() => { busy--; nightClear(); }, S.over ? 2300 : 1700); }
-  else if (S.words <= 0) { S.ending = frame; busy++; setTimeout(() => { busy--; nightLost(); }, 1400); }
+    S.ending = frame; busy++; later(S.over ? 138 : 102, () => { busy--; nightClear(); }); }
+  else if (S.words <= 0) { S.ending = frame; busy++; later(84, () => { busy--; nightLost(); }); }
   else log(`${S.target - S.score} to go, ${S.words} word${S.words === 1 ? "" : "s"} left.`);
 }
 function retune() { if (!canAct() || S.retunes <= 0) return; if (PLAYLOG.run && !HOW.on) PLAYLOG.run.retunes++; if (S.retunes > 1) log("Tuning knob spent."); S.retunes--; S.path = []; pathSound = 0;
@@ -1362,8 +1377,8 @@ function swapConfirm(k) { const sl = partSlots()[k]; if (!swapOk(sl)) return;
   if (sl.id === "gold") S.grid.forEach(t => { if (t.wild) { t.wild = false; t.ch = pickLetter(); } }); if (sl.id === "blue") { S.grid.forEach(t => { t.blue = false; t.ice = false; }); S.blueDeep = 0; } if (sl.id === "tap") S.tap = 0; S.parts = S.parts.filter(id => id !== sl.id); log(`Took out: ${PART[sl.id].name}.`); const p = swapNew; swapNew = null; fitPart(p, swapK); }
 function swapCancel() { S.phase = "shop"; swapNew = null; Sound.click(); }
 // the run score is all the signal beamed in a run; the best ten runs on this device are kept (lexsig.scores)
-function loadScores() { try { const a = JSON.parse(localStorage.getItem("lexsig.scores") || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } }
-function saveRun() { const a = loadScores(), run = { s: S.total, n: S.night - 1, w: S.best.word || "", p: S.best.pts || 0, d: Date.now() };
+function loadScores() { try { const a = JSON.parse(localStorage.getItem("lexsig.scores") || "[]"); return Array.isArray(a) ? a.filter(x => x && typeof x.s === "number") : []; } catch (e) { return []; } }
+function saveRun() { const a = loadScores(), run = { s: S.total, n: S.night - 1, w: S.best.word || "", p: S.best.pts || 0, d: Date.now(), id: PLAYLOG.run ? PLAYLOG.run.id : "" };
   a.push(run); a.sort((x, y) => y.s - x.s || y.n - x.n); const top = a.slice(0, 10); try { localStorage.setItem("lexsig.scores", JSON.stringify(top)); } catch (e) {}
   const i = top.indexOf(run); return i < 0 ? 0 : i + 1; }
 /* ---- the trade (Chris 2026-11-15): a lost night isn't the end while you have a stacked part (two or more copies in one slot).
@@ -1401,7 +1416,7 @@ let flyers = [], sparks = [], pops = [], beams = [], beaconFlash = 0, shake = 0,
 function burst(x, y, n, col) { for (let i = 0; i < n; i++) { const a = Math.random() * 6.283, s = .8 + Math.random() * 2.6; sparks.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s - 1, life: 1, d: .025 + Math.random() * .03, col }); } }
 function update() {
   if (PAUSE.on) return;   // paused: everything holds still
-  frame++; meltUpdate(); scoreUpdate();
+  frame++; laterTick(); meltUpdate(); scoreUpdate();
   // a filled request: the stamped card shows for a moment, then the caller comes back with the next one (Chris 2026-11-16)
   if (S && S.phase === "play" && S.req && S.req.done && S.reqNext && frame >= S.reqNext && !busy) { S.req = makeReq(); S.req.nights = 1; S.reqAt = frame; S.reqNext = 0; REQZ.open = false; }
   const thudCols = new Set();
@@ -1632,7 +1647,7 @@ function drawScoreDrums(top) {
   ctx.restore(); }
 /* Workshop req 4 (Chris 2026-11-15): a shadowy caller in a fedora and trench coat slips in from the right side of the window,
    outside on the fire escape, slides an index card under the sash and slips away. The card stays on the sill: REQUEST stamped in
-   red, the request pencilled on its lines. The caller is drawn behind the rain (drawCaller, from drawRain); the card in the room.
+   red, the request penciled on its lines. The caller is drawn behind the rain (drawCaller, from drawRain); the card in the room.
    CALLER times in frames from when the night's goal plaque goes. */
 const CALLER = { inEnd: 80, reach0: 118, card0: 128, card1: 160, let0: 172, let1: 186, out0: 200, out1: 260, x0: 116, x1: 50, y: 112, push: 22,
   smoke: [], box: null };   // push: how far his hand slides the card down (world px); his cigarette tips come from the atlas (points.caller: tip in his hand, tipR in his mouth)
@@ -1672,7 +1687,7 @@ function drawReqCard(X, Y, z, met) { const [, , cw, ch] = R("reqcard"), r = R("r
   if (q.done) { const a = Math.min(1, (frame - (q.doneT || 0)) / 12), zz = 1 + 1.5 * (1 - a), pw = textW("PLAYED", "key") + 24, phh = glyphCv("key", "P", C.ink).height + 14, k = Math.min(1.4 * f, (CW - 20 * z) / pw) * zz;
     ctx.save(); ctx.globalAlpha = a * .9; ctx.translate(X + CW / 2, Y + CH * .58); ctx.scale(k, k); ctx.strokeStyle = "#c0281a"; ctx.lineWidth = 4; ctx.strokeRect(-pw / 2, -phh / 2, pw, phh); ftext("PLAYED", 0, -phh / 2 + 7, "key", "#c0281a", "c"); ctx.restore(); return; }
   txt("X" + reqX(), X + CW - 10 * z, Y + CH - 10 * z - 14 * TK * f, "ink", "#b0261a", "r", f);   // what it pays
-  // pencilled on the lines: a small line above, the big part, a small line below; the big letters light up red as your word matches them
+  // penciled on the lines: a small line above, the big part, a small line below; the big letters light up red as your word matches them
   const ink = "#2a2c48", fitK = (t, kind, k) => Math.min(k, (CW - 24 * z) / Math.max(1, textW(t, kind))), lit = reqLit();
   if (q.top) txt(q.top, X + CW / 2, Y + CH * .30, "ink", ink, "c", fitK(q.top, "ink", f));
   { const big = q.big, k = fitK(big, "key", 1.25 * f), x0 = X + CW / 2 - textW(big, "key") * k / 2, yb = Y + CH * .46;
@@ -3082,10 +3097,12 @@ function drawIntro() {
 function drawBarText() {
   const by = L.barY; drawTube();
   // the log: typed ink, newest at the bottom, older lines fade, a cursor blinks after the last letter
-  const lw = FX(L.log.w) - 52 - ADV.ink, lines = [];
-  S.log.forEach((e, k) => { if (e.n === 0) return; wrap("> " + e.s.slice(0, e.n), "ink", lw).forEach(s => lines.push({ s, age: S.log.length - 1 - k })); });
+  const lw = FX(L.log.w) - 52 - ADV.ink, groups = [];
+  S.log.forEach((e, k) => { if (e.n === 0) return; groups.push(wrap("> " + e.s.slice(0, e.n), "ink", lw).map(s => ({ s, age: S.log.length - 1 - k }))); });
   const pin = REQ === 3 && S.req && S.phase === "play" ? 1 : 0;
-  const lh = Math.round(22 * TK), rows = TK > 1 ? 2 : 3, show = lines.slice(-(rows - pin)), top = FX(by + L.log.y) + Math.round((FX(L.log.h) - rows * lh) / 2) + 4;
+  const lh = Math.round(22 * TK), rows = TK > 1 ? 2 : 3, cap = rows - pin, show = [], top = FX(by + L.log.y) + Math.round((FX(L.log.h) - rows * lh) / 2) + 4;
+  // whole entries only, newest last; an older entry that doesn't fit whole is left out (it showed from mid-sentence, audit 2026-11-24)
+  for (let g = groups.length - 1; g >= 0; g--) { if (show.length + groups[g].length > cap) { if (!show.length) show = groups[g].slice(-cap); break; } show = groups[g].concat(show); }
   if (pin) { const met = reqMet(S.path), t = "REQUEST: " + S.req.text, px = FX(L.log.x) + 26;
     if (met) { ctx.fillStyle = `rgba(220,50,20,${.18 + .12 * Math.sin(frame / 4)})`; ctx.fillRect(px - 8, top - 4, lw + 16, lh); }
     ctx.fillStyle = C.inkRed; ctx.beginPath(); ctx.arc(px + 6, top + 8 * TK, 5 * TK, 0, 6.283); ctx.fill();
@@ -3329,8 +3346,8 @@ function blitOver(b) { if (!b) return ctx.drawImage(over, 0, 0, W * FINE, H * FI
 /* ---------- title screens (Workshop topic "title", round 1) ----------
    Each style brings the logo in its own way, then settles on the logo and btn("PRESS {A} TO PLAY"). A press during the entrance jumps to
    the settled screen; the next press starts. Style 0 is the old parchment box. #title-N opens style N. The logo is a placeholder made
-   in code from our own 5x7 letters until the real one is drawn: LEXICON in chunky bevelled brass, SIGNAL in lit amber dot-matrix. */
-const TITLE_STYLES = ["Parchment box (now)", "Tuning in", "From the tower", "Neon across the street", "Fill the tube", "Programme sheet", "Radio close-up"];
+   in code from our own 5x7 letters until the real one is drawn: LEXICON in chunky beveled brass, SIGNAL in lit amber dot-matrix. */
+const TITLE_STYLES = ["Parchment box (now)", "Tuning in", "From the tower", "Neon across the street", "Fill the tube", "Program sheet", "Radio close-up"];
 let TS = 6; {   // default: radio close-up (Chris, 2026-11-12, still being tweaked)
  const m = location.hash.match(/title-(\d+)/); if (m) TS = Math.min(TITLE_STYLES.length - 1, +m[1]); }
 const LD = 14, LP = 6 * LD;   // logo letter cell and letter pitch, in fine pixels
@@ -3373,10 +3390,10 @@ const TIPS = [
   "THE LIGHTS UNDER THE TUNING KNOB ARE YOUR RETUNES",
   "THE FINE TUNING KNOB GIVES AN EXTRA RETUNE, AND EACH ONE YOU KEEP MAKES WORDS SCORE A LETTER LONGER",
   "THE LETTERS CARRY OVER TO THE NEXT NIGHT: SAVE A BIG WORD FOR LATER",
-  "B TAKES BACK THE LAST LETTER",
+  "{B} TAKES BACK THE LAST LETTER",
   "PRESS {Y} OR TAP THE RIGHT KNOB TO RETUNE",
-  "X SENDS THE WORD YOU HAVE SPELLED",
-  "START PAUSES THE NIGHT",
+  "{X} SENDS THE WORD YOU HAVE SPELLED",
+  "{START} PAUSES THE NIGHT",
   "FINISH A NIGHT AT 1.5 TIMES ITS TARGET FOR OVERDRIVE: FOUR CARDS, AND A KEY GUARANTEED",
   "HIT TWICE THE TARGET FOR A DOUBLE OVERDRIVE: PICK TWO CARDS",
   "SIGNAL PAST THE TARGET CARRIES OVER: THE NEXT NIGHT STARTS WITH UP TO A QUARTER OF ITS TUBE LIT",
@@ -3864,7 +3881,7 @@ function drawPause() {   // one parchment panel like the log box, in the game's 
   let ny = y0 + items.length * lh + 10;
   ctx.fillStyle = C.inkSoft; ctx.globalAlpha = .35; ctx.fillRect(L0, ny - 4, R0 - L0, 2); ctx.globalAlpha = 1; ny += 6;
   if (PAUSE.noteT) { ftext(PAUSE.note, cx, ny, "read", C.inkSoft, "c"); ny += rh + 10; }
-  ctx.globalAlpha = .55; ftext(`${Math.round(1000 / PERF.dt)} FPS  ${PERF.draw.toFixed(1)} MS${RS < 1 ? "  HALF" : ""}`, cx, ny, "read", C.inkSoft, "c"); ctx.globalAlpha = 1;
+  if (DEV.on) ctx.globalAlpha = .55; else ctx.globalAlpha = 0;   /* (the speed line only for the owner: it spilled out of the panel and read as debug text, audit 2026-11-24) */ ftext(`${Math.round(1000 / PERF.dt)} FPS  ${PERF.draw.toFixed(1)} MS${RS < 1 ? "  HALF" : ""}`, cx, ny, "read", C.inkSoft, "c"); ctx.globalAlpha = 1;
   edgePlate(PAUSE.sub ? "OPTIONS" : "PAUSED", "key", cx, top, C.inkRed);
   ctx.restore(); }
 function howStart() { HOW.on = true; HOW.card = 0; HOW.t = 0; Sound.ensure(); Sound.music(); howReset(); HOW_CARDS[0].setup(); Sound.click(); }
@@ -3873,7 +3890,7 @@ function reloadBuild() { try { if (window.LEX_RELOAD) window.LEX_RELOAD(); else 
 function maybeReload() { if (buildReady) reloadBuild(); }
 // after a lost run, A goes back to the title menu, not straight into a new run (Chris 2026-11-16)
 function overToTitle() { howExit(); titleSel = 0; }
-function howExit() { HOW.on = false; Sound.home(); S = fresh("title");   /* (back to the title: the original song again, Chris 2026-11-23) */
+function howExit() { HOW.on = false; Sound.home(); resetFlow(); S = fresh("title");   /* (back to the title: the original song again, Chris 2026-11-23) */
   fillGrid(false); S.grid.forEach(t => t.ch = " "); "LEXICONSIGNAL".split("").forEach((ch, k) => { S.grid[H5([0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13][k])].ch = ch; });
   titleT = 0; titleSkip = true; titleSel = 1; TSUB.on = false; flyers = []; beams = []; busy = 0; pending = null; Sound.click(); }
 function howKey(k) { if (!HOW.on) return false;
@@ -4077,7 +4094,7 @@ const MAN_SECS = [
     ["tbl", [["THE REQUEST", "PAYS"], ...[["LETTERS TOGETHER (2, LATER 3 OR 4)", "chunk"], ["A RARE LETTER", "letter"], ["A LONG WORD (5+ LETTERS, LATER 6+ AND 7+)", "long"], ["A DOUBLE LETTER, LIKE LL", "double"], ["4+ LETTERS THROUGH THE RED KEY (LATER 5+)", "red"], ["3 VOWELS OR MORE (LATER 4)", "vowels"], ["STARTS AND ENDS WITH THE SAME LETTER", "ends"], ["A SONG TITLE, SPELLED EXACTLY", "word"]].map(([a, k]) => [a, "x" + REQ_PAY[k]])], [.74, .26], true],
     ["p", "Every extra Stranger's Hat adds +2 to every request."],
     ["ex", "STAR FILLS 'SOMETHING WITH AR IN IT' (x5)", [["PLAIN SCORE", "SIGNAL 6 x LENGTH 2 = 12"], ["THE REQUEST", "12 x 4 MORE = 48"], ["SCORE", "12 + 48 = 60"]]]] : [
-    ["p", "These pages have been torn out of the manual. Someone has pencilled a note in the margin: 'Ask the hat.'"],
+    ["p", "These pages have been torn out of the manual. Someone has penciled a note in the margin: 'Ask the hat.'"],
     ["note", "Fit the Stranger's Hat once and this section turns up again."]] },
   { t: "THE END OF A RUN", b: () => [
     ["p", "Your run score, in the bottom left corner, is every bit of signal you beamed plus every night's leftover bonus."],
@@ -4089,7 +4106,7 @@ const MAN_SECS = [
    sign-off screen's LOGBOOK button. The same book as the Service Manual, filled from BOOK (above) and the top ten (lexsig.scores). ---- */
 const MON = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 const bookDate = (t) => { const d = new Date(t); return MON[d.getMonth()] + " " + d.getDate(); };
-const bookTime = (s) => { const m = Math.round(s / 60); return m < 60 ? m + "M" : Math.floor(m / 60) + "H " + (m % 60) + "M"; };
+const bookTime = (s) => { const m = Math.round(s / 60); return m < 1 ? "NO TIME" : m < 60 ? m + "M" : Math.floor(m / 60) + "H " + (m % 60) + "M"; };
 const bookEmpty = () => [["note", "Nothing logged yet. Play a run and the tower starts keeping score."]];
 const partName = (id) => (PART[id] ? PART[id].name : id).toUpperCase();
 // a word's breakdown as a framed example (the manual's "ex" box): what each letter, part and key added, then the sum
@@ -4100,7 +4117,7 @@ function brEx(w, e, lead) { const b = e[3], p = e[1], t = (lead || "") + w.toUpp
   return ["ex", t, [...(sig ? [["SIGNAL", "ABOUT " + sig]] : []), ["LENGTH", "x" + l], ["PARTS AND KEYS", "x" + fmtX(m) + (keys.length ? " (" + keys.join(", ") + ")" : "")], ...(tap ? [["GREEN KEY", "+" + tap]] : []), ...(req ? [["REQUEST", "FILLED"]] : []),
     ["", "(SENT BEFORE THE LOGBOOK KEPT THE FULL MATH)"], ["SCORE", fmtNum(p)]], ""]; }
 const LOG_SECS = [
-  { t: "RECORDS", b: () => { const st = bookStats(), R = BOOK.runs, top = loadScores()[0]; if (!st.ws.length && !top) return bookEmpty();
+  { t: "RECORDS", b: () => { const st = bookStats(), R = BOOK.runs, top = lfScores()[0]; if (!st.ws.length && !top) return bookEmpty();
     const bw = st.ws.reduce((a, x) => x[1][1] > a[1][1] ? x : a, st.ws[0] || ["", [0, 0]]), lw = st.ws.reduce((a, x) => x[0].length > a[0].length || (x[0].length === a[0].length && x[1][1] > a[1][1]) ? x : a, st.ws[0] || ["", [0, 0]]);
     const far = R.reduce((a, x) => Math.max(a, x.r), top ? top.n + 1 : 0), sig = R.reduce((a, x) => a + x.t, 0), ov = R.reduce((a, x) => a + (x.ov || 0), 0);
     return [["big", [[fmtNum(top ? top.s : 0), "HIGH SCORE"], ["NIGHT " + Math.max(1, far), "FURTHEST NIGHT"], [fmtNum(R.length), "RUNS PLAYED"], [fmtNum(st.sends), "WORDS SENT"],
@@ -4110,7 +4127,7 @@ const LOG_SECS = [
       ...(R.length ? [["h", "AN AVERAGE RUN"], ["tbl", [["NIGHT REACHED", (R.reduce((a, x) => a + x.r, 0) / R.length).toFixed(1)], ["WORDS SENT", Math.round(R.reduce((a, x) => a + x.nw, 0) / R.length)],
         ["SCORE", fmtNum(sig / R.length)], ["A WORD SCORES", fmtNum(sig / Math.max(1, R.reduce((a, x) => a + x.nw, 0)))]], [.55, .45]]] : []),
       ["note", "Runs from before the logbook was put in only count if they're still in the play log (the last 40). Your top ten has every run."]]; } },
-  { t: "TOP TEN RUNS", b: () => { const a = loadScores(); if (!a.length) return bookEmpty();
+  { t: "TOP TEN RUNS", b: () => { const a = lfScores(); if (!a.length) return bookEmpty();
     return [["tbl", [["SCORE", "NIGHT", "BEST WORD"], ...a.map((r, i) => [`${i + 1}. ${fmtNum(r.s)}`, String(r.n + 1), (r.w || "-").toUpperCase()])], [.4, .2, .4], true],
       ["p", "Your best ten runs on this device, by run score: every bit of signal you beamed plus each night's leftover bonus."]]; } },
   { t: "YOUR PERSONALITY", b: () => { const st = bookStats(); if (!st.sends) return bookEmpty();
@@ -4209,7 +4226,7 @@ function lfSel(x, y, w, h) { ctx.save(); ctx.strokeStyle = MP.red; ctx.lineWidth
 function lfLay(b, w, add, items, lh, gh, kh) { const k = b[0], row = () => items.length ? items[items.length - 1].row + 1 : 0, pad = Math.round(14 * TK);
   if (k === "lftitle") { const st = bookStats(); add(lh + 8 + kh * 2 + 18 + lh, (X, Y) => { const cx = X + w / 2;
       ftext("MODEL LS-5  NIGHT RECEIVER", cx, Y, BK, MP.red, "c"); ctx.save(); ctx.translate(cx, Y + lh + 8); ctx.scale(2, 2); ftext("STATION LOGBOOK", 0, 0, "key", MP.ink, "c"); ctx.restore();
-      ftext(`${fmtNum(st.ws.length)} WORD${st.ws.length === 1 ? "" : "S"}  ${fmtNum(BOOK.runs.length)} RUN${BOOK.runs.length === 1 ? "" : "S"}  ${bookTime(BOOK.secs)} ON THE AIR`, cx, Y + lh + 8 + kh * 2 + 18, BK, MP.soft, "c"); }, 20); return true; }
+      ftext(!st.ws.length && !BOOK.runs.length ? "A BLANK LOG, WAITING FOR YOUR FIRST NIGHT" : `${fmtNum(st.ws.length)} WORD${st.ws.length === 1 ? "" : "S"}  ${fmtNum(BOOK.runs.length)} RUN${BOOK.runs.length === 1 ? "" : "S"}  ${bookTime(BOOK.secs)} ON THE AIR`, cx, Y + lh + 8 + kh * 2 + 18, BK, MP.soft, "c"); }, 20); return true; }
   if (k === "lfstamp") { const st = bookStats(), top = lfScores()[0], t = st.main ? PTYPES[st.main] : null, h = kh * 4 + lh * 2 + 40;
     add(h, (X, Y) => { const sw = Math.min(w * .55, Math.max(textW(t ? t.n : "UNKNOWN", "key") * 2 + 60, textW("CERTIFIED BY THE TOWER", BK) + 60, w * .36)), sx = X + 10, sy = Y + 8, sh = h - 16;
       ctx.save(); ctx.translate(sx + sw / 2, sy + sh / 2); ctx.rotate(-.06); ctx.globalAlpha = t ? .9 : .35; ctx.strokeStyle = MP.red; ctx.lineWidth = 5; ctx.strokeRect(-sw / 2, -sh / 2 + 6, sw, sh - 12); ctx.lineWidth = 2; ctx.strokeRect(-sw / 2 + 9, -sh / 2 + 15, sw - 18, sh - 30);
@@ -4223,7 +4240,7 @@ function lfLay(b, w, add, items, lh, gh, kh) { const k = b[0], row = () => items
   if (k === "lfboard" || k === "lfpodium") { const rows = b[1], mx = Math.max(1, ...rows.map(r => r.s)), y0 = add.y(), r0 = row();
     const hh = g3H() + 12, rh = lh + Math.round(16 * TK), pod = k === "lfpodium", ph = pod ? Math.round(kh * 2 + lh * 2 + 120 * TK) : 0, h = hh + (pod ? ph + Math.max(0, rows.length - 3) * rh : rows.length * rh) + 10;
     const idxB = items.length; items.push({ y: y0, h, x: 0, w, row: r0, go: () => manGo(1, -1) });
-    add(h, (X, Y) => { const sel = MAN.fsel === idxB; if (sel) lfSel(X - 8, Y - 4, w + 16, h);
+    add(h, (X, Y) => { const sel = MAN.fsel === idxB; if (sel) lfSel(X - 12, Y - 10, w + 24, h + 6);
       ftext("TOP RUNS", X, Y, HK, MP.red, "l"); ftext(sel ? (TAPW() ? "TAP FOR THE TOP TEN" : btn("{A} THE TOP TEN")) : "", X + w, Y, BK, MP.red, "r"); ctx.fillStyle = MP.rule; ctx.fillRect(X, Y + g3H() + 6, w, 2);
       let yy = Y + hh;
       if (pod) { const cw = Math.floor(w / 3), order = [1, 0, 2], hs = [.62, 1, .45]; order.forEach((i, c) => { const r = rows[i]; if (!r) return; const bx = X + c * cw + 10, bw = cw - 20, bh = Math.round((ph - kh * 2 - lh * 2 - 20) * hs[i] + 30), by = yy + ph - bh;
@@ -4236,9 +4253,9 @@ function lfLay(b, w, add, items, lh, gh, kh) { const k = b[0], row = () => items
         ftext("NIGHT " + (r.n + 1), bx + bw + 14, yy + 8, BK, MP.soft, "l"); ftext((r.w || "-").toUpperCase(), X + w, yy + 8, BK, MP.soft, "r"); ctx.fillStyle = MP.faint; ctx.fillRect(X, yy + rh - 2, w, 1); yy += rh; });
       MAN.hits.push({ x0: X - 8, x1: X + w + 8, y0: Y, y1: Y + h, go: () => lfGo(idxB), scroll: true }); }, 22);
     return true; }
-  if (k === "lfcards") { const C = b[1], rowStyle = LOGFRONT === 3, cols = rowStyle ? 1 : w >= 900 && BK === "ink" ? 3 : 2, gap = Math.round(18 * TK), cw = Math.floor((w - gap * (cols - 1)) / cols);
+  if (k === "lfcards") { const C = b[1], rowStyle = LOGFRONT === 3, cols = rowStyle ? 1 : w >= 900 && BK === "ink" ? 3 : 2, gap = Math.round(18 * TK), cw0 = Math.floor((w - gap * (cols - 1)) / cols);
     const vh = Math.round(lh * 1.6), ch = rowStyle ? Math.max(kh * 1.5, lh * 2) + 2 * pad : pad + lh + 8 + kh * 2 + 8 + lh + 10 + vh + pad;
-    for (let i = 0; i < C.length; i += cols) { const y0 = add.y(), r0 = row(), cards = C.slice(i, i + cols);
+    for (let i = 0; i < C.length; i += cols) { const y0 = add.y(), r0 = row(), cards = C.slice(i, i + cols), cw = cards.length < cols ? Math.floor((w - gap * (cards.length - 1)) / cards.length) : cw0;   /* (a lone last card fills its row, audit 2026-11-24) */
       cards.forEach((c, j) => items.push({ y: y0, h: ch, x: j * (cw + gap), w: cw, row: r0, go: () => manGo(c.sec, -1) }));
       const idx0 = items.length - cards.length;
       add(ch, (X, Y) => cards.forEach((c, j) => { const x = X + j * (cw + gap), on = MAN.fsel === idx0 + j, ink = c.dim ? MP.soft : MP.ink;
@@ -4367,19 +4384,20 @@ function manLayout(w) { const key = MAN.book + "|" + LOGFRONT + "|" + PERS + "|"
         ctx.save(); ctx.translate(cx, Y + lh + 8); ctx.scale(2, 2); ftext("STATION LOGBOOK", 0, 0, "key", MP.ink, "c"); ctx.restore();
         let yy = Y + lh + 8 + kh * 2 + 30; ftext("EVERY WORD YOU HAVE BEAMED TO THE TOWER,", cx, yy, BK, MP.soft, "c"); ftext("KEPT ON THIS DEVICE", cx, yy + lh, BK, MP.soft, "c");
         yy += lh * 2 + 18; ctx.fillStyle = MP.faint; ctx.fillRect(X + w * .2, yy - 9, w * .6, 1); ftext(sum.length * ADV[BK] > w ? `${fmtNum(st.ws.length)} WORDS  ${fmtNum(BOOK.runs.length)} RUNS` : sum, cx, yy, BK, MP.red, "c"); }, 24); }
-    else if (k === "big") { const cols = w >= 900 ? 3 : 2, cw = Math.floor(w / cols), bh = Math.round(kh * 2 + lh + 18), rows = Math.ceil(b[1].length / cols);
-      add(rows * bh, (X, Y) => b[1].forEach(([v, lab], i) => { const x = X + (i % cols) * cw, y = Y + Math.floor(i / cols) * bh, sz = textW(String(v), "key") * 2 > cw - 48 ? 1 : 2;
+    else if (k === "big") { const cols = w >= 900 ? 3 : 2, cw = Math.floor(w / cols), two = b[1].some(([, lab]) => wrap(lab, BK, cw - 24).length > 1), bh = Math.round(kh * 2 + lh * (two ? 2 : 1) + 18), rows = Math.ceil(b[1].length / cols);
+      add(rows * bh, (X, Y) => b[1].forEach(([v, lab], i) => { const x = X + (i % cols) * cw, y = Y + Math.floor(i / cols) * bh, sz = Math.max(.9, Math.min(2, (cw - 30) / textW(String(v), "key")));
         ctx.fillStyle = MP.faint; ctx.fillRect(x + 4, y + bh - 8, cw - 20, 1);
-        ctx.save(); ctx.translate(x + 6, y + (sz === 2 ? 0 : Math.round(kh / 2))); ctx.scale(sz, sz); ftext(String(v), 0, 0, "key", MP.ink, "l"); ctx.restore();
-        const L = wrap(lab, BK, cw - 24); ftext(L[0] + (L.length > 1 ? "..." : ""), x + 6, y + kh * 2 + 8, BK, MP.soft, "l"); })); }
-    else if (k === "bars") { const rows = b[1], mx = Math.max(1, ...rows.map(x => x[1])), lw = Math.min(Math.round(w * .38), Math.max(...rows.map(x => textW(x[0], BK))) + 16), tw = Math.max(...rows.map(x => textW(x[2], BK))) + 14, rh = lh + 6;
+        ctx.save(); ctx.translate(x + 6, y + Math.round(kh * (2 - sz) / 2)); ctx.scale(sz, sz); ftext(String(v), 0, 0, "key", MP.ink, "l"); ctx.restore();
+        wrap(lab, BK, cw - 24).slice(0, 2).forEach((l, j) => ftext(l, x + 6, y + kh * 2 + 8 + j * lh, BK, MP.soft, "l")); })); }
+    else if (k === "bars") { const rows = b[1], mx = Math.max(1, ...rows.map(x => x[1])), lw = Math.min(Math.round(w * .55), Math.max(...rows.map(x => textW(x[0], BK))) + 16), tw = Math.max(...rows.map(x => textW(x[2], BK))) + 14, rh = lh + 6;
       add(rows.length * rh, (X, Y) => rows.forEach(([lab, v, txt, hot], i) => { const y = Y + i * rh, bw = Math.max(v > 0 ? 3 : 0, Math.round((w - lw - tw) * v / mx));
         ftext(lab, X, y + 3, BK, hot ? MP.red : MP.ink, "l"); ctx.fillStyle = MP.faint; ctx.fillRect(X + lw, y + rh - 5, w - lw - tw, 1);
         ctx.fillStyle = hot ? MP.red : MP.ink; ctx.globalAlpha = hot ? .85 : .7; ctx.fillRect(X + lw, y + 4, bw, gh); ctx.globalAlpha = 1; ftext(txt, X + w, y + 3, BK, hot ? MP.red : MP.soft, "r"); })); }
-    else if (k === "cols") { const v = b[1], ch = Math.round(150 * TK * (BK === "ink" ? 1 : 1.25)), mx = Math.max(1, ...v), n = v.length, gap = Math.max(2, Math.round(w / n * .25)), cw2 = (w - 40) / n, cap = wrap(b[2], BK, w - 20);
-      add(ch + lh + 12 + cap.length * lh, (X, Y) => { const x0 = X + 40; ctx.fillStyle = MP.rule; ctx.fillRect(x0, Y + ch, w - 40, 2); ctx.fillStyle = MP.faint; ctx.fillRect(x0, Y, 1, ch);
-        ftext(mx >= 1e4 ? Math.round(mx / 1000) + "K" : String(mx), x0 - 8, Y, BK, MP.soft, "r"); ftext("0", x0 - 8, Y + ch - gh, BK, MP.soft, "r");
-        v.forEach((h, i) => { const bh2 = Math.round((ch - 4) * h / mx), last = i === n - 1; ctx.fillStyle = last ? MP.red : MP.ink; ctx.globalAlpha = last ? .9 : .6; ctx.fillRect(Math.round(x0 + i * cw2 + gap / 2), Y + ch - bh2, Math.max(2, Math.round(cw2 - gap)), bh2); }); ctx.globalAlpha = 1;
+    else if (k === "cols") { const v = b[1], ch = Math.round(150 * TK * (BK === "ink" ? 1 : 1.25)), mx = Math.max(1, ...v), n = v.length, gap = Math.max(2, Math.round(w / n * .25)), cap = wrap(b[2], BK, w - 20);
+      const axL = mx >= 1e4 ? Math.round(mx / 1000) + "K" : String(mx), ax = textW(axL, BK) + 16;   /* (room for the axis number: "10K" ran into the margin, audit 2026-11-24) */
+      add(ch + lh + 12 + cap.length * lh, (X, Y) => { const x0 = X + ax; ctx.fillStyle = MP.rule; ctx.fillRect(x0, Y + ch, w - ax, 2); ctx.fillStyle = MP.faint; ctx.fillRect(x0, Y, 1, ch);
+        ftext(axL, x0 - 8, Y, BK, MP.soft, "r"); ftext("0", x0 - 8, Y + ch - gh, BK, MP.soft, "r");
+        const cw2 = (w - ax) / n; v.forEach((h, i) => { const bh2 = Math.round((ch - 4) * h / mx), last = i === n - 1; ctx.fillStyle = last ? MP.red : MP.ink; ctx.globalAlpha = last ? .9 : .6; ctx.fillRect(Math.round(x0 + i * cw2 + gap / 2), Y + ch - bh2, Math.max(2, Math.round(cw2 - gap)), bh2); }); ctx.globalAlpha = 1;
         ftext(b[3] || "", x0, Y + ch + 8, BK, MP.soft, "l"); ftext(b[4] || "", X + w, Y + ch + 8, BK, MP.red, "r"); para(cap, X + 10, Y + ch + lh + 12, MP.soft); }); }
     else if (k === "wgrid") { const cells = b[1], gp = Math.round(lh * 1.4), cwMin = Math.max(...cells.map(c => textW(c[0], BK))) + Math.max(...cells.map(c => textW(c[1], BK))) + 2 * gp, cols = Math.max(1, Math.min(4, Math.floor(w / cwMin))), cw = Math.floor(w / cols), rows = Math.ceil(cells.length / cols), rh = lh + 4;
       for (let r0 = 0; r0 < rows; r0 += 6) { const rr = Math.min(6, rows - r0); add(rr * rh, (X, Y) => { for (let r1 = 0; r1 < rr; r1++) for (let c = 0; c < cols; c++) { const it = cells[c * rows + r0 + r1]; if (!it) continue;   // (down the columns, so A to Z reads top to bottom)
@@ -4403,7 +4421,7 @@ function manLayout(w) { const key = MAN.book + "|" + LOGFRONT + "|" + PERS + "|"
     else if (k === "p") { const L = wrap(b[1], BK, w); add(L.length * lh - (lh - gh), (X, Y) => para(L, X, Y)); }
     else if (k === "note") { const L = wrap(b[1], BK, w - 34); add(lh + L.length * lh - (lh - gh) + 16, (X, Y) => { ctx.fillStyle = MP.red; ctx.fillRect(X, Y, 5, lh + L.length * lh - (lh - gh) + 16); ftext("NOTE", X + 20, Y + 8, BK, MP.red, "l"); para(L, X + 20, Y + 8 + lh); }); }
     else if (k === "list") { const items = b[1].map(s => wrap(s, BK, w - 30)); add(items.reduce((s, L) => s + L.length * lh + 8, 0) - 8 - (lh - gh), (X, Y) => { let yy = Y; items.forEach(L => { ctx.fillStyle = MP.red; ctx.fillRect(X + 2, yy + Math.round(gh / 2) - 4, 8, 8); para(L, X + 26, yy); yy += L.length * lh + 8; }); }); }
-    else if (k === "tbl") { const fr = b[2] || [.35, .65], head = !!b[3], cw = fr.map(f => Math.round(w * f)), pad = 10;
+    else if (k === "tbl") { const fr0 = b[2] || [.35, .65], need = Math.max(...b[1].map(r => textW(String(r[0]), BK))) + 30, f0 = fr0.length === 2 ? Math.min(.5, Math.max(fr0[0], need / w)) : fr0[0], fr = fr0.length === 2 ? [f0, 1 - f0] : fr0, head = !!b[3], cw = fr.map(f => Math.round(w * f)), pad = 10;   /* (audit 2026-11-24) */
       const rows = b[1].map(r => r.map((c, j) => wrap(c, BK, cw[j] - 2 * pad))), rhs = rows.map(r => Math.max(...r.map(L => L.length)) * lh - (lh - gh) + 2 * pad);
       add(rhs.reduce((a, c) => a + c, 0) + 2, (X, Y) => { let yy = Y; ctx.fillStyle = MP.rule; ctx.fillRect(X, yy, w, 2);
         rows.forEach((r, i) => { let xx = X; r.forEach((L, j) => { para(L, xx + pad, yy + pad, head && !i ? MP.red : j === 0 ? MP.ink : MP.soft); xx += cw[j]; });
@@ -4465,7 +4483,7 @@ function drawManual() { manSize();
   ctx.save(); ctx.beginPath(); ctx.rect(px, top - 6, pw, view + 6); ctx.clip(); const oy = top - Math.round(MAN.y);
   for (const o of lay.ops) { if (oy + o.y + o.h < top - 10 || oy + o.y > bot + 10) continue; o.draw(X, oy + o.y); }
   if (MAN.y < MAN.max - 4) { const fg = ctx.createLinearGradient(0, bot - 40, 0, bot); fg.addColorStop(0, "rgba(235,225,196,0)"); fg.addColorStop(1, "rgba(228,214,178,1)"); ctx.fillStyle = fg; ctx.fillRect(px, bot - 40, pw, 40); }   // (more below: the page fades out under the foot)
-  ctx.restore(); MAN.hits = MAN.hits.filter(h => !h.scroll || (h.y1 > top && h.y0 < bot));
+  ctx.restore(); MAN.hits = MAN.hits.filter(h => !h.scroll || (h.y1 > top && h.y0 < bot)).map(h => h.scroll ? { ...h, y0: Math.max(h.y0, top), y1: Math.min(h.y1, bot) } : h);   /* (clipped to the page: a half-hidden card took taps meant for CLOSE, audit 2026-11-24) */
   // scroll marks: a thin bar in the right margin, and MORE at the foot while there's more to read
   if (MAN.max > 0) { const bx = px + pw - Math.round(M / 2), sh = Math.max(30, view * view / lay.h), sy = top + (view - sh) * (MAN.y / MAN.max); ctx.fillStyle = MP.faint; ctx.fillRect(bx - 1, top, 2, view); ctx.fillStyle = MP.red; ctx.fillRect(bx - 3, sy, 6, sh); }
   ctx.fillStyle = MP.rule; ctx.fillRect(X, bot + 6, w, 1);
@@ -4630,13 +4648,15 @@ function drawUpgrade() {
   desc.forEach((s, j) => ftext(s, cx, FX(y + lift + 82 + ph) + 16 + j * lh, "ink", C.gold, "c"));
   // the foot: which part gains the copy
   const sl = partSlots()[swapFocus], note = sl ? `${PART[sl.id].name} LEVEL ${showLv(sl.id, sl.n + 1)}: ${keyStep(sl.id, sl.n + 1)}`.toUpperCase() : "", by = FX(y + lift + ch) - 30 - 26, x0 = FX(x), x1 = FX(x + cw);
-  ctx.fillStyle = "#ffd24a"; ctx.fillRect(x0 + 24, by - 6, x1 - x0 - 48, 2);
-  if (note) { const sc = Math.min(1, (x1 - x0 - 48) / textW(note, "ink")); ctx.save(); ctx.translate(cx, by + 2); ctx.scale(sc, sc); ftext(note, 0, 0, "ink", C.hot, "c"); ctx.restore(); }
+  // (two lines when it doesn't fit, not shrunk to nothing: audit 2026-11-24)
+  const nl = note ? wrap(note, "ink", x1 - x0 - 48).slice(0, 2) : [], nlh = Math.round(16 * TK), ny0 = by + 2 - (nl.length - 1) * nlh;
+  ctx.fillStyle = "#ffd24a"; ctx.fillRect(x0 + 24, ny0 - 8, x1 - x0 - 48, 2);
+  nl.forEach((l, j) => { const sc = Math.min(1, (x1 - x0 - 48) / textW(l, "ink")); ctx.save(); ctx.translate(cx, ny0 + j * nlh); ctx.scale(sc, sc); ftext(l, 0, 0, "ink", C.hot, "c"); ctx.restore(); });
   ctx.strokeStyle = "#ffd24a"; ctx.lineWidth = 4; ctx.beginPath(); ctx.roundRect(FX(x) - 2, FX(y + lift) - 2, FX(cw) + 4, FX(ch) + 4, 6); ctx.stroke();
   ctx.strokeStyle = (frame >> 4) & 1 ? C.hot : C.gold; ctx.lineWidth = 3; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 16; ctx.beginPath(); ctx.roundRect(FX(x) - 7, FX(y + lift) - 7, FX(cw) + 14, FX(ch) + 14, 9); ctx.stroke();
   ctx.restore();
   ftext("THE MELTER PAID OUT", FX(W / 2), 22, "ink", C.hot, "c", { outline: C.dark });
-  ftext(TAPW() ? "TAP A KEY IN THE BAR" : btn("LEFT / RIGHT: CHOOSE A KEY   {A}: LEVEL IT UP"), FX(W / 2), FX(y + ch) + 26, "ink", C.gold, "c", { outline: C.dark });
+  ftext(TAPW() ? "TAP A KEY IN THE BAR" : btn("LEFT / RIGHT: CHOOSE A KEY   {A}: LEVEL IT UP"), FX(W / 2), 22 + Math.round(22 * TK), "ink", C.gold, "c", { outline: C.dark });   /* (under the heading: below the card it sat on the radio's lamps on phones) */
   // the part in the bar that gains the copy
   const sb = slotBox(swapFocus), sw = sb.w, shh = sb.h, sx = FX(sb.x), sy = FX(sb.y);
   ctx.save(); ctx.strokeStyle = (frame >> 3) & 1 ? "#ffd24a" : "#fff2c0"; ctx.lineWidth = 4; ctx.shadowColor = "#ffb040"; ctx.shadowBlur = 14; ctx.strokeRect(sx - 4, sy - 4, FX(sw) + 8, FX(shh) + 8); ctx.restore();
@@ -4671,7 +4691,7 @@ function drawSwap() {
   intro.forEach(s => { ftext(s, tx, ty, "ink", C.ink, "c"); ty += lh; }); ty += 6;
   if (out) { ftext(`OUT: ${PART[out.id].name}${out.n > 1 ? " X" + out.n : ""}`.toUpperCase(), tx, ty, "ink", C.inkRed, "c"); ty += lh;
     od.forEach(s => { ftext(s, tx, ty, "ink", C.inkSoft || C.ink, "c"); ty += lh; }); }
-  ftext(TAPW() ? "TAP A PART BELOW. TAP HERE TO GO BACK." : "LEFT / RIGHT TO CHOOSE, A TAKE OUT, B BACK", FX(W / 2), FX(y + h) + 16, "ink", C.gold, "c", { outline: C.dark });
+  ftext(TAPW() ? "TAP A PART BELOW. TAP HERE TO GO BACK." : btn("LEFT / RIGHT TO CHOOSE, {A} TAKE OUT, {B} BACK"), FX(W / 2), FX(y + h) + 16, "ink", C.gold, "c", { outline: C.dark });
   // the slot that would go: a blinking frame and "OUT" above it, on the slot itself (slotBox: key slots, a gap, then part slots)
   const b = slotBox(swapFocus), sx = FX(b.x), sy = FX(b.y), sw = b.w, sh = b.h;
   ctx.save(); ctx.strokeStyle = (frame >> 3) & 1 ? "#ff6a50" : "#ffd27a"; ctx.lineWidth = 4; ctx.shadowColor = "#ff5a40"; ctx.shadowBlur = 14; ctx.strokeRect(sx - 4, sy - 4, FX(sw) + 8, FX(sh) + 8); ctx.restore();
@@ -4816,7 +4836,7 @@ function drawShop() {
       // what fitting it will do to the slots, as a small lamp label at the foot
       cardTag(c, p, g, G, cx);
       if (!g.f) { c.fillStyle = "rgba(8,5,3,.38)"; c.fillRect(FX(g.x), FX(g.y), FX(G.cw), FX(G.ch)); } });
-    if (!TOKM.banish && !TOKM.open && !(plateKinds().length && meltPlate().tight)) ftext(TAPW() ? "TAP A PART" : plateKinds().length ? btn("LEFT / RIGHT TO LOOK, DOWN FOR MORE, {A} TO PICK") : btn("LEFT / RIGHT TO LOOK, {A} TO FIT"), FX(W / 2), FX(G.y0 + G.ch) + 8, "ink", C.gold, "c", { outline: C.dark });
+    if (!TOKM.banish && !TOKM.open && !(plateKinds().length && meltPlate().tight && !TAPW())) ftext(TAPW() ? "TAP A PART" : plateKinds().length ? btn("LEFT / RIGHT TO LOOK, DOWN FOR MORE, {A} TO PICK") : btn("LEFT / RIGHT TO LOOK, {A} TO FIT"), FX(W / 2), FX(G.y0 + G.ch) + 8, "ink", C.gold, "c", { outline: C.dark });
     TXT = null; }
   ctx.drawImage(shopTop.cv, 0, 0, CVW, CVH); drawMeltPlate();
   shopChoices.forEach((p, k) => { const g = geo(k); if (!p.key) return;   // rare parts: a gold line round the case (style 0), or the gold looks
@@ -4922,10 +4942,10 @@ function overButtons(cx, y) { const labs = ["NEW RUN", "LOGBOOK", "MAIN MENU"], 
     const sc = Math.min(1, (FX(bw) - 16) / textW(lab, "ink")); ctx.translate(FX(b.x + bw / 2), 0); ctx.scale(sc, 1); ctx.translate(-FX(b.x + bw / 2), 0);
     ftext(lab, FX(b.x + bw / 2), FX(b.y) + Math.round((FX(bh) - 14 * TK) / 2) - 2, "ink", on ? "#3a1806" : C.ink, "c", { under: C.brassHi, uy: 2 }); ctx.restore(); return b; });
   if (ready) ftext(TAPW() ? "TAP ONE" : btn("LEFT / RIGHT   {A} CHOOSE"), FX(cx), FX(y + bh) + 8, "ink", C.gold, "c", { outline: C.dark }); }
-function overIcons(cx, y, h) { const sl = partSlots().filter(e => e.id && (e.n || PART[e.id].key)), box = h, gap = 16, tw = sl.length * box + (sl.length - 1) * gap; let x = cx - tw / 2;
+function overIcons(cx, y, h) { const sl = partSlots().filter(e => e.id && (e.n || PART[e.id].key)), box = h, gap = Math.round(22 * TK),   /* (room for the LV2 / x3 tags: they ran into each other, audit 2026-11-24) */ tw = sl.length * box + (sl.length - 1) * gap; let x = cx - tw / 2;
   sl.forEach(e => { const r = R(iconOf(e.id)); if (r) { const sc = Math.min(box / r[2], box / r[3]), w = r[2] * sc, hh = r[3] * sc; ctx.drawImage(atlasImg, r[0], r[1], r[2], r[3], Math.round(x + (box - w) / 2), Math.round(y + (box - hh) / 2), Math.round(w), Math.round(hh)); }
     // the whole stack shows (Chris 2026-11-18): x2, x3 for copies of a part, LV2 and up for a key
-    const tag = PART[e.id].key ? (showLv(e.id, keyLv(e.id)) > 1 ? "LV" + showLv(e.id, keyLv(e.id)) : "") : e.n > 1 ? "x" + e.n : ""; if (tag) ftext(tag, Math.round(x + box + 4), Math.round(y + box - 14 * TK + 2), "ink", C.hot, "r", { outline: C.dark });
+    const tag = PART[e.id].key ? (showLv(e.id, keyLv(e.id)) > 1 ? "LV" + showLv(e.id, keyLv(e.id)) : "") : e.n > 1 ? "x" + e.n : ""; if (tag) ftext(tag, Math.round(x + box + 2), Math.round(y + box - 14 * TK + 2), "ink", C.hot, "r", { outline: C.dark });
     x += box + gap; }); }
 function drawOver() { const CX = FX(W / 2), ih = glyphCv("ink", "N", C.ink).height, kh = glyphCv("key", "N", C.ink).height, rowH = ih + 14, st = overStats(), shown = (k) => overT2 > 12 + k * 9;
   const nb = S.rank === 1, rk = S.rank ? (nb ? "NEW HIGH SCORE!" : `NUMBER ${S.rank} ON YOUR BOARD`) : "", ended = `ENDED ON NIGHT ${S.night}, ${fmtNum(S.score)} OF ${fmtNum(S.target)}`;
@@ -5019,10 +5039,10 @@ function start() { if (buildReady) return maybeReload(); Sound.ensure(); Sound.m
 // buttons (Chris 2026-11-12: a four-button game, Start pauses, Select doesn't mute): A pick / send, B back, X send the word, Y retune,
 // Start pause (and pick on menus), Select nothing (held: dev mode). Keyboard: Z/Space/Enter A, X/Backspace B, C/R retune (Y), V send (X), Esc/P pause.
 function pressA() { if (askKey("a")) return; if (devKey("a")) return; if (manKey("a")) return; if (TL && !PAUSE.on && tallySkip()) return; if (lossSkip()) return; if (pauseKey("a")) return; if (boardKey("a")) return; if (howKey("a")) return; if (inspectKey("a")) return; if (knobKey("a")) return; if (cardKey("a")) return; if (tokMenuKey("a")) return; Sound.ensure(); usingButtons = true; if (dismissCard()) return; if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return overChoose(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "trade") return tradeConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
-function pressB() { if (ASK.on) return; if (devKey("b")) return; if (manKey("b")) return; if (lossSkip()) return; if (pauseKey("b")) return; if (boardKey("b")) return; if (howKey("b")) return; if (inspectKey("a")) return; if (knobKey("b")) return; if (cardKey("b")) return; if (tokMenuKey("b")) return; if (nightHold) return void dismissCard(); if (S.phase === "title" && TSUB.on) return titleSub(false); if (S.phase === "melt") return meltDone(); if (S.phase === "swap") return swapCancel(); if (S.phase === "trade") return tradeGiveUp(); if (S.phase === "play") back(); }
-function pressX() { if (askKey("a")) return; if (devKey("x")) return; if (PAUSE.on || HOW.on || MAN.on) return; if (TL && tallySkip()) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play" && S.path.length) send(); else pressA(); }
+function pressB() { if (askKey("b")) return; if (devKey("b")) return; if (manKey("b")) return; if (lossSkip()) return; if (pauseKey("b")) return; if (boardKey("b")) return; if (howKey("b")) return; if (inspectKey("a")) return; if (knobKey("b")) return; if (cardKey("b")) return; if (tokMenuKey("b")) return; if (nightHold) return void dismissCard(); if (S.phase === "title" && TSUB.on) return titleSub(false); if (S.phase === "melt") return meltDone(); if (S.phase === "swap") return swapCancel(); if (S.phase === "trade") return tradeGiveUp(); if (S.phase === "play") back(); }
+function pressX() { if (ASK.on) return; if (devKey("x")) return; if (PAUSE.on || HOW.on || MAN.on) return; if (TL && tallySkip()) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play" && S.path.length) send(); else pressA(); }
 function pressY() { if (ASK.on) return; if (devKey("y")) return; if (PAUSE.on || HOW.on || MAN.on) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play") retune(); else if (S.phase === "report") reportToggle(); else if (S.phase === "shop" && REROLL_STYLE === 4 && !TOKM.banish) { if (TOKM.open) TOKM.open = false; else tokMenuOpen(); } }   // (Y opens the reroll / banish menu)
-function pressStart() { if (askKey("start")) return; if (devKey("start")) return; if (manKey("start")) return; if (pauseKey("start")) return; if (boardKey("start")) return; if (howKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return overChoose(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "trade") return tradeConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); if (S.phase === "play") pauseOpen(); }
+function pressStart() { if (ASK.on) return; if (devKey("start")) return; if (manKey("start")) return; if (pauseKey("start")) return; if (boardKey("start")) return; if (howKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return overChoose(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "trade") return tradeConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); if (S.phase === "play") pauseOpen(); }
 function pressSel() { if (devKey("select")) return; }   // Select does nothing by itself (held a moment: dev mode, once it's unlocked)
 window.addEventListener("keydown", (e) => {
   if (!e.ctrlKey && !e.metaKey && !e.altKey) { INPUT = "keys"; usingTouch = false; }
@@ -5470,7 +5490,7 @@ const Sound = (() => {
    press it plays over the game screen with its sound, then fades to the title. Any press skips it. Its picture runs on the sound's
    clock so the two stay together; if the sound stalls, the picture carries on alone. */
 const studio = { cv: null, clock: null, node: null, ac0: 0, t0: 0, skip: false, done: false, fading: false };
-function introPress() {
+function introPress() { if (!S) return true;   /* (a press while the art still loads: nothing to do yet, audit 2026-11-24) */
   if (S.phase === "splash") { Sound.ensure(); studioStart(); return true; }
   if (S.phase === "studio") { studio.skip = true; return true; }
   return false;
@@ -5579,7 +5599,7 @@ function devInstall() {
   #devPanel button{font:11px system-ui;color:var(--ink);background:var(--button);border:1px solid transparent;border-radius:4px;padding:8px;text-align:left;cursor:pointer}
   #devPanel button:hover,#devPanel button:focus-visible,#devPanel button.sel{border-color:var(--accent);outline:none;box-shadow:0 0 0 2px var(--accent)}
   #devPanel button.out{background:#2a1a10}
-  #devPanel .muted{color:var(--muted);font-size:11px;margin:0}`;
+  #devPanel .muted{color:var(--muted);font-size:11px;margin:12px 0 0}`;
   document.head.appendChild(css);
   const top = document.querySelector("#console .top"), btn = document.createElement("button"); btn.id = "devBtn"; btn.textContent = "DEV"; if (top) top.appendChild(btn);
   const panel = document.createElement("div"); panel.id = "devPanel"; panel.hidden = true; const card = document.createElement("div"); card.className = "card"; panel.appendChild(card); document.body.appendChild(panel);
@@ -5590,7 +5610,7 @@ function devInstall() {
     card.innerHTML = ""; const el = (t, txt, cls) => { const e = document.createElement(t); if (txt != null) e.textContent = txt; if (cls) e.className = cls; return e; };
     const section = (title) => { card.appendChild(el("h3", title)); const g = el("div", null, "grid"); card.appendChild(g); return g; };
     const button = (parent, label, fn, cls) => { const b = el("button", label, cls); b.onclick = () => { fn(); build(); mark(); }; parent.appendChild(b); return b; };
-    card.appendChild(el("p", S.phase === "play" ? `Night ${S.night} · ${S.shown} of ${S.target} signal · ${S.words} words · ${S.retunes} retunes` : `(${S.phase})`, "muted"));
+    card.appendChild(el("p", S.phase === "play" ? `Night ${S.night} · ${S.shown} of ${S.target} signal · ${S.words} word${S.words === 1 ? "" : "s"} · ${S.retunes} retune${S.retunes === 1 ? "" : "s"}` : `(${S.phase})`, "muted"));
     const fit = section("Fit a part (works this night)"); PARTS.forEach(p => button(fit, p.name, () => { devPlay(); devFit(p.id); }));
     const out = section("Take out"); partSlots().forEach(s => button(out, PART[s.id].name + (s.n > 1 ? " x" + s.n : ""), () => devTakeOut(s.id), "out"));
     if (!S.parts.length) out.appendChild(el("p", "nothing fitted", "muted"));
@@ -5606,7 +5626,7 @@ function devInstall() {
     mark(); };
   btn.onclick = () => DEV.openPanel();
   panel.addEventListener("click", (e) => { if (e.target === panel) DEV.close(); });
-  setInterval(() => { if (DEV.inf && S && S.phase === "play") { S.words = Math.max(S.words, maxWords()); S.retunes = Math.max(S.retunes, maxRetunes()); } const m = card.querySelector(".muted"); if (DEV.open && m) m.textContent = S.phase === "play" ? `Night ${S.night} · ${S.shown} of ${S.target} signal · ${S.words} words · ${S.retunes} retunes` : `(${S.phase})`; }, 250);
+  setInterval(() => { if (DEV.inf && S && S.phase === "play") { S.words = Math.max(S.words, maxWords()); S.retunes = Math.max(S.retunes, maxRetunes()); } const m = card.querySelector(".muted"); if (DEV.open && m) m.textContent = S.phase === "play" ? `Night ${S.night} · ${S.shown} of ${S.target} signal · ${S.words} word${S.words === 1 ? "" : "s"} · ${S.retunes} retune${S.retunes === 1 ? "" : "s"}` : `(${S.phase})`; }, 250);
 }
 // the game's buttons go to the panel while it's open; every press also feeds the secret combo
 function devKey(k) { if (DEV.open) { DEV.nav(k); return true; } devNote(k); return false; }
