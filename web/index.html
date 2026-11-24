@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 272;</script><script>
+<script>window.LEX_BUILD = 273;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -4259,7 +4259,8 @@ function lfLay(b, w, add, items, lh, gh, kh) { const k = b[0], row = () => items
   if (k === "lfall") { const y0 = add.y(), r0 = row(), h = lh + 30; items.push({ y: y0, h, x: 0, w, row: r0, go: () => { MAN.sec = -2; MAN.sel = 0; MAN.y = MAN.ty = 0; MAN.cache = null; MAN.selL = null; Sound.paper(); } });
     const idx = items.length - 1;
     add(h, (X, Y) => { const on = MAN.fsel === idx; ctx.strokeStyle = on ? MP.red : MP.rule; ctx.lineWidth = 2; ctx.strokeRect(X + 1, Y + 1, w - 2, h - 2); if (on) lfSel(X, Y, w, h);
-      ftext("THE FULL LOGBOOK: ALL " + LOG_SECS.length + " ENTRIES, EVERY WORD AND CHART", X + 18, Y + 15, BK, on ? MP.red : MP.ink, "l"); ftext(">", X + w - 18, Y + 15, BK, MP.red, "r");
+      const room = w - 36 - textW(">", BK) - 20, lab = ["THE FULL LOGBOOK: ALL " + LOG_SECS.length + " ENTRIES, EVERY WORD AND CHART", "THE FULL LOGBOOK: ALL " + LOG_SECS.length + " ENTRIES", "THE FULL LOGBOOK"].find(t => textW(t, BK) <= room) || "FULL LOGBOOK";   /* (the longest that fits: it ran off a phone, Chris 2026-11-24) */
+      ftext(lab, X + 18, Y + 15, BK, on ? MP.red : MP.ink, "l"); ftext(">", X + w - 18, Y + 15, BK, MP.red, "r");
       MAN.hits.push({ x0: X, x1: X + w, y0: Y, y1: Y + h, go: () => lfGo(idx), scroll: true }); }, 20); return true; }
   return false; }
 const g3H = () => glyphCv(HK, "N", MP.ink).height;
@@ -4472,7 +4473,7 @@ function drawManual() { manSize();
   const fp = MAN.book === "log" && LOGFRONT;
   if (MAN.sec === -2) { ftext(tap ? "< FRONT PAGE" : btn("{B} FRONT PAGE"), X, fy, BK, MP.red, "l"); hit(px, px + pw / 2, () => manKey("b")); ftext(tap ? "TAP A LINE TO OPEN" : btn("{A} OPEN"), X + w, fy, BK, MP.soft, "r"); }
   else if (MAN.sec < 0) {
-    const l = tap ? "< CLOSE" : btn("{B} CLOSE"), r = lfOn() ? (tap ? "TAP A CARD TO OPEN IT" : "PICK A CARD, " + btn("{A} TO OPEN")) : tap ? "TAP A LINE TO OPEN" : btn("{A} OPEN");
+    const l = tap ? "< CLOSE" : btn("{B} CLOSE"), r = lfOn() ? (tap ? "TAP ONE TO OPEN IT" : btn("{A} OPEN")) : tap ? "TAP A LINE TO OPEN" : btn("{A} OPEN");
     ftext(l, X, fy, BK, MP.red, "l"); hit(px, px + pw / 3, manClose); ftext(r, X + w, fy, BK, MP.soft, "r"); }
   else { const bk = fp && MAN.via !== -2 ? "FRONT PAGE" : "CONTENTS"; ftext(tap ? "< " + bk : btn("{B} " + bk), X, fy, BK, MP.red, "l"); hit(px, px + pw / 2, () => manGo(-1)); ftext(tap ? "DRAG TO READ" : "UP / DOWN TO READ", X + w, fy, BK, MP.soft, "r");
   }
