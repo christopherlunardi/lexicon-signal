@@ -773,3 +773,6 @@ the same batch.
   BACK ROOM BLUES, RAIN BOSSA, PALM ROOM, MIDNIGHT SERIAL; new players jOrgan, jPluck, jDrum, jRim, jShaker, jTick, jTheremin.
   A retune that changes station plays Sound.dial() (between-stations static: a narrow band of hiss sweeping, heterodyne whistles,
   crackle, a murmur) instead of the plain retune sound, and the new song starts 1.05 s later (Sound.next(gap)).
+- Stations decided (Chris 2026-11-23, "just simple"): the game has two, ROT = [0, 1] (NIGHT PULSE, LAST CALL TRIO). Every night starts
+  on the first (startNight calls Sound.home()); each retune turns the dial (Sound.dial) to the other, so two retunes come back. r2's
+  four songs (stations 6..9) stay in the code for the Workshop only. A tip and the manual's retune section say so.

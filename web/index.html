@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 260;</script><script>
+<script>window.LEX_BUILD = 261;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -825,7 +825,7 @@ function reqWordOk(W2, p) { const q = S.req;
   if (q.kind === "long") return W2.length >= q.len; if (q.kind === "double") return /(.)\1/.test(W2); if (q.kind === "red") return W2.length >= q.len && p.some(i => S.grid[i].hot);
   if (q.kind === "vowels") return [...W2].filter(c => "AEIOU".includes(c)).length >= q.n; return W2[0] === W2[W2.length - 1]; }
 function newRun() { S = fresh("play"); log("On the air."); plStart(); startNight(); }
-function startNight() {
+function startNight() { Sound.home();   /* (each night starts on the first station: Chris 2026-11-23) */
   S.ending = 0; S.score = 0; S.shown = 0; S.over = false; S.over2 = false; S.picks = 1; S.nw = []; S.startTotal = S.total; S.firstWord = true; S.target = targetFor(S.night); S.words = maxWords(); S.retunes = maxRetunes(); if (/-stn-/.test(location.hash)) S.retunes = Math.max(S.retunes, 5); S.path = [];
   if (S.carry > 0 && !HOW.on) { S.score = Math.min(S.carry, round5(S.target * CARRY_MAX)); log(`Overdrive carried over: ${S.score} already in the tube.`); } S.carry = 0;
   // the ice and the depth of the frost carry over from night to night (Chris 2026-11-16: a reset worked against planning)
@@ -3306,6 +3306,7 @@ const TIPS = [
   "EVERY WORD THAT MISSES THE BLUE KEY FREEZES A KEY AROUND IT. A WORD THROUGH IT PAYS X2, +1 FOR EACH FROZEN KEY",
   "USE A FROZEN KEY WITHOUT THE BLUE KEY AND IT ALL BREAKS: THE BLUE KEY MOVES AND STARTS OVER AT X2",
   "A RETUNE GIVES THE FROZEN KEYS NEW LETTERS BUT KEEPS THE ICE",
+  "A RETUNE ALSO TURNS THE DIAL TO THE OTHER STATION. EACH NIGHT STARTS BACK ON THE FIRST",
   "ON YOUR LAST WORD THE SIGNAL STARTS TO FADE: MAKE IT COUNT",
   "THE BLUE KEY'S ICE KEEPS FROM NIGHT TO NIGHT: SAVE IT UP FOR ONE BIG WORD",
   "ONCE THE BLUE KEY HAS FROZEN ALL IT CAN, EVERY WORD THAT MISSES IT ADDS X1 MORE",
@@ -3965,6 +3966,7 @@ const MAN_SECS = [
   { t: "LAMPS, RETUNES AND BONUSES", b: () => [
     ["h", "RETUNING"],
     ["p", "Once a night you can retune: every letter on the glass is swapped for new ones. It doesn't use a lamp. The small light under the right tuning knob shows you still have it, and each Fine Tuning Knob adds another."],
+    ["p", "A retune also turns the dial to the radio's other station, a slow piano trio; retune again and it comes back. Every night starts on the first station."],
     ["p", "Frozen keys keep their ice through a retune (only their letters change), and the blue key stays where it is."],
     ["h", "LEFTOVERS PAY"],
     ["p", "When a night clears, what you didn't need pays into your run score:"],
@@ -4959,7 +4961,9 @@ const Sound = (() => {
     // 9: an old radio mystery serial between scenes, E phrygian: an organ chord swelling, a low drum on each change, a clock, a far theremin
     { name: "MIDNIGHT SERIAL", kc: 1350, band: "jazz", bpm: 60, prog: SERIAL, shift: -5, alt: [0, 1, 3, 5, 7, 8, 10], bass: .8, lp: 2600, wet: .45, level: 1.15, seed: 61, groove: "serial" },
   );
-  let ROT = [0], cur = null;
+  // (Chris 2026-11-23: the game has two: NIGHT PULSE, and LAST CALL TRIO, picked for its noir feel. Each night starts on the first; a
+  // retune turns the dial to the other, so two retunes come back. The other stations stay for the Workshop and #...-stn- tests.)
+  let ROT = [0, 1], cur = null;
   { const m = location.hash.match(/-stn((?:-\d+)+)/); if (m) { const l = m[1].split("-").filter(x => x !== "").map(Number).filter(i => i < STATIONS.length); if (l.length) ROT = l; } }
   // a note (midi) moved into the station on now: its key, and its mode's degree
   function P(m) { const st = cur ? cur.st : STATIONS[ROT[0]]; if (!st.shift && !st.alt) return m; const r = ((m - 69) % 12 + 12) % 12, k = AEOL.indexOf(r); return m + st.shift + (k >= 0 && st.alt ? st.alt[k] - AEOL[k] : 0); }
@@ -5146,6 +5150,7 @@ const Sound = (() => {
     // stations: the list, the one on, tune one in (with the retune's sweep), and the next in the retune order
     STATIONS, rot: () => ROT, setRot(l) { ROT = l.length ? l : [0]; }, station: () => cur ? cur.i : ROT[0],
     tune(i, gap) { if (!ac || !playing) return STATIONS[i]; return tune(i, true, gap); },
+    home() { if (!ac || !playing || !cur || cur.i === ROT[0]) return; tune(ROT[0], true, .4); },
     next(gap) { const i = cur ? cur.i : ROT[0], k = ROT.indexOf(i), n = ROT[(k + 1) % ROT.length]; return this.tune(n, gap); },
     toggle() { muted = !muted; if (master) master.gain.setTargetAtTime(muted ? 0 : .8, ac.currentTime, .05); log(muted ? "Sound off." : "Sound on."); },
     setStatic(l) {},   // (the constant static hiss is gone, Chris 2026-11-12: static is only a sound effect now; the rain is the room's sound)
