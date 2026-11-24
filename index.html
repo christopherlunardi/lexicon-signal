@@ -3819,7 +3819,8 @@ function reloadBuild() { try { if (window.LEX_RELOAD) window.LEX_RELOAD(); else 
 function maybeReload() { if (buildReady) reloadBuild(); }
 // after a lost run, A goes back to the title menu, not straight into a new run (Chris 2026-11-16)
 function overToTitle() { howExit(); titleSel = 0; }
-function howExit() { HOW.on = false; S = fresh("title"); fillGrid(false); S.grid.forEach(t => t.ch = " "); "LEXICONSIGNAL".split("").forEach((ch, k) => { S.grid[H5([0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13][k])].ch = ch; });
+function howExit() { HOW.on = false; Sound.home(); S = fresh("title");   /* (back to the title: the original song again, Chris 2026-11-23) */
+  fillGrid(false); S.grid.forEach(t => t.ch = " "); "LEXICONSIGNAL".split("").forEach((ch, k) => { S.grid[H5([0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13][k])].ch = ch; });
   titleT = 0; titleSkip = true; titleSel = 1; TSUB.on = false; flyers = []; beams = []; busy = 0; pending = null; Sound.click(); }
 function howKey(k) { if (!HOW.on) return false;
   if (k === "a" || k === "right") { if (HOW.card < HOW_CARDS.length - 1) howGo(HOW.card + 1); else howExit(); }
@@ -4060,6 +4061,7 @@ const LOG_SECS = [
       ["p", "Your best ten runs on this device, by run score: every bit of signal you beamed plus each night's leftover bonus."]]; } },
   { t: "YOUR PERSONALITY", b: () => { const st = bookStats(); if (!st.sends) return bookEmpty();
     if (!st.main) return [["p", "The tower can't read you yet."], ["note", `Send ${TYPE_MIN - st.sends} more word${TYPE_MIN - st.sends === 1 ? "" : "s"} and the logbook will tell you what kind of broadcaster you are.`]];
+    if (PERS) return persBlocks(st);
     const out = [["ptype", st.main]];
     if (st.streak) out.push(["ptype", st.streak, "WITH A STREAK OF"]);
     if (st.main !== "easy") out.push(["h", "THE WORDS THAT DID IT"], ["wgrid", st.eg[st.main].slice(0, 16).map(([w, n]) => [w, "x" + n])]);
@@ -4107,8 +4109,9 @@ const BOOK_DEMO = /bookdemo/.test(location.hash);
 function bookDemo() { let a = 7; const R = () => { a = (a * 16807) % 2147483647; return a / 2147483647; };
   const L = (LEXG[0] || []).concat(LEXG[1] || []), pick = (arr) => arr[Math.floor(R() * arr.length)], w = {};
   const doom = [...(KINDS.doomer || [])].filter(x => x.length >= 3), add = (x, n) => { const e = w[x] || (w[x] = [0, 0, Date.now() - 864e5 * 9, null]); e[0] += n; e[1] = Math.max(e[1], Math.round((x.length * x.length * 3 + R() * 40) * (1 + R() * 3))); };
-  for (let i = 0; i < 420 && L.length; i++) { const x = pick(L); if (x.length <= 8) add(x, 1 + Math.floor(R() * R() * 6)); }
-  for (let i = 0; i < 26 && doom.length; i++) add(pick(doom), 1 + Math.floor(R() * 4));
+  for (let i = 0; i < 1400 && L.length; i++) { const x = pick(L); if (x.length <= (R() < .85 ? 5 : 8)) add(x, 1 + Math.floor(R() * R() * 4)); }
+  const odd = (LEXG[4] || []).filter(x => x.length <= 5); for (let i = 0; i < 60 && odd.length; i++) add(pick(odd), 1);
+  for (let i = 0; i < 16 && doom.length; i++) add(pick(doom), 1 + Math.floor(R() * 2));
   add("quixotic", 1); w.quixotic[1] = 2470; add("coquina", 2); w.coquina[1] = 1512; add("eardrum", 1); w.eardrum[1] = 1530;
   w.eardrum[3] = { s: 17, l: 5, m: 18, f: 0, r: [["LETTERS + BASE 2", "+12"], ["LENGTH: 7 LETTERS", "x5"], ["TREBLE SLIDER", "+5 SIGNAL"], ["RED KEY", "x3"], ["BLUE KEY", "x6"]] };
   const parts = Object.keys(PART), runs = [];
@@ -4217,6 +4220,53 @@ function lfNav(k) { const its = (MAN.cache && MAN.cache.items) || [], cur = its[
   cand.sort((a, b) => Math.abs(cx(a[0]) - cx(cur)) - Math.abs(cx(b[0]) - cx(cur))); MAN.fsel = cand[0][1]; Sound.tickMove(); }
 
 if (BOOK_DEMO) bookDemo();
+/* ---- the personality page (Workshop "pers", 2026-11-23, Chris: show only your type and WHY, more clearly, and nicer to look at; he was
+   puzzled to be a Doomer with 60 Tile Shark words). Every option says it in words: how often you send that kind of word against how
+   often an ordinary player does (the lift), and why the kind you send most isn't always your type. PERS: 0 as before (bars and every
+   type); 1 You vs everyone (two bars a kind); 2 Meters (a needle gauge a kind, ordinary marked); 3 More or less (bars out from an
+   "ordinary player" line, right for more, left for less). #pers-N. ---- */
+let PERS = 0; { const m = location.hash.match(/pers-(\d)/); if (m) PERS = Math.min(3, +m[1]); }
+const oneIn = (share) => share > 0 ? "1 IN " + fmtNum(Math.max(1, Math.round(1 / share))) : "NONE";
+const xLift = (l) => "x" + (l >= 10 ? Math.round(l) : (Math.round(l * 10) / 10).toFixed(1));
+function persBlocks(st) { const m = st.main, kinds = st.order.filter(k => (st.cnt[k] || 0) > 0), out = [["ptype", m]];
+  if (st.streak) out.push(["ptype", st.streak, "WITH A STREAK OF"]);
+  const row = (k) => ({ k, n: PTYPES[k].n, c: st.cnt[k] || 0, you: (st.cnt[k] || 0) / st.sends, ord: PTYPES[k].base, lift: st.lift[k], hot: k === m, streak: k === st.streak });
+  if (m === "easy") out.push(["h", "WHY"], ["p", `No kind of word stands out yet: to be a type, you have to send a kind of word at least ${xLift(1.15)} as often as an ordinary player does. You're close to ordinary on all of them, so you're Easy Listening for now.`]);
+  else { const r = row(m); out.push(["h", "WHY " + r.n], ["p", `An ordinary player sends ${r.n} words about ${oneIn(r.ord)}. You send ${oneIn(r.you)}: ${xLift(r.lift)} as often. No other kind of word stands out that much, so that's your type.`]); }
+  const vis = kinds.slice(0, PERS === 3 ? 7 : PERS === 2 ? 4 : 5).map(row);
+  if (vis.length) out.push(["h", PERS === 3 ? "MORE OR LESS THAN AN ORDINARY PLAYER" : "YOU AGAINST AN ORDINARY PLAYER"], [PERS === 1 ? "lfvs" : PERS === 2 ? "lfmeter" : "lfdiv", vis]);
+  const most = kinds.slice().sort((a, b) => (st.cnt[b] || 0) - (st.cnt[a] || 0))[0];
+  if (most && most !== m) { const r = row(most); out.push(["note", `You sent more ${r.n} words (${fmtNum(r.c)}) than any other kind. But everybody sends lots of those: about ${oneIn(r.ord)} for an ordinary player, ${oneIn(r.you)} for you. That's ${xLift(r.lift)}, ${r.lift >= 1.15 ? (r.streak ? "your streak" : "a lean") : "about normal"}, not your type: your type is the kind you send most out of the ordinary, not the most of.`]); }
+  if (m !== "easy" && st.eg[m]) out.push(["h", "THE WORDS THAT DID IT"], ["wgrid", st.eg[m].slice(0, 16).map(([w, n]) => [w, "x" + n])]);
+  out.push(["p", "Your type changes as your library grows. It's worked out from every word you've ever sent."]); return out; }
+// the pictures
+function persLay(b, w, add, lh, gh, kh) { const k = b[0], rows = b[1];
+  if (k === "lfvs") { const lw = Math.min(Math.round(w * .34), Math.max(...rows.map(r => textW(r.n, BK))) + 20), tw = textW("x00.0", "ink3") + 16, rh = lh * 2 + 18, bw = w - lw - tw - textW("00.0%", BK) - 30, mx = Math.max(...rows.map(r => Math.max(r.you, r.ord)));
+    add(rows.length * rh + lh + 6, (X, Y) => { ctx.fillStyle = MP.red; ctx.fillRect(X + lw, Y + 2, 14, gh - 4); ftext("YOU", X + lw + 22, Y, BK, MP.red, "l"); const ox = X + lw + 22 + textW("YOU", BK) + 30; ctx.strokeStyle = MP.soft; ctx.lineWidth = 1; ctx.strokeRect(ox + .5, Y + 2.5, 14, gh - 4); ftext("AN ORDINARY PLAYER", ox + 22, Y, BK, MP.soft, "l"); if (ox + 22 + textW("AN ORDINARY PLAYER", BK) + 30 + textW("HOW MUCH MORE", BK) < X + w) ftext("HOW MUCH MORE", X + w, Y, BK, MP.soft, "r");
+      rows.forEach((r, i) => { const y = Y + lh + 6 + i * rh, c = r.hot ? MP.red : MP.ink; ftext(r.n, X, y + Math.round(lh * .55), BK, c, "l");
+        const a = Math.max(3, Math.round(bw * r.you / mx)), o = Math.max(3, Math.round(bw * r.ord / mx));
+        ctx.fillStyle = c; ctx.globalAlpha = r.hot ? .9 : .7; ctx.fillRect(X + lw, y + 2, a, gh); ctx.globalAlpha = 1; ftext((r.you * 100).toFixed(1) + "%", X + lw + a + 8, y + 2, BK, c, "l");
+        ctx.save(); ctx.beginPath(); ctx.rect(X + lw, y + lh + 4, o, gh); ctx.clip(); ctx.strokeStyle = MP.soft; ctx.lineWidth = 2; for (let d = -gh; d < o; d += 7) { ctx.beginPath(); ctx.moveTo(X + lw + d, y + lh + 4 + gh); ctx.lineTo(X + lw + d + gh, y + lh + 4); ctx.stroke(); } ctx.restore();
+        ctx.strokeStyle = MP.soft; ctx.lineWidth = 1; ctx.strokeRect(X + lw + .5, y + lh + 4.5, o, gh); ftext((r.ord * 100).toFixed(1) + "%", X + lw + o + 8, y + lh + 4, BK, MP.soft, "l");
+        ftext(xLift(r.lift), X + w, y + Math.round(lh * .55), r.hot ? "ink3" : BK, r.lift >= 1.15 ? MP.red : MP.soft, "r"); ctx.fillStyle = MP.faint; ctx.fillRect(X, y + rh - 6, w, 1); }); }); return true; }
+  if (k === "lfmeter") { const cols = w >= 900 && BK === "ink" ? 4 : 2, cw = Math.floor(w / cols), R = Math.min(cw * .38, 110 * TK), gh2 = R + lh * 5 + 34, nr = Math.ceil(rows.length / cols);
+    add(nr * gh2, (X, Y) => rows.forEach((r, i) => { const cx = X + (i % cols) * cw + cw / 2, cy = Y + Math.floor(i / cols) * gh2 + R + lh + 14, ang = (v) => Math.PI + Math.PI * (Math.max(-2, Math.min(3, Math.log2(Math.max(.01, v)))) + 2) / 5;
+      ctx.lineWidth = 2; ctx.strokeStyle = MP.rule; ctx.beginPath(); ctx.arc(cx, cy, R, Math.PI, 2 * Math.PI); ctx.stroke();
+      ctx.strokeStyle = "rgba(163,48,28,.35)"; ctx.lineWidth = Math.round(R * .14); ctx.beginPath(); ctx.arc(cx, cy, R - ctx.lineWidth / 2 - 2, ang(1.15), 2 * Math.PI); ctx.stroke();
+      ctx.lineWidth = 2; for (const v of [.25, .5, 1, 2, 4, 8]) { const a = ang(v), l = v === 1 ? .3 : .14; ctx.strokeStyle = v === 1 ? MP.ink : MP.soft; ctx.lineWidth = v === 1 ? 3 : 2; ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * R, cy + Math.sin(a) * R); ctx.lineTo(cx + Math.cos(a) * R * (1 - l), cy + Math.sin(a) * R * (1 - l)); ctx.stroke(); }
+      const a1 = ang(1); ftext("ORDINARY", cx + Math.cos(a1) * (R + 8), cy + Math.sin(a1) * (R + 8) - gh, "ink", MP.ink, "c"); ftext("LESS", cx - R, cy + 6, "ink", MP.soft, "c"); ftext("MORE", cx + R, cy + 6, "ink", MP.red, "c");
+      const an = ang(r.lift); ctx.strokeStyle = r.hot ? MP.red : MP.ink; ctx.lineWidth = 4; ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(an) * R * .92, cy + Math.sin(an) * R * .92); ctx.stroke();
+      ctx.fillStyle = MP.ink; ctx.beginPath(); ctx.arc(cx, cy, 7, 0, 6.283); ctx.fill();
+      ftext(r.n, cx, cy + 14 + lh, BK, r.hot ? MP.red : MP.ink, "c"); ftext(xLift(r.lift), cx, cy + 14 + lh * 2, BK, r.lift >= 1.15 ? MP.red : MP.soft, "c"); ftext("YOU " + oneIn(r.you).replace("1 IN ", "1/") + "  MOST " + oneIn(r.ord).replace("1 IN ", "1/"), cx, cy + 14 + lh * 3, BK, MP.soft, "c"); })); return true; }
+  if (k === "lfdiv") { const lw = Math.min(Math.round(w * .3), Math.max(...rows.map(r => textW(r.n, BK))) + 20), rh = lh + 16, x0 = lw + Math.round((w - lw) / 2), half = Math.round((w - lw) / 2) - 10, MX = Math.log2(4);
+    const cap = wrap("THE LINE IS AN ORDINARY PLAYER  (X2 = TWICE AS OFTEN, X0.5 = HALF)", BK, w);
+    add(rows.length * rh + lh * (1 + cap.length) + 10, (X, Y) => { const cx = X + x0; ftext("LESS", cx - 12, Y, BK, MP.soft, "r"); ftext("MORE", cx + 12, Y, BK, MP.red, "l");
+      ctx.fillStyle = MP.ink; ctx.fillRect(cx - 1, Y + lh, 3, rows.length * rh + 6);
+      rows.forEach((r, i) => { const y = Y + lh + 6 + i * rh, lab = r.lift > 0 ? xLift(r.lift) : "NONE", v = Math.max(-1, Math.min(1, Math.log2(Math.max(.05, r.lift)) / MX)), L = Math.round(Math.abs(v) * (half - textW(lab, BK) - 16)), c = r.hot ? MP.red : r.lift >= 1 ? MP.ink : MP.soft;
+        ftext(r.n, X, y + 6, BK, r.hot ? MP.red : MP.ink, "l"); ctx.fillStyle = c; ctx.globalAlpha = r.hot ? .9 : .65; ctx.fillRect(v >= 0 ? cx + 2 : cx - L, y + 6, Math.max(3, L), gh); ctx.globalAlpha = 1;
+        ftext(lab, v >= 0 ? cx + L + 12 : cx - L - 12, y + 6, BK, c, v >= 0 ? "l" : "r"); ctx.fillStyle = MP.faint; ctx.fillRect(X, y + rh - 3, w, 1); });
+      cap.forEach((l, j) => ftext(l, X + w / 2, Y + lh + 10 + rows.length * rh + j * lh, BK, MP.soft, "c")); }); return true; }
+  return false; }
 const manTitle = (i) => { const t = bookSecs()[i].t; return typeof t === "function" ? t() : t; };
 function manOpen(from, book, sec) { MAN.on = true; MAN.from = from || "title"; MAN.book = book || "manual"; MAN.sec = sec ?? -1; MAN.sel = Math.max(0, sec ?? 0); MAN.y = MAN.ty = 0; MAN.cache = null; MAN.selL = null; MAN.fsel = 0; MAN.via = null; Sound.paper(); }
 function manClose() { MAN.on = false; MAN.drag = null; Sound.click(); if (MAN.from === "pause") PAUSE.on = true; if (MAN.from === "title" && S.phase === "title") titleSel = Math.max(0, TITLE_MENU.indexOf(MAN.book === "log" ? "LOGBOOK" : "HOW TO PLAY")); }
@@ -4243,11 +4293,11 @@ function manUp() { const d = MAN.drag; MAN.drag = null; if (!d || d.moved) retur
 function manBlocks() { if (MAN.sec >= 0) return [["sec", MAN.sec], ...bookSecs()[MAN.sec].b()];
   if (lfOn()) return lfBlocks();
   return [[MAN.book === "log" ? "logcover" : "cover"], ["toc"]]; }
-function manLayout(w) { const key = MAN.book + "|" + LOGFRONT + "|" + bookVer + "|" + MAN.sec + "|" + BK + "|" + MAN.view + "|" + w + "|" + TK + "|" + TF_READY + "|" + TAPW() + "|" + manReq() + "|" + (S.parts || []).join(); if (MAN.cache && MAN.cache.key === key) return MAN.cache;
+function manLayout(w) { const key = MAN.book + "|" + LOGFRONT + "|" + PERS + "|" + bookVer + "|" + MAN.sec + "|" + BK + "|" + MAN.view + "|" + w + "|" + TK + "|" + TF_READY + "|" + TAPW() + "|" + manReq() + "|" + (S.parts || []).join(); if (MAN.cache && MAN.cache.key === key) return MAN.cache;
   const lh = MLH(), gh = glyphCv(BK, "N", MP.ink).height, g3 = glyphCv(HK, "N", MP.ink).height, kh = glyphCv("key", "N", MP.ink).height, ops = []; let y = 0;
   const add = (h, draw, gap) => { ops.push({ y, h, draw }); y += h + (gap ?? Math.round(14 * TK)); }; add.y = () => y; const items = [];
   const para = (lines, x0, y0, col) => lines.forEach((s, i) => ftext(s, x0, y0 + i * lh, BK, col || MP.ink, "l"));
-  for (const b of manBlocks()) { const k = b[0]; if (k.startsWith("lf") && lfLay(b, w, add, items, lh, gh, kh)) continue;
+  for (const b of manBlocks()) { const k = b[0]; if (k.startsWith("lf") && (lfLay(b, w, add, items, lh, gh, kh) || persLay(b, w, add, lh, gh, kh))) continue;
     if (k === "cover") { const f0 = Math.round(150 * TK), fig = MAN.view && lh * 4 + 38 + kh * 2 + 30 + f0 + 30 + g3 + 20 + 3 * Math.max(lh + 16, Math.round(34 * TK)) > MAN.view ? 0 : f0;   // (no drawing where the page is short, so the contents start in view)
       add(lh + 8 + kh * 2 + 30 + lh * 2 + (fig ? 20 + fig + lh + 10 : 0), (X, Y) => { const cx = X + w / 2;
         ftext("MODEL LS-5  NIGHT RECEIVER", cx, Y, BK, MP.red, "c");
@@ -5093,7 +5143,8 @@ const Sound = (() => {
     { name: "MIDNIGHT SERIAL", kc: 1350, band: "jazz", bpm: 60, prog: SERIAL, shift: -5, alt: [0, 1, 3, 5, 7, 8, 10], bass: .8, lp: 2600, wet: .45, level: 1.15, seed: 61, groove: "serial" },
   );
   // (Chris 2026-11-23: the game has two: NIGHT PULSE, and LAST CALL TRIO, picked for its noir feel. Each night starts on the first; a
-  // retune turns the dial to the other, so two retunes come back. The other stations stay for the Workshop and #...-stn- tests.)
+  // retune turns the dial to the next, so two retunes come back. ROT[0] is always the original song: a new night, a new run and going
+  // back to the title all tune back to it (Sound.home), however many songs are added later. The other stations stay for the Workshop and #...-stn- tests.)
   let ROT = [0, 1], cur = null;
   { const m = location.hash.match(/-stn((?:-\d+)+)/); if (m) { const l = m[1].split("-").filter(x => x !== "").map(Number).filter(i => i < STATIONS.length); if (l.length) ROT = l; } }
   // a note (midi) moved into the station on now: its key, and its mode's degree

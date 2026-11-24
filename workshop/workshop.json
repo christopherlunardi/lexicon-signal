@@ -1,6 +1,110 @@
 {
  "topics": [
   {
+   "id": "pers",
+   "title": "Personality page",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "date": "2026-11-23",
+     "question": "How should the personality page show your type and why?",
+     "found": "All three drop the list of every type and keep your type (and streak) up top. Then WHY, in plain words: how often an ordinary player sends that kind of word, how often you do, and how many times as often that is. Then a picture of the same thing for your other kinds, and a note about the kind you sent the most of if it isn't your type: it's the Tile Shark puzzle, everyone sends lots of those, so 60 of them is only a little more than normal (x1.6), while Doomer words are rare enough that a couple dozen makes you x4.4. Then the words that did it. The pictures use a made-up logbook built to look like yours (a Doomer with 60 Tile Shark words).",
+     "options": [
+      {
+       "id": "0",
+       "title": "As now",
+       "note": "For comparison: the bars and the list of every type.",
+       "images": [
+        {
+         "src": "img/pers-r1/0w-0.jpg",
+         "label": "Top"
+        },
+        {
+         "src": "img/pers-r1/0w-1.jpg",
+         "label": "Lower"
+        }
+       ],
+       "play": "play.html#title-bookdemo"
+      },
+      {
+       "id": "1",
+       "title": "You vs everyone",
+       "note": "Each kind you send gets two bars: you (solid) and an ordinary player (hatched), as a share of all your words, with how many times as often on the right. You can see at a glance that Tile Shark is a big share for everyone.",
+       "images": [
+        {
+         "src": "img/pers-r1/1w-0.jpg",
+         "label": "Top"
+        },
+        {
+         "src": "img/pers-r1/1w-1.jpg",
+         "label": "The why"
+        },
+        {
+         "src": "img/pers-r1/1s-2.jpg",
+         "label": "2S"
+        },
+        {
+         "src": "img/pers-r1/1p-2.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#title-bookdemo-pers-1"
+      },
+      {
+       "id": "2",
+       "title": "Meters",
+       "note": "A needle gauge for each of your top four kinds, like the radio's own meters: ORDINARY is marked, the red zone is where a kind stands out, and the needle shows where you are (it goes up to 8 times as often). Under each: you 1 in N against most players 1 in N.",
+       "images": [
+        {
+         "src": "img/pers-r1/2w-0.jpg",
+         "label": "Top"
+        },
+        {
+         "src": "img/pers-r1/2w-1.jpg",
+         "label": "The why"
+        },
+        {
+         "src": "img/pers-r1/2s-2.jpg",
+         "label": "2S"
+        },
+        {
+         "src": "img/pers-r1/2p-2.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#title-bookdemo-pers-2"
+      },
+      {
+       "id": "3",
+       "title": "More or less",
+       "note": "One chart: a line down the middle is an ordinary player, each kind's bar goes right if you send it more and left if less, with x2 / x0.5 on the end. Shows every kind you've sent, so you also see what you avoid.",
+       "images": [
+        {
+         "src": "img/pers-r1/3w-0.jpg",
+         "label": "Top"
+        },
+        {
+         "src": "img/pers-r1/3w-1.jpg",
+         "label": "The why"
+        },
+        {
+         "src": "img/pers-r1/3s-2.jpg",
+         "label": "2S"
+        },
+        {
+         "src": "img/pers-r1/3p-2.jpg",
+         "label": "Phone"
+        }
+       ],
+       "play": "play.html#title-bookdemo-pers-3"
+      }
+     ],
+     "chosen": null
+    }
+   ]
+  },
+  {
    "id": "logfront",
    "title": "Logbook front page",
    "rounds": [

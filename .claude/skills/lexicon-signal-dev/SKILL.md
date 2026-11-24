@@ -785,3 +785,8 @@ the same batch.
 - Every release: after pushing, check the GitHub site really deployed (`gh run list --workflow pages.yml -L 1`, wait with
   `gh run watch <id> --exit-status`); if it failed, `gh run rerun <id>`. On 2026-11-23 three deploys failed silently ("No artifacts
   named github-pages"), so the Retroid app sat on build 260 while the phone link had 262. pages.yml now retries the deploy once.
+- 2026-11-23 (Chris): the song goes back to the original (ROT[0], Sound.home) on a new night, a new run and going back to the title
+  (howExit), whatever is added later. Workshop "pers" r1 (open): the personality page without the list of every type, with a WHY in
+  words (1 in N against an ordinary player, xLift) and a picture: PERS 1 you vs everyone bars, 2 needle meters (log scale), 3 more or
+  less bars from an ordinary-player line (#pers-N; 0 = as before, the default until he picks); a note explains the kind sent most if
+  it isn't the type (his Tile Shark puzzle). bookdemo now looks like his logbook (a Doomer with 60 Tile Shark words).
