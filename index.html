@@ -4027,7 +4027,7 @@ const MAN_SECS = [
   { t: "THE END OF A RUN", b: () => [
     ["p", "Your run score, in the bottom left corner, is every bit of signal you beamed plus every night's leftover bonus."],
     ["p", "When the lamps go dark before the tube is full, the radio powers down and the run ends. The sign-off log shows how the run went and the parts and keys you had (x2 for copies, LV for key levels). From there you can start again, go back to the title, or open the logbook."],
-    ["p", "Your best ten runs on this device are kept in the LOGBOOK on the title menu, with every word you've ever sent, charts of your runs, and what kind of broadcaster your words say you are."],
+    ["p", "Your best ten runs on this device are kept in the LOGBOOK on the title menu, with every word you've ever sent, charts of your runs, and what kind of broadcaster your words say you are. It opens on your top runs and cards of your best numbers: open a card for the whole story, or the full logbook at the bottom for everything."],
     ["note", "Every run builds a different radio. Try parts you've never fitted, and banish the ones that don't suit you."]] },
 ];
 /* ---- the Station Logbook (Chris 2026-11-23): the title menu's LOGBOOK (it took HIGH SCORES' place; the top ten is page 2) and the
@@ -4805,8 +4805,8 @@ function crtCollapse(p, t) { const cv0 = ctx.canvas, w = cv0.width, h = cv0.heig
 // the game over screen: the run's numbers, then NEW RUN or MAIN MENU (nothing takes a press until the numbers are in)
 const OVER_READY = 60;
 function overStats() { return [["NIGHTS CLEARED", String(S.night - 1)], ["WORDS SENT", String(S.sent || 0)], ["BEST WORD", S.best.word ? `${S.best.word.toUpperCase()} +${fmtNum(S.best.pts)}` : "-"], ["LONGEST WORD", S.longest ? S.longest.toUpperCase() : "-"]]; }
-// NEW RUN, LOGBOOK (opens on its top ten page; back closes it) or MAIN MENU (Chris 2026-11-18: the board from here too; 2026-11-23 the logbook)
-function overChoose() { if (overT2 < OVER_READY) { overT2 = OVER_READY; return; } if (overSel === 1) return manOpen("over", "log", 1); beaconKill = 0; if (overSel === 0) start(); else overToTitle(); }
+// NEW RUN, LOGBOOK (opens on its front page like everywhere else, Chris 2026-11-23) or MAIN MENU (Chris 2026-11-18: the board from here too; 2026-11-23 the logbook)
+function overChoose() { if (overT2 < OVER_READY) { overT2 = OVER_READY; return; } if (overSel === 1) return manOpen("over", "log"); beaconKill = 0; if (overSel === 0) start(); else overToTitle(); }
 function overButtons(cx, y) { const labs = ["NEW RUN", "LOGBOOK", "MAIN MENU"], gap = 10, bw = Math.min(110, Math.floor((W - 24 - gap * 2) / 3)), bh = 22, x0 = Math.round(cx - (bw * 3 + gap * 2) / 2), ready = overT2 >= OVER_READY;
   OVERUI = labs.map((lab, i) => { const b = { x: x0 + i * (bw + gap), y, w: bw, h: bh }, on = ready && overSel === i;
     ctx.save(); if (!ready) ctx.globalAlpha = .4;

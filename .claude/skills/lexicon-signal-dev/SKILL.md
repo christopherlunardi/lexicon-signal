@@ -743,7 +743,7 @@ the same batch.
 - 2026-11-23 (Chris): the pause menu's SOUND line became MUSIC and EFFECTS level rows (0..10 each, 10 = the standard mix, saved in lexsig.vol; the rain follows MUSIC). Left/right step, A switches off and back, a tap on the pips sets the level. M still mutes everything. Fixed: the Service Manual opened from pause didn't take up/down (move() asked pauseKey before manKey).
 - 2026-11-23 (Chris): planned, not built yet: a Station Logbook in place of HIGH SCORES (records, a word library that never trims, charts, a personality type from the kinds of words sent). Type names so far: Edgelord (swears, crude words, slurs), Too Much Computer (internet slang, said-as-a-word acronyms), Tile Shark (weird legal short words), Wordcel (long fancy words; name 'for now'), Doomer (dark words), Short Wave (mostly 3-letter words), Long Haul (7+ letters), Romantic, Gourmand (food). Dead Air was cut.
 - 2026-11-23 (Chris): the Station Logbook is built. Title menu LOGBOOK (took HIGH SCORES' place) and the sign-off screen's LOGBOOK
-  button (opens on the top ten); dev panel LOGBOOK. It is the Service Manual's book engine with MAN.book = "log" (bookSecs() picks
+  button (opens on the front page, like every way in: Chris 2026-11-23); dev panel LOGBOOK. It is the Service Manual's book engine with MAN.book = "log" (bookSecs() picks
   LOG_SECS or MAN_SECS; manOpen(from, book, sec)). Data: lexsig.book (never trimmed: every word's sends / best / first sent, a line
   per run, time on the air), filled by bookSync from plSave; the play log's runs are caught up on start (fills it the first time,
   closes runs left halfway). #test- pages don't write to it, except #test-book... pages. Pages: records, top ten, personality, most
