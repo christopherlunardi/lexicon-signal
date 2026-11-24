@@ -729,7 +729,7 @@ function plShare() { let txt = "[]"; try { txt = JSON.stringify(JSON.parse(local
 const BOOK_OFF = /^#test-(?!book)/.test(location.hash);   // (#test-book... pages do write, to test the logbook)
 let BOOK = { v: 1, w: {}, runs: [], cnt: {}, secs: 0 }, bookVer = 0;
 try { const b = JSON.parse(localStorage.getItem("lexsig.book") || "null"); if (b && b.v === 1 && b.w && Array.isArray(b.runs)) BOOK = Object.assign({ cnt: {}, secs: 0 }, b); } catch (e) {}
-function bookSave() { bookVer++; if (BOOK_OFF) return; try { localStorage.setItem("lexsig.book", JSON.stringify(BOOK)); } catch (e) {} }
+function bookSave() { bookVer++; if (BOOK_OFF || BOOK_DEMO) return; try { localStorage.setItem("lexsig.book", JSON.stringify(BOOK)); } catch (e) {} }
 function bookSync(r, done) { if (!r || !r.id || BOOK_OFF) return; const ws = r.words || [], c = BOOK.cnt[r.id] || 0; let ch = false;
   for (const x of ws.slice(c)) { const w = String(x.w || "").toLowerCase(); if (!/^[a-z]{3,16}$/.test(w)) continue; const e = BOOK.w[w];
     const br = x.br || { old: [x.b || 0, x.m || 1, x.red ? 1 : 0, x.gold ? 1 : 0, x.tap || 0, x.req ? 1 : 0] };   // (runs from before the breakdown was kept: the play log's own numbers)
@@ -3908,7 +3908,7 @@ function howText(t) { return btn(t.replace(/\[\[([^|\]]*)\|?([^\]]*)\]\]/g, (m, 
 // bigger print where the screen is small (a phone in the handheld shell, the Retroid): the body in the stamped size, heads in key letters
 let BK = "ink", HK = "ink3"; const MLH = () => Math.round((BK === "ink" ? 22 : 33) * TK);
 function manSize() { const big = (cv.getBoundingClientRect().width || CVW) / CVW < .62; BK = big ? "ink3" : "ink"; HK = big ? "key" : "ink3"; }
-const MAN = { on: false, sec: -1, sel: 0, y: 0, ty: 0, max: 0, from: "title", hits: [], drag: null, cache: null, view: 0, book: "manual" };
+const MAN = { on: false, sec: -1, sel: 0, y: 0, ty: 0, max: 0, from: "title", hits: [], drag: null, cache: null, view: 0, book: "manual", fsel: 0, via: null };
 const bookSecs = () => MAN.book === "log" ? LOG_SECS : MAN_SECS;   // one book engine, two books: the Service Manual and the Station Logbook
 const MP = { paper: "#ebe1c4", edge: "#cdbb8e", ink: "#2a2018", soft: "#6a5844", red: "#a3301c", rule: "rgba(42,32,24,.6)", faint: "rgba(42,32,24,.22)" };
 const manReq = () => hatKnown();
@@ -4094,12 +4094,138 @@ const LOG_SECS = [
     return [["bars", rows.map(([id, e]) => [partName(id), e[0], `${e[0]} RUN${e[0] === 1 ? "" : "S"}, NIGHT ${(e[1] / e[0]).toFixed(1)}`, best && best[0] === id])],
       ["p", "How many of your runs ended with each part fitted, and the night those runs reached on average."], ...(best ? [["note", `Your luckiest part: ${PART[best[0]].name}, with runs that reach night ${(best[1][1] / best[1][0]).toFixed(1)} on average.`]] : [])]; } },
 ];
+/* ---- the Logbook's front page (Workshop "logfront", 2026-11-23, Chris: open on a leaderboard and good-looking cards of your best
+   numbers, each one opening its entry for more, and a way into the whole logbook, the way How to Play leads into the Service Manual).
+   LOGFRONT: 0 = no front page (the cover and contents, as now); 1 Ledger (the top runs as bars, then boxed cards); 2 Stamped (your
+   type as a rubber stamp and the high score up top, a podium for the top three, index cards); 3 Chart (your runs charted across the
+   top, a short top five, then cards as rows). #logfront-N picks one. On the front page MAN.sec is -1 and the contents are -2;
+   up / down / left / right move between the cards, A opens one, B goes back. ---- */
+let LOGFRONT = 0; { const m = location.hash.match(/logfront-(\d)/); if (m) LOGFRONT = Math.min(3, +m[1]); }
+const lfOn = () => MAN.book === "log" && LOGFRONT > 0 && MAN.sec === -1;
+// demo data for the Workshop's play copies (#...-bookdemo): a made-up logbook in memory only, never saved
+const BOOK_DEMO = /bookdemo/.test(location.hash);
+function bookDemo() { let a = 7; const R = () => { a = (a * 16807) % 2147483647; return a / 2147483647; };
+  const L = (LEXG[0] || []).concat(LEXG[1] || []), pick = (arr) => arr[Math.floor(R() * arr.length)], w = {};
+  const doom = [...(KINDS.doomer || [])].filter(x => x.length >= 3), add = (x, n) => { const e = w[x] || (w[x] = [0, 0, Date.now() - 864e5 * 9, null]); e[0] += n; e[1] = Math.max(e[1], Math.round((x.length * x.length * 3 + R() * 40) * (1 + R() * 3))); };
+  for (let i = 0; i < 420 && L.length; i++) { const x = pick(L); if (x.length <= 8) add(x, 1 + Math.floor(R() * R() * 6)); }
+  for (let i = 0; i < 26 && doom.length; i++) add(pick(doom), 1 + Math.floor(R() * 4));
+  add("quixotic", 1); w.quixotic[1] = 2470; add("coquina", 2); w.coquina[1] = 1512; add("eardrum", 1); w.eardrum[1] = 1530;
+  w.eardrum[3] = { s: 17, l: 5, m: 18, f: 0, r: [["LETTERS + BASE 2", "+12"], ["LENGTH: 7 LETTERS", "x5"], ["TREBLE SLIDER", "+5 SIGNAL"], ["RED KEY", "x3"], ["BLUE KEY", "x6"]] };
+  const parts = Object.keys(PART), runs = [];
+  for (let i = 0; i < 34; i++) { const r = Math.max(1, Math.round(3 + i * .22 + R() * 6)); runs.push({ id: "d" + i, at: Date.now() - (34 - i) * 864e5 * .7, t: Math.round(40 * Math.pow(1.48, r) * (.6 + R() * .5)), r, bw: pick(Object.keys(w)), bp: 0, nw: r * 5, ov: R() < .2 ? 1 : 0, end: "lost", parts: [pick(parts), pick(parts), pick(parts)] }); }
+  BOOK = { v: 1, w, runs, cnt: {}, secs: 60 * 60 * 9.4 }; bookVer++; }
+const lfScores = () => BOOK_DEMO ? BOOK.runs.slice().sort((x, y) => y.t - x.t).slice(0, 10).map(x => ({ s: x.t, n: x.r - 1, w: x.bw })) : loadScores();
+// the cards: what each shows and which entry it opens (LOG_SECS: 0 records, 1 top ten, 2 personality, 3 most sent, 4 best, 5 longest,
+// 6 A to Z, 7 runs chart, 8 words chart, 9 parts chart)
+function lfCards() { const st = bookStats(), R = BOOK.runs, out = [], ws = st.ws; if (!ws.length && !R.length) return out;
+  const by = (f) => ws.reduce((a, x) => f(x) > f(a) ? x : a, ws[0]);
+  if (st.main) { const t = PTYPES[st.main]; out.push({ lab: "YOUR TYPE", v: t.n, sub: t.tag, sec: 2, viz: ["bars", st.order.slice(0, 3).map(k => [st.lift[k], k === st.main])] }); }
+  else out.push({ lab: "YOUR TYPE", v: "NOT YET", sub: `SEND ${TYPE_MIN - st.sends} MORE WORDS`, sec: 2, viz: null, dim: true });
+  if (ws.length) { const b = by(x => x[1][1]); out.push({ lab: "BEST WORD", v: b[0].toUpperCase(), sub: fmtNum(b[1][1]) + " SIGNAL", sec: 4, viz: ["keys", b[0]] }); }
+  if (R.length) { const far = R.reduce((a, x) => Math.max(a, x.r), 0); out.push({ lab: "FURTHEST NIGHT", v: "NIGHT " + far, sub: fmtNum(R.length) + " RUNS PLAYED", sec: 7, viz: ["cols", R.slice(-14).map(x => x.r)] }); }
+  if (st.sends) out.push({ lab: "WORDS SENT", v: fmtNum(st.sends), sub: fmtNum(ws.length) + " DIFFERENT", sec: 8, viz: ["cols", [3, 4, 5, 6, 7, 8, 9].map(L => st.lens[L] || 0), true] });
+  if (ws.length) { const m = ws.reduce((a, x) => x[1][0] > a[1][0] || (x[1][0] === a[1][0] && x[1][1] > a[1][1]) ? x : a, ws[0]); out.push({ lab: "MOST SENT", v: m[0].toUpperCase(), sub: "SENT " + m[1][0] + " TIME" + (m[1][0] === 1 ? "" : "S"), sec: 3, viz: ["keys", m[0]] }); }
+  if (ws.length) { const l = by(x => x[0].length * 1e6 + x[1][1]); out.push({ lab: "LONGEST WORD", v: l[0].toUpperCase(), sub: l[0].length + " LETTERS", sec: 5, viz: ["keys", l[0]] }); }
+  { const p = {}; R.forEach(x => (x.parts || []).forEach(id => { if (PART[id]) p[id] = (p[id] || 0) + 1; })); const top = Object.entries(p).sort((a, b) => b[1] - a[1])[0];
+    if (top) out.push({ lab: "FAVORITE PART", v: partName(top[0]), sub: "IN " + top[1] + " RUN" + (top[1] === 1 ? "" : "S"), sec: 9, viz: null }); }
+  if (R.length) out.push({ lab: "ON THE AIR", v: bookTime(BOOK.secs), sub: fmtNum(R.reduce((a, x) => a + x.t, 0)) + " SIGNAL", sec: 0, viz: null });
+  if (ws.length) out.push({ lab: "EVERY WORD", v: fmtNum(ws.length), sub: "A TO Z", sec: 6, viz: null });
+  return out; }
+function lfBlocks() { const S2 = lfScores(), C = lfCards(), out = [];
+  if (LOGFRONT === 2) out.push(["lfstamp"]); else if (LOGFRONT === 3) out.push(["lfchart"]); else out.push(["lftitle"]);
+  if (!C.length && !S2.length) out.push(["note", "Nothing logged yet. Play a run and the tower starts keeping score: your best runs, your best words and what kind of broadcaster you are will show up here."]);
+  if (S2.length) out.push(LOGFRONT === 2 ? ["lfpodium", S2.slice(0, 5)] : ["lfboard", S2.slice(0, 5)]);
+  if (C.length) out.push(["h", "YOUR NUMBERS"], ["lfcards", C]);
+  out.push(["lfall"]); return out; }
+// a small picture inside a card: bars, columns, or the word as little keys
+function lfViz(v, x, y, w, h) { if (!v) return; const [k, d, ends] = v;
+  if (k === "cols") { const n = d.length, mx = Math.max(1, ...d), cw = w / n, gap = Math.max(2, Math.round(cw * .25)); d.forEach((val, i) => { const bh = Math.max(2, Math.round((h - 2) * val / mx)), last = !ends && i === n - 1, top = ends && val === mx;
+      ctx.fillStyle = last || top ? MP.red : MP.ink; ctx.globalAlpha = last || top ? .9 : .55; ctx.fillRect(Math.round(x + i * cw + gap / 2), y + h - bh, Math.max(2, Math.round(cw - gap)), bh); }); ctx.globalAlpha = 1; ctx.fillStyle = MP.rule; ctx.fillRect(x, y + h, w, 1); return; }
+  if (k === "bars") { const mx = Math.max(1, ...d.map(z => z[0])), bh = Math.max(4, Math.floor(h / 3) - 4); d.forEach(([val, hot], i) => { ctx.fillStyle = hot ? MP.red : MP.ink; ctx.globalAlpha = hot ? .9 : .45; ctx.fillRect(x, y + i * (bh + 4), Math.max(3, Math.round(w * val / mx)), bh); }); ctx.globalAlpha = 1; return; }
+  if (k === "keys") { const s = Math.min(h, Math.floor(w / Math.max(4, d.length)) - 4), gh2 = glyphCv("ink", "N", MP.ink).height; if (s < 12) return;
+    [...d.toUpperCase()].forEach((ch, i) => { const kx = x + i * (s + 4); if (kx + s > x + w) return; ctx.fillStyle = MP.paper; ctx.fillRect(kx, y + h - s, s, s); ctx.strokeStyle = MP.ink; ctx.lineWidth = 2; ctx.strokeRect(kx + 1, y + h - s + 1, s - 2, s - 2);
+      ftext(ch, kx + s / 2, y + h - s / 2 - gh2 / 2, "ink", MP.ink, "c"); }); } }
+// big lettering that fits its room: the "key" letters at up to sz times, smaller if they'd run over
+function lfBig(s, x, y, maxW, sz, col, al) { const tw = textW(s, "key"), k = Math.max(.5, Math.min(sz, maxW / tw)); ctx.save(); ctx.translate(x, y); ctx.scale(k, k); ftext(s, 0, 0, "key", col, al || "l"); ctx.restore(); return k; }
+// the selection frame (pulsing red, like a lit key) and the "open" arrow
+function lfSel(x, y, w, h) { ctx.save(); ctx.strokeStyle = MP.red; ctx.lineWidth = 4; ctx.globalAlpha = .75 + .25 * Math.sin(frame * .12); ctx.strokeRect(x - 3, y - 3, w + 6, h + 6); ctx.restore(); ctx.fillStyle = "rgba(163,48,28,.08)"; ctx.fillRect(x, y, w, h); }
+// the front page's blocks, laid out by manLayout (each pushes its selectable spots into items: y, h, x, w, row, go)
+function lfLay(b, w, add, items, lh, gh, kh) { const k = b[0], row = () => items.length ? items[items.length - 1].row + 1 : 0, pad = Math.round(14 * TK);
+  if (k === "lftitle") { const st = bookStats(); add(lh + 8 + kh * 2 + 18 + lh, (X, Y) => { const cx = X + w / 2;
+      ftext("MODEL LS-5  NIGHT RECEIVER", cx, Y, BK, MP.red, "c"); ctx.save(); ctx.translate(cx, Y + lh + 8); ctx.scale(2, 2); ftext("STATION LOGBOOK", 0, 0, "key", MP.ink, "c"); ctx.restore();
+      ftext(`${fmtNum(st.ws.length)} WORDS  ${fmtNum(BOOK.runs.length)} RUNS  ${bookTime(BOOK.secs)} ON THE AIR`, cx, Y + lh + 8 + kh * 2 + 18, BK, MP.soft, "c"); }, 20); return true; }
+  if (k === "lfstamp") { const st = bookStats(), top = lfScores()[0], t = st.main ? PTYPES[st.main] : null, h = kh * 4 + lh * 2 + 40;
+    add(h, (X, Y) => { const sw = Math.min(w * .55, Math.max(textW(t ? t.n : "UNKNOWN", "key") * 2 + 60, textW("CERTIFIED BY THE TOWER", BK) + 60, w * .36)), sx = X + 10, sy = Y + 8, sh = h - 16;
+      ctx.save(); ctx.translate(sx + sw / 2, sy + sh / 2); ctx.rotate(-.06); ctx.globalAlpha = t ? .9 : .35; ctx.strokeStyle = MP.red; ctx.lineWidth = 5; ctx.strokeRect(-sw / 2, -sh / 2 + 6, sw, sh - 12); ctx.lineWidth = 2; ctx.strokeRect(-sw / 2 + 9, -sh / 2 + 15, sw - 18, sh - 30);
+      ftext(t ? (st.main === "easy" ? "YOU ARE" : "YOU ARE A") : "NOT YET", 0, -sh / 2 + 26, BK, MP.red, "c"); lfBig(t ? t.n : "UNKNOWN", 0, -kh, sw - 40, 2, MP.red, "c"); ftext(t ? "CERTIFIED BY THE TOWER" : `SEND ${Math.max(0, TYPE_MIN - st.sends)} MORE WORDS`, 0, sh / 2 - 26 - gh, BK, MP.red, "c"); ctx.restore();
+      const rx = sx + sw + 40, rw = X + w - rx; ftext("HIGH SCORE", rx, Y + 14, BK, MP.soft, "l"); lfBig(fmtNum(top ? top.s : 0), rx, Y + 14 + lh + 4, rw, 3, MP.ink, "l");
+      ftext(top ? "NIGHT " + (top.n + 1) + (top.w ? "  " + top.w.toUpperCase() : "") : "NO RUNS YET", rx, Y + 14 + lh + 4 + kh * 3 + 10, BK, MP.red, "l"); }, 24); return true; }
+  if (k === "lfchart") { const R = BOOK.runs.slice(-30), far = R.reduce((a, x) => Math.max(a, x.r), 0), ch = Math.round(120 * TK), h = lh + 10 + kh * 2 + 14 + ch + lh + 10;
+    add(h, (X, Y) => { ftext("STATION LOGBOOK", X, Y, BK, MP.red, "l"); ftext(`${fmtNum(BOOK.runs.length)} RUNS  ${bookTime(BOOK.secs)} ON THE AIR`, X + w, Y, BK, MP.soft, "r");
+      lfBig("BEST: NIGHT " + far, X, Y + lh + 10, w, 2, MP.ink, "l"); if (R.length) lfViz(["cols", R.map(x => x.r)], X, Y + lh + 10 + kh * 2 + 14, w, ch);
+      ftext(R.length ? `NIGHTS REACHED, YOUR LAST ${R.length} RUNS (RED: THE LATEST)` : "NO RUNS YET", X, Y + lh + 10 + kh * 2 + 14 + ch + 8, BK, MP.soft, "l"); }, 22); return true; }
+  if (k === "lfboard" || k === "lfpodium") { const rows = b[1], mx = Math.max(1, ...rows.map(r => r.s)), y0 = add.y(), r0 = row();
+    const hh = g3H() + 12, rh = lh + Math.round(16 * TK), pod = k === "lfpodium", ph = pod ? Math.round(kh * 2 + lh * 2 + 120 * TK) : 0, h = hh + (pod ? ph + Math.max(0, rows.length - 3) * rh : rows.length * rh) + 10;
+    const idxB = items.length; items.push({ y: y0, h, x: 0, w, row: r0, go: () => manGo(1, -1) });
+    add(h, (X, Y) => { const sel = MAN.fsel === idxB; if (sel) lfSel(X - 8, Y - 4, w + 16, h);
+      ftext("TOP RUNS", X, Y, HK, MP.red, "l"); ftext(sel ? (TAPW() ? "TAP FOR THE TOP TEN" : btn("{A} THE TOP TEN")) : "", X + w, Y, BK, MP.red, "r"); ctx.fillStyle = MP.rule; ctx.fillRect(X, Y + g3H() + 6, w, 2);
+      let yy = Y + hh;
+      if (pod) { const cw = Math.floor(w / 3), order = [1, 0, 2], hs = [.62, 1, .45]; order.forEach((i, c) => { const r = rows[i]; if (!r) return; const bx = X + c * cw + 10, bw = cw - 20, bh = Math.round((ph - kh * 2 - lh * 2 - 20) * hs[i] + 30), by = yy + ph - bh;
+          ctx.fillStyle = i === 0 ? MP.red : MP.ink; ctx.globalAlpha = i === 0 ? .9 : .7; ctx.fillRect(bx, by, bw, bh); ctx.globalAlpha = 1; lfBig(String(i + 1), bx + bw / 2, by + 8, bw - 10, 1.5, MP.paper, "c");
+          lfBig(fmtNum(r.s), bx + bw / 2, by - kh * 1.5 - lh - 12, bw, 1.5, i === 0 ? MP.red : MP.ink, "c"); ftext("NIGHT " + (r.n + 1) + (r.w ? " " + r.w.toUpperCase() : ""), bx + bw / 2, by - lh - 4, BK, MP.soft, "c"); });
+        yy += ph; rows.slice(3).forEach((r, i) => { ftext(`${i + 4}. ${fmtNum(r.s)}`, X + 6, yy + 8, BK, MP.ink, "l"); ftext("NIGHT " + (r.n + 1) + (r.w ? "  " + r.w.toUpperCase() : ""), X + w, yy + 8, BK, MP.soft, "r"); ctx.fillStyle = MP.faint; ctx.fillRect(X, yy + rh - 2, w, 1); yy += rh; }); }
+      else rows.forEach((r, i) => { const lw2 = textW("5.", BK) + 14, sw2 = textW("000,000", BK) + 20, nw = textW("NIGHT 00", BK) + 20, ww = Math.min(textW("WWWWWWWW", BK), w * .22), bx = X + lw2 + sw2, bw = Math.max(20, w - lw2 - sw2 - nw - ww - 30);
+        ftext((i + 1) + ".", X + lw2 - 10, yy + 8, BK, i ? MP.ink : MP.red, "r"); ftext(fmtNum(r.s), X + lw2 + sw2 - 14, yy + 8, BK, i ? MP.ink : MP.red, "r");
+        ctx.fillStyle = i ? MP.ink : MP.red; ctx.globalAlpha = i ? .55 : .85; ctx.fillRect(bx, yy + 8, Math.max(4, Math.round(bw * r.s / mx)), gh); ctx.globalAlpha = 1;
+        ftext("NIGHT " + (r.n + 1), bx + bw + 14, yy + 8, BK, MP.soft, "l"); ftext((r.w || "-").toUpperCase(), X + w, yy + 8, BK, MP.soft, "r"); ctx.fillStyle = MP.faint; ctx.fillRect(X, yy + rh - 2, w, 1); yy += rh; });
+      MAN.hits.push({ x0: X - 8, x1: X + w + 8, y0: Y, y1: Y + h, go: () => lfGo(idxB), scroll: true }); }, 22);
+    return true; }
+  if (k === "lfcards") { const C = b[1], rowStyle = LOGFRONT === 3, cols = rowStyle ? 1 : w >= 900 && BK === "ink" ? 3 : 2, gap = Math.round(18 * TK), cw = Math.floor((w - gap * (cols - 1)) / cols);
+    const vh = Math.round(lh * 1.6), ch = rowStyle ? Math.max(kh * 1.5, lh * 2) + 2 * pad : pad + lh + 8 + kh * 2 + 8 + lh + 10 + vh + pad;
+    for (let i = 0; i < C.length; i += cols) { const y0 = add.y(), r0 = row(), cards = C.slice(i, i + cols);
+      cards.forEach((c, j) => items.push({ y: y0, h: ch, x: j * (cw + gap), w: cw, row: r0, go: () => manGo(c.sec, -1) }));
+      const idx0 = items.length - cards.length;
+      add(ch, (X, Y) => cards.forEach((c, j) => { const x = X + j * (cw + gap), on = MAN.fsel === idx0 + j, ink = c.dim ? MP.soft : MP.ink;
+        if (rowStyle) { if (on) lfSel(x - 8, Y, cw + 16, ch); ctx.fillStyle = MP.faint; ctx.fillRect(x, Y + ch - 2, cw, 1);
+          const lx = x + 6, ty = Y + Math.round((ch - gh) / 2); ftext(c.lab, lx, ty - Math.round(lh * .45), BK, on ? MP.red : MP.soft, "l"); ftext(c.sub, lx, ty + Math.round(lh * .55), BK, MP.soft, "l");
+          const vx = x + Math.round(cw * .36), vw = Math.round(cw * .22); lfViz(c.viz, vx, Y + pad, vw, ch - 2 * pad);
+          lfBig(c.v, x + cw - 40, Y + Math.round((ch - kh * 1.5) / 2), cw * .36, 1.5, on ? MP.red : ink, "r"); ftext(">", x + cw - 8, ty, BK, on ? MP.red : MP.faint, "r"); }
+        else { const card = LOGFRONT === 2;
+          if (card) { ctx.fillStyle = "rgba(255,252,240,.55)"; ctx.fillRect(x, Y, cw, ch); ctx.fillStyle = MP.red; ctx.fillRect(x, Y + pad + lh + 2, cw, 2); ctx.fillStyle = "rgba(60,90,160,.25)"; for (let ly = Y + pad + lh + 2 + lh; ly < Y + ch - 6; ly += lh) ctx.fillRect(x + 6, ly, cw - 12, 1);
+            ctx.strokeStyle = MP.faint; ctx.lineWidth = 2; ctx.strokeRect(x, Y, cw, ch); }
+          else { ctx.strokeStyle = MP.rule; ctx.lineWidth = 2; ctx.strokeRect(x + 1, Y + 1, cw - 2, ch - 2); ctx.fillStyle = "rgba(163,48,28,.04)"; ctx.fillRect(x + 2, Y + 2, cw - 4, ch - 4); }
+          if (on) lfSel(x, Y, cw, ch);
+          const ix = x + pad, iw = cw - 2 * pad; let yy = Y + pad; ftext(c.lab, ix, yy, BK, MP.red, "l"); ftext(on ? (TAPW() ? "OPEN >" : btn("{A} >")) : ">", x + cw - pad, yy, BK, on ? MP.red : MP.faint, "r"); yy += lh + 8;
+          lfBig(c.v, ix, yy, iw, 2, ink, "l"); yy += kh * 2 + 8; const sub = wrap(c.sub, BK, iw); ftext(sub[0] + (sub.length > 1 ? "..." : ""), ix, yy, BK, MP.soft, "l"); yy += lh + 10;
+          lfViz(c.viz, ix, yy, iw, vh); }
+        MAN.hits.push({ x0: x, x1: x + cw, y0: Y, y1: Y + ch, go: () => lfGo(idx0 + j), scroll: true }); }), gap); }
+    return true; }
+  if (k === "lfall") { const y0 = add.y(), r0 = row(), h = lh + 30; items.push({ y: y0, h, x: 0, w, row: r0, go: () => { MAN.sec = -2; MAN.sel = 0; MAN.y = MAN.ty = 0; MAN.cache = null; MAN.selL = null; Sound.paper(); } });
+    const idx = items.length - 1;
+    add(h, (X, Y) => { const on = MAN.fsel === idx; ctx.strokeStyle = on ? MP.red : MP.rule; ctx.lineWidth = 2; ctx.strokeRect(X + 1, Y + 1, w - 2, h - 2); if (on) lfSel(X, Y, w, h);
+      ftext("THE FULL LOGBOOK: ALL " + LOG_SECS.length + " ENTRIES, EVERY WORD AND CHART", X + 18, Y + 15, BK, on ? MP.red : MP.ink, "l"); ftext(">", X + w - 18, Y + 15, BK, MP.red, "r");
+      MAN.hits.push({ x0: X, x1: X + w, y0: Y, y1: Y + h, go: () => lfGo(idx), scroll: true }); }, 20); return true; }
+  return false; }
+const g3H = () => glyphCv(HK, "N", MP.ink).height;
+// touch or A on a front-page spot: a tap on a spot not chosen yet just opens it (no two-tap)
+function lfGo(i) { const it = MAN.cache && MAN.cache.items && MAN.cache.items[i]; if (!it) return; MAN.fsel = i; it.go(); }
+// moving between the spots: up / down by rows (nearest column), left / right along a row
+function lfNav(k) { const its = (MAN.cache && MAN.cache.items) || [], cur = its[MAN.fsel]; if (!cur) { MAN.fsel = 0; return; }
+  const cx = (it) => (it.x ?? 0) + (it.w ?? 1e5) / 2;
+  if (k === "left" || k === "right") { const j = MAN.fsel + (k === "left" ? -1 : 1); if (its[j] && its[j].row === cur.row) { MAN.fsel = j; Sound.tickMove(); } return; }
+  const r = cur.row + (k === "up" ? -1 : 1), cand = its.map((it, i) => [it, i]).filter(([it]) => it.row === r); if (!cand.length) return;
+  cand.sort((a, b) => Math.abs(cx(a[0]) - cx(cur)) - Math.abs(cx(b[0]) - cx(cur))); MAN.fsel = cand[0][1]; Sound.tickMove(); }
+
+if (BOOK_DEMO) bookDemo();
 const manTitle = (i) => { const t = bookSecs()[i].t; return typeof t === "function" ? t() : t; };
-function manOpen(from, book, sec) { MAN.on = true; MAN.from = from || "title"; MAN.book = book || "manual"; MAN.sec = sec ?? -1; MAN.sel = Math.max(0, sec ?? 0); MAN.y = MAN.ty = 0; MAN.cache = null; MAN.selL = null; Sound.paper(); }
+function manOpen(from, book, sec) { MAN.on = true; MAN.from = from || "title"; MAN.book = book || "manual"; MAN.sec = sec ?? -1; MAN.sel = Math.max(0, sec ?? 0); MAN.y = MAN.ty = 0; MAN.cache = null; MAN.selL = null; MAN.fsel = 0; MAN.via = null; Sound.paper(); }
 function manClose() { MAN.on = false; MAN.drag = null; Sound.click(); if (MAN.from === "pause") PAUSE.on = true; if (MAN.from === "title" && S.phase === "title") titleSel = Math.max(0, TITLE_MENU.indexOf(MAN.book === "log" ? "LOGBOOK" : "HOW TO PLAY")); }
-function manGo(i) { if (i < 0) { MAN.sel = Math.max(0, MAN.sec); MAN.sec = -1; MAN.y = MAN.ty = 0; } else { MAN.sec = i; MAN.y = MAN.ty = 0; } MAN.cache = null; Sound.paper(); }
+function manGo(i, via) { if (i < 0) { if (MAN.book === "log" && LOGFRONT && MAN.via !== -2) { MAN.sec = -1; MAN.selL = null; } else { MAN.sel = Math.max(0, MAN.sec); MAN.sec = MAN.book === "log" && LOGFRONT ? -2 : -1; } MAN.via = null; MAN.y = MAN.ty = 0; }
+  else { MAN.via = via ?? (MAN.sec === -2 ? -2 : -1); MAN.sec = i; MAN.y = MAN.ty = 0; } MAN.cache = null; Sound.paper(); }
 function manScroll(d) { MAN.ty = Math.max(0, Math.min(MAN.max, MAN.ty + d)); }
 function manKey(k) { if (!MAN.on) return false; const step = MLH() * 3;
+  if (lfOn()) { if (k === "a") lfGo(MAN.fsel); else if (k === "b" || k === "start") manClose(); else lfNav(k); return true; }
+  if (MAN.sec === -2 && (k === "b")) { MAN.sec = -1; MAN.y = MAN.ty = 0; MAN.cache = null; MAN.selL = null; Sound.paper(); return true; }
   if (MAN.sec < 0) {
     if (k === "up" || k === "down") { MAN.sel = (MAN.sel + (k === "up" ? bookSecs().length - 1 : 1)) % bookSecs().length; Sound.tickMove(); }
     else if (k === "a") manGo(MAN.sel);
@@ -4115,12 +4241,13 @@ function manMove(p) { const d = MAN.drag; if (!d) return; const dy = p.y * FINE 
 function manUp() { const d = MAN.drag; MAN.drag = null; if (!d || d.moved) return; const h = MAN.hits.find(r => d.x >= r.x0 && d.x <= r.x1 && d.y >= r.y0 && d.y <= r.y1); if (h) h.go(); }
 // the layout: each block measured once per width (cached), drawn from the top of the content
 function manBlocks() { if (MAN.sec >= 0) return [["sec", MAN.sec], ...bookSecs()[MAN.sec].b()];
+  if (lfOn()) return lfBlocks();
   return [[MAN.book === "log" ? "logcover" : "cover"], ["toc"]]; }
-function manLayout(w) { const key = MAN.book + "|" + bookVer + "|" + MAN.sec + "|" + BK + "|" + MAN.view + "|" + w + "|" + TK + "|" + TF_READY + "|" + TAPW() + "|" + manReq() + "|" + (S.parts || []).join(); if (MAN.cache && MAN.cache.key === key) return MAN.cache;
+function manLayout(w) { const key = MAN.book + "|" + LOGFRONT + "|" + bookVer + "|" + MAN.sec + "|" + BK + "|" + MAN.view + "|" + w + "|" + TK + "|" + TF_READY + "|" + TAPW() + "|" + manReq() + "|" + (S.parts || []).join(); if (MAN.cache && MAN.cache.key === key) return MAN.cache;
   const lh = MLH(), gh = glyphCv(BK, "N", MP.ink).height, g3 = glyphCv(HK, "N", MP.ink).height, kh = glyphCv("key", "N", MP.ink).height, ops = []; let y = 0;
-  const add = (h, draw, gap) => { ops.push({ y, h, draw }); y += h + (gap ?? Math.round(14 * TK)); };
+  const add = (h, draw, gap) => { ops.push({ y, h, draw }); y += h + (gap ?? Math.round(14 * TK)); }; add.y = () => y; const items = [];
   const para = (lines, x0, y0, col) => lines.forEach((s, i) => ftext(s, x0, y0 + i * lh, BK, col || MP.ink, "l"));
-  for (const b of manBlocks()) { const k = b[0];
+  for (const b of manBlocks()) { const k = b[0]; if (k.startsWith("lf") && lfLay(b, w, add, items, lh, gh, kh)) continue;
     if (k === "cover") { const f0 = Math.round(150 * TK), fig = MAN.view && lh * 4 + 38 + kh * 2 + 30 + f0 + 30 + g3 + 20 + 3 * Math.max(lh + 16, Math.round(34 * TK)) > MAN.view ? 0 : f0;   // (no drawing where the page is short, so the contents start in view)
       add(lh + 8 + kh * 2 + 30 + lh * 2 + (fig ? 20 + fig + lh + 10 : 0), (X, Y) => { const cx = X + w / 2;
         ftext("MODEL LS-5  NIGHT RECEIVER", cx, Y, BK, MP.red, "c");
@@ -4183,7 +4310,7 @@ function manLayout(w) { const key = MAN.book + "|" + bookVer + "|" + MAN.sec + "
     else if (k === "fig") { const fh = Math.round((b[1] === "tube" ? 110 : 190) * TK * (BK === "ink" ? 1 : 1.25)), cap = wrap(b[2], BK, w - 20);
       add(fh + 12 + cap.length * lh, (X, Y) => { manFig(b[1], X, Y, w, fh); para(cap, X + 10, Y + fh + 12, MP.soft); }); }
   }
-  MAN.cache = { key, ops, h: y }; return MAN.cache; }
+  MAN.cache = { key, ops, h: y, items }; return MAN.cache; }
 // line drawings, printed in the manual's black and red
 function manFig(kind, X, Y, w, h) { const lw = Math.max(2, Math.round(2 * TK)); ctx.save(); ctx.lineWidth = lw; ctx.strokeStyle = MP.ink;
   const keyAt = (x, y, s, ch, opt = {}) => { ctx.fillStyle = MP.paper; ctx.fillRect(x, y, s, s); ctx.strokeStyle = MP.ink; ctx.lineWidth = lw; ctx.strokeRect(x, y, s, s);
@@ -4220,11 +4347,13 @@ function drawManual() { manSize();
   ctx.strokeStyle = "rgba(120,80,30,.12)"; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px + pw * .9, py + ph * .82, pw * .045, .3, 5.6); ctx.stroke();   // (a coffee ring)
   ctx.fillStyle = "#8a8478"; for (const yy of [.18, .82]) { ctx.fillRect(px + 14, py + ph * yy - 14, 4, 28); ctx.fillStyle = "#b8b2a4"; ctx.fillRect(px + 15, py + ph * yy - 13, 1, 26); ctx.fillStyle = "#8a8478"; }   // (staples)
   const X = px + M, w = pw - 2 * M, headY = py + 18;
-  { const lg = MAN.book === "log", hl = (lg ? "LS-5 STATION LOG" : "LEXICON SIGNAL LS-5") + "   PAGE " + (MAN.sec + 2), hr = MAN.sec < 0 ? (lg ? "STATION LOGBOOK" : "SERVICE MANUAL") : (lg ? "" : "SEC. " + (MAN.sec + 1) + "  ") + manTitle(MAN.sec); ftext(hl, X, headY, BK, MP.soft, "l"); if (textW(hl, BK) + textW(hr, BK) + 40 <= w) ftext(hr, X + w, headY, BK, MP.soft, "r"); }
+  { const lg = MAN.book === "log", hl = (lg ? "LS-5 STATION LOG" : "LEXICON SIGNAL LS-5") + "   PAGE " + (MAN.sec < 0 ? 1 : MAN.sec + 2), hr = MAN.sec < 0 ? (lg ? "STATION LOGBOOK" : "SERVICE MANUAL") : (lg ? "" : "SEC. " + (MAN.sec + 1) + "  ") + manTitle(MAN.sec); ftext(hl, X, headY, BK, MP.soft, "l"); if (textW(hl, BK) + textW(hr, BK) + 40 <= w) ftext(hr, X + w, headY, BK, MP.soft, "r"); }
   ctx.fillStyle = MP.rule; ctx.fillRect(X, headY + gh + 8, w, 2); ctx.fillRect(X, headY + gh + 12, w, 1);
   const footH = lh + 30, top = headY + gh + 26, bot = py + ph - footH, view = bot - top;
   const lay = manLayout(w); MAN.max = Math.max(0, lay.h - view + 20); MAN.view = view;
-  if (MAN.sec < 0) { const rh = Math.max(lh + 16, Math.round(34 * TK)), toc = lay.ops.find((o, i) => i === 2 + MAN.sel); const fresh = MAN.selL !== MAN.sel + "|" + lay.key; if (toc && !MAN.drag && fresh) { MAN.selL = MAN.sel + "|" + lay.key; if (MAN.sel === 0) MAN.ty = Math.max(0, toc.y + rh + 10 - view); if (toc.y < MAN.ty) MAN.ty = toc.y - 10; if (toc.y + rh > MAN.ty + view) MAN.ty = toc.y + rh - view + 10; MAN.ty = Math.max(0, Math.min(MAN.max, MAN.ty)); } }
+  if (lfOn()) { const it = lay.items[MAN.fsel], fresh = MAN.selL !== "f" + MAN.fsel + "|" + lay.key; if (it && !MAN.drag && fresh) { MAN.selL = "f" + MAN.fsel + "|" + lay.key;
+      if (MAN.fsel === 0) MAN.ty = 0; else { if (it.y < MAN.ty) MAN.ty = it.y - 16; if (it.y + it.h > MAN.ty + view) MAN.ty = it.y + it.h - view + 16; }   /* (the first spot: back to the very top) */ MAN.ty = Math.max(0, Math.min(MAN.max, MAN.ty)); } }
+  else if (MAN.sec < 0) { const rh = Math.max(lh + 16, Math.round(34 * TK)), toc = lay.ops.find((o, i) => i === 2 + MAN.sel); const fresh = MAN.selL !== MAN.sel + "|" + lay.key; if (toc && !MAN.drag && fresh) { MAN.selL = MAN.sel + "|" + lay.key; if (MAN.sel === 0) MAN.ty = 0; if (toc.y < MAN.ty) MAN.ty = toc.y - 10; if (toc.y + rh > MAN.ty + view) MAN.ty = toc.y + rh - view + 10; MAN.ty = Math.max(0, Math.min(MAN.max, MAN.ty)); } }
   MAN.ty = Math.max(0, Math.min(MAN.max, MAN.ty)); MAN.y += (MAN.ty - MAN.y) * .35; if (Math.abs(MAN.ty - MAN.y) < .5) MAN.y = MAN.ty;
   ctx.save(); ctx.beginPath(); ctx.rect(px, top - 6, pw, view + 6); ctx.clip(); const oy = top - Math.round(MAN.y);
   for (const o of lay.ops) { if (oy + o.y + o.h < top - 10 || oy + o.y > bot + 10) continue; o.draw(X, oy + o.y); }
@@ -4234,10 +4363,12 @@ function drawManual() { manSize();
   if (MAN.max > 0) { const bx = px + pw - Math.round(M / 2), sh = Math.max(30, view * view / lay.h), sy = top + (view - sh) * (MAN.y / MAN.max); ctx.fillStyle = MP.faint; ctx.fillRect(bx - 1, top, 2, view); ctx.fillStyle = MP.red; ctx.fillRect(bx - 3, sy, 6, sh); }
   ctx.fillStyle = MP.rule; ctx.fillRect(X, bot + 6, w, 1);
   const fy = bot + 18, tap = TAPW(), hit = (x0, x1, go) => MAN.hits.push({ x0, x1, y0: bot, y1: py + ph, go });
-  if (MAN.sec < 0) {
-    const l = tap ? "< CLOSE" : btn("{B} CLOSE"), r = tap ? "TAP A LINE TO OPEN" : btn("{A} OPEN");
+  const fp = MAN.book === "log" && LOGFRONT;
+  if (MAN.sec === -2) { ftext(tap ? "< FRONT PAGE" : btn("{B} FRONT PAGE"), X, fy, BK, MP.red, "l"); hit(px, px + pw / 2, () => manKey("b")); ftext(tap ? "TAP A LINE TO OPEN" : btn("{A} OPEN"), X + w, fy, BK, MP.soft, "r"); }
+  else if (MAN.sec < 0) {
+    const l = tap ? "< CLOSE" : btn("{B} CLOSE"), r = lfOn() ? (tap ? "TAP A CARD TO OPEN IT" : "PICK A CARD, " + btn("{A} TO OPEN")) : tap ? "TAP A LINE TO OPEN" : btn("{A} OPEN");
     ftext(l, X, fy, BK, MP.red, "l"); hit(px, px + pw / 3, manClose); ftext(r, X + w, fy, BK, MP.soft, "r"); }
-  else { ftext(tap ? "< CONTENTS" : btn("{B} CONTENTS"), X, fy, BK, MP.red, "l"); hit(px, px + pw / 2, () => manGo(-1)); ftext(tap ? "DRAG TO READ" : "UP / DOWN TO READ", X + w, fy, BK, MP.soft, "r");
+  else { const bk = fp && MAN.via !== -2 ? "FRONT PAGE" : "CONTENTS"; ftext(tap ? "< " + bk : btn("{B} " + bk), X, fy, BK, MP.red, "l"); hit(px, px + pw / 2, () => manGo(-1)); ftext(tap ? "DRAG TO READ" : "UP / DOWN TO READ", X + w, fy, BK, MP.soft, "r");
   }
   ctx.restore(); }
 function drawTitleOld() {
@@ -4852,7 +4983,7 @@ cv.addEventListener("pointermove", (e) => {
   if (p.length >= 2 && i === p[p.length - 2]) { setPath(p.slice(0, -1)); return; }
   if (!p.includes(i) && adjacent(last, i)) setPath([...p, i]); S.cursor = i;
 });
-cv.addEventListener("wheel", (e) => { if (MAN.on) { if (MAN.sec >= 0) manScroll(e.deltaY > 0 ? 60 : -60); else MAN.sel = Math.max(0, Math.min(bookSecs().length - 1, MAN.sel + Math.sign(e.deltaY))); e.preventDefault(); return; } if (reportScroll(Math.sign(e.deltaY))) e.preventDefault(); }, { passive: false });   // the night report's word list
+cv.addEventListener("wheel", (e) => { if (MAN.on) { if (MAN.sec >= 0 || lfOn()) manScroll(e.deltaY > 0 ? 60 : -60); else MAN.sel = Math.max(0, Math.min(bookSecs().length - 1, MAN.sel + Math.sign(e.deltaY))); e.preventDefault(); return; } if (reportScroll(Math.sign(e.deltaY))) e.preventDefault(); }, { passive: false });   // the night report's word list
 cv.addEventListener("pointerup", () => { if (MAN.on) { manUp(); return; } REPORT.drag = null; if (down === null) return; const d = down; down = null; if (dragging) { dragging = false; if (S.path.length >= 3) send(); else if (S.path.length) setPath([]); } else tapTile(d); });
 cv.addEventListener("pointercancel", () => { down = null; dragging = false; });
 cv.addEventListener("pointerleave", () => { hoverTile = -1; });

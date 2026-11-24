@@ -1,6 +1,118 @@
 {
  "topics": [
   {
+   "id": "logfront",
+   "title": "Logbook front page",
+   "rounds": [
+    {
+     "id": "r1",
+     "status": "open",
+     "date": "2026-11-23",
+     "question": "What should the Logbook open on?",
+     "found": "Every option opens on a front page: your top runs first, then cards for your best numbers, then THE FULL LOGBOOK for every entry (the contents). Move between the cards with the d-pad (up / down / left / right), A or a tap opens one and goes to its entry (the top runs open the top ten, your type opens your personality, best word opens best words with the breakdowns...), and B comes back to the front page where you were. The pictures and Play links use a made-up logbook so there's something to look at (it isn't saved). Also fixed in every version: you can always scroll back to the very top (the contents list's first line now scrolls all the way up).",
+     "options": [
+      {
+       "id": "0",
+       "title": "As now",
+       "note": "For comparison: the cover and the contents list.",
+       "images": [
+        {
+         "src": "img/logfront-r1/0w-0-front.jpg",
+         "label": "Opens on"
+        }
+       ],
+       "play": "play.html#title-bookdemo"
+      },
+      {
+       "id": "1",
+       "title": "Ledger",
+       "note": "The title, then your top five runs as a bar chart (the high score's bar in red), then your numbers as boxed cards: your type, best word (spelled out in little keys), furthest night (with your recent runs charted), words sent (by length), most sent, longest word, favorite part, time on the air, every word. Each card opens its full entry; the last line opens the whole logbook.",
+       "images": [
+        {
+         "src": "img/logfront-r1/1w-0-front.jpg",
+         "label": "Opens on"
+        },
+        {
+         "src": "img/logfront-r1/1w-1-down3.jpg",
+         "label": "Cards"
+        },
+        {
+         "src": "img/logfront-r1/1p-0-front.jpg",
+         "label": "Phone"
+        },
+        {
+         "src": "img/logfront-r1/1p-1-down3.jpg",
+         "label": "Phone cards"
+        },
+        {
+         "src": "img/logfront-r1/1s-0-front.jpg",
+         "label": "2S"
+        }
+       ],
+       "play": "play.html#title-bookdemo-logfront-1"
+      },
+      {
+       "id": "2",
+       "title": "Stamped",
+       "note": "Your type stamped in red like a certificate next to your high score, a podium for your top three runs (4 and 5 under it), then the same numbers as index cards. The most 'look at me' of the three.",
+       "images": [
+        {
+         "src": "img/logfront-r1/2w-0-front.jpg",
+         "label": "Opens on"
+        },
+        {
+         "src": "img/logfront-r1/2w-1-down3.jpg",
+         "label": "Cards"
+        },
+        {
+         "src": "img/logfront-r1/2p-0-front.jpg",
+         "label": "Phone"
+        },
+        {
+         "src": "img/logfront-r1/2p-1-down3.jpg",
+         "label": "Phone cards"
+        },
+        {
+         "src": "img/logfront-r1/2s-0-front.jpg",
+         "label": "2S"
+        }
+       ],
+       "play": "play.html#title-bookdemo-logfront-2"
+      },
+      {
+       "id": "3",
+       "title": "Chart",
+       "note": "Your furthest night big, with a chart of your last 30 runs across the top, the top five as bars, then the numbers as one card per row: the name and a line on the left, a small picture in the middle, the number on the right. Most like a station's report sheet.",
+       "images": [
+        {
+         "src": "img/logfront-r1/3w-0-front.jpg",
+         "label": "Opens on"
+        },
+        {
+         "src": "img/logfront-r1/3w-1-down3.jpg",
+         "label": "Cards"
+        },
+        {
+         "src": "img/logfront-r1/3p-0-front.jpg",
+         "label": "Phone"
+        },
+        {
+         "src": "img/logfront-r1/3p-1-down3.jpg",
+         "label": "Phone cards"
+        },
+        {
+         "src": "img/logfront-r1/3s-0-front.jpg",
+         "label": "2S"
+        }
+       ],
+       "play": "play.html#title-bookdemo-logfront-3"
+      }
+     ],
+     "chosen": null
+    }
+   ]
+  },
+  {
    "id": "stations",
    "title": "Stations (a song per retune)",
    "rounds": [
