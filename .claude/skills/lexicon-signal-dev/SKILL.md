@@ -741,7 +741,7 @@ the same batch.
 
 - 2026-11-22 (Chris): he only plays on the GitHub site (installed as an app); never the Android app. release.py no longer writes dist/; dist/ and .github/workflows/android.yml are gone. Sharing his play log from the installed site: pause (Start) > SHARE PLAY LOG opens the phone's share sheet (newest 3 runs), or copies it where sharing isn't offered.
 - 2026-11-23 (Chris): the pause menu's SOUND line became MUSIC and EFFECTS level rows (0..10 each, 10 = the standard mix, saved in lexsig.vol; the rain follows MUSIC). Left/right step, A switches off and back, a tap on the pips sets the level. M still mutes everything. Fixed: the Service Manual opened from pause didn't take up/down (move() asked pauseKey before manKey).
-- 2026-11-23 (Chris): planned, not built yet: a Station Logbook in place of HIGH SCORES (records, a word library that never trims, charts, a personality type from the kinds of words sent). Type names so far: Edgelord (swears, crude words, slurs), Too Much Computer (internet slang, said-as-a-word acronyms), Tile Shark (weird legal short words), Wordcel (long fancy words; name 'for now'), Doomer (dark words), Short Wave (mostly 3-letter words), Long Haul (7+ letters), Romantic, Gourmand (food). Dead Air was cut.
+- 2026-11-23 (Chris): planned, not built yet: a Station Logbook in place of HIGH SCORES (records, a word library that never trims, charts, a personality type from the kinds of words sent). Type names so far: Edgelord (swears, crude words, slurs), TOO ONLINE (was Too Much Computer: too long, Chris 2026-11-23) (internet slang, said-as-a-word acronyms), Tile Shark (weird legal short words), Wordcel (long fancy words; name 'for now'), Doomer (dark words), Short Wave (mostly 3-letter words), Long Haul (7+ letters), Romantic, Gourmand (food). Dead Air was cut.
 - 2026-11-23 (Chris): the Station Logbook is built. Title menu LOGBOOK (took HIGH SCORES' place) and the sign-off screen's LOGBOOK
   button (opens on the front page, like every way in: Chris 2026-11-23); dev panel LOGBOOK. It is the Service Manual's book engine with MAN.book = "log" (bookSecs() picks
   LOG_SECS or MAN_SECS; manOpen(from, book, sec)). Data: lexsig.book (never trimmed: every word's sends / best / first sent, a line
@@ -786,7 +786,7 @@ the same batch.
   `gh run watch <id> --exit-status`); if it failed, `gh run rerun <id>`. On 2026-11-23 three deploys failed silently ("No artifacts
   named github-pages"), so the Retroid app sat on build 260 while the phone link had 262. pages.yml now retries the deploy once.
 - 2026-11-23 (Chris): the song goes back to the original (ROT[0], Sound.home) on a new night, a new run and going back to the title
-  (howExit), whatever is added later. Workshop "pers" r1 (open): the personality page without the list of every type, with a WHY in
+  (howExit), whatever is added later. Workshop "pers" r1: Chris picked PERS 1 (you vs everyone, the default now): the personality page without the list of every type, with a WHY in
   words (1 in N against an ordinary player, xLift) and a picture: PERS 1 you vs everyone bars, 2 needle meters (log scale), 3 more or
   less bars from an ordinary-player line (#pers-N; 0 = as before, the default until he picks); a note explains the kind sent most if
   it isn't the type (his Tile Shark puzzle). bookdemo now looks like his logbook (a Doomer with 60 Tile Shark words).

@@ -751,7 +751,7 @@ function kindsOf(w) { const o = [], t = tierOf(w), n = w.length; for (const k in
    (x1.15 and three or more sends); the next one that stands out is your streak. Nothing stands out: Easy Listening. */
 const PTYPES = {
   edgelord: { n: "EDGELORD", base: .012, tag: "THE FCC HAS YOUR NUMBER.", txt: "Swears, slurs and filth, beamed into the night at full power. Sponsors are pulling out. Ratings have never been better." },
-  online: { n: "TOO MUCH COMPUTER", tag: "TOUCH GRASS, CALLER.", base: .007, txt: "Memes, slang and acronyms you say out loud. Your radio has a comment section now, and every word you send gets ratioed by the tower." },
+  online: { n: "TOO ONLINE", tag: "TOUCH GRASS, CALLER.", base: .007, txt: "Memes, slang and acronyms you say out loud. Your radio has a comment section now, and every word you send gets ratioed by the tower." },
   tileshark: { n: "TILE SHARK", tag: "THAT'S NOT A WORD. (IT IS.)", base: .07, txt: "Short, strange words nobody has said out loud since the old country. You don't know what they mean and you don't need to." },
   wordcel: { n: "WORDCEL", tag: "OH, SO YOU THINK YOU'RE BETTER THAN US.", base: .02, txt: "Long, fancy words with too many syllables. You read the dictionary for fun and the tower can tell." },
   doomer: { n: "DOOMER", tag: "IT'S ALL OVER. KEEP BROADCASTING.", base: .009, txt: "Death, rot, ruin and the void. The night is long, the signal is weak and the world is ending, so you might as well score." },
@@ -4225,7 +4225,7 @@ if (BOOK_DEMO) bookDemo();
    often an ordinary player does (the lift), and why the kind you send most isn't always your type. PERS: 0 as before (bars and every
    type); 1 You vs everyone (two bars a kind); 2 Meters (a needle gauge a kind, ordinary marked); 3 More or less (bars out from an
    "ordinary player" line, right for more, left for less). #pers-N. ---- */
-let PERS = 0; { const m = location.hash.match(/pers-(\d)/); if (m) PERS = Math.min(3, +m[1]); }
+let PERS = 1; /* (Chris picked 1, you vs everyone, 2026-11-23) */ { const m = location.hash.match(/pers-(\d)/); if (m) PERS = Math.min(3, +m[1]); }
 const oneIn = (share) => share > 0 ? "1 IN " + fmtNum(Math.max(1, Math.round(1 / share))) : "NONE";
 const xLift = (l) => "x" + (l >= 10 ? Math.round(l) : (Math.round(l * 10) / 10).toFixed(1));
 function persBlocks(st) { const m = st.main, kinds = st.order.filter(k => (st.cnt[k] || 0) > 0), out = [["ptype", m]];

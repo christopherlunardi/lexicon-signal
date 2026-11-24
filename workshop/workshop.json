@@ -6,10 +6,10 @@
    "rounds": [
     {
      "id": "r1",
-     "status": "open",
+     "status": "decided",
      "date": "2026-11-23",
      "question": "How should the personality page show your type and why?",
-     "found": "All three drop the list of every type and keep your type (and streak) up top. Then WHY, in plain words: how often an ordinary player sends that kind of word, how often you do, and how many times as often that is. Then a picture of the same thing for your other kinds, and a note about the kind you sent the most of if it isn't your type: it's the Tile Shark puzzle, everyone sends lots of those, so 60 of them is only a little more than normal (x1.6), while Doomer words are rare enough that a couple dozen makes you x4.4. Then the words that did it. The pictures use a made-up logbook built to look like yours (a Doomer with 60 Tile Shark words).",
+     "found": "All three drop the list of every type and keep your type (and streak) up top. Then WHY, in plain words: how often an ordinary player sends that kind of word, how often you do, and how many times as often that is. Then a picture of the same thing for your other kinds, and a note about the kind you sent the most of if it isn't your type: it's the Tile Shark puzzle, everyone sends lots of those, so 60 of them is only a little more than normal (x1.6), while Doomer words are rare enough that a couple dozen makes you x4.4. Then the words that did it. The pictures use a made-up logbook built to look like yours (a Doomer with 60 Tile Shark words). Decided 2026-11-23: You vs everyone. Too Much Computer is now TOO ONLINE (the long name broke layouts).",
      "options": [
       {
        "id": "0",
@@ -100,7 +100,7 @@
        "play": "play.html#title-bookdemo-pers-3"
       }
      ],
-     "chosen": null
+     "chosen": "1"
     }
    ]
   },
