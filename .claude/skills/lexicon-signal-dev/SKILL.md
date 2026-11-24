@@ -815,3 +815,7 @@ the same batch.
   boot code called bookSave, which read BOOK_DEMO before its const line ran (TDZ). Fixed in 271 (BOOK_DEMO declared next to BOOK; boot
   cleanup in try). Rule: anything that runs while the script is starting must only touch names declared above it; test boot with a
   filled logbook (scratchpad crash.js seeds one), not only with empty storage.
+- Personality type rates from real players (Chris 2026-11-24: real numbers, but the game stays fully offline). PTYPES base values are
+  baked in and refreshed by hand with tools/kind_rates.js (header has the SQL export; each player counts once; blended with the first
+  guesses with weight K=4 while players are few; writes tools/kind_rates.json). First refresh 2026-11-24: 4 players, 1,301 words.
+  When the numbers stop moving between refreshes, set FROZEN and stop.

@@ -1,0 +1,40 @@
+{
+ "date": "2026-11-24",
+ "players": 4,
+ "words": 1301,
+ "K": 4,
+ "guess": {
+  "edgelord": 0.012,
+  "online": 0.007,
+  "tileshark": 0.07,
+  "wordcel": 0.02,
+  "doomer": 0.009,
+  "short": 0.22,
+  "long": 0.08,
+  "romantic": 0.005,
+  "gourmand": 0.015
+ },
+ "real": {
+  "edgelord": 0.021792306427194867,
+  "online": 0.007761538333881029,
+  "tileshark": 0.11392116015660066,
+  "wordcel": 0.002079002079002079,
+  "doomer": 0.021300548554265542,
+  "short": 0.2884543358947909,
+  "long": 0.011037522013348533,
+  "romantic": 0.004636475579680448,
+  "gourmand": 0.015616425375213355
+ },
+ "rates": {
+  "edgelord": 0.0169,
+  "online": 0.0074,
+  "tileshark": 0.092,
+  "wordcel": 0.011,
+  "doomer": 0.0152,
+  "short": 0.2542,
+  "long": 0.0455,
+  "romantic": 0.0048,
+  "gourmand": 0.0153
+ },
+ "FROZEN": false
+}

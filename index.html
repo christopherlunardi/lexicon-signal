@@ -795,15 +795,15 @@ function kindsOf(w) { const o = [], t = tierOf(w), n = w.length; for (const k in
    boards: tools sim 2026-11-23), with two words' slack so one odd word doesn't decide it. The top one is your type if it stands out
    (x1.15 and three or more sends); the next one that stands out is your streak. Nothing stands out: Easy Listening. */
 const PTYPES = {
-  edgelord: { n: "EDGELORD", base: .012, tag: "THE FCC HAS YOUR NUMBER.", txt: "Swears, slurs and filth, beamed into the night at full power. Sponsors are pulling out. Ratings have never been better." },
-  online: { n: "TOO ONLINE", tag: "TOUCH GRASS, CALLER.", base: .007, txt: "Memes, slang and acronyms you say out loud. Your radio has a comment section now, and every word you send gets ratioed by the tower." },
-  tileshark: { n: "TILE SHARK", tag: "THAT'S NOT A WORD. (IT IS.)", base: .07, txt: "Short, strange words nobody has said out loud since the old country. You don't know what they mean and you don't need to." },
-  wordcel: { n: "WORDCEL", tag: "OH, SO YOU THINK YOU'RE BETTER THAN US.", base: .02, txt: "Long, fancy words with too many syllables. You read the dictionary for fun and the tower can tell." },
-  doomer: { n: "DOOMER", tag: "IT'S ALL OVER. KEEP BROADCASTING.", base: .009, txt: "Death, rot, ruin and the void. The night is long, the signal is weak and the world is ending, so you might as well score." },
-  short: { n: "SHORT WAVE", tag: "THREE LETTERS. SEND IT.", base: .22, txt: "Small words, sent fast. Why trace a long one when three letters and a good multiplier do the job?" },
-  long: { n: "LONG HAUL", tag: "THE LONGER THE BETTER.", base: .08, txt: "You stare at the glass until a seven-letter word shows itself. The lamps are going dark. You don't care." },
-  romantic: { n: "ROMANTIC", tag: "THIS ONE GOES OUT TO THE LOVERS.", base: .005, txt: "Love, kisses and sweethearts. You're running a late-night dedication show and the whole city is listening." },
-  gourmand: { n: "GOURMAND", tag: "YOU'RE ON THE AIR, AND YOU'RE HUNGRY.", base: .015, txt: "Food, drink and anything you can eat. Nobody asked for a menu, but the tower is getting one." },
+  edgelord: { n: "EDGELORD", base: .0169, tag: "THE FCC HAS YOUR NUMBER.", txt: "Swears, slurs and filth, beamed into the night at full power. Sponsors are pulling out. Ratings have never been better." },
+  online: { n: "TOO ONLINE", tag: "TOUCH GRASS, CALLER.", base: .0074, txt: "Memes, slang and acronyms you say out loud. Your radio has a comment section now, and every word you send gets ratioed by the tower." },
+  tileshark: { n: "TILE SHARK", tag: "THAT'S NOT A WORD. (IT IS.)", base: .092, txt: "Short, strange words nobody has said out loud since the old country. You don't know what they mean and you don't need to." },
+  wordcel: { n: "WORDCEL", tag: "OH, SO YOU THINK YOU'RE BETTER THAN US.", base: .011, txt: "Long, fancy words with too many syllables. You read the dictionary for fun and the tower can tell." },
+  doomer: { n: "DOOMER", tag: "IT'S ALL OVER. KEEP BROADCASTING.", base: .0152, txt: "Death, rot, ruin and the void. The night is long, the signal is weak and the world is ending, so you might as well score." },
+  short: { n: "SHORT WAVE", tag: "THREE LETTERS. SEND IT.", base: .2542, txt: "Small words, sent fast. Why trace a long one when three letters and a good multiplier do the job?" },
+  long: { n: "LONG HAUL", tag: "THE LONGER THE BETTER.", base: .0455, txt: "You stare at the glass until a seven-letter word shows itself. The lamps are going dark. You don't care." },
+  romantic: { n: "ROMANTIC", tag: "THIS ONE GOES OUT TO THE LOVERS.", base: .0048, txt: "Love, kisses and sweethearts. You're running a late-night dedication show and the whole city is listening." },
+  gourmand: { n: "GOURMAND", tag: "YOU'RE ON THE AIR, AND YOU'RE HUNGRY.", base: .0153, txt: "Food, drink and anything you can eat. Nobody asked for a menu, but the tower is getting one." },
   easy: { n: "EASY LISTENING", tag: "SMOOTH, STEADY, NOTHING STRANGE.", base: 1, txt: "No one kind of word stands out yet. Keep sending: the more words in your library, the clearer your signal." } };
 const TYPE_MIN = 15;   // words sent before a type is given
 let bookCache = null;
