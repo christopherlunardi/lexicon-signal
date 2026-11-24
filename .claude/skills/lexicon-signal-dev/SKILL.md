@@ -790,3 +790,6 @@ the same batch.
   words (1 in N against an ordinary player, xLift) and a picture: PERS 1 you vs everyone bars, 2 needle meters (log scale), 3 more or
   less bars from an ordinary-player line (#pers-N; 0 = as before, the default until he picks); a note explains the kind sent most if
   it isn't the type (his Tile Shark puzzle). bookdemo now looks like his logbook (a Doomer with 60 Tile Shark words).
+- The Workshop artifact can hold at most 256 MB a version. On 2026-11-23 it hit that: the videos of decided rounds were dropped from
+  the published page and workshop.json (their stills stay; the files stay in the repo). When a round is decided, drop its .mp4s
+  from the next publish (files: {"img/...mp4": null}) and from its options' images.

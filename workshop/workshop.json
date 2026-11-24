@@ -233,7 +233,8 @@
        "note": "The game's own music, exactly as it is now: the slow A minor pulse, chord pads, soft beat. Everything else is tuned against this one.",
        "audio": "img/stations-r1/st0.mp3",
        "play": "play.html#title-stn-0-1-2-3-4-5",
-       "sound": true
+       "sound": true,
+       "images": []
       },
       {
        "id": "1",
@@ -241,7 +242,8 @@
        "note": "Piano trio ballad at 70 BPM in D minor: brushes, upright bass, the piano taking the tune now and then. The game's sounds move up into D minor.",
        "audio": "img/stations-r1/st1.mp3",
        "play": "play.html#title-stn-1-0-2-3-4-5",
-       "sound": true
+       "sound": true,
+       "images": []
       },
       {
        "id": "2",
@@ -249,7 +251,8 @@
        "note": "Very slow (62 BPM) and dreamy in E flat: vibraphone with its tremolo, soft bass, the lightest brushes. The sounds move into E flat.",
        "audio": "img/stations-r1/st2.mp3",
        "play": "play.html#title-stn-2-0-1-3-4-5",
-       "sound": true
+       "sound": true,
+       "images": []
       },
       {
        "id": "3",
@@ -257,7 +260,8 @@
        "note": "A gentle swing at 92 BPM in C: walking bass, brushes and ride, piano chords, a cup-muted trumpet with short phrases. Same key as Night Pulse, so the sounds stay where they are.",
        "audio": "img/stations-r1/st3.mp3",
        "play": "play.html#title-stn-3-0-1-2-4-5",
-       "sound": true
+       "sound": true,
+       "images": []
       },
       {
        "id": "4",
@@ -265,7 +269,8 @@
        "note": "84 BPM, your tempo: the band with a clarinet as an old record from the next room, narrow, warm, crackling, wavering a little. In B flat; the sounds move down to match.",
        "audio": "img/stations-r1/st4.mp3",
        "play": "play.html#title-stn-4-0-1-2-3-5",
-       "sound": true
+       "sound": true,
+       "images": []
       },
       {
        "id": "5",
@@ -273,7 +278,8 @@
        "note": "Your idea of a second song with a new scale: the game's own band (same pads, bass and beat) with new chords in E dorian, minor with a raised sixth, a little lighter and mistier. The sounds move to E.",
        "audio": "img/stations-r1/st5.mp3",
        "play": "play.html#title-stn-5-0-1-2-3-4",
-       "sound": true
+       "sound": true,
+       "images": []
       },
       {
        "id": "tour",
@@ -281,7 +287,8 @@
        "note": "All six in a row, about 14 seconds each, with a word played on each and a real retune into the next.",
        "audio": "img/stations-r1/tour.mp3",
        "play": "play.html#title-stn-0-1-2-3-4-5",
-       "sound": true
+       "sound": true,
+       "images": []
       }
      ],
      "chosen": "1"
@@ -299,7 +306,8 @@
        "note": "For comparison: the second song you picked.",
        "audio": "img/stations-r1/st1.mp3",
        "play": "play.html#title-stn-1-0",
-       "sound": true
+       "sound": true,
+       "images": []
       },
       {
        "id": "6",
@@ -307,7 +315,8 @@
        "note": "A slow 12-bar blues in G after closing time: shuffled brushes, a walking bass, the piano answering on the off-beats. No tune at all. The game's sounds move to G, and its minor pentatonic is the blues scale's core, so the letters sound bluesy.",
        "audio": "img/stations-r2/st6.mp3",
        "play": "play.html#title-stn-6-1-0",
-       "sound": true
+       "sound": true,
+       "images": []
       },
       {
        "id": "7",
@@ -315,7 +324,8 @@
        "note": "A slow bossa nova in E minor at your 84 BPM: a nylon-string guitar picking the chords on the off-beats, a rim click playing the clave, a shaker, the bass rocking root and fifth. No tune. Lighter and warmer than the trio.",
        "audio": "img/stations-r2/st7.mp3",
        "play": "play.html#title-stn-7-1-0",
-       "sound": true
+       "sound": true,
+       "images": []
       },
       {
        "id": "8",
@@ -323,7 +333,8 @@
        "note": "A 1950s hotel lounge in F minor: an organ holding the chords, hand drums and a shaker, a slow bolero bass, and the vibes ringing two chord notes now and then. Hazy and tropical, still at night.",
        "audio": "img/stations-r2/st8.mp3",
        "play": "play.html#title-stn-8-1-0",
-       "sound": true
+       "sound": true,
+       "images": []
       },
       {
        "id": "9",
@@ -331,7 +342,8 @@
        "note": "Between the scenes of an old radio mystery, in E phrygian (dark, with the half step above the root): an organ chord swelling on each change, a low drum under it, a clock ticking, and once in a while a far theremin sliding through two or three notes. The slowest and most suspenseful.",
        "audio": "img/stations-r2/st9.mp3",
        "play": "play.html#title-stn-9-1-0",
-       "sound": true
+       "sound": true,
+       "images": []
       },
       {
        "id": "tour",
@@ -339,7 +351,8 @@
        "note": "Last Call Trio, then the dial turning to each of the four new songs, about 14 seconds each.",
        "audio": "img/stations-r2/tour2.mp3",
        "play": "play.html#title-stn-1-6-7-8-9-0",
-       "sound": true
+       "sound": true,
+       "images": []
       }
      ],
      "chosen": null
@@ -497,10 +510,6 @@
        "note": "A brass-framed mechanical counter in the bottom-left corner of the room. Each drum turns up to the next figure as the score counts, the frame flares when it lands. Unused places show dim zeros.",
        "images": [
         {
-         "src": "img/score-r1/score-1.mp4",
-         "label": "Clip"
-        },
-        {
          "src": "img/score-r1/score-1.png",
          "label": "Still"
         }
@@ -512,10 +521,6 @@
        "title": "Glow tubes",
        "note": "A small wooden case of glass tubes, each figure burning orange. Any figure that changes flares white-hot, then settles. A new tube lights up when the score needs another place.",
        "images": [
-        {
-         "src": "img/score-r1/score-2.mp4",
-         "label": "Clip"
-        },
         {
          "src": "img/score-r1/score-2.png",
          "label": "Still"
@@ -529,10 +534,6 @@
        "note": "The night report's lit dot-matrix figures, smaller, in a dark brass-rimmed panel in the corner. Counts in white-hot, settles to amber, with commas.",
        "images": [
         {
-         "src": "img/score-r1/score-3.mp4",
-         "label": "Clip"
-        },
-        {
          "src": "img/score-r1/score-3.png",
          "label": "Still"
         }
@@ -544,10 +545,6 @@
        "title": "On the bar's brass plate",
        "note": "No new box: the lower brass plate in the bar shows the run score instead of the night number (the night is still announced at the start of each night and on the report). The plate glows and the figures pop while it counts.",
        "images": [
-        {
-         "src": "img/score-r1/score-4.mp4",
-         "label": "Clip"
-        },
         {
          "src": "img/score-r1/score-4.png",
          "label": "Still"
@@ -826,10 +823,6 @@
        "note": "The game as it is today, for comparison: flat dark keys, the line through the letters, the light wipe over a real word, letters breaking into dots when sent, keys scrambling as they land.",
        "images": [
         {
-         "src": "img/glass-r1/glass-0.mp4",
-         "label": "Video"
-        },
-        {
          "src": "img/glass-r1/glass-0.jpg",
          "label": "Lit word"
         },
@@ -845,10 +838,6 @@
        "title": "Deep glass",
        "note": "Richer glass. Every key sits in a recessed well (dark under its top lip, the lower lip catching the light), each letter throws a soft glow on the dots round it, and the pane gets a faint curved reflection, darker corners and a glint that slides across now and then. Plays exactly the same.",
        "images": [
-        {
-         "src": "img/glass-r1/glass-1.mp4",
-         "label": "Video"
-        },
         {
          "src": "img/glass-r1/glass-1.jpg",
          "label": "Lit word"
@@ -866,10 +855,6 @@
        "note": "Keys power on as they arrive. A falling key rides dark; when it seats, its whole letter strikes on with a short stutter (dark, a white flash, dim, then settling to amber) instead of the scramble of dots. The start of a night and every refill look like the set warming up.",
        "images": [
         {
-         "src": "img/glass-r1/glass-2.mp4",
-         "label": "Video"
-        },
-        {
          "src": "img/glass-r1/glass-2.jpg",
          "label": "Lit word"
         },
@@ -885,10 +870,6 @@
        "title": "Word lock",
        "note": "A stronger real-word moment. When the letters become a word every key of it flashes together, a ring of light opens out from each, the keys get a thick pale-gold frame and breathe as one, and the rest of the glass dips so the word stands alone. Replaces the light wipe.",
        "images": [
-        {
-         "src": "img/glass-r1/glass-3.mp4",
-         "label": "Video"
-        },
         {
          "src": "img/glass-r1/glass-3.jpg",
          "label": "Lit word"
@@ -906,10 +887,6 @@
        "note": "The traced order without anything crossing a letter. Lit links run from the edge of one key to the edge of the next and end in an arrowhead, a bead runs along each link, and a lit stud marks the first key. Replaces the line through the middles and the ring.",
        "images": [
         {
-         "src": "img/glass-r1/glass-4.mp4",
-         "label": "Video"
-        },
-        {
          "src": "img/glass-r1/glass-4.jpg",
          "label": "Lit word"
         },
@@ -926,10 +903,6 @@
        "note": "A more satisfying send. The letters rise whole off the glass, bigger and brighter, while the fill drains away down the keys under them and an ember of each letter fades; then they come apart into dots from up there, with a few sparks, and stream to the tower. The send takes about a tenth of a second longer.",
        "images": [
         {
-         "src": "img/glass-r1/glass-5.mp4",
-         "label": "Video"
-        },
-        {
          "src": "img/glass-r1/glass-5.jpg",
          "label": "Lit word"
         },
@@ -945,10 +918,6 @@
        "title": "Side meter",
        "note": "Deeper, more orange amber, and the value moved out of the letter's dot field: a stack of four small lamp sockets in the right edge of each key, one lit per value step, so the letter stands alone and the value reads like a little level meter.",
        "images": [
-        {
-         "src": "img/glass-r1/glass-6.mp4",
-         "label": "Video"
-        },
         {
          "src": "img/glass-r1/glass-6.jpg",
          "label": "Lit word"
@@ -1076,10 +1045,6 @@
        "note": "The key's letter is lit red instead of amber, with a soft red glow round it. Picked, it fills red.",
        "images": [
         {
-         "src": "img/carrier-r1/1.mp4",
-         "label": "Clip"
-        },
-        {
          "src": "img/carrier-r1/1-still.png",
          "label": "Still"
         }
@@ -1091,10 +1056,6 @@
        "title": "Red backlight",
        "note": "The letter stays amber; the dots behind it glow a dim, breathing red, like a red bulb behind the panel.",
        "images": [
-        {
-         "src": "img/carrier-r1/2.mp4",
-         "label": "Clip"
-        },
         {
          "src": "img/carrier-r1/2-still.png",
          "label": "Still"
@@ -1108,10 +1069,6 @@
        "note": "A low red glow sits in the bottom of the key and gently rises and falls, like embers.",
        "images": [
         {
-         "src": "img/carrier-r1/3.mp4",
-         "label": "Clip"
-        },
-        {
          "src": "img/carrier-r1/3-still.png",
          "label": "Still"
         }
@@ -1124,10 +1081,6 @@
        "note": "A small red pilot lamp in the key's corner, softly pulsing, and its value dots turn red. The quietest of the five.",
        "images": [
         {
-         "src": "img/carrier-r1/4.mp4",
-         "label": "Clip"
-        },
-        {
          "src": "img/carrier-r1/4-still.png",
          "label": "Still"
         }
@@ -1139,10 +1092,6 @@
        "title": "Red scan",
        "note": "A red line keeps sweeping down the key, like a signal being picked up.",
        "images": [
-        {
-         "src": "img/carrier-r1/5.mp4",
-         "label": "Clip"
-        },
         {
          "src": "img/carrier-r1/5-still.png",
          "label": "Still"
@@ -1171,10 +1120,6 @@
        "note": "The room starts dark with static and the dial hunting. Scrambled letters flicker and lock into the logo left to right, it lands with a thump, then the six lamps come on one by one.",
        "images": [
         {
-         "src": "img/title-r1/1.mp4",
-         "label": "The entrance"
-        },
-        {
          "src": "img/title-r1/1-still.png",
          "label": "Where it settles"
         }
@@ -1186,10 +1131,6 @@
        "title": "From the tower",
        "note": "Rings of red signal leave the tower's beacon and wash across the room. The logo forms out of wavy lines that settle into the letters, then it burns in.",
        "images": [
-        {
-         "src": "img/title-r1/2.mp4",
-         "label": "The entrance"
-        },
         {
          "src": "img/title-r1/2-still.png",
          "label": "Where it settles"
@@ -1203,10 +1144,6 @@
        "note": "The logo is a neon sign on a dark board. The letters buzz on one at a time, stutter, and flood the room red; SIGNAL lights up in amber under it.",
        "images": [
         {
-         "src": "img/title-r1/3.mp4",
-         "label": "The entrance"
-        },
-        {
          "src": "img/title-r1/3-still.png",
          "label": "Where it settles"
         }
@@ -1218,10 +1155,6 @@
        "title": "Fill the tube",
        "note": "The signal tube along the bar fills itself cell by cell. When it's full the room flashes and the logo drops in on a brass plate with a heavy clunk and a bounce.",
        "images": [
-        {
-         "src": "img/title-r1/4.mp4",
-         "label": "The entrance"
-        },
         {
          "src": "img/title-r1/4-still.png",
          "label": "Where it settles"
@@ -1235,10 +1168,6 @@
        "note": "Parchment, like the old title box: a sheet slides up, the logo is stamped onto it, SIGNAL comes up in red ink and the two lines of how to play type out.",
        "images": [
         {
-         "src": "img/title-r1/5.mp4",
-         "label": "The entrance"
-        },
-        {
          "src": "img/title-r1/5-still.png",
          "label": "Where it settles"
         }
@@ -1250,10 +1179,6 @@
        "title": "Radio close-up",
        "note": "Your sketch, with your painted glass. No bar, the radio big and centred (a clean 1.5x). Static in the glass, then each letter of your picture switches on in reading order with a stutter and a blip; once lit they breathe, and now and then one flickers out for a moment. The dial scrolls, the meter swings up, the lamps come on and a brass PRESS START plate appears.",
        "images": [
-        {
-         "src": "img/title-r1/6.mp4",
-         "label": "The entrance"
-        },
         {
          "src": "img/title-r1/6-still.png",
          "label": "Where it settles"
@@ -1314,14 +1239,6 @@
        "note": "Gilded, and every few seconds a band of light sweeps along the gold frame of the card and the slot. Watch the videos.",
        "images": [
         {
-         "src": "img/rare-r1/rare-2-shop.mp4",
-         "label": "Part picker (video)"
-        },
-        {
-         "src": "img/rare-r1/rare-2-slots.mp4",
-         "label": "In its slot (video)"
-        },
-        {
          "src": "img/rare-r1/rare-2-shop.jpg",
          "label": "Part picker"
         },
@@ -1370,14 +1287,6 @@
        "note": "Gilded + glint + the gold seal together.",
        "images": [
         {
-         "src": "img/rare-r1/rare-5-shop.mp4",
-         "label": "Part picker (video)"
-        },
-        {
-         "src": "img/rare-r1/rare-5-slots.mp4",
-         "label": "In its slot (video)"
-        },
-        {
          "src": "img/rare-r1/rare-5-shop.jpg",
          "label": "Part picker"
         },
@@ -1407,25 +1316,29 @@
        "id": "1",
        "title": "Piano trio, late ballad",
        "note": "Piano, brushes and an upright bass at 70 BPM, a slow minor tune with the piano taking the melody now and then.",
-       "audio": "img/music-r1/trio-2.mp3"
+       "audio": "img/music-r1/trio-2.mp3",
+       "images": []
       },
       {
        "id": "2",
        "title": "Small band with a muted horn",
        "note": "A gentle swing at 96 BPM: walking bass, brushes and ride, piano chords, and a cup-muted trumpet playing short phrases every few bars.",
-       "audio": "img/music-r1/horn-2.mp3"
+       "audio": "img/music-r1/horn-2.mp3",
+       "images": []
       },
       {
        "id": "3",
        "title": "Old 78 record through the wall",
        "note": "84 BPM (your tempo): the band with a clarinet, as an old record would sound from the next room: narrow, warm, crackling, the pitch wavering slightly.",
-       "audio": "img/music-r1/record-2.mp3"
+       "audio": "img/music-r1/record-2.mp3",
+       "images": []
       },
       {
        "id": "4",
        "title": "Vibraphone after hours",
        "note": "Very slow (62 BPM) and dreamy: a vibraphone with its tremolo over soft bass, the lightest brushes, a few piano chords.",
-       "audio": "img/music-r1/vibes-2.mp3"
+       "audio": "img/music-r1/vibes-2.mp3",
+       "images": []
       }
      ],
      "chosen": null
@@ -1678,10 +1591,6 @@
        "note": "The empty part of the signal tube glows red and pulses, and the last battery lamp blinks red.",
        "images": [
         {
-         "src": "img/danger-r1/danger-1.mp4",
-         "label": "Video"
-        },
-        {
          "src": "img/danger-r1/danger-1.jpg",
          "label": "Still"
         }
@@ -1693,10 +1602,6 @@
        "title": "Fading signal",
        "note": "Static creeps over the glass, a torn line flicks across it now and then, and a key drops out for a moment: the radio is losing the station.",
        "images": [
-        {
-         "src": "img/danger-r1/danger-2.mp4",
-         "label": "Video"
-        },
         {
          "src": "img/danger-r1/danger-2.jpg",
          "label": "Still"
@@ -1710,10 +1615,6 @@
        "note": "The edges of the screen pulse dark red in a double beat, with a low thump you can hear (the video has no sound).",
        "images": [
         {
-         "src": "img/danger-r1/danger-3.mp4",
-         "label": "Video"
-        },
-        {
          "src": "img/danger-r1/danger-3.jpg",
          "label": "Still"
         }
@@ -1725,10 +1626,6 @@
        "title": "Red tube, light static",
        "note": "Option 1's red tube with a lighter version of option 2's static on the glass.",
        "images": [
-        {
-         "src": "img/danger-r1/danger-4.mp4",
-         "label": "Video"
-        },
         {
          "src": "img/danger-r1/danger-4.jpg",
          "label": "Still"
@@ -1781,10 +1678,6 @@
        "note": "The glass keys die one by one with little pops, the dial garbles into static and goes flat, the tube drains, then the room goes dark except the tower's red light blinking outside.",
        "images": [
         {
-         "src": "img/loss-r1/loss-1.mp4",
-         "label": "Video"
-        },
-        {
          "src": "img/loss-r1/loss-1.jpg",
          "label": "Still"
         }
@@ -1797,10 +1690,6 @@
        "note": "The dial flashes SIGNAL LOST, the tower's red light stutters and goes out, static floods the screen, then the picture squeezes to a bright line and a dot like an old set switching off.",
        "images": [
         {
-         "src": "img/loss-r1/loss-2.mp4",
-         "label": "Video"
-        },
-        {
          "src": "img/loss-r1/loss-2.jpg",
          "label": "Still"
         }
@@ -1812,10 +1701,6 @@
        "title": "Letters fall",
        "note": "The dial goes to a red flat line and every key drops out of the glass, one column at a time with a thud, then the room dims.",
        "images": [
-        {
-         "src": "img/loss-r1/loss-3.mp4",
-         "label": "Video"
-        },
         {
          "src": "img/loss-r1/loss-3.jpg",
          "label": "Still"
@@ -1931,10 +1816,6 @@
        "note": "The whole dial flashes lit (red for warnings, amber for good news) with dark letters, three times, then holds.",
        "images": [
         {
-         "src": "img/dialfx-r1/dialfx-1.mp4",
-         "label": "Video"
-        },
-        {
          "src": "img/dialfx-r1/dialfx-1.jpg",
          "label": "Still"
         }
@@ -1946,10 +1827,6 @@
        "title": "Glow",
        "note": "A big glow pulses around the dial and onto the radio while the message shows.",
        "images": [
-        {
-         "src": "img/dialfx-r1/dialfx-2.mp4",
-         "label": "Video"
-        },
         {
          "src": "img/dialfx-r1/dialfx-2.jpg",
          "label": "Still"
@@ -1963,10 +1840,6 @@
        "note": "A bright scan line sweeps across and writes the message in, then it holds.",
        "images": [
         {
-         "src": "img/dialfx-r1/dialfx-3.mp4",
-         "label": "Video"
-        },
-        {
          "src": "img/dialfx-r1/dialfx-3.jpg",
          "label": "Still"
         }
@@ -1979,10 +1852,6 @@
        "note": "The dial's rim lights up and pulses, and the radio gives a small jolt.",
        "images": [
         {
-         "src": "img/dialfx-r1/dialfx-4.mp4",
-         "label": "Video"
-        },
-        {
          "src": "img/dialfx-r1/dialfx-4.jpg",
          "label": "Still"
         }
@@ -1994,10 +1863,6 @@
        "title": "Lit flash and glow",
        "note": "Options 1 and 2 together.",
        "images": [
-        {
-         "src": "img/dialfx-r1/dialfx-5.mp4",
-         "label": "Video"
-        },
         {
          "src": "img/dialfx-r1/dialfx-5.jpg",
          "label": "Still"
@@ -2026,10 +1891,6 @@
        "note": "A click and a rising hum; the glass warms from the middle like a valve heating, the battery lamps light one by one with rising notes, the dial says ON THE AIR, then the letters fall in column by column.",
        "images": [
         {
-         "src": "img/power-r1/power-1.mp4",
-         "label": "Video"
-        },
-        {
          "src": "img/power-r1/power-1.jpg",
          "label": "Still"
         }
@@ -2042,10 +1903,6 @@
        "note": "A click, then static fills the glass while the dial scrolls up the stations (88.1 FM ... 97.6 FM); it locks with a chord, ON THE AIR, all the lamps light at once and the letters rain in.",
        "images": [
         {
-         "src": "img/power-r1/power-2.mp4",
-         "label": "Video"
-        },
-        {
          "src": "img/power-r1/power-2.jpg",
          "label": "Still"
         }
@@ -2057,10 +1914,6 @@
        "title": "Lamp cascade",
        "note": "The battery lamps light left to right with rising notes, the glass glows up from below, then the letters fall in one key at a time, from the top left to the bottom right.",
        "images": [
-        {
-         "src": "img/power-r1/power-3.mp4",
-         "label": "Video"
-        },
         {
          "src": "img/power-r1/power-3.jpg",
          "label": "Still"
@@ -2152,10 +2005,6 @@
        "note": "The small lamp at the end of the tube lights warm when your word will clear the night, red for overdrive.",
        "images": [
         {
-         "src": "img/endlamp-r1/endlamp-0.mp4",
-         "label": "Video"
-        },
-        {
          "src": "img/endlamp-r1/endlamp-0.jpg",
          "label": "Clear"
         },
@@ -2171,10 +2020,6 @@
        "title": "Bigger and brighter",
        "note": "A bigger lamp with a much stronger glow that spills over the end of the bar, and a soft ping when it lights.",
        "images": [
-        {
-         "src": "img/endlamp-r1/endlamp-1.mp4",
-         "label": "Video"
-        },
         {
          "src": "img/endlamp-r1/endlamp-1.jpg",
          "label": "Clear"
@@ -2192,10 +2037,6 @@
        "note": "When it lights, sparks fly and a white flash bursts from the lamp, then a light streak runs across it like a lens flare.",
        "images": [
         {
-         "src": "img/endlamp-r1/endlamp-2.mp4",
-         "label": "Video"
-        },
-        {
          "src": "img/endlamp-r1/endlamp-2.jpg",
          "label": "Clear"
         },
@@ -2212,10 +2053,6 @@
        "note": "The bigger lamp, and a band of light runs along the tube into it, over and over, while your word will clear.",
        "images": [
         {
-         "src": "img/endlamp-r1/endlamp-3.mp4",
-         "label": "Video"
-        },
-        {
          "src": "img/endlamp-r1/endlamp-3.jpg",
          "label": "Clear"
         },
@@ -2231,10 +2068,6 @@
        "title": "Lit tag",
        "note": "The lamp as it is now, plus a small lit tag above it that says CLEAR, or OVERDRIVE in red.",
        "images": [
-        {
-         "src": "img/endlamp-r1/endlamp-4.mp4",
-         "label": "Video"
-        },
         {
          "src": "img/endlamp-r1/endlamp-4.jpg",
          "label": "Clear"
@@ -2267,10 +2100,6 @@
        "note": "Danger: thin white cracks creep in from the edges of every frozen key and the blue key, and they tremble (the blue key most); its x chip is struck out. Reward: the same cracks fill with light and glints twinkle. Break: gray shards drop, the blue key bursts and a comet of light carries it to its new key.",
        "images": [
         {
-         "src": "img/icecrack-r1/icecrack-1.mp4",
-         "label": "Video"
-        },
-        {
          "src": "img/icecrack-r1/icecrack-1.jpg",
          "label": "Danger"
         },
@@ -2290,10 +2119,6 @@
        "title": "Fault lines",
        "note": "Danger: jagged cracks run from each frozen key across to the blue key, flickering, so you see it all hangs together. Reward: the lines turn into light with beads running into the blue key. Cash-in: the beads rush in before the burst. Break: a crack races across the glass to where the blue key reforms.",
        "images": [
-        {
-         "src": "img/icecrack-r1/icecrack-2.mp4",
-         "label": "Video"
-        },
         {
          "src": "img/icecrack-r1/icecrack-2.jpg",
          "label": "Danger"
@@ -2315,10 +2140,6 @@
        "note": "The loudest. Danger: heavy cracks, a hard shake, flakes dropping off, the keys darken and the chip blinks the x2 you'd fall back to. Reward: the ice fills up with light, the chip swells and lights up. Break: a white flash and chunky shards; the blue key's shards fly over and fit back together. In the game now.",
        "images": [
         {
-         "src": "img/icecrack-r1/icecrack-3.mp4",
-         "label": "Video"
-        },
-        {
          "src": "img/icecrack-r1/icecrack-3.jpg",
          "label": "Danger"
         },
@@ -2338,10 +2159,6 @@
        "title": "Lights",
        "note": "The calm one. Danger: the ice and the blue key go dark and dull with gray cracks, like the light is dying. Reward: they blaze and a sheen runs over each key. Break: the ice crumbles down as dust; the blue key's light goes out and stutters on at its new key.",
        "images": [
-        {
-         "src": "img/icecrack-r1/icecrack-4.mp4",
-         "label": "Video"
-        },
         {
          "src": "img/icecrack-r1/icecrack-4.jpg",
          "label": "Danger"
@@ -2403,10 +2220,6 @@
        "note": "Frozen keys: blue letters and one small frost sprig in the top left corner (it sits under a corner mark when there is one). The blue key: a blue tint, two sprigs, its glow and the x chip.",
        "images": [
         {
-         "src": "img/icerest-r1/icerest-0.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/icerest-r1/icerest-0.jpg",
          "label": "A few frozen"
         },
@@ -2427,10 +2240,6 @@
        "title": "Frosted panes",
        "note": "Each frozen key sits under a pale pane of frosted glass with a couple of glints; every few seconds a soft sheen crosses the ice from left to right. The blue key gets a deeper blue pane that brightens as it holds more. Deepened frost: a white frosted edge and specks on every pane.",
        "images": [
-        {
-         "src": "img/icerest-r1/icerest-1.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/icerest-r1/icerest-1.jpg",
          "label": "A few frozen"
@@ -2453,10 +2262,6 @@
        "note": "White frost sprigs grow out of the corners and a fringe creeps along the edges. It is thicker on every frozen key the more the blue key holds (a few keys: light; all eight: heavy; deepened: heaviest, with glints twinkling). The blue key carries a small snow crystal in its bottom left corner that grows with it.",
        "images": [
         {
-         "src": "img/icerest-r1/icerest-2.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/icerest-r1/icerest-2.jpg",
          "label": "A few frozen"
         },
@@ -2477,10 +2282,6 @@
        "title": "Frost veins",
        "note": "A thin frost vein joins every frozen key to the blue key, and now and then a bead of light drifts along it into the blue key, so you can see the ice is the blue key's. Frozen keys get a light blue film. When you trace over the ice, the fault-line cracks run along the same veins; through the blue key, they light up. Deepened frost: the veins turn white and thicker and the beads come more often. This is the one in the game for now.",
        "images": [
-        {
-         "src": "img/icerest-r1/icerest-3.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/icerest-r1/icerest-3.jpg",
          "label": "A few frozen"
@@ -2503,10 +2304,6 @@
        "note": "Frozen keys become beveled blocks of ice, lit from the top left. The blue key gets a small level meter on its right edge: one segment for each key it can freeze, filling from the bottom; deepened frost turns the segments white one by one.",
        "images": [
         {
-         "src": "img/icerest-r1/icerest-4.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/icerest-r1/icerest-4.jpg",
          "label": "A few frozen"
         },
@@ -2527,10 +2324,6 @@
        "title": "Cold light",
        "note": "No frost drawn at all: the frozen keys' own dot fields glow cold blue, the blue key brightest, breathing slowly outward from the blue key. Deepened frost: the fields turn paler and brighter.",
        "images": [
-        {
-         "src": "img/icerest-r1/icerest-5.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/icerest-r1/icerest-5.jpg",
          "label": "A few frozen"
@@ -2568,10 +2361,6 @@
        "note": "For comparison: what already shows a good word. The keys light and a light sweeps across them, the dial lights warm with a + on the number, the tube blinks the cells it would fill, and a short two-note lock sound.",
        "images": [
         {
-         "src": "img/wordok-r1/wordok-0.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/wordok-r1/wordok-0.jpg",
          "label": "A word, held"
         }
@@ -2584,10 +2373,6 @@
        "title": "Dial lock-on",
        "note": "The moment the letters make a word, the dial flashes lit twice, then a warm glow pulses round it (and spills onto the top of the glass) for as long as the word holds. Uses the same glow you picked for important dial messages.",
        "images": [
-        {
-         "src": "img/wordok-r1/wordok-1.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/wordok-r1/wordok-1.jpg",
          "label": "A word, held"
@@ -2602,10 +2387,6 @@
        "note": "A round green tuning tube set into the cabinet above the right grille, like the tuning eye on an old set. Dim and open while you trace; when the letters make a word its dark wedge snaps shut and it glows bright green. Opens again the moment the word breaks.",
        "images": [
         {
-         "src": "img/wordok-r1/wordok-2.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/wordok-r1/wordok-2.jpg",
          "label": "A word, held"
         }
@@ -2618,10 +2399,6 @@
        "title": "Send lamp",
        "note": "A small SEND lamp sign above the left grille. Dark while you trace; when the letters make a word it strikes on like a neon sign (a couple of flickers, then steady red-orange glow). Goes dark the moment the word breaks.",
        "images": [
-        {
-         "src": "img/wordok-r1/wordok-3.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/wordok-r1/wordok-3.jpg",
          "label": "A word, held"
@@ -2636,10 +2413,6 @@
        "note": "Four bright corner brackets fly in and lock onto the corners of the glass when the letters make a word, with a quick flash round the rim. They stay, softly pulsing, while the word holds, and slide away when it breaks.",
        "images": [
         {
-         "src": "img/wordok-r1/wordok-4.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/wordok-r1/wordok-4.jpg",
          "label": "A word, held"
         }
@@ -2653,10 +2426,6 @@
        "note": "The trace itself goes white-hot and thicker when it's a word, and the word's keys beat together with a bright rim, like a heartbeat. Everything happens on the word, so your eye doesn't leave the glass.",
        "images": [
         {
-         "src": "img/wordok-r1/wordok-5.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/wordok-r1/wordok-5.jpg",
          "label": "A word, held"
         }
@@ -2669,10 +2438,6 @@
        "title": "Send tag",
        "note": "A lit SEND tag appears on the last letter (where pressing A again sends), bobbing gently; on a touch screen it says TAP. It hangs below the key (above it on the bottom row), so it can sit over part of the key below.",
        "images": [
-        {
-         "src": "img/wordok-r1/wordok-6.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/wordok-r1/wordok-6.jpg",
          "label": "A word, held"
@@ -2696,10 +2461,6 @@
        "note": "",
        "images": [
         {
-         "src": "img/wordok-r2/wordok-7.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/wordok-r2/wordok-7.jpg",
          "label": "A word, held"
         }
@@ -2722,10 +2483,6 @@
        "note": "What's in the game now: the warm glow round the dial, and the dial blinking between reverse print and normal every half second. Fixed: the reverse print now stays inside the dial's window, so it no longer lights over the bezel.",
        "images": [
         {
-         "src": "img/wordok-r3/wordok-7.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/wordok-r3/wordok-7.jpg",
          "label": "A word, held"
         }
@@ -2738,10 +2495,6 @@
        "title": "Soft wash blink",
        "note": "No big glow. The dial window takes a soft warm wash every half second (about a third as bright as full reverse); the letters stay bright amber the whole time.",
        "images": [
-        {
-         "src": "img/wordok-r3/wordok-8.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/wordok-r3/wordok-8.jpg",
          "label": "A word, held"
@@ -2756,10 +2509,6 @@
        "note": "No glow. The dial fades smoothly into reverse print and back out again over about a second and a half, instead of a hard blink.",
        "images": [
         {
-         "src": "img/wordok-r3/wordok-9.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/wordok-r3/wordok-9.jpg",
          "label": "A word, held"
         }
@@ -2772,10 +2521,6 @@
        "title": "Just the word, reversed",
        "note": "No glow. Only the word gets a lit box behind it (dark letters on amber) that blinks on and off every half second, like selected text. The number stays as it is.",
        "images": [
-        {
-         "src": "img/wordok-r3/wordok-10.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/wordok-r3/wordok-10.jpg",
          "label": "A word, held"
@@ -2790,10 +2535,6 @@
        "note": "Two quick reverse blinks the moment the letters make a word, then the dial stays normal with a soft steady glow for as long as the word holds. No continuous blinking.",
        "images": [
         {
-         "src": "img/wordok-r3/wordok-11.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/wordok-r3/wordok-11.jpg",
          "label": "A word, held"
         }
@@ -2806,10 +2547,6 @@
        "title": "Blinking cursor",
        "note": "No glow. A solid block cursor blinks right after the word on the dial, every half second, the way a text cursor does when it's waiting for you.",
        "images": [
-        {
-         "src": "img/wordok-r3/wordok-12.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/wordok-r3/wordok-12.jpg",
          "label": "A word, held"
@@ -2839,10 +2576,6 @@
        "note": "For comparison. At rest the gold key spins its letter reel in a gold frame with two little arrows; once a word goes through it the letter locks in and it looks almost like any other traced key.",
        "images": [
         {
-         "src": "img/goldlook-r1/goldlook-0.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/goldlook-r1/goldlook-0-gold.jpg",
          "label": "At rest"
         },
@@ -2867,10 +2600,6 @@
        "title": "Gold letter",
        "note": "The gold key's letters are always gold (the spinning reel and the letter it locks to), a richer gold while traced, so it never turns into a plain key.",
        "images": [
-        {
-         "src": "img/goldlook-r1/goldlook-1.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/goldlook-r1/goldlook-1-gold.jpg",
          "label": "At rest"
@@ -2897,10 +2626,6 @@
        "note": "A gold sheen sweeps across the key every second and a half, at rest and while traced (brighter while traced).",
        "images": [
         {
-         "src": "img/goldlook-r1/goldlook-2.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/goldlook-r1/goldlook-2-gold.jpg",
          "label": "At rest"
         },
@@ -2925,10 +2650,6 @@
        "title": "Shake",
        "note": "The key jitters like a coin on a table: a short shake every few seconds at rest, and a steady small shake while it's in your word.",
        "images": [
-        {
-         "src": "img/goldlook-r1/goldlook-3.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/goldlook-r1/goldlook-3-gold.jpg",
          "label": "At rest"
@@ -2955,10 +2676,6 @@
        "note": "A thick polished gold frame with four studs at the corners, like a set jewel, always on; it glows while traced.",
        "images": [
         {
-         "src": "img/goldlook-r1/goldlook-4.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/goldlook-r1/goldlook-4-gold.jpg",
          "label": "At rest"
         },
@@ -2984,10 +2701,6 @@
        "note": "Option 1's gold letters, plus a soft gold glow behind the key that grows while it's traced.",
        "images": [
         {
-         "src": "img/goldlook-r1/goldlook-5.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/goldlook-r1/goldlook-5-gold.jpg",
          "label": "At rest"
         },
@@ -3012,10 +2725,6 @@
        "title": "Gold plate",
        "note": "The whole key face is solid gold with a dark letter (a red letter when it's also the red key), at rest and traced. The boldest.",
        "images": [
-        {
-         "src": "img/goldlook-r1/goldlook-6.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/goldlook-r1/goldlook-6-gold.jpg",
          "label": "At rest"
@@ -3057,10 +2766,6 @@
        "note": "For comparison: the green ring round the middle key and its charge number on a tag.",
        "images": [
         {
-         "src": "img/greenlook-r1/greenlook-0.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/greenlook-r1/greenlook-0-green.jpg",
          "label": "At rest"
         },
@@ -3085,10 +2790,6 @@
        "title": "Green letter",
        "note": "The ring and tag stay; the green key's letter also glows green (a red or gold letter wins if the key is also red or gold).",
        "images": [
-        {
-         "src": "img/greenlook-r1/greenlook-1.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/greenlook-r1/greenlook-1-green.jpg",
          "label": "At rest"
@@ -3115,10 +2816,6 @@
        "note": "The ring and tag stay; a thin green bar inside the key's left edge fills up as the charge grows.",
        "images": [
         {
-         "src": "img/greenlook-r1/greenlook-2.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/greenlook-r1/greenlook-2-green.jpg",
          "label": "At rest"
         },
@@ -3143,10 +2840,6 @@
        "title": "Battery tag",
        "note": "The ring stays; the charge tag becomes a little battery (with a terminal nub) that fills with green as the charge grows.",
        "images": [
-        {
-         "src": "img/greenlook-r1/greenlook-3.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/greenlook-r1/greenlook-3-green.jpg",
          "label": "At rest"
@@ -3173,10 +2866,6 @@
        "note": "The ring breathes in and out, slowly at first and faster and brighter as the charge grows.",
        "images": [
         {
-         "src": "img/greenlook-r1/greenlook-4.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/greenlook-r1/greenlook-4-green.jpg",
          "label": "At rest"
         },
@@ -3201,10 +2890,6 @@
        "title": "Corner lamp",
        "note": "The ring and tag stay; a small round green lamp in the key's bottom-left corner glows brighter as the charge grows.",
        "images": [
-        {
-         "src": "img/greenlook-r1/greenlook-5.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/greenlook-r1/greenlook-5-green.jpg",
          "label": "At rest"
@@ -3246,10 +2931,6 @@
        "note": "For comparison: the score is added up instantly and the letters fly straight to the tower with the total.",
        "images": [
         {
-         "src": "img/tally-r1/tally-0.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/tally-r1/tally-0.jpg",
          "label": "Mid count"
         }
@@ -3262,10 +2943,6 @@
        "title": "On the dial",
        "note": "The count-up plays on the dial as a running sum: the signal climbs letter by letter (each letter flares on the glass as it's counted), then x the length, then each multiplier, then the flat adds, with the running total on the right. Each part's slot flashes with its tag the moment it adds in.",
        "images": [
-        {
-         "src": "img/tally-r1/tally-1.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/tally-r1/tally-1.jpg",
          "label": "Mid count"
@@ -3280,10 +2957,6 @@
        "note": "The count-up plays on the glass: each letter pops its value on a little chip as it's counted, part bonuses pop on their letter, the length and multipliers stamp over the word in big chips (red for multipliers, green for the green key's charge), and the total pops at the end. Slots flash as their part adds in.",
        "images": [
         {
-         "src": "img/tally-r1/tally-2.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/tally-r1/tally-2.jpg",
          "label": "Mid count"
         }
@@ -3296,10 +2969,6 @@
        "title": "Both",
        "note": "The chips on the keys and the running sum on the dial together.",
        "images": [
-        {
-         "src": "img/tally-r1/tally-3.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/tally-r1/tally-3.jpg",
          "label": "Mid count"
@@ -3323,10 +2992,6 @@
        "note": "For comparison: chips on the keys and the running sum on the dial, now seen with the whole screen, bar and all.",
        "images": [
         {
-         "src": "img/tally-r2/tally-3.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/tally-r2/tally-3.jpg",
          "label": "Mid count"
         }
@@ -3339,10 +3004,6 @@
        "title": "Sparks from the parts",
        "note": "When a part adds in, its slot in the bar flares and a spark flies from it to where it lands: to the letter for a letter bonus (the Treble Slider's +5 on the J), to the dial for length, multipliers and the green key's charge. You can follow each part's effect from its slot.",
        "images": [
-        {
-         "src": "img/tally-r2/tally-4.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/tally-r2/tally-4.jpg",
          "label": "Mid count"
@@ -3357,10 +3018,6 @@
        "note": "Less on the glass at once: each letter's chip fades quickly, and only the latest length or multiplier chip stays over the word, so a busy word doesn't pile up.",
        "images": [
         {
-         "src": "img/tally-r2/tally-5.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/tally-r2/tally-5.jpg",
          "label": "Mid count"
         }
@@ -3374,10 +3031,6 @@
        "note": "The signal tube along the bar fills with the running total as it counts up, so you see the night's progress grow with every step.",
        "images": [
         {
-         "src": "img/tally-r2/tally-6.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/tally-r2/tally-6.jpg",
          "label": "Mid count"
         }
@@ -3390,10 +3043,6 @@
        "title": "All three",
        "note": "Sparks, tidy chips and the live tube together.",
        "images": [
-        {
-         "src": "img/tally-r2/tally-7.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/tally-r2/tally-7.jpg",
          "label": "Mid count"
@@ -3416,10 +3065,6 @@
        "note": "Each letter, then any part bonus on that letter, then the length and the parts that make it longer, then the multipliers and the green key.",
        "images": [
         {
-         "src": "img/tally-r3/tally-8.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/tally-r3/tally-8.jpg",
          "label": "Mid count"
         }
@@ -3432,10 +3077,6 @@
        "title": "Plain word first",
        "note": "The word scores on its own first: the 2, every letter, \"5 LETTERS X3\" (JOKER alone: 15 x 3 = 45). Then the parts add on, each with its spark: Treble Slider +5 to the J and the K, the Tube Amp turns X3 into X4, the Coil x2, the red key x3, the green key +19. Same total; you see what your word was worth and what your radio added.",
        "images": [
-        {
-         "src": "img/tally-r3/tally-9.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/tally-r3/tally-9.jpg",
          "label": "Mid count"
@@ -3465,10 +3106,6 @@
        "note": "For comparison: the count-up in the game now, at one even pace with the old sounds.",
        "images": [
         {
-         "src": "img/tallyfx-r1/tallyfx-0.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/tallyfx-r1/tallyfx-0.jpg",
          "label": "Mid count"
         }
@@ -3481,10 +3118,6 @@
        "title": "Phases",
        "note": "The count splits into its parts: the word, the letter bonuses, the length, the multipliers, the adds. Each part goes a little quicker, with a short beat between parts. Soft simple sounds: a light tick per letter, a whoosh as a spark leaves its slot, a small bell when it lands, a low thump for each multiplier, a warm chord at the end. About the same length overall.",
        "images": [
-        {
-         "src": "img/tallyfx-r1/tallyfx-1.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/tallyfx-r1/tallyfx-1.jpg",
          "label": "Mid count"
@@ -3499,10 +3132,6 @@
        "note": "Like 1, and when the plain word is done its chips gather into one tag over the word (\"JOKER 45\") with a two-note chime, so you see what the word alone was worth before the parts start.",
        "images": [
         {
-         "src": "img/tallyfx-r1/tallyfx-2.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/tallyfx-r1/tallyfx-2.jpg",
          "label": "Mid count"
         }
@@ -3516,10 +3145,6 @@
        "note": "Like 1, but every sound is a note in one scale that climbs through the whole count: the letters walk up, the parts keep climbing, multipliers ring lower and fuller, and the final chord resolves it.",
        "images": [
         {
-         "src": "img/tallyfx-r1/tallyfx-3.mp4",
-         "label": "Video (sound)"
-        },
-        {
          "src": "img/tallyfx-r1/tallyfx-3.jpg",
          "label": "Mid count"
         }
@@ -3532,10 +3157,6 @@
        "title": "Roll-up + tune",
        "note": "2 and 3 together.",
        "images": [
-        {
-         "src": "img/tallyfx-r1/tallyfx-4.mp4",
-         "label": "Video (sound)"
-        },
         {
          "src": "img/tallyfx-r1/tallyfx-4.jpg",
          "label": "Mid count"
