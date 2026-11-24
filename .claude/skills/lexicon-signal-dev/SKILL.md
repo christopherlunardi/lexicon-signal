@@ -782,3 +782,6 @@ the same batch.
   (lfBlocks / lfLay: lftitle, lfstamp, lfchart, lfboard, lfpodium, lfcards, lfall), contents = -2; selectable spots are the layout's
   items (row, x, w; lfNav moves, lfGo opens; MAN.fsel), MAN.via says where B goes back to. #...-bookdemo fills a made-up logbook in
   memory (never saved) for Workshop pictures and play links. Fixed: the contents' first line scrolls back to the very top.
+- Every release: after pushing, check the GitHub site really deployed (`gh run list --workflow pages.yml -L 1`, wait with
+  `gh run watch <id> --exit-status`); if it failed, `gh run rerun <id>`. On 2026-11-23 three deploys failed silently ("No artifacts
+  named github-pages"), so the Retroid app sat on build 260 while the phone link had 262. pages.yml now retries the deploy once.
