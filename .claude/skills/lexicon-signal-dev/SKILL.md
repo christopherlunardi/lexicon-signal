@@ -788,8 +788,16 @@ the same batch.
 - 2026-11-23 (Chris): the song goes back to the original (ROT[0], Sound.home) on a new night, a new run and going back to the title
   (howExit), whatever is added later. Workshop "pers" r1: Chris picked PERS 1 (you vs everyone, the default now): the personality page without the list of every type, with a WHY in
   words (1 in N against an ordinary player, xLift) and a picture: PERS 1 you vs everyone bars, 2 needle meters (log scale), 3 more or
-  less bars from an ordinary-player line (#pers-N; 0 = as before, the default until he picks); a note explains the kind sent most if
+  less bars from an ordinary-player line (#pers-N; 0 = as before). PERS 1 shows every type in the comparison and WHAT EACH TYPE MEANS at the bottom (Chris 2026-11-23); a note explains the kind sent most if
   it isn't the type (his Tile Shark puzzle). bookdemo now looks like his logbook (a Doomer with 60 Tile Shark words).
 - The Workshop artifact can hold at most 256 MB a version. On 2026-11-23 it hit that: the videos of decided rounds were dropped from
   the published page and workshop.json (their stills stay; the files stay in the repo). When a round is decided, drop its .mp4s
   from the next publish (files: {"img/...mp4": null}) and from its options' images.
+- 2026-11-23 (Chris: collect everyone's play data wherever they play). The first time a player reaches the title, HELP TUNE THE
+  TOWER asks (lexsig.share yes/no; pause menu SEND PLAY DATA switches it). With yes, plFlush posts finished runs from lexsig.runs (and
+  runs left 6 hours) to https://idlelooping.com/api/plays/ (text/plain JSON {v, pid, owner, runs}); offline or failed posts wait and
+  retry at start, after each run, on "online" and every 10 minutes; lexsig.sent holds what went. The receiver is api/plays.js in the
+  idleloopingwebsite repo: it files each run as runs/<day>/<pid>/<run id>.json in the private repo christopherlunardi/
+  lexicon-signal-plays (Vercel env PLAYS_TOKEN = a fine-grained token with Contents read/write on that repo). To study the data:
+  add that repo to the session and read the files. The claude.ai link doesn't post (its page can't reach other sites); it keeps
+  writing to its own "plays" database (ArtifactData), unless the player said no.

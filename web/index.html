@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 266;</script><script>
+<script>window.LEX_BUILD = 267;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -704,22 +704,59 @@ function log(s) { S.log.push({ s: s.toUpperCase(), n: 0 }); if (S.log.length > 1
 const PLAYLOG = { run: null, db: null, uid: null, last: 0 };
 // each player writes only their own runs (plays/<their id>/runs/<run>); only the owner can read them all
 try { if (window.claude && claude.use) Promise.all([claude.use("db"), claude.use("user")]).then(async ([d, u]) => { if (d && u) { PLAYLOG.uid = await u.id(); PLAYLOG.db = d; } }).catch(() => {}); } catch (e) {}
-const playWhere = () => document.body.classList.contains("pwa") ? "webapp" : document.body.classList.contains("inapp") ? "android" : /github\.io$/.test(location.hostname) ? "web" : window.claude ? "link" : "other";
+const playWhere = () => document.body.classList.contains("pwa") ? "webapp" : document.body.classList.contains("inapp") ? "android" : /github\.io$/.test(location.hostname) ? "web" : /idlelooping/.test(location.hostname) ? "site" : window.claude ? "link" : "other";
 function plStart() { if (HOW.on) return; PLAYLOG.run = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6), at: Date.now(), build: window.LEX_BUILD || 0, where: playWhere(),
     screen: innerWidth + "x" + innerHeight, input: usingTouch ? "touch" : usingButtons ? "buttons" : "mouse", words: [], nights: [], fails: 0, retunes: 0, end: "" }; PLAYLOG.last = Date.now(); }
 function plWord(sc) { const r = PLAYLOG.run; if (!r || HOW.on) return; const now = Date.now();
   r.words.push({ n: S.night, w: sc.word, p: sc.pts, len: sc.len, m: sc.mult, red: sc.red, gold: sc.gold, req: sc.reqB ? 1 : 0, tap: sc.tap || 0, b: sc.boost, br: sc.br, left: S.words, rt: S.retunes, s: Math.round((now - PLAYLOG.last) / 100) / 10 }); PLAYLOG.last = now; plSave(); }   // (saved after every word, so a run left mid-night still counts: 2026-11-15)
 function plNight(offered) { const r = PLAYLOG.run; if (!r || HOW.on) return; r.nights.push({ n: S.night, target: S.target, score: S.score, over: !!S.over, wordsLeft: S.words, offered: offered.map(p => p.id), picked: null, parts: S.parts.slice() }); plSave(); }
 function plPick(id) { const r = PLAYLOG.run; if (!r) return; const nn = r.nights[r.nights.length - 1]; if (nn) nn.picked = nn.picked && !/^(melt|up:)/.test(id) ? nn.picked + "+" + id : id; }   // (a double overdrive's two picks: "amp+red")
-function plEnd(how) { const r = PLAYLOG.run; if (!r || r.end) return; r.end = how; r.total = S.total; r.reached = S.night; r.parts = S.parts.slice(); plSave(); PLAYLOG.run = null; }
+function plEnd(how) { const r = PLAYLOG.run; if (!r || r.end) return; r.end = how; r.total = S.total; r.reached = S.night; r.parts = S.parts.slice(); plSave(); PLAYLOG.run = null; setTimeout(plFlush, 1500); }
 function plSave() { const r = PLAYLOG.run; if (!r) return; r.total = S.total; r.reached = S.night; r.now = { n: S.night, target: S.target, score: S.score, words: S.words, retunes: S.retunes, parts: S.parts.slice() };
   try { const a = JSON.parse(localStorage.getItem("lexsig.runs") || "[]").filter(x => x.id !== r.id); a.push(r); localStorage.setItem("lexsig.runs", JSON.stringify(a.slice(-40))); } catch (e) {}
   try { bookSync(r, !!r.end); } catch (e) {}
-  if (PLAYLOG.db && PLAYLOG.uid) PLAYLOG.db.collection("plays/" + PLAYLOG.uid + "/runs").doc(r.id).set(JSON.parse(JSON.stringify(r))).catch(() => {}); }
+  if (PLAYLOG.db && PLAYLOG.uid && SHARE !== "no") PLAYLOG.db.collection("plays/" + PLAYLOG.uid + "/runs").doc(r.id).set(JSON.parse(JSON.stringify(r))).catch(() => {}); }
 addEventListener("pagehide", () => { if (PLAYLOG.run && !PLAYLOG.run.end && S && S.phase !== "title") plSave(); });
 // shares the newest 3 runs, newest first (Chris 2026-11-22: the whole log was too long to paste, and the newest run, at its end, got cut off)
 function plShare() { let txt = "[]"; try { txt = JSON.stringify(JSON.parse(localStorage.getItem("lexsig.runs") || "[]").slice(-3).reverse()); } catch (e) {}
   if (navigator.share) navigator.share({ title: "Lexicon Signal play log", text: txt }).catch(() => {}); else if (navigator.clipboard) navigator.clipboard.writeText(txt).then(() => log("Play log copied.")).catch(() => {}); }
+/* ---- sending play data (Chris 2026-11-23: collect everyone's play data, wherever they play). The first time a player reaches the
+   title, a notice asks (SHARE: "yes" / "no" in lexsig.share; the pause menu switches it). With "yes", every finished run in lexsig.runs
+   (and any run left unfinished for 6 hours) is posted to the studio site (SHARE_URL: api/plays in the idleloopingwebsite repo, which
+   files each run in a private GitHub repo). Offline, or if the post fails, the runs wait and go on the next try: at start, after each
+   run, when the device comes back online and every 10 minutes. Sent ids are kept in lexsig.sent. Anonymous: a random player id
+   (lexsig.pid), no name or account. On the claude.ai link the runs go to its own database instead (and only if not switched off). */
+const SHARE_URL = "https://idlelooping.com/api/plays/";
+let SHARE = null; try { SHARE = localStorage.getItem("lexsig.share"); } catch (e) {}
+const ASK = { on: false, sel: 0, hits: [] };
+function playerId() { let id = ""; try { id = localStorage.getItem("lexsig.pid") || ""; if (!/^[a-z0-9]{12}$/.test(id)) { id = ""; for (let i = 0; i < 12; i++) id += "abcdefghijklmnopqrstuvwxyz0123456789"[Math.floor(Math.random() * 36)]; localStorage.setItem("lexsig.pid", id); } } catch (e) {} return id || "nostorage000"; }
+function shareSet(v) { SHARE = v; try { localStorage.setItem("lexsig.share", v); } catch (e) {} ASK.on = false; Sound.click(); log(v === "yes" ? "Play data on. Thanks!" : "Play data off."); if (v === "yes") setTimeout(plFlush, 500); }
+let plFlushing = false;
+function plFlush() { if (SHARE !== "yes" || plFlushing || window.claude || /^#test-/.test(location.hash) || location.protocol === "file:" || navigator.onLine === false) return;
+  let runs = [], sent = []; try { runs = JSON.parse(localStorage.getItem("lexsig.runs") || "[]"); sent = JSON.parse(localStorage.getItem("lexsig.sent") || "[]"); } catch (e) { return; }
+  const now = Date.now(), todo = runs.filter(r => r && r.id && !sent.includes(r.id) && (r.words || []).length && (r.end || now - (r.at || 0) > 6 * 36e5)).slice(0, 10); if (!todo.length) return;
+  let owner = false; try { owner = !!localStorage.getItem("lexsig.devkey"); } catch (e) {}
+  plFlushing = true;
+  fetch(SHARE_URL, { method: "POST", headers: { "Content-Type": "text/plain" }, body: JSON.stringify({ v: 1, pid: playerId(), owner, runs: todo }) })
+    .then(r => r.ok ? r.json() : null).then(j => { if (j && j.ok) { try { localStorage.setItem("lexsig.sent", JSON.stringify(sent.concat(j.saved || todo.map(r => r.id)).slice(-500))); } catch (e) {} } })
+    .catch(() => {}).finally(() => { plFlushing = false; }); }
+setTimeout(plFlush, 8000); addEventListener("online", () => setTimeout(plFlush, 2000)); setInterval(plFlush, 6e5);
+function askKey(k) { if (!ASK.on) return false; if (k === "left" || k === "right" || k === "up" || k === "down") { ASK.sel = 1 - ASK.sel; Sound.tickMove(); } else if (k === "a" || k === "start") shareSet(ASK.sel ? "no" : "yes"); return true; }
+// the notice: a slip of the manual's paper over the title, two buttons
+function drawAsk() { manSize(); ASK.hits = []; const lh = MLH(), kh = glyphCv("key", "N", MP.ink).height, gh = glyphCv(BK, "N", MP.ink).height;
+  const pw = Math.min(CVW - 40, Math.round(980 * Math.max(1, TK * .9))), M = Math.round(Math.min(44, pw * .05)), w = pw - 2 * M;
+  const body = wrap("Lexicon Signal can send what happens in your runs (the words you send, your scores, the parts you pick) to Idle Looping Studios, so we can tune and balance the game. It's anonymous: no name, no account, nothing else from your device.", BK, w);
+  const foot = wrap("Offline? It waits and sends later. You can switch it off any time in the pause menu.", BK, w);
+  const bh = lh + 28, tk = Math.min(1.5, w / textW("HELP TUNE THE TOWER", "key")), ph = M + Math.round(kh * tk) + 22 + body.length * lh + 14 + foot.length * lh + 26 + bh + M;
+  const px = Math.round((CVW - pw) / 2), py = Math.max(10, Math.round((CVH - ph) / 2));
+  ctx.save(); ctx.fillStyle = "rgba(6,4,10,.6)"; ctx.fillRect(0, 0, CVW, CVH); ctx.fillStyle = "rgba(0,0,0,.4)"; ctx.fillRect(px + 8, py + 10, pw, ph); ctx.fillStyle = MP.paper; ctx.fillRect(px, py, pw, ph);
+  ctx.strokeStyle = MP.rule; ctx.lineWidth = 2; ctx.strokeRect(px + 10, py + 10, pw - 20, ph - 20);
+  let y = py + M; ctx.save(); ctx.translate(px + pw / 2, y); ctx.scale(tk, tk); ftext("HELP TUNE THE TOWER", 0, 0, "key", MP.red, "c"); ctx.restore(); y += Math.round(kh * tk) + 22;
+  body.forEach(l => { ftext(l, px + M, y, BK, MP.ink, "l"); y += lh; }); y += 14; foot.forEach(l => { ftext(l, px + M, y, BK, MP.soft, "l"); y += lh; }); y += 26;
+  const labs = ["SURE, SEND IT", "NO THANKS"], gap = 24, bw = Math.floor((w - gap) / 2);
+  labs.forEach((lab, i) => { const bx = px + M + i * (bw + gap), on = ASK.sel === i; ctx.strokeStyle = on ? MP.red : MP.rule; ctx.lineWidth = on ? 4 : 2; ctx.strokeRect(bx, y, bw, bh); if (on) { ctx.fillStyle = "rgba(163,48,28,.1)"; ctx.fillRect(bx, y, bw, bh); }
+    ftext(lab, bx + bw / 2, y + Math.round((bh - gh) / 2), BK, on ? MP.red : MP.ink, "c"); ASK.hits.push({ x0: bx, x1: bx + bw, y0: y, y1: y + bh, go: () => shareSet(i ? "no" : "yes") }); });
+  ctx.restore(); }
 /* ---- the Station Logbook's records (Chris 2026-11-23: a reason to come back). Kept on the device in lexsig.book and never trimmed,
    unlike the play log's last 40 runs: every word ever sent (times sent, best score, first sent), and a line for every run. Filled from
    the play log: plSave hands each run over, and the words it hasn't counted yet are added (book.cnt remembers how many per run), so
@@ -1420,6 +1457,8 @@ function draw() {
   if (PAUSE.on) drawPause();
   if (BOARD.on) drawBoard();
   if (MAN.on) drawManual();
+  if (!ASK.on && SHARE === null && S.phase === "title" && !MAN.on && !HOW.on && !TSUB.on && titleT > 60 && !/^#test-/.test(location.hash)) { ASK.on = true; ASK.sel = 0; }
+  if (ASK.on) drawAsk();
   drawFinish();
 }
 /* ================= screen finish (Workshop "finish", 2026-11-13) =================
@@ -3307,6 +3346,7 @@ const TIPS = [
   "USE A FROZEN KEY WITHOUT THE BLUE KEY AND IT ALL BREAKS: THE BLUE KEY MOVES AND STARTS OVER AT X2",
   "A RETUNE GIVES THE FROZEN KEYS NEW LETTERS BUT KEEPS THE ICE",
   "A RETUNE ALSO TURNS THE DIAL TO THE OTHER STATION. EACH NIGHT STARTS BACK ON THE FIRST",
+  "PAUSE MENU: SEND PLAY DATA SWITCHES SENDING YOUR RUNS TO THE STUDIO ON OR OFF. IT HELPS US BALANCE THE GAME",
   "ON YOUR LAST WORD THE SIGNAL STARTS TO FADE: MAKE IT COUNT",
   "THE BLUE KEY'S ICE KEEPS FROM NIGHT TO NIGHT: SAVE IT UP FOR ONE BIG WORD",
   "ONCE THE BLUE KEY HAS FROZEN ALL IT CAN, EVERY WORD THAT MISSES IT ADDS X1 MORE",
@@ -3760,6 +3800,7 @@ function pauseItems() {
     ["SCREEN COLOR: " + COLORS[colorMode][0], () => { colorMode = (colorMode + 1) % COLORS.length; applyColor(); try { localStorage.setItem("lexsig.colour", colorMode); } catch (e) {} }],
     sure("new", "NEW RUN", () => { pauseClose(); plEnd("quit"); start(); }),
     sure("title", "QUIT TO TITLE", () => { pauseClose(); plEnd("quit"); howExit(); titleSel = 0; }),
+    ["SEND PLAY DATA: " + (SHARE === "yes" ? "ON" : "OFF"), () => shareSet(SHARE === "yes" ? "no" : "yes")],
     ["SHARE PLAY LOG", () => plShare()]];
   const n = NATIVE();
   if (n) {
@@ -4233,12 +4274,15 @@ function persBlocks(st) { const m = st.main, kinds = st.order.filter(k => (st.cn
   const row = (k) => ({ k, n: PTYPES[k].n, c: st.cnt[k] || 0, you: (st.cnt[k] || 0) / st.sends, ord: PTYPES[k].base, lift: st.lift[k], hot: k === m, streak: k === st.streak });
   if (m === "easy") out.push(["h", "WHY"], ["p", `No kind of word stands out yet: to be a type, you have to send a kind of word at least ${xLift(1.15)} as often as an ordinary player does. You're close to ordinary on all of them, so you're Easy Listening for now.`]);
   else { const r = row(m); out.push(["h", "WHY " + r.n], ["p", `An ordinary player sends ${r.n} words about ${oneIn(r.ord)}. You send ${oneIn(r.you)}: ${xLift(r.lift)} as often. No other kind of word stands out that much, so that's your type.`]); }
-  const vis = kinds.slice(0, PERS === 3 ? 7 : PERS === 2 ? 4 : 5).map(row);
+  const vis = (PERS === 1 ? st.order : kinds).slice(0, PERS === 2 ? 4 : 99).map(row);   /* (you vs everyone: every type, Chris 2026-11-23) */
   if (vis.length) out.push(["h", PERS === 3 ? "MORE OR LESS THAN AN ORDINARY PLAYER" : "YOU AGAINST AN ORDINARY PLAYER"], [PERS === 1 ? "lfvs" : PERS === 2 ? "lfmeter" : "lfdiv", vis]);
   const most = kinds.slice().sort((a, b) => (st.cnt[b] || 0) - (st.cnt[a] || 0))[0];
   if (most && most !== m) { const r = row(most); out.push(["note", `You sent more ${r.n} words (${fmtNum(r.c)}) than any other kind. But everybody sends lots of those: about ${oneIn(r.ord)} for an ordinary player, ${oneIn(r.you)} for you. That's ${xLift(r.lift)}, ${r.lift >= 1.15 ? (r.streak ? "your streak" : "a lean") : "about normal"}, not your type: your type is the kind you send most out of the ordinary, not the most of.`]); }
   if (m !== "easy" && st.eg[m]) out.push(["h", "THE WORDS THAT DID IT"], ["wgrid", st.eg[m].slice(0, 16).map(([w, n]) => [w, "x" + n])]);
-  out.push(["p", "Your type changes as your library grows. It's worked out from every word you've ever sent."]); return out; }
+  out.push(["p", "Your type changes as your library grows. It's worked out from every word you've ever sent."]);
+  // what every type means (Chris 2026-11-23: show them all at the bottom)
+  out.push(["h", "WHAT EACH TYPE MEANS"], ["tbl", Object.keys(PTYPES).map(k => [PTYPES[k].n + (k === m ? "  (YOU)" : k === st.streak ? "  (STREAK)" : ""), PTYPES[k].tag + " " + PTYPES[k].txt])]);
+  return out; }
 // the pictures
 function persLay(b, w, add, lh, gh, kh) { const k = b[0], rows = b[1];
   if (k === "lfvs") { const lw = Math.min(Math.round(w * .34), Math.max(...rows.map(r => textW(r.n, BK))) + 20), tw = textW("x00.0", "ink3") + 16, rh = lh * 2 + 18, bw = w - lw - tw - textW("00.0%", BK) - 30, mx = Math.max(...rows.map(r => Math.max(r.you, r.ord)));
@@ -4933,7 +4977,7 @@ const TAPW = () => usingTouch && !SHELL;
 const KEYNAME = { A: "Z", B: "X", X: "V", Y: "C", START: "ESC" };
 const BTN = (b) => INPUT === "keys" ? KEYNAME[b] : b;
 const btn = (t) => String(t).replace(/\{(A|B|X|Y|START)\}/g, (m, b) => BTN(b));
-function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ? "up" : "down"; if (devKey(dk)) return; if (manKey(dk)) return; if (pauseKey(dk)) return; if (boardKey(dk)) return; if (howKey(dk)) return; if (nightHold) return; dismissCard();
+function move(dx, dy) { const dk = dx < 0 ? "left" : dx > 0 ? "right" : dy < 0 ? "up" : "down"; if (askKey(dk)) return; if (devKey(dk)) return; if (manKey(dk)) return; if (pauseKey(dk)) return; if (boardKey(dk)) return; if (howKey(dk)) return; if (nightHold) return; dismissCard();
   usingButtons = true; Sound.ensure();
   if (S.phase === "report") { if (dy) reportScroll(dy); return; }
   if (S.phase === "dying") { lossSkip(); return; }
@@ -4961,11 +5005,11 @@ function titleBusy() { if (S.phase === "title" && !titleSkip && titleT < TITLE_L
 function start() { if (buildReady) return maybeReload(); Sound.ensure(); Sound.music(); newRun(); }   // (a new build waiting in the app loads first)
 // buttons (Chris 2026-11-12: a four-button game, Start pauses, Select doesn't mute): A pick / send, B back, X send the word, Y retune,
 // Start pause (and pick on menus), Select nothing (held: dev mode). Keyboard: Z/Space/Enter A, X/Backspace B, C/R retune (Y), V send (X), Esc/P pause.
-function pressA() { if (devKey("a")) return; if (manKey("a")) return; if (TL && !PAUSE.on && tallySkip()) return; if (lossSkip()) return; if (pauseKey("a")) return; if (boardKey("a")) return; if (howKey("a")) return; if (inspectKey("a")) return; if (knobKey("a")) return; if (cardKey("a")) return; if (tokMenuKey("a")) return; Sound.ensure(); usingButtons = true; if (dismissCard()) return; if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return overChoose(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "trade") return tradeConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
-function pressB() { if (devKey("b")) return; if (manKey("b")) return; if (lossSkip()) return; if (pauseKey("b")) return; if (boardKey("b")) return; if (howKey("b")) return; if (inspectKey("a")) return; if (knobKey("b")) return; if (cardKey("b")) return; if (tokMenuKey("b")) return; if (nightHold) return void dismissCard(); if (S.phase === "title" && TSUB.on) return titleSub(false); if (S.phase === "melt") return meltDone(); if (S.phase === "swap") return swapCancel(); if (S.phase === "trade") return tradeGiveUp(); if (S.phase === "play") back(); }
-function pressX() { if (devKey("x")) return; if (PAUSE.on || HOW.on || MAN.on) return; if (TL && tallySkip()) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play" && S.path.length) send(); else pressA(); }
-function pressY() { if (devKey("y")) return; if (PAUSE.on || HOW.on || MAN.on) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play") retune(); else if (S.phase === "report") reportToggle(); else if (S.phase === "shop" && REROLL_STYLE === 4 && !TOKM.banish) { if (TOKM.open) TOKM.open = false; else tokMenuOpen(); } }   // (Y opens the reroll / banish menu)
-function pressStart() { if (devKey("start")) return; if (manKey("start")) return; if (pauseKey("start")) return; if (boardKey("start")) return; if (howKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return overChoose(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "trade") return tradeConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); if (S.phase === "play") pauseOpen(); }
+function pressA() { if (askKey("a")) return; if (devKey("a")) return; if (manKey("a")) return; if (TL && !PAUSE.on && tallySkip()) return; if (lossSkip()) return; if (pauseKey("a")) return; if (boardKey("a")) return; if (howKey("a")) return; if (inspectKey("a")) return; if (knobKey("a")) return; if (cardKey("a")) return; if (tokMenuKey("a")) return; Sound.ensure(); usingButtons = true; if (dismissCard()) return; if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return overChoose(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "trade") return tradeConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); tapTile(S.cursor); }
+function pressB() { if (ASK.on) return; if (devKey("b")) return; if (manKey("b")) return; if (lossSkip()) return; if (pauseKey("b")) return; if (boardKey("b")) return; if (howKey("b")) return; if (inspectKey("a")) return; if (knobKey("b")) return; if (cardKey("b")) return; if (tokMenuKey("b")) return; if (nightHold) return void dismissCard(); if (S.phase === "title" && TSUB.on) return titleSub(false); if (S.phase === "melt") return meltDone(); if (S.phase === "swap") return swapCancel(); if (S.phase === "trade") return tradeGiveUp(); if (S.phase === "play") back(); }
+function pressX() { if (askKey("a")) return; if (devKey("x")) return; if (PAUSE.on || HOW.on || MAN.on) return; if (TL && tallySkip()) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play" && S.path.length) send(); else pressA(); }
+function pressY() { if (ASK.on) return; if (devKey("y")) return; if (PAUSE.on || HOW.on || MAN.on) return; Sound.ensure(); if (dismissCard()) return; if (S.phase === "play") retune(); else if (S.phase === "report") reportToggle(); else if (S.phase === "shop" && REROLL_STYLE === 4 && !TOKM.banish) { if (TOKM.open) TOKM.open = false; else tokMenuOpen(); } }   // (Y opens the reroll / banish menu)
+function pressStart() { if (askKey("start")) return; if (devKey("start")) return; if (manKey("start")) return; if (pauseKey("start")) return; if (boardKey("start")) return; if (howKey("start")) return; Sound.ensure(); if (titleBusy()) return; if (S.phase === "title") return titleChoose(TS === 6 ? titleSel : 0); if (S.phase === "over") return overChoose(); if (S.phase === "swap") return swapConfirm(swapFocus); if (S.phase === "trade") return tradeConfirm(swapFocus); if (S.phase === "report") return reportNext(); if (S.phase === "melt") return meltDone(); if (S.phase === "upgrade") return upgradeConfirm(swapFocus); if (S.phase === "shop") return choosePart(shopFocus); if (S.phase === "play") pauseOpen(); }
 function pressSel() { if (devKey("select")) return; }   // Select does nothing by itself (held a moment: dev mode, once it's unlocked)
 window.addEventListener("keydown", (e) => {
   if (!e.ctrlKey && !e.metaKey && !e.altKey) { INPUT = "keys"; usingTouch = false; }
@@ -4990,7 +5034,8 @@ function toWorld(e) { const r = cv.getBoundingClientRect(), s = Math.min(r.width
 function keyAt(p, strict) { for (let i = 0; i < NN; i++) { const c = tileC(i), mx = strict ? L.tw * .38 : L.tw * .6, my = strict ? L.th * .38 : L.th * .6; if (Math.abs(p.x - c.x) < mx && Math.abs(p.y - c.y) < my) return i; } return -1; }
 let down = null, dragging = false;
 cv.addEventListener("pointerdown", (e) => {
-  Sound.ensure(); usingButtons = false; e.preventDefault(); if (introPress()) return; const p = toWorld(e); if (TL && !PAUSE.on && S.phase === "play" && tallySkip()) return;
+  Sound.ensure(); usingButtons = false; e.preventDefault(); if (introPress()) return; const p = toWorld(e);
+  if (ASK.on) { const h = ASK.hits.find(r => p.x * FINE >= r.x0 && p.x * FINE <= r.x1 && p.y * FINE >= r.y0 && p.y * FINE <= r.y1); if (h) h.go(); return; } if (TL && !PAUSE.on && S.phase === "play" && tallySkip()) return;
   if (MAN.on) { manDown(p); try { cv.setPointerCapture(e.pointerId); } catch (er) {} return; }
   if (BOARD.on) { BOARD.on = false; Sound.click(); return; }
   if (PAUSE.on) { const fy = p.y * FINE, fx = p.x * FINE, hit = PAUSE.hits.find(r => fy >= r.y0 && fy <= r.y1 && fx >= r.x0 && fx <= r.x1);
