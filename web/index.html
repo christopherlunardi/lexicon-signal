@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 259;</script><script>
+<script>window.LEX_BUILD = 260;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -1024,9 +1024,9 @@ function retune() { if (!canAct() || S.retunes <= 0) return; if (PLAYLOG.run && 
   const keep = S.grid.map(t => t && (t.ice || t.blue) ? t : null); fillGrid(true);
   // (their letters do change with the rest, Chris 2026-11-16; the frost's depth stays too)
   if (keep.some(Boolean)) { S.grid.forEach(t => { t.blue = false; }); keep.forEach((t, i) => { if (t) { t.ch = pickLetter(); t.wild = false; t.hot = false; t.land = 1; t.yOff = 0; t.vy = 0; t.wait = 0; S.grid[i] = t; } }); ensureHot(); }
-  knobA.R += 2.4; staticKick = .5; Sound.retune(); log("Retuned.");
-  // stations (Workshop, 2026-11-23): with more than one in the rotation, a retune also tunes the radio to the next song
-  if (Sound.rot().length > 1) { const st = Sound.next(); dialFlash = { text: st.kc + " " + st.name, t: 120 }; log(`Tuned in ${st.name}, ${st.kc} kc.`); } }
+  knobA.R += 2.4; staticKick = .5; log("Retuned.");
+  // stations (Workshop, 2026-11-23): with more than one in the rotation, a retune also turns the dial to the next song (its own staticky sound)
+  if (Sound.rot().length <= 1) Sound.retune(); else { staticKick = 1; Sound.dial(); const st = Sound.next(1.05); dialFlash = { text: st.kc + " " + st.name, t: 120 }; log(`Tuned in ${st.name}, ${st.kc} kc.`); } }
 let shopChoices = [], shopFocus = 0;
 function nightClear() {
   if (HOW.on && !HOW.shop) return;
@@ -4925,8 +4925,8 @@ const Sound = (() => {
      (the game's own synth: chord pads, a bass, a soft beat) and "jazz" (a small band heard through the wall, from the Workshop's music
      round 1: piano, upright bass, brushes, a lead). ROT is the stations a retune steps through; [0] = no change (the game as shipped). */
   const AEOL = [0, 2, 3, 5, 7, 8, 10];
-  const JQ = { m9: [3, 7, 10, 14], m11: [3, 10, 14, 17], d13: [4, 10, 14, 21], d9: [4, 10, 14, 19], d7b9: [4, 10, 13, 19], d7b13: [4, 10, 13, 20], M9: [4, 7, 11, 14], M69: [4, 9, 14, 19], m7b5: [3, 6, 10, 14], m6: [3, 7, 9, 14] };
-  const JS = { m: [0, 2, 3, 5, 7, 9, 10], d: [0, 2, 4, 5, 7, 9, 10], M: [0, 2, 4, 5, 7, 9, 11], h: [0, 1, 3, 5, 6, 8, 10], alt: [0, 1, 3, 4, 6, 8, 10] };
+  const JQ = { m7s4: [3, 7, 10, 17], M7s11: [4, 7, 11, 18], m69: [3, 7, 9, 14], d7s9: [4, 10, 15, 19], m9: [3, 7, 10, 14], m11: [3, 10, 14, 17], d13: [4, 10, 14, 21], d9: [4, 10, 14, 19], d7b9: [4, 10, 13, 19], d7b13: [4, 10, 13, 20], M9: [4, 7, 11, 14], M69: [4, 9, 14, 19], m7b5: [3, 6, 10, 14], m6: [3, 7, 9, 14] };
+  const JS = { phr: [0, 1, 3, 5, 7, 8, 10], lyd: [0, 2, 4, 6, 7, 9, 11], dor: [0, 2, 3, 5, 7, 9, 10], m: [0, 2, 3, 5, 7, 9, 10], d: [0, 2, 4, 5, 7, 9, 10], M: [0, 2, 4, 5, 7, 9, 11], h: [0, 1, 3, 5, 6, 8, 10], alt: [0, 1, 3, 4, 6, 8, 10] };
   const JC = (root, q, sc, beats) => ({ root, v: JQ[q], sc: JS[sc], beats });
   const tr = (prog, d) => prog.map(c => ({ ...c, root: c.root + d }));
   const BALLAD = [JC(38, "m9", "m", 4), JC(43, "d13", "d", 4), JC(46, "M9", "M", 4), JC(45, "d7b13", "alt", 4), JC(38, "m9", "m", 4), JC(43, "d13", "d", 4), JC(40, "m7b5", "h", 2), JC(45, "d7b9", "alt", 2), JC(38, "m6", "m", 2), JC(45, "d7b13", "alt", 2)];
@@ -4942,6 +4942,23 @@ const Sound = (() => {
     { name: "FOG PULSE", kc: 1450, band: "pulse", bpm: 84, ch: [[55, 59, 62, 66], [55, 61, 64, 66], [54, 59, 62, 67], [54, 57, 62, 64]], rt: [40, 45, 43, 38], shift: -5, alt: [0, 2, 3, 5, 7, 9, 10], level: 1 },
   ];
   // (levels: matched by ear-weighted loudness, 150 Hz to 5 kHz, to station 0's music)
+  /* Workshop stations r2 (Chris 2026-11-23: picked LAST CALL TRIO for its noir feel; wants a third song, different from both and still
+     vibey; likes that there's hardly a melody, so the player's own sounds play the tune). Each is groove and chords, almost no lead. */
+  const BLUES = [JC(43, "d13", "d", 4), JC(36, "d9", "d", 4), JC(43, "d13", "d", 4), JC(43, "d7s9", "d", 4), JC(36, "d9", "d", 4), JC(36, "d9", "d", 4), JC(43, "d13", "d", 4), JC(40, "d7b9", "alt", 4),
+    JC(45, "m9", "m", 4), JC(38, "d13", "d", 4), JC(43, "d13", "d", 2), JC(40, "d7b9", "alt", 2), JC(45, "m9", "m", 2), JC(38, "d7b9", "alt", 2)];
+  const BOSSA = [JC(40, "m9", "dor", 4), JC(45, "d13", "d", 4), JC(40, "m9", "dor", 4), JC(45, "d13", "d", 4), JC(36, "M9", "M", 4), JC(47, "d7b13", "alt", 4), JC(40, "m69", "dor", 4), JC(42, "m7b5", "h", 2), JC(47, "d7b9", "alt", 2)];
+  const PALM = [JC(41, "m9", "dor", 4), JC(46, "d13", "d", 4), JC(41, "m9", "dor", 4), JC(46, "d13", "d", 4), JC(44, "M9", "M", 4), JC(37, "M7s11", "lyd", 4), JC(36, "d7b13", "alt", 4), JC(36, "d7b9", "alt", 4)];
+  const SERIAL = [JC(40, "m7s4", "phr", 8), JC(41, "M7s11", "lyd", 8), JC(40, "m7s4", "phr", 8), JC(38, "m9", "dor", 4), JC(41, "M7s11", "lyd", 4)];
+  STATIONS.push(
+    // 6: a slow 12-bar blues in G, shuffled, after closing: walking bass, brushes, piano answering on the off-beats; no tune at all
+    { name: "BACK ROOM BLUES", kc: 760, band: "jazz", bpm: 64, prog: BLUES, shift: -2, piano: .9, bass: 1, brush: .9, ride: .45, lead: null, lp: 2300, wet: .3, level: 1.4, seed: 31, groove: "shuffle" },
+    // 7: a slow bossa in E minor: a nylon-string guitar's chords, a rim click on the clave, a shaker, a bass that rocks root and fifth
+    { name: "RAIN BOSSA", kc: 1100, band: "jazz", bpm: 84, prog: BOSSA, shift: -5, alt: [0, 2, 3, 5, 7, 9, 10], bass: .9, lp: 2600, wet: .3, level: 2, seed: 41, groove: "bossa" },
+    // 8: a hotel lounge band from the 50s in F minor: an organ holding the chords, hand drums, vibes now and then, a slow bolero bass
+    { name: "PALM ROOM", kc: 920, band: "jazz", bpm: 72, prog: PALM, shift: -4, alt: [0, 2, 3, 5, 7, 9, 10], bass: .9, lp: 2400, wet: .38, level: 1.3, seed: 51, groove: "bolero" },
+    // 9: an old radio mystery serial between scenes, E phrygian: an organ chord swelling, a low drum on each change, a clock, a far theremin
+    { name: "MIDNIGHT SERIAL", kc: 1350, band: "jazz", bpm: 60, prog: SERIAL, shift: -5, alt: [0, 1, 3, 5, 7, 8, 10], bass: .8, lp: 2600, wet: .45, level: 1.15, seed: 61, groove: "serial" },
+  );
   let ROT = [0], cur = null;
   { const m = location.hash.match(/-stn((?:-\d+)+)/); if (m) { const l = m[1].split("-").filter(x => x !== "").map(Number).filter(i => i < STATIONS.length); if (l.length) ROT = l; } }
   // a note (midi) moved into the station on now: its key, and its mode's degree
@@ -4986,6 +5003,63 @@ const Sound = (() => {
     g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(pk, t + .05); g.gain.setValueAtTime(pk, t + Math.max(.06, len - .08)); g.gain.exponentialRampToValueAtTime(.0001, t + len + .18);
     o.connect(lp); lp.connect(g); o.start(t); o.stop(t + len + .25); vib.start(t); vib.stop(t + len + .25);
   }
+  function jOrgan(out, ms, t, len, vel) {   // a soft tonewheel organ holding a chord: two drawbars, a slow swell, a gentle rotating wobble
+    const g = ac.createGain(), trem = ac.createGain(), lfo = ac.createOscillator(), lg = ac.createGain(); g.connect(out); trem.connect(g); trem.gain.value = .85; lfo.frequency.value = 5.6; lg.gain.value = .15; lfo.connect(lg); lg.connect(trem.gain);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vel * .03, t + Math.min(.9, len * .3)); g.gain.setValueAtTime(vel * .03, t + len * .85); g.gain.exponentialRampToValueAtTime(.0001, t + len + .4);
+    ms.forEach(m => (lowEnd ? [[1, 1]] : [[1, 1], [2, .35]]).forEach(([k, a]) => { const o = ac.createOscillator(), og = ac.createGain(); o.type = "sine"; o.frequency.value = m2f(m) * k; og.gain.value = a; o.connect(og); og.connect(trem); o.start(t); o.stop(t + len + .5); }));
+    lfo.start(t); lfo.stop(t + len + .5); }
+  function jPluck(out, m, t, vel, len) {   // a nylon string: a bright attack that darkens fast
+    const g = ac.createGain(), lp = ac.createBiquadFilter(), o = ac.createOscillator(); lp.type = "lowpass"; lp.frequency.setValueAtTime(2600, t); lp.frequency.exponentialRampToValueAtTime(500, t + .25); o.type = "triangle"; o.frequency.value = m2f(m);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vel * .09, t + .004); g.gain.exponentialRampToValueAtTime(.0001, t + Math.max(.25, len)); o.connect(lp); lp.connect(g); g.connect(out); o.start(t); o.stop(t + len + .05); }
+  function jDrum(out, t, f0, f1, vel, dur, nz) {   // hand drums, the low drum: a pitched thump and a little skin
+    const o = ac.createOscillator(), g = ac.createGain(); o.type = "sine"; o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur * .6);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vel, t + .004); g.gain.exponentialRampToValueAtTime(.0001, t + dur); o.connect(g); g.connect(out); o.start(t); o.stop(t + dur + .05);
+    if (nz) jNoise(out, t, "bandpass", nz, 1.2, vel * .25, .002, .06); }
+  const jRim = (out, t, vel) => { jNoise(out, t, "bandpass", 1800, 4, vel * .1, .001, .05); const o = ac.createOscillator(), g = ac.createGain(); o.type = "square"; o.frequency.value = 820; g.gain.setValueAtTime(vel * .02, t); g.gain.exponentialRampToValueAtTime(.00005, t + .04); o.connect(g); g.connect(out); o.start(t); o.stop(t + .05); };
+  const jShaker = (out, t, vel) => jNoise(out, t, "highpass", 7000, .7, vel * .025, .015, .09);
+  const jTick = (out, t, vel) => jNoise(out, t, "bandpass", 3400, 6, vel * .06, .001, .035);   // the clock on the studio wall
+  function jTheremin(out, m, from, t, len, vel) {   // a far theremin: a sine sliding up from the note before, a wide slow vibrato
+    const f = m2f(m), o = ac.createOscillator(), g = ac.createGain(), v = ac.createOscillator(), vg = ac.createGain(); o.type = "sine"; o.frequency.setValueAtTime(m2f(from), t); o.frequency.exponentialRampToValueAtTime(f, t + .22);
+    v.frequency.value = 5.5; vg.gain.setValueAtTime(0, t); vg.gain.linearRampToValueAtTime(f * .012, t + .5); v.connect(vg); vg.connect(o.frequency);
+    g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(vel * .05, t + .25); g.gain.setValueAtTime(vel * .05, t + len * .8); g.gain.exponentialRampToValueAtTime(.0001, t + len + .3);
+    o.connect(g); g.connect(out); o.start(t); o.stop(t + len + .35); v.start(t); v.stop(t + len + .35); }
+  const voicing = (c, lo, hi) => { const b = near(c.root, lo + 2); return c.v.map(iv => { let m = b + iv; while (m > hi) m -= 12; while (m < lo) m += 12; return m; }).sort((a, z) => a - z); };
+  // the new songs' players, beat by beat (straight eighths; the shuffle uses the swing players above)
+  function jGroove(S2, st, out, n, t, c, into, next, bar, inBar, beat, R) {
+    const e = beat / 2, root = near(c.root, 38) < 31 ? near(c.root, 38) + 12 : near(c.root, 38), fifth = root + 7 > 50 ? root - 5 : root + 7;
+    if (S2.groove === "bossa") {
+      // bass: root on the beat, the fifth on the "and" of the next beat (the bossa rock), every two beats
+      if (inBar % 2 === 0) { jBass(out.bass, root, t, S2.bass, beat * 1.3); jBass(out.bass, fifth, t + beat * 1.5, S2.bass * .8, beat * .5); }
+      // guitar: the chord picked on the syncopated bossa spots, quiet and short
+      const v = voicing(c, 52, 69), hitsG = [[0, 1], [1.5, .8], [2.5, .7], [3.5, .75]];
+      hitsG.forEach(([o2, a]) => { if (Math.floor(o2) !== inBar || (o2 && R() > .85)) return; v.forEach((m, k) => jPluck(out.keys, m, t + (o2 - inBar) * beat + k * .012, a * (k ? .8 : 1), beat * .7)); });
+      // two bars of clave on the rim (3 then 2), a shaker on every eighth, a soft kick on 1 and 3
+      if (inBar === 0) { const cl = bar % 2 === 0 ? [0, 1.5, 3] : [1, 2]; cl.forEach(o2 => jRim(out.drums, t + o2 * beat, .8)); }
+      for (let k = 0; k < 2; k++) jShaker(out.drums, t + k * e, k ? 1 : .6);
+      if (inBar % 2 === 0) jKick(out.drums, t, .6);
+      return; }
+    if (S2.groove === "bolero") {
+      // bass: root on 1, a pickup fifth on the "and" of 2, root on 3 (the slow bolero step)
+      if (inBar === 0) { jBass(out.bass, root, t, S2.bass, beat * 1.4); jBass(out.bass, fifth, t + beat * 1.5, S2.bass * .75, beat * .45); jBass(out.bass, root, t + beat * 2, S2.bass * .9, beat * 1.6); }
+      // the organ holds each chord
+      if (into === 0) jOrgan(out.keys, voicing(c, 53, 70), t, c.beats * beat, 1);
+      // hand drums: a muted slap on 2, open tones on 4 and its "and"; a shaker on the eighths
+      if (inBar === 1) jDrum(out.drums, t, 300, 240, .09, .12, 2400);
+      if (inBar === 3) { jDrum(out.drums, t, 200, 170, .12, .3); jDrum(out.drums, t + e, 200, 170, .1, .28); }
+      if (inBar === 0) jDrum(out.drums, t + e, 150, 130, .08, .3);
+      for (let k = 0; k < 2; k++) jShaker(out.drums, t + k * e, k ? .9 : .5);
+      // vibes now and then: two notes of the chord, rung softly (no tune)
+      if (into === 0 && bar % 4 === 3 && R() < .7) { const v = voicing(c, 69, 81); jLead(out.lead, "vibes", v[2], t + e, .55, beat * 1.2); jLead(out.lead, "vibes", v[1], t + beat * 1.5, .5, beat * 2); }
+      return; }
+    if (S2.groove === "serial") {
+      // an organ chord swelling on each change, a low drum under it, the bass holding the root
+      if (into === 0) { jOrgan(out.keys, voicing(c, 50, 67), t, c.beats * beat, 1.2); jDrum(out.drums, t, 90, 62, .3, .9, 500); jBass(out.bass, root, t + .02, S2.bass, beat * Math.min(4, c.beats) * .9); }
+      // the clock: tick, tock
+      jTick(out.drums, t, inBar % 2 ? .6 : 1);
+      // a far theremin, very rarely: two or three long notes from the chord
+      if (inBar === 0 && bar % 8 === 6 && R() < .8) { const v = voicing(c, 71, 84); let prev = v[0] - 5; [v[2], v[1], v[0]].slice(0, R() < .5 ? 2 : 3).forEach((m, k) => { jTheremin(out.lead, m, prev, t + k * beat * 2, beat * 2.1, .9); prev = m; }); }
+      return; }
+  }
   // ---- the jazz band: what each player does in each beat ----
   function jChordAt(prog, n) { const tot = prog.reduce((a, c) => a + c.beats, 0); let b = ((n % tot) + tot) % tot; for (let i = 0; i < prog.length; i++) { const c = prog[i]; if (b < c.beats) return { c, into: b, next: prog[(i + 1) % prog.length] }; b -= c.beats; } }
   const near = (m, target) => m + Math.round((target - m) / 12) * 12;
@@ -4995,6 +5069,7 @@ const Sound = (() => {
     for (; ; C.beatN++) {
       const n = C.beatN, t = C.start + n * beat; if (t >= t1) break;
       const { c, into, next } = jChordAt(prog, n), bar = Math.floor(n / 4), inBar = n % 4, hum = () => (R() - .5) * .018;   // hum: players a hair early or late
+      if (S2.groove && S2.groove !== "shuffle") { jGroove(S2, st, out, n, t, c, into, next, bar, inBar, beat, R); continue; }
       // bass: walks in quarter notes (the root on the chord's first beat, chord and scale tones after, a half step into the next chord)
       if (S2.bass) { let m;
         if (into === 0) m = near(c.root, st.lastBass);
@@ -5049,7 +5124,7 @@ const Sound = (() => {
     if (cur.st.band === "pulse") { pulseSched(cur, t1); if (S && S.target) cur.padF.frequency.setTargetAtTime(600 + fill * 1800, ac.currentTime, .4); }
     else { jazzSched(cur, t1); cur.chain.lp.frequency.setTargetAtTime(cur.st.lp * (.8 + fill * .45), ac.currentTime, .4); } }   // the band comes through the wall clearer as the night's signal fills
   // tune in station i: the one playing fades under the retune's static, the new one starts on its first beat as it clears
-  function tune(i, sweep) { const t = ac.currentTime, st = STATIONS[i], at = t + (sweep ? .55 : .1);
+  function tune(i, sweep, gap) { const t = ac.currentTime, st = STATIONS[i], at = t + (sweep ? gap || .55 : .1);
     if (cur) { const old = cur; old.g.gain.setTargetAtTime(.0001, t, .07); (old.chain ? old.chain.srcs : []).forEach(x => { try { x.stop(t + 3); } catch (e) {} }); }   /* (stopped on the audio clock; its notes already have stop times) */
     const g = ac.createGain(); g.connect(mus); if (sweep) { g.gain.setValueAtTime(.0001, t); g.gain.setValueAtTime(.0001, at); g.gain.exponentialRampToValueAtTime(st.level, at + .7); } else g.gain.value = st.level;
     const C = { i, st, g, start: at, nextBeat: at, beatN: 0, js: { lastBass: st.prog ? st.prog[0].root : 40, lead: null } };
@@ -5070,8 +5145,8 @@ const Sound = (() => {
     music() { if (!ac) return; this.rain(); if (playing) return; playing = true; tune(ROT[0], false); setInterval(schedule, 60); },
     // stations: the list, the one on, tune one in (with the retune's sweep), and the next in the retune order
     STATIONS, rot: () => ROT, setRot(l) { ROT = l.length ? l : [0]; }, station: () => cur ? cur.i : ROT[0],
-    tune(i) { if (!ac || !playing) return STATIONS[i]; return tune(i, true); },
-    next() { const i = cur ? cur.i : ROT[0], k = ROT.indexOf(i), n = ROT[(k + 1) % ROT.length]; return this.tune(n); },
+    tune(i, gap) { if (!ac || !playing) return STATIONS[i]; return tune(i, true, gap); },
+    next(gap) { const i = cur ? cur.i : ROT[0], k = ROT.indexOf(i), n = ROT[(k + 1) % ROT.length]; return this.tune(n, gap); },
     toggle() { muted = !muted; if (master) master.gain.setTargetAtTime(muted ? 0 : .8, ac.currentTime, .05); log(muted ? "Sound off." : "Sound on."); },
     setStatic(l) {},   // (the constant static hiss is gone, Chris 2026-11-12: static is only a sound effect now; the rain is the room's sound)
     rain() { if (!ac || rainOn) return; rainOn = true; startRain(); },
@@ -5127,6 +5202,17 @@ const Sound = (() => {
     hiss() { if (!ac) return; noise(ac.currentTime, 1.4, .3, "bandpass", 1400, .6); },
     down() { if (!ac) return; const t = ac.currentTime; osc("sine", 1500, t, .004, .07, .9, sfx, 50); noise(t, .5, .12, "highpass", 2500, 1); },
     fail() { if (!ac) return; const t = ac.currentTime; noise(t, .3, .32, "bandpass", 500, 2); osc("square", 82, t, .005, .16, .25, sfx, 55); },
+    // turning the dial from one station to the next (Chris 2026-11-23: a staticky radio change): hiss through a narrow band sweeping
+    // up and back, whistles sliding past as the dial crosses other carriers, crackle, a moment of a far voice-like murmur, then it settles
+    dial() { if (!ac) return; const t = ac.currentTime, D = 1.1;
+      { const s2 = ac.createBufferSource(); s2.buffer = nb; s2.loop = true; const bp = ac.createBiquadFilter(); bp.type = "bandpass"; bp.Q.value = 3; bp.frequency.setValueAtTime(500, t); bp.frequency.exponentialRampToValueAtTime(3200, t + D * .45); bp.frequency.exponentialRampToValueAtTime(900, t + D);
+        const g = ac.createGain(), am = ac.createOscillator(), ag = ac.createGain(); am.frequency.setValueAtTime(9, t); am.frequency.linearRampToValueAtTime(23, t + D); ag.gain.value = .06; am.connect(ag); ag.connect(g.gain);
+        g.gain.setValueAtTime(.0001, t); g.gain.exponentialRampToValueAtTime(.16, t + .05); g.gain.setValueAtTime(.16, t + D * .8); g.gain.exponentialRampToValueAtTime(.0001, t + D + .15);
+        s2.connect(bp); bp.connect(g); g.connect(sfx); s2.start(t, Math.random()); s2.stop(t + D + .2); am.start(t); am.stop(t + D + .2); }
+      [[2400, 700, .1, .38], [900, 2900, .5, .32], [3300, 1600, .78, .22]].forEach(([a, b, at, d]) => osc("sine", a, t + at, .03, .018, d, sfx, b));   // heterodyne whistles
+      for (let k = 0; k < 9; k++) { const tt = t + Math.random() * D; noise(tt, .012, .1 + Math.random() * .12, "highpass", 2500, 1); }   // crackle
+      osc("sawtooth", 140, t + .35, .05, .012, .25, sfx, 190); noise(t + .35, .25, .03, "bandpass", 700, 6, sfx);   // a murmur from another station
+      osc("square", 1900, t + D, .001, .02, .03); },   // the dial lands
     retune() { if (!ac) return; const t = ac.currentTime; noise(t, .7, .24, "bandpass", 300, 8, sfx, 5000); osc("sine", 300, t, .02, .06, .6, sfx, 1400); },
     clear() { if (!ac) return; const t = ac.currentTime; [69, 72, 76, 79, 84, 88].forEach((m, k) => osc("square", q(m), t + k * .08, .003, .07, .6)); noise(t, 1.2, .13, "bandpass", 400, 2, sfx, 9000); },
     pick() { if (!ac) return; const t = ac.currentTime; osc("square", PF(440), t, .003, .07, .08); osc("square", PF(660), t + .06, .003, .07, .12); },
@@ -5231,7 +5317,7 @@ const DEV_ACTIONS = [
   ["POWER UP", () => { devPlay(); S.night = 1; startNight(); }],
   ["NEW RUN", () => { newRun(); barShow = 1; }], ["TITLE SCREEN", () => { S.phase = "title"; titleT = 0; titleSkip = false; }],
   ["LOGBOOK", () => { manOpen(S.phase === "title" ? "title" : "dev", "log"); }],
-  [() => "STATION: " + Sound.STATIONS[Sound.station()].name, () => { Sound.ensure(); Sound.music(); const n = Sound.STATIONS.length; Sound.setRot(Sound.STATIONS.map((x, i) => i)); Sound.tune((Sound.station() + 1) % n); Sound.retune(); }],
+  [() => "STATION: " + Sound.STATIONS[Sound.station()].name, () => { Sound.ensure(); Sound.music(); const n = Sound.STATIONS.length; Sound.setRot(Sound.STATIONS.map((x, i) => i)); Sound.dial(); Sound.tune((Sound.station() + 1) % n, 1.05); }],
   ["STUDIO INTRO", () => { studioStart(); }], [() => "SOUND " + (Sound.muted() ? "OFF" : "ON"), () => { Sound.ensure(); Sound.toggle(); }],
 ];
 function devInstall() {
