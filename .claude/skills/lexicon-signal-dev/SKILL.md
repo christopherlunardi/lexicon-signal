@@ -830,3 +830,6 @@ the same batch.
   writes LEX_SUB0 (in 2 lists | in 0-1 lists) and goldRank() sorts gold fills by it. A fill that meets an open request still comes
   first. Ties inside a rank are still alphabetical (?AT reads BAT, not CAT): a true frequency list would fix that.
   Never put a release out before its tests finish (build 274 broke the screen: `show` was a const).
+- Room light on wide screens (Chris 2026-11-25): the lamp's pool sits at the right edge; the edge darkening (buildRoom's v and the
+  finish overlay's FIN.vig) is lifted where the lamp reaches, so the light builds to the right edge instead of going bright, then dark
+  (it read as light from nowhere on the RP6). A visible lamp source may come later.

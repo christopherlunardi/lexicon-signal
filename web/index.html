@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 276;</script><script>
+<script>window.LEX_BUILD = 277;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -417,7 +417,9 @@ function buildRoom() {
     const i = (y * W + x) * 4; let lr, lg, lb;
     if (md[i + 3] > 0) { lr = .74; lg = .76; lb = .86; }
     else { const lamp = Math.max(0, 1 - Math.hypot((x - lx) / (330 * K), (y - ly) / (260 * K))) ** 1.6, moon = Math.max(0, 1 - Math.hypot((x - wcx) / (150 * K), (y - wcy) / (130 * K))) ** 2;
-      const v = 1 - .35 * Math.max(0, Math.min(1, Math.hypot((x - W / 2) / (W / 2), (y - H / 2) / (H / 2)) - .55));
+      // the edges darken, but not where the lamp reaches: the light keeps building to the right edge, from a lamp just out of frame
+      // (Chris 2026-11-25: on the wide RP6 it went bright, then dark again at the edge, light from nowhere)
+      const v = 1 - .35 * Math.max(0, Math.min(1, Math.hypot((x - W / 2) / (W / 2), (y - H / 2) / (H / 2)) - .55)) * Math.max(0, 1 - lamp * 3);
       lr = (.44 + lamp * 1.0 + moon * .22) * v; lg = (.43 + lamp * .74 + moon * .3) * v; lb = (.44 + lamp * .48 + moon * .5) * v;
       if (d[i] > 120 && d[i + 1] > 60 && d[i] > d[i + 2] * 2.5 && d[i + 1] > d[i] * .45 && rimAt(x, y)) { lr *= 1.3; lg *= 1.3; lb *= 1.2; } }
     d[i] = Math.min(255, d[i] * lr); d[i + 1] = Math.min(255, d[i + 1] * lg); d[i + 2] = Math.min(255, d[i + 2] * lb); d[i + 3] = 255; }
@@ -1500,6 +1502,9 @@ function finBuild() { const k = CVW + "x" + CVH; if (FIN.k === k) return; FIN.k 
   const v = FIN.vig = document.createElement("canvas"); v.width = CVW; v.height = CVH; const c = v.getContext("2d");
   const g = c.createRadialGradient(CVW / 2, CVH * .45, Math.min(CVW, CVH) * .25, CVW / 2, CVH * .5, Math.hypot(CVW, CVH) * .6);
   g.addColorStop(0, "rgba(20,8,2,0)"); g.addColorStop(.6, "rgba(20,8,2,.18)"); g.addColorStop(1, "rgba(10,4,1,.62)"); c.fillStyle = g; c.fillRect(0, 0, CVW, CVH);
+  { const lx = CVW, ly = CVH * .62, lg = c.createRadialGradient(lx, ly, 0, lx, ly, CVW * .55);   // lift it on the lamp side (low right), as in buildRoom
+    lg.addColorStop(0, "rgba(0,0,0,.95)"); lg.addColorStop(.5, "rgba(0,0,0,.6)"); lg.addColorStop(1, "rgba(0,0,0,0)");
+    c.globalCompositeOperation = "destination-out"; c.fillStyle = lg; c.fillRect(0, 0, CVW, CVH); c.globalCompositeOperation = "source-over"; }
   const ro = FIN.roll = document.createElement("canvas"); ro.width = 1; ro.height = 64; const r2 = ro.getContext("2d"), rg = r2.createLinearGradient(0, 0, 0, 64);
   rg.addColorStop(0, "rgba(255,220,170,0)"); rg.addColorStop(.5, "rgba(255,220,170,.06)"); rg.addColorStop(1, "rgba(255,220,170,0)"); r2.fillStyle = rg; r2.fillRect(0, 0, 1, 64);
   const sc = FIN.scan = document.createElement("canvas"); sc.width = 8; sc.height = 4; const s2 = sc.getContext("2d"); s2.fillStyle = "rgba(0,0,0,.22)"; s2.fillRect(0, 2, 8, 2);
