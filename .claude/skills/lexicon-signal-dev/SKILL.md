@@ -825,3 +825,8 @@ the same batch.
   no end found at boot counts as "left" (past night 1 it enters the top ten). Button names in tips go through {B}/{X}/{START}.
   Open from the audit: the How to Play cards are small on phones and cover the part slots (drawHowCard placement).
   Audit scripts: scratchpad audit-func/t*.js (seeded states, each prints PASS/FAIL).
+- Gold key word choice (Chris 2026-11-24: ?ORRY read LORRY). Group 0 (SCOWL 35, 36k words) has no order inside, so ties went
+  alphabetical. tools/wordlists/scowl-common.txt counts how many of SCOWL's three everyday lists carry each size-35 word; words.py
+  writes LEX_SUB0 (in 2 lists | in 0-1 lists) and goldRank() sorts gold fills by it. A fill that meets an open request still comes
+  first. Ties inside a rank are still alphabetical (?AT reads BAT, not CAT): a true frequency list would fix that.
+  Never put a release out before its tests finish (build 274 broke the screen: `show` was a const).

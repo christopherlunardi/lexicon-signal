@@ -25,8 +25,12 @@ def tier(w):
     return 3 if w in everyday else 4
 groups = [set() for _ in range(5)]
 for w in words: groups[tier(w)].add(w)
+# within the most common group, how many everyday lists have the word (scowl-common.txt, Chris 2026-11-24): the gold key's tie-breaker,
+# written after the five groups as two more lists (in 2 lists | in 0-1 lists), each a subset of group 0
+lists = {l.split()[0]: int(l.split()[1]) for l in (D / "scowl-common.txt").read_text().splitlines() if l and not l.startswith("#")}
+sub = [sorted(w for w in groups[0] if lists.get(w, 3) == 2), sorted(w for w in groups[0] if lists.get(w, 3) < 2)]
 (ROOT / "words.js").write_text("// Word list: ENABLE (public domain) + SCOWL/ESDB size 70 (Copyright Kevin Atkinson, see tools/wordlists/SCOWL-Copyright.txt)"
-    " + place names (ESDB, and the world-cities list from GeoNames, CC BY 4.0) + our own extra words; 3-12 letters. Made by tools/words.py\nwindow.LEX_WORDS=\"" + " | ".join(" ".join(sorted(g)) for g in groups) + "\";\n")
+    " + place names (ESDB, and the world-cities list from GeoNames, CC BY 4.0) + our own extra words; 3-12 letters. Made by tools/words.py\nwindow.LEX_WORDS=\"" + " | ".join(" ".join(sorted(g)) for g in groups) + "\";\nwindow.LEX_SUB0=\"" + " | ".join(" ".join(g) for g in sub) + "\";\n")
 # word kinds for the Station Logbook's personality types (Chris 2026-11-23): kinds.txt's base words plus their plain forms (s, es, ed,
 # ing) that are in the list; edgelord also takes extra.txt's "# crude" section. Written into words.js as window.LEX_KINDS.
 kinds, cur = {}, None

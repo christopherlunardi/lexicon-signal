@@ -172,7 +172,7 @@ body.padmode #screenWrap,body.inapp #screenWrap{position:fixed;top:0;right:0;bot
 
 <script src="words.js"></script>
 <script src="studio.js"></script>
-<script>window.LEX_BUILD = 275;</script><script>
+<script>window.LEX_BUILD = 276;</script><script>
 (() => {
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -182,6 +182,9 @@ if (!CanvasRenderingContext2D.prototype.roundRect) CanvasRenderingContext2D.prot
 // the word list comes in groups, most common first, split by " | " (tools/words.py). tierOf(w) says which group (0 most common): the gold
 // key picks the most common word it can (Chris 2026-11-18). Each group stays a sorted array (searched by halves) sharing its strings with DICT.
 const LEXG = (window.LEX_WORDS || "").split(" | ").map(g => g.split(" ")), DICT = new Set(LEXG.flat());
+// within group 0, words fewer everyday lists carry rank lower for the gold key (LEX_SUB0, Chris 2026-11-24: ?ORRY read LORRY, not SORRY)
+const SUB0 = (window.LEX_SUB0 || "").split(" | ").map(g => new Set(g.split(" ")));
+function goldRank(w) { const t = tierOf(w); return t > 0 ? t + 2 : SUB0[0] && SUB0[0].has(w) ? 1 : SUB0[1] && SUB0[1].has(w) ? 2 : 0; }
 function tierOf(w) { for (let g = 0; g < LEXG.length; g++) { const a = LEXG[g]; let lo = 0, hi = a.length - 1; while (lo <= hi) { const m = (lo + hi) >> 1; if (a[m] === w) return g; if (a[m] < w) lo = m + 1; else hi = m - 1; } } return 9; }
 const cv = $("screen"), ctx = cv.getContext("2d", { alpha: false }); window.__lexCtx = ctx;   // the screen: 2 fine pixels per world pixel (opaque: cheaper to put on screen)
 { const d = Object.getOwnPropertyDescriptor(CanvasRenderingContext2D.prototype, "imageSmoothingEnabled");
@@ -651,11 +654,11 @@ const ABC = "abcdefghijklmnopqrstuvwxyz";
 // the Gold Key's "?" stands for any letter: a word with it reads as the first real word it can make
 // (with a request open, a letter that also fills the request comes first: MO + gold key with "OW" wanted reads MOW, Chris 2026-11-16)
 // any number of gold keys (Chris 2026-11-22: two in a row then OAT found nothing; it only filled the first one): every way to fill them
-// is tried, cached per letters, and the most common word wins (REPO, not PEPO); one that fills an open request comes first
+// is tried, cached per letters, and the most common word wins (REPO, not PEPO; SORRY, not LORRY: goldRank); one that fills an open request comes first
 const goldCache = new Map();
 function goldFills(w) { let r = goldCache.get(w); if (r) return r; r = []; const n = (w.match(/\?/g) || []).length;
   if (n <= 3 && w.length >= 3) { const go = (s) => { const i = s.indexOf("?"); if (i < 0) { if (DICT.has(s)) r.push(s); return; } for (const c of ABC) go(s.slice(0, i) + c + s.slice(i + 1)); }; go(w); }
-  r.sort((a, b) => tierOf(a) - tierOf(b)); if (goldCache.size > 400) goldCache.clear(); goldCache.set(w, r); return r; }
+  r.sort((a, b) => goldRank(a) - goldRank(b)); if (goldCache.size > 400) goldCache.clear(); goldCache.set(w, r); return r; }
 function resolveWord(w, p) { if (w.indexOf("?") < 0) return w; const fills = goldFills(w); if (!fills.length) return w;
   if (p && typeof reqOpen === "function" && reqOpen()) { const r = fills.find(t => reqWordOk(t.toUpperCase(), p)); if (r) return r; }
   return fills[0]; }
